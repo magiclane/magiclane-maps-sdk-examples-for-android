@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	android:layout_width="match_parent"
+	android:layout_height="@dimen/custom_server_dialog_height"
+	android:background="#FFFFFF">
+
+	<EditText
+		android:id="@+id/input"
+		android:layout_width="match_parent"
+		android:layout_height="@dimen/custom_server_input_height"
+		android:layout_marginStart="@dimen/custom_server_input_margin"
+		android:layout_marginTop="@dimen/custom_server_input_margin"
+		android:layout_marginEnd="@dimen/custom_server_input_margin"
+		android:background="@drawable/rounded_background_gray"
+		android:paddingStart="@dimen/listItemPadding"
+		android:paddingEnd="@dimen/listItemPadding"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toTopOf="parent" />
+
+	<androidx.constraintlayout.widget.Barrier
+		android:id="@+id/barrier"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		app:barrierDirection="bottom"
+		app:constraint_referenced_ids="input" />
+
+	<Button
+		android:id="@+id/positiveButton"
+		style="?android:attr/borderlessButtonStyle"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="@dimen/custom_server_button_margin"
+		android:background="@android:color/transparent"
+		android:text="OK"
+		android:textSize="@dimen/standardTextSize"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintTop_toBottomOf="@+id/barrier" />
+
+	<Button
+		android:id="@+id/negativeButton"
+		style="?android:attr/borderlessButtonStyle"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="@dimen/custom_server_button_margin"
+		android:background="@android:color/transparent"
+		android:text="Cancel"
+		android:textSize="@dimen/standardTextSize"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toStartOf="@id/positiveButton"
+		app:layout_constraintTop_toBottomOf="@+id/barrier" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

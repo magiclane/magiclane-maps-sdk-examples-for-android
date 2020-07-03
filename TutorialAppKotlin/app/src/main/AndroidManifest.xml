@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+	package="com.generalmagic.gemsdkdemo">
+
+	<application
+		android:allowBackup="true"
+		android:label="GEMSDK Demo"
+		android:supportsRtl="true"
+		android:theme="@style/AppTheme">
+
+		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+
+		<activity
+			android:name=".MainActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale"
+			android:windowSoftInputMode="stateAlwaysVisible"> <!-- must exist on all activities ! -->
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
+
+		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+
+		<activity
+			android:name=".controllers.SensorsListActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+		<activity
+			android:name=".controllers.DirectCamActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+
+		<activity
+			android:name=".activities.RouteDescriptionActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+
+		<activity
+			android:name=".activities.publictransport.PublicTransportRouteDescriptionActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+		<activity
+			android:name=".activities.publictransport.PublicTransportAgenciesActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+
+		<activity
+			android:name=".activities.WebActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+
+		<activity
+			android:name=".activities.searchaddress.SearchAddressActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+
+		<activity
+			android:name=".controllers.StylesActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+
+		<activity
+			android:name=".controllers.OnlineMapsActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+		<activity
+			android:name=".controllers.SearchTextActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+		<activity
+			android:name=".controllers.SearchNearbyActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+		<activity
+			android:name=".controllers.SearchPoiActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+
+	</application>
+
+</manifest>

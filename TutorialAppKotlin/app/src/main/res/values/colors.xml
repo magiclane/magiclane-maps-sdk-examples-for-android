@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<color name="colorPrimary">#476483</color>
+	<color name="colorPrimaryDark">#2D3C47</color>
+	<color name="colorAccent">#03DAC5</color>
+	<color name="divider_light">#3888</color>
+	<color name="blue_color">#0678f4</color>
+	<color name="list_view_bgnd_color">#DCDCDC</color>
+
+	<color name="colorBlackFull">#000000</color>
+	<color name="colorLightBlue">#3399FF</color>
+	<color name="colorWhiteFull">#FFFFFF</color>
+	<color name="colorGreenFull">#00FF00</color>
+	<color name="colorRedFull">#FF0000</color>
+</resources>

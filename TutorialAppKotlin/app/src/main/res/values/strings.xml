@@ -1,0 +1,35 @@
+<resources>
+	<string name="app_name">ME</string>
+	<string name="nav_header_title">GEM SDK Demo</string>
+	<string name="nav_header_subtitle">https://maps.generalmagic.com</string>
+	<string name="map">Map</string>
+	<string name="one_view">One view</string>
+	<string name="two_tiled_views">Two tiled views</string>
+	<string name="two_overlapped_map_views">Two overlapped views</string>
+	<string name="search">Search</string>
+	<string name="free_text_search">Free text search</string>
+	<string name="address_search">Address search</string>
+	<string name="what_is_nearby">What\'s nearby</string>
+	<string name="poi_category_search">Gas stations</string>
+	<string name="styles">Styles</string>
+	<string name="drawer_open">Open</string>
+	<string name="drawer_close">Close</string>
+	<string name="action_show_code">Show code</string>
+	<string name="routing">Routing</string>
+	<string name="a_to_b_route">A to B route</string>
+	<string name="a_to_b_via_c_route">A to B via C route</string>
+	<string name="maps">Maps</string>
+	<string name="online_maps">Online maps</string>
+	<string name="fly_to">Fly to</string>
+	<string name="landmark">Landmark</string>
+	<string name="area">Area</string>
+	<string name="route">Route</string>
+	<string name="route_instruction">Route instruction</string>
+	<string name="traffic">Traffic</string>
+	<string name="server">Server</string>
+	<string name="set_custom_server">Set custom server</string>
+	<string name="exit_application">Exit Application?</string>
+	<string name="yes">Yes</string>
+	<string name="no">No</string>
+	<string name="ok">OK</string>
+</resources>

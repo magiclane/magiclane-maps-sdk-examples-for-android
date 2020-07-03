@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/wiki_image_list_item"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+	android:layout_gravity="center">
+
+	<ImageView
+		android:id="@+id/wiki_image"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginEnd="@dimen/wiki_image_info_padding"
+		android:adjustViewBounds="true"
+		android:scaleType="centerInside"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toTopOf="parent"
+		tools:ignore="ContentDescription" />
+
+	<Button
+		android:id="@+id/wiki_image_description"
+		style="?android:attr/borderlessButtonStyle"
+		android:layout_width="@dimen/wiki_image_info_size"
+		android:layout_height="@dimen/wiki_image_info_size"
+		android:layout_margin="@dimen/wiki_image_info_padding"
+		android:background="@drawable/round_info_button_white"
+		android:visibility="gone"
+		app:layout_constraintEnd_toEndOf="@id/wiki_image"
+		app:layout_constraintTop_toTopOf="@id/wiki_image" />
+
+	<ProgressBar
+		android:id="@+id/wiki_image_progress"
+		style="?android:attr/progressBarStyleSmall"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

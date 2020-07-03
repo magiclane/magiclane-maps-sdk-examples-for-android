@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/search_item"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:minHeight="@dimen/listCellMinHeight">
+
+	<View
+		android:id="@+id/divider"
+		android:layout_width="match_parent"
+		android:layout_height="1dp"
+		android:layout_marginEnd="@dimen/listItemPadding"
+		android:background="#33888888"
+		android:visibility="gone"
+		app:layout_constraintTop_toTopOf="parent" />
+
+	<ImageView
+		android:id="@+id/icon"
+		android:layout_width="@dimen/listIconSize"
+		android:layout_height="@dimen/listIconSize"
+		android:layout_marginStart="@dimen/listItemPadding"
+		android:layout_marginTop="@dimen/nav_bottom_bar_vertical_padding"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintLeft_toLeftOf="parent"
+		app:layout_constraintTop_toTopOf="parent"
+		app:layout_constraintVertical_bias="0.4"
+		app:layout_constraintVertical_chainStyle="packed"
+		tools:ignore="ContentDescription" />
+
+	<TextView
+		android:id="@+id/text"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="@dimen/listItemPadding"
+		android:layout_marginEnd="@dimen/listItemPadding"
+		android:paddingTop="@dimen/listItemPadding"
+		android:textColor="@android:color/black"
+		android:textSize="@dimen/standardTextSize"
+		app:layout_constraintBottom_toTopOf="@id/description"
+		app:layout_constraintEnd_toStartOf="@id/status_text"
+		app:layout_constraintStart_toEndOf="@id/icon"
+		app:layout_constraintTop_toTopOf="parent"
+		app:layout_constraintVertical_bias="0.4"
+		app:layout_constraintVertical_chainStyle="packed"
+		app:layout_goneMarginBottom="@dimen/listItemPadding" />
+
+	<TextView
+		android:id="@+id/description"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="@dimen/listItemPadding"
+		android:paddingBottom="@dimen/listItemPadding"
+		android:textSize="@dimen/smallTextSize"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toStartOf="@id/status_text"
+		app:layout_constraintStart_toEndOf="@id/icon"
+		app:layout_constraintTop_toBottomOf="@id/text" />
+
+	<TextView
+		android:id="@+id/status_text"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="@dimen/listItemPadding"
+		android:layout_marginEnd="@dimen/listItemPadding"
+		android:paddingTop="@dimen/listItemPadding"
+		android:textColor="@android:color/black"
+		android:textSize="@dimen/standardTextSize"
+		app:layout_constraintBottom_toTopOf="@id/status_description"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintTop_toTopOf="parent"
+		app:layout_constraintVertical_bias="0.4"
+		app:layout_constraintVertical_chainStyle="packed"
+		app:layout_goneMarginBottom="@dimen/listItemPadding" />
+
+	<TextView
+		android:id="@+id/status_description"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="@dimen/listItemPadding"
+		android:layout_marginEnd="@dimen/listItemPadding"
+		android:paddingBottom="@dimen/listItemPadding"
+		android:textSize="@dimen/smallTextSize"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintTop_toBottomOf="@id/status_text" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,15 @@
+TutorialAppCpp/app/libs/
+TutorialAppKotlin/app/libs/
+*.iml
+.gradle
+local.properties
+TutorialAppCpp/.DS_Store
+TutorialAppCpp/.idea/
+TutorialAppCpp/build
+TutorialAppCpp/app/.externalNativeBuild
+TutorialAppCpp/app/.cxx
+TutorialAppKotlin/.DS_Store
+TutorialAppKotlin/.idea/
+TutorialAppKotlin/build
+TutorialAppKotlin/app/.externalNativeBuild
+TutorialAppKotlin/app/.cxx

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.generalmagic.gemsdkdemo.controllers.common.WikiView xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/wikiView"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:background="@drawable/top_rounded_white_background"
+	android:fillViewport="true"
+	android:visibility="gone">
+
+	<ImageView
+		android:id="@+id/icon"
+		android:layout_width="@dimen/maps_status_icon_size"
+		android:layout_height="@dimen/maps_status_icon_size"
+		android:layout_gravity="center"
+		android:layout_margin="@dimen/listItemPadding"
+		app:layout_constraintBottom_toTopOf="@id/barrier"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toTopOf="parent"
+		tools:ignore="ContentDescription" />
+
+	<TextView
+		android:id="@+id/text"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="@dimen/listItemPadding"
+		android:layout_marginTop="@dimen/listItemPadding"
+		android:layout_marginEnd="@dimen/listItemPadding"
+		android:textColor="@android:color/black"
+		android:textSize="@dimen/standardTextSize"
+		app:layout_constraintBottom_toTopOf="@id/description"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toEndOf="@id/icon"
+		app:layout_constraintTop_toTopOf="parent" />
+
+	<TextView
+		android:id="@+id/description"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="@dimen/listItemPadding"
+		android:layout_marginEnd="@dimen/listItemPadding"
+		android:layout_marginBottom="@dimen/listItemPadding"
+		android:textSize="@dimen/smallTextSize"
+		app:layout_constraintBottom_toTopOf="@id/barrier"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toEndOf="@id/icon"
+		app:layout_constraintTop_toBottomOf="@id/text" />
+
+	<androidx.constraintlayout.widget.Barrier
+		android:id="@+id/barrier"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		app:barrierDirection="bottom"
+		app:constraint_referenced_ids="icon, description"
+		app:layout_constraintTop_toTopOf="@id/wiki"
+		app:layout_goneMarginBottom="@dimen/listItemPadding" />
+
+	<androidx.core.widget.NestedScrollView
+		android:id="@+id/wiki"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:fillViewport="true"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toBottomOf="@id/barrier">
+
+		<androidx.constraintlayout.widget.ConstraintLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content">
+
+			<androidx.recyclerview.widget.RecyclerView
+				android:id="@+id/wiki_image_list"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center"
+				app:layout_constraintBottom_toTopOf="@id/wiki_title"
+				app:layout_constraintTop_toTopOf="parent" />
+
+			<TextView
+				android:id="@+id/wiki_title"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_marginStart="@dimen/listItemPadding"
+				android:layout_marginEnd="@dimen/listItemPadding"
+				android:layout_marginBottom="@dimen/route_status_text_lateral_padding"
+				android:textSize="@dimen/bigTextSize"
+				android:textStyle="bold"
+				android:visibility="gone"
+				app:layout_constraintBottom_toTopOf="@id/wiki_description"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toBottomOf="@id/wiki_image_list" />
+
+			<TextView
+				android:id="@+id/wiki_description"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_marginStart="@dimen/listItemPadding"
+				android:layout_marginEnd="@dimen/listItemPadding"
+				android:layout_marginBottom="@dimen/listItemPadding"
+				android:ellipsize="end"
+				android:justificationMode="inter_word"
+				android:maxLines="5"
+				android:textColor="@android:color/black"
+				android:textSize="@dimen/mediumTextSize"
+				android:visibility="gone"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toBottomOf="@id/wiki_title" />
+
+		</androidx.constraintlayout.widget.ConstraintLayout>
+	</androidx.core.widget.NestedScrollView>
+</com.generalmagic.gemsdkdemo.controllers.common.WikiView>
+

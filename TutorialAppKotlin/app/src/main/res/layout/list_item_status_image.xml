@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content">
+
+	<ImageView
+		android:id="@+id/icon"
+		android:layout_width="@dimen/maps_status_icon_size"
+		android:layout_height="@dimen/maps_status_icon_size"
+		android:layout_margin="@dimen/listItemPadding"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toTopOf="parent"
+		tools:ignore="ContentDescription" />
+
+	<TextView
+		android:id="@+id/text"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="@dimen/listItemPadding"
+		android:layout_marginTop="@dimen/maps_item_padding"
+		android:textColor="@android:color/black"
+		android:textSize="@dimen/standardTextSize"
+		app:layout_constraintBottom_toTopOf="@id/description"
+		app:layout_constraintEnd_toStartOf="@id/item_progress_bar"
+		app:layout_constraintStart_toEndOf="@id/icon"
+		app:layout_constraintTop_toTopOf="parent"
+		app:layout_constraintVertical_bias="0.5"
+		app:layout_constraintVertical_chainStyle="packed"
+		app:layout_goneMarginEnd="@dimen/maps_text_gone_margin" />
+
+	<TextView
+		android:id="@+id/description"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="@dimen/listItemPadding"
+		android:layout_marginBottom="@dimen/maps_item_padding"
+		android:textSize="@dimen/smallTextSize"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toStartOf="@id/item_progress_bar"
+		app:layout_constraintStart_toEndOf="@id/icon"
+		app:layout_constraintTop_toBottomOf="@id/text"
+		app:layout_goneMarginEnd="@dimen/maps_text_gone_margin" />
+
+	<ProgressBar
+		android:id="@+id/item_progress_bar"
+		style="?android:attr/progressBarStyleHorizontal"
+		android:layout_width="@dimen/maps_progress_bar_size"
+		android:layout_height="@dimen/maps_progress_bar_size"
+		android:layout_margin="@dimen/listItemPadding"
+		android:background="@drawable/circle_shape"
+		android:indeterminate="false"
+		android:progressDrawable="@drawable/circular_progress_bar"
+		android:visibility="gone"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintHorizontal_chainStyle="packed"
+		app:layout_constraintTop_toTopOf="parent" />
+
+
+	<ImageView
+		android:id="@+id/status_icon"
+		android:layout_width="@dimen/maps_status_icon_size"
+		android:layout_height="@dimen/maps_status_icon_size"
+		android:layout_margin="@dimen/listItemPadding"
+		app:layout_constraintBottom_toBottomOf="@id/item_progress_bar"
+		app:layout_constraintEnd_toEndOf="@id/item_progress_bar"
+		app:layout_constraintStart_toStartOf="@id/item_progress_bar"
+		app:layout_constraintTop_toTopOf="@id/item_progress_bar"
+		app:layout_goneMarginBottom="@dimen/maps_status_icon_gone_margin"
+		app:layout_goneMarginEnd="@dimen/maps_status_icon_gone_margin"
+		app:layout_goneMarginTop="@dimen/maps_status_icon_gone_margin"
+		tools:ignore="ContentDescription" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

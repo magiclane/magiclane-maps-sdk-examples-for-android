@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.generalmagic.gemsdkdemo.controllers.RouteCustom xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/routeCustomController"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:gravity="center_horizontal"
+	android:orientation="vertical">
+
+	<include
+		layout="@layout/pick_location"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent" />
+
+</com.generalmagic.gemsdkdemo.controllers.RouteCustom>
