@@ -30,7 +30,8 @@
 	</item>
 
 	<!--/////////////////////////////////////////////////////// -->
-	<item android:title="Data Source">
+	<item android:title="Data Source"
+		android:visible="false">
 		<menu>
 			<group android:checkableBehavior="single">
 				<item
@@ -41,7 +42,7 @@
 					android:id="@+id/tutorial_directcam"
 					android:title="Direct Camera"
 					app:showAsAction="never" />
-				
+
 				<item
 					android:id="@+id/tutorial_canvasDrawerCam"
 					android:title="Canvas Camera Drawer"
@@ -73,7 +74,8 @@
 				<item
 					android:id="@+id/tutorial_addresssearch"
 					android:title="Address Search"
-					app:showAsAction="never" />
+					app:showAsAction="never"
+					android:visible="false" />
 			</group>
 		</menu>
 	</item>

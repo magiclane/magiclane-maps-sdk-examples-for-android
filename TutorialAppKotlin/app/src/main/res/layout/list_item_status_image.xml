@@ -44,6 +44,20 @@
 		app:layout_constraintTop_toBottomOf="@id/text"
 		app:layout_goneMarginEnd="@dimen/maps_text_gone_margin" />
 
+	<ImageView
+		android:id="@+id/status_icon"
+		android:layout_width="@dimen/maps_status_icon_size"
+		android:layout_height="@dimen/maps_status_icon_size"
+		android:layout_margin="@dimen/listItemPadding"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintHorizontal_chainStyle="packed"
+		app:layout_constraintTop_toTopOf="parent"
+		app:layout_goneMarginBottom="@dimen/maps_status_icon_gone_margin"
+		app:layout_goneMarginEnd="@dimen/maps_status_icon_gone_margin"
+		app:layout_goneMarginTop="@dimen/maps_status_icon_gone_margin"
+		tools:ignore="ContentDescription" />
+
 	<ProgressBar
 		android:id="@+id/item_progress_bar"
 		style="?android:attr/progressBarStyleHorizontal"
@@ -54,25 +68,8 @@
 		android:indeterminate="false"
 		android:progressDrawable="@drawable/circular_progress_bar"
 		android:visibility="gone"
-		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintHorizontal_chainStyle="packed"
-		app:layout_constraintTop_toTopOf="parent" />
-
-
-	<ImageView
-		android:id="@+id/status_icon"
-		android:layout_width="@dimen/maps_status_icon_size"
-		android:layout_height="@dimen/maps_status_icon_size"
-		android:layout_margin="@dimen/listItemPadding"
-		app:layout_constraintBottom_toBottomOf="@id/item_progress_bar"
-		app:layout_constraintEnd_toEndOf="@id/item_progress_bar"
-		app:layout_constraintStart_toStartOf="@id/item_progress_bar"
-		app:layout_constraintTop_toTopOf="@id/item_progress_bar"
-		app:layout_goneMarginBottom="@dimen/maps_status_icon_gone_margin"
-		app:layout_goneMarginEnd="@dimen/maps_status_icon_gone_margin"
-		app:layout_goneMarginTop="@dimen/maps_status_icon_gone_margin"
-		tools:ignore="ContentDescription" />
-
-
+		app:layout_constraintBottom_toBottomOf="@id/status_icon"
+		app:layout_constraintEnd_toEndOf="@id/status_icon"
+		app:layout_constraintStart_toStartOf="@id/status_icon"
+		app:layout_constraintTop_toTopOf="@id/status_icon" />
 </androidx.constraintlayout.widget.ConstraintLayout>

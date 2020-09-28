@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.generalmagic.gemsdkdemo.controllers.SearchTextController xmlns:android="http://schemas.android.com/apk/res/android"
+<com.generalmagic.gemsdk.demo.controllers.SearchTextController xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	android:id="@+id/searchTextController"
 	android:layout_width="match_parent"
@@ -32,4 +32,4 @@
 			android:background="#FFFFFF"
 			android:gravity="center" />
 	</RelativeLayout>
-</com.generalmagic.gemsdkdemo.controllers.SearchTextController>
+</com.generalmagic.gemsdk.demo.controllers.SearchTextController>
