@@ -21,6 +21,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import com.generalmagic.apihelper.EnumHelp
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.activities.BaseActivity
 import com.generalmagic.gemsdk.demo.activities.searchaddress.SearchAddressActivity
@@ -92,7 +93,7 @@ class MainActivity : BaseActivity() {
         override fun onlineWorldMapSupportStatus(state: TStatus) {
             val listener = object : ProgressListener() {
                 override fun notifyStatusChanged(status: Int) {
-                    when (TContentUpdaterStatus.fromInt(status)) {
+                    when (EnumHelp.fromInt<TContentUpdaterStatus>(status)) {
                         TContentUpdaterStatus.EFullyReady,
                         TContentUpdaterStatus.EPartiallyReady -> {
                             val updater = mapUpdater ?: return

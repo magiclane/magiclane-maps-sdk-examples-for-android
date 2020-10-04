@@ -106,22 +106,22 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
             }
         }
 
-        override fun navigationInstructionUpdated() {
+        override fun navigationInstructionUpdated(instr: NavigationInstruction) {
             Handler(Looper.getMainLooper()).post {
                 if (!startNotified) {
                     onNavigationStarted()
                     startNotified = true
                 }
 
-                navLayout?.updateNavInstruction(GEMSdkCall.execute { getNavigationInstruction() })
+                navLayout?.updateNavInstruction(instr)
             }
         }
 
         override fun navigationSound(sound: ISound) {}
 
-        override fun routeUpdated() {
+        override fun routeUpdated(route: Route) {
             Handler(Looper.getMainLooper()).post {
-                navLayout?.routeUpdated(GEMSdkCall.execute { getRoute() })
+                navLayout?.routeUpdated(route)
             }
         }
 

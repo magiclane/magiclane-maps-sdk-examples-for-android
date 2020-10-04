@@ -12,6 +12,7 @@ package com.generalmagic.gemsdk.demo.activities.searchaddress
 
 import android.content.Intent
 import android.graphics.Bitmap
+import com.generalmagic.apihelper.EnumHelp
 import com.generalmagic.gemsdk.GuidedAddressSearchService
 import com.generalmagic.gemsdk.MapDetails
 import com.generalmagic.gemsdk.ProgressListener
@@ -184,7 +185,7 @@ object GEMAddressSearchView {
 
     fun didChangeFilter(viewId: Long, iField: Int, filter: String) {
         filter.trim()
-        val field = TAddressField.fromInt(iField)
+        val field = EnumHelp.fromInt<TAddressField>(iField)
 
         if ((m_filter != filter) || (m_field != field)) {
             if (m_field != field) {
@@ -333,7 +334,7 @@ object GEMAddressSearchView {
             GuidedAddressSearchService().getNextAddressDetailLevel(landmark)
                 ?.let { nextDetailLevel ->
                     if (nextDetailLevel.size > 0) {
-                        m_detailLevel = TAddressDetailLevel.fromInt(nextDetailLevel[0])
+                        m_detailLevel = EnumHelp.fromInt(nextDetailLevel[0])
                     }
                 }
         }
@@ -423,7 +424,7 @@ object GEMAddressSearchView {
     // ---------------------------------------------------------------------------------------------
 
     fun getHint(viewId: Long, field: Int): String {
-        when (TAddressField.fromInt(field)) {
+        when (EnumHelp.fromInt<TAddressField>(field)) {
             TAddressField.EState -> {
                 return Utils.getUIString(StringIds.eStrState)
             }

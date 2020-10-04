@@ -27,9 +27,9 @@ import com.generalmagic.gemsdk.demo.activities.ListItemStatusImage
 import com.generalmagic.gemsdk.demo.util.GEMApplication
 import com.generalmagic.gemsdk.demo.util.StaticsHolder.Companion.getGlContext
 import com.generalmagic.gemsdk.demo.util.StaticsHolder.Companion.getMainMapView
-import com.generalmagic.gemsdk.magicearth.CanvasBufferRenderer
 import com.generalmagic.gemsdk.models.Canvas
 import com.generalmagic.gemsdk.models.CanvasListener
+import com.generalmagic.gemsdk.util.CanvasBufferRenderer
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import kotlinx.android.synthetic.main.activity_camera.*
@@ -38,7 +38,7 @@ import kotlinx.android.synthetic.main.activity_list_view.root_view
 import kotlinx.android.synthetic.main.activity_list_view.toolbar
 
 open class BasicSensorsActivity : GenericListActivity() {
-    val lastData = HashMap<EDataType, IData?>()
+    val lastData = HashMap<EDataType, SenseData?>()
 
     override fun refresh() {
         list_view.adapter = ChapterLISIAdapter(wrapList(lastData.keys))
@@ -55,7 +55,7 @@ open class BasicSensorsActivity : GenericListActivity() {
 
     open class DataItemViewModel(
         val type: EDataType,
-        private val lastData: HashMap<EDataType, IData?>
+        private val lastData: HashMap<EDataType, SenseData?>
     ) : ListItemStatusImage() {
         override fun getText(): String {
             return String.format("$type")
@@ -68,10 +68,10 @@ open class BasicSensorsActivity : GenericListActivity() {
     }
 
     companion object {
-        fun toString(iData: IData): String {
-            return when (val type = iData.getType()) {
+        fun toString(SenseData: SenseData): String {
+            return when (val type = SenseData.getType()) {
                 EDataType.Acceleration -> {
-                    val data = IAcceleration(iData)
+                    val data = AccelerationData(SenseData)
                     val x = data.getX()
                     val y = data.getY()
                     val z = data.getZ()
@@ -80,7 +80,7 @@ open class BasicSensorsActivity : GenericListActivity() {
                 }
 
                 EDataType.Activity -> {
-                    val data = IActivity(iData)
+                    val data = ActivityData(SenseData)
 
                     val x = data.getActivityConfidence()
                     val y = data.getType()
@@ -89,7 +89,7 @@ open class BasicSensorsActivity : GenericListActivity() {
                 }
 
                 EDataType.Attitude -> {
-                    val data = IAttitude(iData)
+                    val data = AttitudeData(SenseData)
 
                     val x = data.getPitch()
                     val y = data.getRoll()
@@ -99,7 +99,7 @@ open class BasicSensorsActivity : GenericListActivity() {
                 }
 
                 EDataType.Battery -> {
-                    val data = IBattery(iData)
+                    val data = BatteryData(SenseData)
 
                     val y = data.getBatteryLevel()
                     val x = data.getBatteryHealth()
@@ -109,7 +109,7 @@ open class BasicSensorsActivity : GenericListActivity() {
                 }
 
                 EDataType.Camera -> {
-                    val data = ICamera(iData)
+                    val data = CameraData(SenseData)
 
                     val config = data.getCameraConfiguration() ?: return ""
 // 				val bmp = Util.createBitmapFromNV21(data.getBuffer(), 1280, 720)
@@ -122,7 +122,7 @@ open class BasicSensorsActivity : GenericListActivity() {
                 }
 
                 EDataType.Compass -> {
-                    val data = ICompass(iData)
+                    val data = CompassData(SenseData)
 
                     val x = data.getHeading()
                     val y = data.getAccuracy()
@@ -131,7 +131,7 @@ open class BasicSensorsActivity : GenericListActivity() {
                 }
 
                 EDataType.MagneticField -> {
-                    val data = IMagneticField(iData)
+                    val data = MagneticFieldData(SenseData)
 
                     val x = data.getX()
                     val y = data.getY()
@@ -141,7 +141,7 @@ open class BasicSensorsActivity : GenericListActivity() {
                 }
 
                 EDataType.Orientation -> {
-                    val data = IOrientation(iData)
+                    val data = OrientationData(SenseData)
 
                     val x = data.getDeviceOrientation()
                     val y = data.getUIOrientation()
@@ -151,7 +151,7 @@ open class BasicSensorsActivity : GenericListActivity() {
 
                 EDataType.ImprovedPosition,
                 EDataType.Position -> {
-                    val data = IPosition(iData)
+                    val data = PositionData(SenseData)
 
                     val x = data.getLatitude()
                     val y = data.getLongitude()
@@ -160,7 +160,7 @@ open class BasicSensorsActivity : GenericListActivity() {
                 }
 
                 EDataType.RotationRate -> {
-                    val data = IRotationRate(iData)
+                    val data = RotationRateData(SenseData)
 
                     val x = data.getX()
                     val y = data.getY()
@@ -170,7 +170,7 @@ open class BasicSensorsActivity : GenericListActivity() {
                 }
 
                 EDataType.Temperature -> {
-                    val data = ITemperature(iData)
+                    val data = TemperatureData(SenseData)
 
                     val x = data.getTemperatureDegrees()
                     val y = data.getTemperatureLevel()
@@ -198,7 +198,7 @@ class SensorsListActivity : BasicSensorsActivity() {
             Log.d("GEMSDK", "onDataInterruptionEnded: $type")
         }
 
-        override fun onNewData(data: IData?) {
+        override fun onNewData(data: SenseData?) {
             data ?: return
 
             val type = data.getType()
@@ -267,10 +267,10 @@ class DirectCamActivity : BaseActivity() {
 
     private var currentDataSource: DataSource? = null
     private var listener = object : DataSourceListener() {
-        override fun onNewData(data: IData?) {
-            data ?: return
+        override fun onNewData(data: SenseData?) {
+            if(data?.getType() != EDataType.Camera) return
 
-            val camData = ICamera(data)
+            val camData = CameraData(data)
             val configs = camData.getCameraConfiguration() ?: return
 
 // 			val bmp = Util.createBitmap(data.getBuffer()?.array(), configs.frameWidth(), configs.frameHeight())
@@ -369,10 +369,10 @@ class CanvasDrawerCam(context: Context, attrs: AttributeSet) : AppLayoutControll
     private var currentDataSource: DataSource? = null
 
     private val cameraListener = object : DataSourceListener() {
-        override fun onNewData(data: IData?) {
+        override fun onNewData(data: SenseData?) {
             data ?: return
             GEMSdkCall.execute {
-                val camData = ICamera(data)
+                val camData = CameraData(data)
                 val buffer = camData.getDirectBuffer() ?: return@execute
                 val configs = camData.getCameraConfiguration() ?: return@execute
 
