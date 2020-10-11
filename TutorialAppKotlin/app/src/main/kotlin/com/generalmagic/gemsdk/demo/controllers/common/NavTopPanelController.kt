@@ -27,7 +27,7 @@ import com.generalmagic.gemsdk.demo.util.UtilUITexts
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getDistText
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getTimeText
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getUIString
-import com.generalmagic.gemsdk.magicearth.StringIds
+import com.generalmagic.gemsdk.extensions.StringIds
 import com.generalmagic.gemsdk.models.Marker
 import com.generalmagic.gemsdk.models.RouteTrafficEvent
 import com.generalmagic.gemsdk.util.GEMError

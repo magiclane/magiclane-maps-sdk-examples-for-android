@@ -16,7 +16,7 @@ import com.generalmagic.gemsdk.TUnitSystem
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getDistText
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getTimeText
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getUIString
-import com.generalmagic.gemsdk.magicearth.StringIds
+import com.generalmagic.gemsdk.extensions.StringIds
 import com.generalmagic.gemsdk.models.AddressInfo
 import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.models.RouteTrafficEvent
@@ -159,7 +159,7 @@ class UtilUITexts {
                 val coords = landmark.getCoordinates()
                 if (coords != null) {
                     val mainView = StaticsHolder.getMainMapView()
-                    landmarkList = mainView?.getMatchedLocations(coords) ?: landmarkList
+                    landmarkList = mainView?.getNearestLocations(coords) ?: landmarkList
                 }
 
                 if (landmarkList.isNotEmpty()) {

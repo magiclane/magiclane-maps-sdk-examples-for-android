@@ -16,6 +16,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
@@ -24,6 +25,8 @@ import androidx.drawerlayout.widget.DrawerLayout
 import com.generalmagic.apihelper.EnumHelp
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.activities.BaseActivity
+import com.generalmagic.gemsdk.demo.activities.pickvideo.PickLogActivity
+import com.generalmagic.gemsdk.demo.activities.pickvideo.PickLogActivity.Companion.RESULT_VIDEO_PATH
 import com.generalmagic.gemsdk.demo.activities.searchaddress.SearchAddressActivity
 import com.generalmagic.gemsdk.demo.controllers.*
 import com.generalmagic.gemsdk.demo.util.GEMApplication
@@ -40,8 +43,10 @@ import com.generalmagic.gemsdk.mapview.GEMMapSurface
 import com.generalmagic.gemsdk.models.ContentStoreItem
 import com.generalmagic.gemsdk.models.Screen
 import com.generalmagic.gemsdk.models.TContentType
+import com.generalmagic.gemsdk.models.ViewListener
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
+import com.generalmagic.gemsdk.util.SDKPathsHelper
 import com.google.android.material.navigation.NavigationView
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_layout.*
@@ -50,13 +55,14 @@ import kotlinx.android.synthetic.main.tutorial_custom_nav.view.*
 import kotlinx.android.synthetic.main.tutorial_custom_ptnav.view.*
 import kotlinx.android.synthetic.main.tutorial_custom_sim.view.*
 import kotlinx.android.synthetic.main.tutorial_custom_url.view.*
-import kotlinx.android.synthetic.main.tutorial_drawercam.view.*
 import kotlinx.android.synthetic.main.tutorial_flyto_area.view.*
 import kotlinx.android.synthetic.main.tutorial_flyto_coords.view.*
 import kotlinx.android.synthetic.main.tutorial_flyto_instr.view.*
 import kotlinx.android.synthetic.main.tutorial_flyto_route.view.*
 import kotlinx.android.synthetic.main.tutorial_flyto_traffic.view.*
 import kotlinx.android.synthetic.main.tutorial_hello.view.*
+import kotlinx.android.synthetic.main.tutorial_logplayer.view.*
+import kotlinx.android.synthetic.main.tutorial_logrecorder.view.*
 import kotlinx.android.synthetic.main.tutorial_multiplemaps.view.*
 import kotlinx.android.synthetic.main.tutorial_predef_nav.view.*
 import kotlinx.android.synthetic.main.tutorial_predef_ptnav.view.*
@@ -66,6 +72,7 @@ import kotlinx.android.synthetic.main.tutorial_route_abc.view.*
 import kotlinx.android.synthetic.main.tutorial_route_custom.view.*
 import kotlinx.android.synthetic.main.tutorial_twotiledviews.view.*
 import kotlinx.android.synthetic.main.tutorial_wiki.view.*
+import java.io.File
 import java.net.Proxy
 import java.util.*
 
@@ -129,7 +136,7 @@ class MainActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         GEMMapSurface.appVariant = AppVariant.VARIANT_MAGICEARTH_BETA
         GEMApplication.appContext = applicationContext
-
+        GEMApplication.recordsPath = SDKPathsHelper.getPhonePath(this) + File.separator + "records"
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
@@ -163,8 +170,8 @@ class MainActivity : BaseActivity() {
         followingProvider.listeners.add(mapFollowListener)
 
         gem_surface.onMainScreenCreated = { screen: Screen ->
-            mainMapView =
-                View(screen, TRectF(0.0f, 0.0f, 1.0f, 1.0f), mainMapViewListener)
+            val mainViewRect = TRectF(0.0f, 0.0f, 1.0f, 1.0f)
+            mainMapView = View.produce(screen, mainViewRect, mainMapViewListener)
 
             gem_surface.onPreHandleTouchListener = { _ ->
                 bWasFollowingPosition = mainMapView?.isFollowingPosition() ?: false
@@ -411,10 +418,23 @@ class MainActivity : BaseActivity() {
             }
 
             R.id.tutorial_canvasDrawerCam -> {
+//                currentController = layoutInflater.inflate(
+//                    R.layout.tutorial_drawercam,
+//                    contentMain
+//                ).canvasDrawerCamController
+            }
+
+            R.id.tutorial_logRecorder -> {
                 currentController = layoutInflater.inflate(
-                    R.layout.tutorial_drawercam,
+                    R.layout.tutorial_logrecorder,
                     contentMain
-                ).canvasDrawerCamController
+                ).logRecorderController
+            }
+
+            R.id.tutorial_logPlayer -> {
+                val intent = Intent(this, PickLogActivity::class.java)
+                intent.putExtra(PickLogActivity.INPUT_DIR, GEMApplication.recordsPath)
+                startActivityForResult(intent, CODE_RESULT_SELECT_VIDEO)
             }
 
             R.id.tutorial_flyto_coords -> {
@@ -478,6 +498,37 @@ class MainActivity : BaseActivity() {
 
         GEMSdkCall.execute { currentController?.doStart() }
     }
+
+    private val CODE_RESULT_SELECT_VIDEO = 100
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        when (requestCode) {
+            CODE_RESULT_SELECT_VIDEO -> {
+                if (data == null) {
+                    Toast.makeText(this, "Please pick again!", Toast.LENGTH_SHORT).show()
+                    return
+                }
+
+                val contentMain = main_container as ViewGroup
+                val logPlayerController = layoutInflater.inflate(
+                    R.layout.tutorial_logplayer,
+                    contentMain
+                ).logPlayerController
+
+
+                val pickedPath = data.getStringExtra(RESULT_VIDEO_PATH) ?: return
+                logPlayerController.videoPath = pickedPath
+
+                currentController = logPlayerController
+                GEMSdkCall.execute { currentController?.doStart() }
+            }
+            else -> {
+                // uknown answer
+            }
+        }
+    }
+
 
     override fun onRequestPermissionsFinish(granted: Boolean) {
         if (!granted) {

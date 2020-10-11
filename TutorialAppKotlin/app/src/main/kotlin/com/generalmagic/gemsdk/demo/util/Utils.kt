@@ -18,8 +18,8 @@ import android.util.TypedValue
 import android.view.WindowManager
 import com.generalmagic.gemsdk.CommonSettings
 import com.generalmagic.gemsdk.TUnitSystem
-import com.generalmagic.gemsdk.magicearth.LocalizationManager
-import com.generalmagic.gemsdk.magicearth.StringIds
+import com.generalmagic.gemsdk.extensions.LocalizationManager
+import com.generalmagic.gemsdk.extensions.StringIds
 import com.generalmagic.gemsdk.models.Image
 import com.generalmagic.gemsdk.models.ImageDatabase
 import com.generalmagic.gemsdk.models.Landmark

@@ -31,7 +31,6 @@ import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.demo.util.Util.Companion.setPanelBackground
 import com.generalmagic.gemsdk.demo.util.UtilUITexts
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getDistText
-import com.generalmagic.gemsdk.models.Position
 import com.generalmagic.gemsdk.models.Time
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
@@ -63,7 +62,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
     private var navInstr: NavigationInstruction? = null
     private var route: Route? = null
     private var alarmService: AlarmService? = null
-    private var position: Position? = null
+    private var position: PositionData? = null
 
     private var laneInfoImage: Bitmap? = null
 
@@ -101,7 +100,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
         updateAllPanels()
     }
 
-    fun updatePosition(value: Position) {
+    fun updatePosition(value: PositionData) {
         position = value
 
         GEMSdkCall.execute { navDataProvider.updatePositionInfo(value, navInstr) }
@@ -598,7 +597,7 @@ class UINavDataProvider {
     }
 
     fun updatePositionInfo(
-        value: Position,
+        value: PositionData,
         navInstr: NavigationInstruction?,
         willReset: Boolean = true
     ) {
@@ -662,7 +661,7 @@ class UINavDataProvider {
 
         val arrivalTime = Time()
 
-        arrivalTime.localTime()
+        arrivalTime.setLocalTime()
         arrivalTime.fromInt(arrivalTime.asInt() + getRemainingTravelTime() * 1000)
 
         info.eta = String.format("%d:%02d", arrivalTime.getHour(), arrivalTime.getMinute())

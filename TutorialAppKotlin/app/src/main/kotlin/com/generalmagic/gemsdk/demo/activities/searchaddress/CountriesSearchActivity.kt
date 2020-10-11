@@ -20,7 +20,7 @@ import com.generalmagic.gemsdk.demo.activities.SearchListActivity
 import com.generalmagic.gemsdk.demo.activities.SearchListItem
 import com.generalmagic.gemsdk.demo.activities.searchaddress.GEMAddressSearchView.onCountrySelected
 import com.generalmagic.gemsdk.demo.util.Utils
-import com.generalmagic.gemsdk.magicearth.StringIds
+import com.generalmagic.gemsdk.extensions.StringIds
 import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.models.TAddressField
 import com.generalmagic.gemsdk.util.GEMError

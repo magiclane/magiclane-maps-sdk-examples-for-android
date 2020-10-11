@@ -33,7 +33,7 @@ import com.generalmagic.gemsdk.demo.util.UtilUITexts
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getDistText
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getFormattedWaypointName
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getUIString
-import com.generalmagic.gemsdk.magicearth.StringIds
+import com.generalmagic.gemsdk.extensions.StringIds
 import com.generalmagic.gemsdk.models.RouteTrafficEvent
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import com.generalmagic.gemsdk.util.GemIcons

@@ -20,7 +20,7 @@ import com.generalmagic.gemsdk.TAddressDetailLevel
 import com.generalmagic.gemsdk.demo.util.GEMApplication
 import com.generalmagic.gemsdk.demo.util.StaticsHolder
 import com.generalmagic.gemsdk.demo.util.Utils
-import com.generalmagic.gemsdk.magicearth.StringIds
+import com.generalmagic.gemsdk.extensions.StringIds
 import com.generalmagic.gemsdk.models.ImageDatabase
 import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.models.TAddressField
@@ -293,7 +293,7 @@ object GEMAddressSearchView {
 //            (THighlightOptions.EHO_ShowLandmark.value or THighlightOptions.EHO_ShowContour.value)) or THighlightOptions.EHO_Overlap, kHighlightContour, kHighlightContour
 //        }
 
-        mainMapView.activateHighlight(arrayListOf(landmark))
+        mainMapView.activateHighlightLandmarks(arrayListOf(landmark))
 //        finish()
     }
 

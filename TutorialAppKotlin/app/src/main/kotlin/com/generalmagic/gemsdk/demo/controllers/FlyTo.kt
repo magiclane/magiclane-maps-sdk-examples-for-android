@@ -116,7 +116,7 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
                 )
 
                 mainMap.centerOnRectArea(area, -3, TRect(), animation)
-                mainMap.activateHighlight(arrayListOf(value), settings)
+                mainMap.activateHighlightLandmarks(arrayListOf(value), settings)
             }
         }
     }
@@ -197,7 +197,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
 
                     mainMap.preferences()?.routes()?.add(route, true)
 
-                    mainMap.centerOnRoute(route, null, animation)
+                    mainMap.centerOnRoute(route, TRect(),animation)
                 }
             } else {
                 val instructionsList = GEMSdkCall.execute { segment.getInstructions() } ?: return
@@ -211,7 +211,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
 
                     mainMap.preferences()?.routes()?.add(route, true)
 
-                    mainMap.centerOnRouteInstruction(instruction, -1, null, animation)
+                    mainMap.centerOnRouteInstruction(instruction, -1, TXy(), animation)
                 }
             }
         }
@@ -303,7 +303,7 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
 
                 mainMap.preferences()?.routes()?.add(route, true)
 
-                mainMap.centerOnRouteTrafficEvent(trafficEvent, -1, null, animation)
+                mainMap.centerOnRouteTrafficEvent(trafficEvent, -1, TRect(), animation)
             }
         }
     }

@@ -25,7 +25,6 @@ import com.generalmagic.gemsdk.util.GEMSdkCall
 import kotlinx.android.synthetic.main.app_bar_layout.view.*
 
 // --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
 
 class HelloViewController(context: Context, attrs: AttributeSet?) :
     AppLayoutController(context, attrs) {
@@ -44,22 +43,20 @@ class HelloViewController(context: Context, attrs: AttributeSet?) :
 }
 
 // --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
 
 open class ManyMapsController(context: Context, attrs: AttributeSet?) :
     AppLayoutController(context, attrs) {
     protected val contentStore = ContentStore()
     protected val mapViews = ArrayList<View>()
-    protected lateinit var mapStyles: ArrayList<ContentStoreItem>
+    protected var mapStyles: ArrayList<ContentStoreItem> = ArrayList()
     protected var defaultStyle: ContentStoreItem? = null
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
 
-        @Suppress
-        mapStyles = GEMSdkCall.execute {
+        GEMSdkCall.execute {
             contentStore.getLocalContentList(TContentType.ECT_ViewStyleHighRes.value)
-        } ?: ArrayList()
+        }?.let { mapStyles = it }
 
         defaultStyle = if (mapStyles.size > 0) {
             mapStyles[0]
@@ -76,7 +73,7 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
         GEMSdkCall.checkCurrentThread()
         val screen = gemMapScreen() ?: return
 
-        val subview = View(screen, rect, null)
+        val subview = View.produce(screen, rect, null)?: return
         getMainMapView()?.getCamera()?.let{
             subview.setCamera(it)
         }
@@ -114,7 +111,6 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
     }
 }
 
-// --------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------
 
 class TwoTiledViewsController(context: Context, attrs: AttributeSet?) :
@@ -164,7 +160,6 @@ class TwoTiledViewsController(context: Context, attrs: AttributeSet?) :
     }
 }
 
-// --------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------
 
 class MultipleViewsController(context: Context, attrs: AttributeSet?) :
@@ -235,5 +230,4 @@ class MultipleViewsController(context: Context, attrs: AttributeSet?) :
     }
 }
 
-// --------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------

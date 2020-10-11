@@ -32,6 +32,12 @@
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+		
+		<activity
+			android:name=".activities.pickvideo.PickLogActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+		<!--/////////////////////////////////////////////////////////////////////////////////////-->
 
 		<activity
 			android:name=".activities.RouteDescriptionActivity"

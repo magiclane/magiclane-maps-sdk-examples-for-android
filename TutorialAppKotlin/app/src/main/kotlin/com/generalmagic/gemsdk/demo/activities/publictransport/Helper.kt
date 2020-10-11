@@ -15,7 +15,7 @@ import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.activities.RouteInstructionItem
 import com.generalmagic.gemsdk.demo.util.Utils
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getDistText
-import com.generalmagic.gemsdk.magicearth.StringIds
+import com.generalmagic.gemsdk.extensions.StringIds
 import com.generalmagic.gemsdk.models.RectangleGeographicArea
 import com.generalmagic.gemsdk.models.Time
 import com.generalmagic.gemsdk.util.GemIcons

@@ -30,23 +30,35 @@
 	</item>
 
 	<!--/////////////////////////////////////////////////////// -->
-	<item android:title="Data Source"
-		android:visible="false">
+	<item android:title="Data Source">
 		<menu>
 			<group android:checkableBehavior="single">
 				<item
 					android:id="@+id/tutorial_sensorsList"
 					android:title="Sensors List"
-					app:showAsAction="never" />
+					app:showAsAction="never"
+					android:visible="false"/>
 				<item
 					android:id="@+id/tutorial_directcam"
 					android:title="Direct Camera"
-					app:showAsAction="never" />
+					app:showAsAction="never"
+					android:visible="false"/>
 
 				<item
 					android:id="@+id/tutorial_canvasDrawerCam"
 					android:title="Canvas Camera Drawer"
-					app:showAsAction="never" />
+					app:showAsAction="never"
+					android:visible="false"/>
+
+				<item
+					android:id="@+id/tutorial_logRecorder"
+					android:title="Log Recorder"
+					app:showAsAction="never"/>
+
+				<item
+					android:id="@+id/tutorial_logPlayer"
+					android:title="Log Player"
+					app:showAsAction="never"/>
 			</group>
 		</menu>
 	</item>

@@ -30,7 +30,9 @@ import com.generalmagic.gemsdk.models.*
 import com.generalmagic.gemsdk.util.GEMHelper
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import com.generalmagic.gemsdk.util.GemIcons
+import com.generalmagic.gemsdk.util.SDKPathsHelper
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.IntBuffer
@@ -378,6 +380,8 @@ class GEMApplication {
         var topActivity: Activity? = null
         var uiHandler = Handler(Looper.getMainLooper())
         var appContext: Context? = null
+        var recordsPath = ""
+        
         fun getApplicationContext(): Context {
             return appContext!!
         }

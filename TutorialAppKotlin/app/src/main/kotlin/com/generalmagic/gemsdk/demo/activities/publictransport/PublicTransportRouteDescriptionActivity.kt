@@ -28,6 +28,7 @@ import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.doOnPreDraw
 import com.generalmagic.gemsdk.Route
+import com.generalmagic.gemsdk.TRect
 import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.activities.BaseActivity
 import com.generalmagic.gemsdk.demo.util.AppUtils

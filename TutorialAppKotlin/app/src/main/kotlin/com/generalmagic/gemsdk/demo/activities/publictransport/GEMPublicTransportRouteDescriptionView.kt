@@ -17,7 +17,7 @@ import com.generalmagic.gemsdk.demo.util.AppUtils
 import com.generalmagic.gemsdk.demo.util.GEMApplication
 import com.generalmagic.gemsdk.demo.util.Utils
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getUIString
-import com.generalmagic.gemsdk.magicearth.StringIds
+import com.generalmagic.gemsdk.extensions.StringIds
 import com.generalmagic.gemsdk.models.Image
 import com.generalmagic.gemsdk.models.ImageDatabase
 import com.generalmagic.gemsdk.models.Time

@@ -159,14 +159,14 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
     BaseNavControllerLayout(context, attrs) {
 
     private val positionListener = object : PositionListener() {
-        override fun onNewPosition(value: Position) {
+        override fun onNewPosition(value: PositionData) {
             Handler(Looper.getMainLooper()).post {
                 navLayout.updatePosition(value)
             }
         }
     }
 
-    private lateinit var alarmService: AlarmService
+    private var alarmService: AlarmService? = null
     private val nAlarmDistanceMeters = 500.0
     private var alarmListener: AlarmListener = object : AlarmListener() {
         override fun boundaryCrossed() {}
@@ -198,14 +198,14 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
     }
 
     init {
-        alarmService = AlarmService(alarmListener)
-        alarmService.setLandmarkAlarmDistance(nAlarmDistanceMeters)
+        alarmService = AlarmService.produce(alarmListener)
+        alarmService?.setLandmarkAlarmDistance(nAlarmDistanceMeters)
 
         val availableOverlays = MarkerOverlaysService().getAvailableOverlays(null)?.first
         if (availableOverlays != null) {
             for (item in availableOverlays) {
                 if (item.getUid() == TCommonOverlayId.EOID_Safety.value.toShort()) {
-                    alarmService.markers()?.add(item)
+                    alarmService?.markers()?.add(item)
                 }
             }
         }
@@ -481,7 +481,7 @@ open class PredefNavController(context: Context, attrs: AttributeSet?) :
         }
 
         val myPos = positionService.getPosition() ?: return
-        val myPosition = myPos.getCoordinates() ?: return
+        val myPosition = Coordinates(myPos.getLatitude(), myPos.getLongitude())
 
         val category = getGasCategory()
 
