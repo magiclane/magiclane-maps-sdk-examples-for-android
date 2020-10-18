@@ -24,9 +24,9 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import com.generalmagic.gemsdk.demo.R
-import com.generalmagic.gemsdk.demo.activities.BaseActivity
+import com.generalmagic.gemsdk.demo.app.BaseActivity
+import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.util.AppUtils
-import com.generalmagic.gemsdk.demo.util.GEMApplication
 import com.generalmagic.gemsdk.models.TAddressField
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import kotlinx.android.synthetic.main.search_address_view.*
@@ -558,17 +558,6 @@ class SearchAddressActivity : BaseActivity() {
                     city?.requestFocus()
                 }
             }
-        }
-
-        GEMApplication.topActivity = this
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    override fun onPause() {
-        super.onPause()
-        if (GEMApplication.topActivity === this) {
-            GEMApplication.topActivity = null
         }
     }
 

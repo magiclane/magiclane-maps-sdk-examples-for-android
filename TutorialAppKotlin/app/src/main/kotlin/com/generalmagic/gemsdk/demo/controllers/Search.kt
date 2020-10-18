@@ -24,9 +24,9 @@ import com.generalmagic.gemsdk.demo.activities.LandmarkViewModel
 import com.generalmagic.gemsdk.demo.activities.SLIAdapter
 import com.generalmagic.gemsdk.demo.activities.SearchListActivity
 import com.generalmagic.gemsdk.demo.activities.SearchListItem
+import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.demo.util.IntentHelper
 import com.generalmagic.gemsdk.demo.util.KeyboardUtil
-import com.generalmagic.gemsdk.demo.util.StaticsHolder
 import com.generalmagic.gemsdk.models.Coordinates
 import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.models.LandmarkCategory

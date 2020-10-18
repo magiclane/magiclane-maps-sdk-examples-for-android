@@ -20,6 +20,7 @@ import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.generalmagic.gemsdk.demo.R
+import com.generalmagic.gemsdk.demo.app.BaseActivity
 import kotlinx.android.synthetic.main.web_activity.*
 
 // -------------------------------------------------------------------------------------------------

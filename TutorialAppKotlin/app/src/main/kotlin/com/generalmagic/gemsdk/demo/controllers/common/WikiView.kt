@@ -323,19 +323,19 @@ class WikiView(context: Context, attrs: AttributeSet?) : ConstraintLayout(contex
         val imgSizes = context.resources.getDimension(R.dimen.navigationImageSize).toInt()
 
         if (GEMSdkCall.execute {
-                if (!wiki.hasWiki(value)) return@execute false
+            if (!wiki.hasWiki(value)) return@execute false
 
-                locationDetails.text = value.getName()
-                locationDetails.description = UtilUITexts.formatLandmarkDetails(value)
-                locationDetails.image = Util.createBitmap(value.getImage(), imgSizes, imgSizes)
-                locationDetails.wikipediaText = null
-                locationDetails.wikipediaDescription = null
-                locationDetails.wikipediaUrl = null
+            locationDetails.text = value.getName()
+            locationDetails.description = UtilUITexts.formatLandmarkDetails(value)
+            locationDetails.image = Util.createBitmap(value.getImage(), imgSizes, imgSizes)
+            locationDetails.wikipediaText = null
+            locationDetails.wikipediaDescription = null
+            locationDetails.wikipediaUrl = null
 
-                // request wiki info
-                wiki.requestWiki(value)
-                return@execute true
-            } != true
+            // request wiki info
+            wiki.requestWiki(value)
+            return@execute true
+        } != true
         ) {
             return false
         }

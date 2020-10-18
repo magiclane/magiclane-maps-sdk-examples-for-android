@@ -17,8 +17,8 @@ import com.generalmagic.gemsdk.GuidedAddressSearchService
 import com.generalmagic.gemsdk.MapDetails
 import com.generalmagic.gemsdk.ProgressListener
 import com.generalmagic.gemsdk.TAddressDetailLevel
-import com.generalmagic.gemsdk.demo.util.GEMApplication
-import com.generalmagic.gemsdk.demo.util.StaticsHolder
+import com.generalmagic.gemsdk.demo.app.GEMApplication
+import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.demo.util.Utils
 import com.generalmagic.gemsdk.extensions.StringIds
 import com.generalmagic.gemsdk.models.ImageDatabase
@@ -80,7 +80,7 @@ object GEMAddressSearchView {
             val intent =
                 Intent(GEMApplication.getApplicationContext(), SearchAddressActivity::class.java)
             intent.putExtra("viewId", viewId)
-            GEMApplication.topActivity?.startActivity(intent)
+            GEMApplication.topActivity()?.startActivity(intent)
         }
     }
 
@@ -177,8 +177,7 @@ object GEMAddressSearchView {
     // ---------------------------------------------------------------------------------------------
 
     fun didTapCountryFlag(viewId: Long) {
-        //TODO:
-
+        // TODO:
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -199,7 +198,7 @@ object GEMAddressSearchView {
                 GuidedAddressSearchService().cancelRequest(it)
             }
 
-            search(getParentLandmark(field), filter, getDetailLevel(field));
+            search(getParentLandmark(field), filter, getDetailLevel(field))
         }
     }
 
@@ -268,7 +267,6 @@ object GEMAddressSearchView {
                 landmark = m_street
             }
             else -> {
-
             }
         }
 

@@ -91,7 +91,7 @@ class NetworkProviderImpl : NetworkProvider() {
 
     fun mobileCountryCodeChanged(mcc: Int) {
         for (listener in listeners) {
-            listener.mobileCountryCodeChanged(mcc)
+            listener.onMobileCountryCodeChanged(mcc)
         }
     }
 

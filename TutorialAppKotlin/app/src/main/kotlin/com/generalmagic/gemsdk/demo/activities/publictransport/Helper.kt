@@ -232,7 +232,7 @@ class Helper {
 
                         bFirstStationHasWheelChairSupport =
                             instructionList[0].toPTRouteInstruction()?.getHasWheelchairSupport()
-                                ?: false
+                            ?: false
 
                         val startPlatformCode =
                             instructionList[0].toPTRouteInstruction()?.getPlatformCode() ?: ""
@@ -246,7 +246,7 @@ class Helper {
 
                         bLastStationHasWheelChairSupport =
                             instructionList[instructionsCount - 1].toPTRouteInstruction()
-                                ?.getHasWheelchairSupport() ?: false
+                            ?.getHasWheelchairSupport() ?: false
 
                         val endPlatformCode =
                             instructionList[instructionsCount - 1].toPTRouteInstruction()
@@ -278,7 +278,7 @@ class Helper {
                             )
                         }
                     } else if (routeSegment.toPTRouteSegment()
-                            ?.getRealtimeStatus() == ERealtimeStatus.ERSOnTime
+                        ?.getRealtimeStatus() == ERealtimeStatus.ERSOnTime
                     ) {
                         routeDescriptionItem.m_stationEarlyTime =
                             Utils.getUIString(StringIds.eStrOnTime)
@@ -289,7 +289,7 @@ class Helper {
                             instructionList[0].toPTRouteInstruction()?.getName() ?: ""
                         routeDescriptionItem.m_stopStationName =
                             instructionList[instructionsCount - 1].toPTRouteInstruction()?.getName()
-                                ?: ""
+                            ?: ""
 
                         if ((routeDescriptionItems.size > 0) && routeDescriptionItems.last().m_isWalk) {
                             routeDescriptionItems.last().m_stopStationName =
@@ -325,12 +325,12 @@ class Helper {
                                     Utils.getUIString(StringIds.eStrWheelchairSupport)
                             }
                         } else // if (bBicycleSupportRequested)
-                        {
-                            if (bRouteSegmentHasBicycleSupport) {
-                                routeDescriptionItem.m_supportLineInfo =
-                                    Utils.getUIString(StringIds.eStrBicycleSupport)
+                            {
+                                if (bRouteSegmentHasBicycleSupport) {
+                                    routeDescriptionItem.m_supportLineInfo =
+                                        Utils.getUIString(StringIds.eStrBicycleSupport)
+                                }
                             }
-                        }
                     }
 
                     routeDescriptionItem.m_agencyName =

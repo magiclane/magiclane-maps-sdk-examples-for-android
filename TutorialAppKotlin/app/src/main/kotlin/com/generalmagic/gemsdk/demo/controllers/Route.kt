@@ -19,11 +19,13 @@ import android.widget.Toast
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.activities.RouteDescriptionActivity.Companion.showRouteDescription
 import com.generalmagic.gemsdk.demo.activities.publictransport.PublicTransportRouteDescriptionActivity.Companion.showPTRouteDescription
-import com.generalmagic.gemsdk.demo.util.MainMapStatusFollowingProvider
-import com.generalmagic.gemsdk.demo.util.StaticsHolder
+import com.generalmagic.gemsdk.demo.app.BaseLayoutController
+import com.generalmagic.gemsdk.demo.app.MapFollowingStatusProvider
+import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.demo.util.UtilUITexts
 import com.generalmagic.gemsdk.models.Coordinates
+import com.generalmagic.gemsdk.models.Image
 import com.generalmagic.gemsdk.models.ImageDatabase
 import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.util.GEMError
@@ -74,7 +76,7 @@ abstract class RouteServiceWrapper {
 }
 
 abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
-    AppLayoutController(context, attrs) {
+    BaseLayoutController(context, attrs) {
 
     private val routing = object : RouteServiceWrapper() {
         override fun onStartCalculating() {
@@ -120,10 +122,14 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
                     val route = routes[routeIndex]
 
                     val routeName = UtilUITexts.formatRouteName(route)
-                    val image = ImageDatabase().getImageById(Util.getTrafficIconId(route))
+
+                    val imageList = arrayListOf<Image>()
+                    ImageDatabase().getImageById(Util.getTrafficIconId(route))?.let {
+                        imageList.add(it)
+                    }
 
                     mainMap.preferences()?.routes()
-                        ?.add(routes[routeIndex], routeIndex == MAIN_ROUTE_INDEX, routeName, image)
+                        ?.add(routes[routeIndex], routeIndex == MAIN_ROUTE_INDEX, routeName, imageList)
                 }
             }
 
@@ -246,7 +252,7 @@ open class RouteCustom(context: Context, attrs: AttributeSet?) :
                 bottomButtons()?.bottomCenterButton?.visibility = View.GONE
                 bottomButtons()?.bottomRightButton?.visibility = View.GONE
                 pickLocation.visibility = View.GONE
-                GEMSdkCall.execute { MainMapStatusFollowingProvider.getInstance().doUnFollow() }
+                GEMSdkCall.execute { MapFollowingStatusProvider.getInstance().doFollowStop() }
             }
             it.onStartPicked = { landmark ->
                 landmarks.add(0, landmark)

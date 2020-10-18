@@ -105,7 +105,6 @@ class CountriesSearchActivity : SearchListActivity() {
 
         val adapter = SLIAdapter(result)
         list_view.adapter = adapter
-        
     }
 
     fun getFilterHint(): String {

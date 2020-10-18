@@ -22,9 +22,9 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.gemsdk.demo.R
-import com.generalmagic.gemsdk.demo.activities.BaseActivity
 import com.generalmagic.gemsdk.demo.activities.WebActivity
-import com.generalmagic.gemsdk.demo.util.GEMApplication
+import com.generalmagic.gemsdk.demo.app.BaseActivity
+import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import io.github.luizgrp.sectionedrecyclerviewadapter.Section

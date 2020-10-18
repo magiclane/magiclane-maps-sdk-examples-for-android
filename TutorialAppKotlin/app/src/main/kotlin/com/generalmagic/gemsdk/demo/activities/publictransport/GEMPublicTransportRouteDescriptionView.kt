@@ -13,8 +13,8 @@ package com.generalmagic.gemsdk.demo.activities.publictransport
 import android.graphics.Bitmap
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.R
+import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.util.AppUtils
-import com.generalmagic.gemsdk.demo.util.GEMApplication
 import com.generalmagic.gemsdk.demo.util.Utils
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getUIString
 import com.generalmagic.gemsdk.extensions.StringIds

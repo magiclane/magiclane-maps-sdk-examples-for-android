@@ -18,8 +18,9 @@ import android.widget.Toast
 import com.generalmagic.gemsdk.Animation
 import com.generalmagic.gemsdk.TAnimation
 import com.generalmagic.gemsdk.TXy
+import com.generalmagic.gemsdk.demo.app.BaseLayoutController
+import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.demo.util.IntentHelper
-import com.generalmagic.gemsdk.demo.util.StaticsHolder
 import com.generalmagic.gemsdk.models.Coordinates
 import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.models.SearchPreferences
@@ -28,7 +29,7 @@ import com.generalmagic.gemsdk.util.GEMSdkCall
 import kotlinx.android.synthetic.main.location_details_panel.view.*
 
 class WikiController(context: Context, attrs: AttributeSet?) :
-    AppLayoutController(context, attrs) {
+    BaseLayoutController(context, attrs) {
     private lateinit var landmark: Landmark
     private var ignoreWikiErrorsCount = 0
 

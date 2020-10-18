@@ -17,11 +17,12 @@ import android.widget.Toast
 import com.generalmagic.gemsdk.Debug
 import com.generalmagic.gemsdk.GemString
 import com.generalmagic.gemsdk.TCustomUrlService
+import com.generalmagic.gemsdk.demo.app.BaseLayoutController
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import kotlinx.android.synthetic.main.custom_server_bottom_dialog.view.*
 
 class CustomServerUrl(context: Context, attrs: AttributeSet?) :
-    AppLayoutController(context, attrs) {
+    BaseLayoutController(context, attrs) {
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)

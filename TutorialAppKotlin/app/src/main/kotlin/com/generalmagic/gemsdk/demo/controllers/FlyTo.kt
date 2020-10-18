@@ -17,7 +17,8 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.Toast
 import com.generalmagic.gemsdk.*
-import com.generalmagic.gemsdk.demo.util.StaticsHolder
+import com.generalmagic.gemsdk.demo.app.BaseLayoutController
+import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.models.Coordinates
 import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.models.SearchPreferences
@@ -28,7 +29,7 @@ import kotlinx.android.synthetic.main.location_details_panel.view.*
 import kotlinx.android.synthetic.main.nav_top_panel.view.*
 
 abstract class FlyController(context: Context, attrs: AttributeSet?) :
-    AppLayoutController(context, attrs) {
+    BaseLayoutController(context, attrs) {
 
     protected fun updateStartStopBtn(started: Boolean) {
         bottomButtons()?.let { buttons ->
@@ -197,7 +198,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
 
                     mainMap.preferences()?.routes()?.add(route, true)
 
-                    mainMap.centerOnRoute(route, TRect(),animation)
+                    mainMap.centerOnRoute(route, TRect(), animation)
                 }
             } else {
                 val instructionsList = GEMSdkCall.execute { segment.getInstructions() } ?: return

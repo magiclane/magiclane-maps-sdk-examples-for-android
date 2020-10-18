@@ -18,8 +18,9 @@ import android.view.View
 import android.widget.Toast
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.activities.RouteDescriptionActivity
-import com.generalmagic.gemsdk.demo.util.MainMapStatusFollowingProvider
-import com.generalmagic.gemsdk.demo.util.StaticsHolder
+import com.generalmagic.gemsdk.demo.app.BaseLayoutController
+import com.generalmagic.gemsdk.demo.app.MapFollowingStatusProvider
+import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.models.*
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
@@ -32,7 +33,7 @@ import kotlinx.android.synthetic.main.pick_location.view.*
 // ---------------------------------------------------------------------------------------------
 
 abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
-    AppLayoutController(context, attrs) {
+    BaseLayoutController(context, attrs) {
 
     protected val navigationService = NavigationService()
 
@@ -76,7 +77,7 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
 
     protected val navigationListener = object : NavigationListener() {
         private var startNotified = false
-        override fun betterRouteDetected(
+        override fun onBetterRouteDetected(
             route: Route,
             travelTime: Int,
             delay: Int,
@@ -84,29 +85,29 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
         ) {
         }
 
-        override fun betterRouteInvalidated() {}
+        override fun onBetterRouteInvalidated() {}
 
-        override fun betterRouteRejected(errorCode: Int) {}
+        override fun onBetterRouteRejected(errorCode: Int) {}
 
         override fun canPlayNavigationSound(): Boolean {
             return false
         }
 
-        override fun destinationReached(landmark: Landmark) {
+        override fun onDestinationReached(landmark: Landmark) {
             Handler(Looper.getMainLooper()).post {
                 onNavigationEnded()
                 startNotified = false
             }
         }
 
-        override fun navigationError(errorCode: Int) {
+        override fun onNavigationError(errorCode: Int) {
             Handler(Looper.getMainLooper()).post {
                 onNavigationEnded(errorCode)
                 startNotified = false
             }
         }
 
-        override fun navigationInstructionUpdated(instr: NavigationInstruction) {
+        override fun onNavigationInstructionUpdated(instr: NavigationInstruction) {
             Handler(Looper.getMainLooper()).post {
                 if (!startNotified) {
                     onNavigationStarted()
@@ -117,15 +118,15 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
             }
         }
 
-        override fun navigationSound(sound: ISound) {}
+        override fun onNavigationSound(sound: ISound) {}
 
-        override fun routeUpdated(route: Route) {
+        override fun onRouteUpdated(route: Route) {
             Handler(Looper.getMainLooper()).post {
                 navLayout?.routeUpdated(route)
             }
         }
 
-        override fun waypointReached(landmark: Landmark) {}
+        override fun onWaypointReached(landmark: Landmark) {}
     }
 
     fun isTripActive(): Boolean {
@@ -169,32 +170,32 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
     private var alarmService: AlarmService? = null
     private val nAlarmDistanceMeters = 500.0
     private var alarmListener: AlarmListener = object : AlarmListener() {
-        override fun boundaryCrossed() {}
+        override fun onBoundaryCrossed() {}
 
-        override fun highSpeed(speed: Double) {}
+        override fun onHighSpeed(speed: Double) {}
 
-        override fun landmarkAlarmsPassedOver() {}
+        override fun onLandmarkAlarmsPassedOver() {}
 
-        override fun landmarkAlarmsUpdated() {}
+        override fun onLandmarkAlarmsUpdated() {}
 
-        override fun lowSpeed(speed: Double) {}
+        override fun onLowSpeed(speed: Double) {}
 
-        override fun markerAlarmsPassedOver() {}
+        override fun onMarkerAlarmsPassedOver() {}
 
-        override fun markerAlarmsUpdated() {
+        override fun onMarkerAlarmsUpdated() {
             Handler(Looper.getMainLooper()).post { navLayout.updateAlarmsInfo(alarmService) }
         }
 
-        override fun monitoringStateChanged(isMonitoringActive: Boolean) {}
+        override fun onMonitoringStateChanged(isMonitoringActive: Boolean) {}
 
-        override fun normalSpeed() {}
+        override fun onNormalSpeed() {}
 
-        override fun speedLimit(speed: Double, limit: Double) {
+        override fun onSpeedLimit(speed: Double, limit: Double) {
         }
 
-        override fun tunnelEntered() {}
+        override fun onTunnelEntered() {}
 
-        override fun tunnelLeft() {}
+        override fun onTunnelLeft() {}
     }
 
     init {
@@ -244,7 +245,7 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
             if (route != null) mainMap.preferences()?.routes()?.add(route, true)
 
             PositionService().addListener(positionListener, EDataType.Position)
-            MainMapStatusFollowingProvider.getInstance().doFollow()
+            MapFollowingStatusProvider.getInstance().doFollowStart()
         }
 
         showNavLayout()
@@ -327,7 +328,7 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
                 buttonAsFollowGps(it)
                 it.setOnClickListener {
                     GEMSdkCall.execute {
-                        MainMapStatusFollowingProvider.getInstance().doFollow()
+                        MapFollowingStatusProvider.getInstance().doFollowStart()
                     }
                 }
             }
@@ -517,7 +518,7 @@ class CustomSimController(context: Context, attrs: AttributeSet?) :
                 bottomButtons()?.bottomCenterButton?.visibility = View.GONE
                 bottomButtons()?.bottomRightButton?.visibility = View.GONE
                 pickLocation.visibility = View.GONE
-                GEMSdkCall.execute { MainMapStatusFollowingProvider.getInstance().doUnFollow() }
+                GEMSdkCall.execute { MapFollowingStatusProvider.getInstance().doFollowStop() }
             }
             it.onStartPicked = { landmark ->
                 landmarks.add(0, landmark)
@@ -564,7 +565,7 @@ class CustomNavController(context: Context, attrs: AttributeSet?) :
                 bottomButtons()?.bottomCenterButton?.visibility = View.GONE
                 bottomButtons()?.bottomRightButton?.visibility = View.GONE
                 pickLocation.visibility = View.GONE
-                GEMSdkCall.execute { MainMapStatusFollowingProvider.getInstance().doUnFollow() }
+                GEMSdkCall.execute { MapFollowingStatusProvider.getInstance().doFollowStop() }
             }
             it.onStartPicked = { landmark ->
                 landmarks.add(0, landmark)

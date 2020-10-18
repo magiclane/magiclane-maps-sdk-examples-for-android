@@ -14,8 +14,8 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import com.generalmagic.gemsdk.demo.R
-import com.generalmagic.gemsdk.demo.controllers.AppLayoutController
-import com.generalmagic.gemsdk.demo.util.StaticsHolder
+import com.generalmagic.gemsdk.demo.app.BaseLayoutController
+import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -23,7 +23,7 @@ import kotlinx.android.synthetic.main.app_bar_layout.view.*
 import kotlinx.android.synthetic.main.pick_location.view.*
 
 class PickLocationController(context: Context, attrs: AttributeSet?) :
-    AppLayoutController(context, attrs) {
+    BaseLayoutController(context, attrs) {
 
     var onCancelPressed: () -> Unit = {}
     var onStartPicked: (Landmark) -> Unit = {}

@@ -8,30 +8,19 @@
  * license agreement you entered into with General Magic.
  */
 
-package com.generalmagic.gemsdk.demo.util
+package com.generalmagic.gemsdk.demo.app
 
-import androidx.drawerlayout.widget.DrawerLayout
-import com.generalmagic.gemsdk.*
-import com.generalmagic.gemsdk.demo.MainActivity
-import com.generalmagic.gemsdk.demo.util.StaticsHolder.Companion.getMainMapView
-import com.generalmagic.gemsdk.models.Screen
+import com.generalmagic.gemsdk.Animation
+import com.generalmagic.gemsdk.TAnimation
+import com.generalmagic.gemsdk.TFlyModes
 import com.generalmagic.gemsdk.util.GEMSdkCall
+import java.util.concurrent.atomic.AtomicBoolean
 
-class StaticsHolder {
+class MapFollowingStatusProvider {
     companion object {
-        var getMainMapView: () -> View? = { null }
-        var gemMapScreen: () -> Screen? = { null }
-        var getMainActivity: () -> MainActivity? = { null }
-        var getNavViewDrawerLayout: () -> DrawerLayout? = { null }
-        var getGlContext: () -> OpenGLContext? = { null }
-    }
-}
-
-class MainMapStatusFollowingProvider {
-    companion object {
-        private var instance: MainMapStatusFollowingProvider? = null
-        fun getInstance(): MainMapStatusFollowingProvider {
-            if (instance == null) instance = MainMapStatusFollowingProvider()
+        private var instance: MapFollowingStatusProvider? = null
+        fun getInstance(): MapFollowingStatusProvider {
+            if (instance == null) instance = MapFollowingStatusProvider()
             return instance!!
         }
     }
@@ -46,29 +35,34 @@ class MainMapStatusFollowingProvider {
         }
     }
 
-    fun doUnFollow() {
+    private var isFollowing = AtomicBoolean()
+    fun isFollowing() = isFollowing
+
+    fun doFollowStop() {
         GEMSdkCall.checkCurrentThread()
-        val mainMapView = getMainMapView() ?: return
+        val mainMapView = StaticsHolder.getMainMapView() ?: return
         mainMapView.stopFollowingPosition()
 
+        isFollowing.set(false)
         for (listener in listeners) {
-            listener.statusChangedTo(false)
+            listener.statusChangedTo(isFollowing.get())
         }
     }
 
-    fun doFollow() {
+    fun doFollowStart() {
         GEMSdkCall.checkCurrentThread()
-        val mainMapView = getMainMapView() ?: return
-        
+        val mainMapView = StaticsHolder.getMainMapView() ?: return
+
         val animation = Animation()
         animation.setMethod(TAnimation.EAnimationFly)
         animation.setFly(TFlyModes.EFM_Linear)
         animation.setDuration(900)
-        
+
         mainMapView.startFollowingPosition(animation)
 
+        isFollowing.set(true)
         for (listener in listeners) {
-            listener.statusChangedTo(true)
+            listener.statusChangedTo(isFollowing.get())
         }
     }
 

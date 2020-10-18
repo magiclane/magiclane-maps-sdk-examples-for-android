@@ -26,7 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.marginStart
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.R
-import com.generalmagic.gemsdk.demo.util.StaticsHolder
+import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.demo.util.Util.Companion.setPanelBackground
 import com.generalmagic.gemsdk.demo.util.UtilUITexts
@@ -437,15 +437,15 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
     }
 
     /**---------------------------------------------------------------------------------------------
-    Update Panels
-    ----------------------------------------------------------------------------------------------*/
+     Update Panels
+     ----------------------------------------------------------------------------------------------*/
 
     private fun updateAllPanels() {
         if (!allowRefresh) return
 
         /**-----------------------------------------------------------------------------------------
-        Update the panels
-        ------------------------------------------------------------------------------------------*/
+         Update the panels
+         ------------------------------------------------------------------------------------------*/
         updateNavigationBottomPanel(navDataProvider.info)
 
         topPanelController.update(navInstr, route, alarmService)
@@ -557,8 +557,8 @@ class UINavDataProvider {
     val info = NavInfo()
 
     /**---------------------------------------------------------------------------------------------
-    Public methods
-    ----------------------------------------------------------------------------------------------*/
+     Public methods
+     ----------------------------------------------------------------------------------------------*/
 
     companion object {
         fun getLaneInfoImage(
@@ -699,8 +699,8 @@ class UINavDataProvider {
     }
 
     /**---------------------------------------------------------------------------------------------
-    Private methods
-    ----------------------------------------------------------------------------------------------*/
+     Private methods
+     ----------------------------------------------------------------------------------------------*/
 
     // ---------------------------------------------------------------------------------------------
 
@@ -722,8 +722,8 @@ class UINavDataProvider {
     }
 
     /**---------------------------------------------------------------------------------------------
-    data class NavInfo
-    ----------------------------------------------------------------------------------------------*/
+     data class NavInfo
+     ----------------------------------------------------------------------------------------------*/
     data class NavInfo(
         var demoText: String? = null,
         var eta: String? = null,

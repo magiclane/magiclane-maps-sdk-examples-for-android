@@ -8,19 +8,17 @@
  * license agreement you entered into with General Magic.
  */
 
-package com.generalmagic.gemsdk.demo.controllers
+package com.generalmagic.gemsdk.demo.app
 
 import android.content.Context
 import android.util.AttributeSet
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.generalmagic.gemsdk.demo.R
-import com.generalmagic.gemsdk.demo.util.MainMapStatusFollowingProvider
-import com.generalmagic.gemsdk.demo.util.StaticsHolder
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.android.synthetic.main.app_bar_layout.view.*
 
-open class AppLayoutController(context: Context, attrs: AttributeSet?) :
+open class BaseLayoutController(context: Context, attrs: AttributeSet?) :
     ConstraintLayout(context, attrs) {
 
     open fun onBackPressed(): Boolean {
@@ -45,7 +43,7 @@ open class AppLayoutController(context: Context, attrs: AttributeSet?) :
                 it.visibility = android.view.View.VISIBLE
                 buttonAsFollowGps(it)
                 it.setOnClickListener {
-                    GEMSdkCall.execute { MainMapStatusFollowingProvider.getInstance().doFollow() }
+                    GEMSdkCall.execute { MapFollowingStatusProvider.getInstance().doFollowStart() }
                 }
             }
         }

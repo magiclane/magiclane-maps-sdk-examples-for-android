@@ -13,6 +13,7 @@ package com.generalmagic.gemsdk.demo.util
 import com.generalmagic.gemsdk.CommonSettings
 import com.generalmagic.gemsdk.Route
 import com.generalmagic.gemsdk.TUnitSystem
+import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getDistText
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getTimeText
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getUIString

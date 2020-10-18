@@ -10,14 +10,10 @@
 
 package com.generalmagic.gemsdk.demo.util
 
-import android.app.Activity
 import android.content.Context
-import android.content.res.Resources
 import android.graphics.*
 import android.graphics.drawable.*
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.util.DisplayMetrics
 import android.util.TypedValue
 import android.view.View
@@ -27,15 +23,18 @@ import com.generalmagic.gemsdk.Route
 import com.generalmagic.gemsdk.SignpostImageRef
 import com.generalmagic.gemsdk.TRgba
 import com.generalmagic.gemsdk.models.*
+import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMHelper
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import com.generalmagic.gemsdk.util.GemIcons
-import com.generalmagic.gemsdk.util.SDKPathsHelper
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.IntBuffer
+import java.nio.channels.FileChannel
 
 class Util {
     companion object {
@@ -372,22 +371,53 @@ class Util {
 
             return cost[lhsLength]
         }
-    }
-}
 
-class GEMApplication {
-    companion object {
-        var topActivity: Activity? = null
-        var uiHandler = Handler(Looper.getMainLooper())
-        var appContext: Context? = null
-        var recordsPath = ""
-        
-        fun getApplicationContext(): Context {
-            return appContext!!
+        fun moveFileToDir(filePath: String, dirPath: String): GEMError {
+            val from = File(filePath)
+            if (!from.exists()) {
+                return GEMError.KInvalidInput
+            }
+
+            val dir = File(dirPath)
+            try {
+                dir.mkdirs()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                return GEMError.KAccessDenied
+            }
+
+            val to = File(dirPath + File.separator + from.name)
+            if (to.exists()) {
+                return GEMError.KExist
+            } else if (to.isDirectory) {
+                return GEMError.KInvalidInput
+            }
+
+            moveFile(from, dir)
+//            if(!from.renameTo(to))
+//                return GEMError.KInternalAbort
+
+            return GEMError.KNoError
         }
 
-        fun getAppResources(): Resources {
-            return getApplicationContext().resources
+        fun moveFile(file: File, dir: File): File? {
+            val newFile = File(dir, file.name)
+            var outputChannel: FileChannel? = null
+            var inputChannel: FileChannel? = null
+
+            val result: File?
+            try {
+                outputChannel = FileOutputStream(newFile).channel
+                inputChannel = FileInputStream(file).channel
+                inputChannel.transferTo(0, inputChannel.size(), outputChannel)
+                inputChannel.close()
+                file.delete()
+                result = newFile
+            } finally {
+                inputChannel?.close()
+                outputChannel?.close()
+            }
+            return result
         }
     }
 }

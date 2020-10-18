@@ -20,7 +20,7 @@ import com.generalmagic.gemsdk.LogUploader
 import com.generalmagic.gemsdk.LogUploaderListener
 import com.generalmagic.gemsdk.TLogUploaderState
 import com.generalmagic.gemsdk.demo.R
-import com.generalmagic.gemsdk.demo.activities.BaseActivity
+import com.generalmagic.gemsdk.demo.app.BaseActivity
 import com.generalmagic.gemsdk.util.GEMError
 import java.io.File
 import java.text.SimpleDateFormat
@@ -49,7 +49,7 @@ class PickLogActivity : BaseActivity() {
     private val uploadUsername = ""
     private val uploadEmail = "mstoica@generalmagic.com"
     private val uploadListener = object : LogUploaderListener() {
-        override fun logStatus(sLogPath: String, nProgress: Int, nStatus: Int) {
+        override fun onLogStatusChanged(sLogPath: String, nProgress: Int, nStatus: Int) {
             if (nStatus < 0) {
                 val error = GEMError.fromInt(nStatus)
 
@@ -72,7 +72,7 @@ class PickLogActivity : BaseActivity() {
     }
     private val logUploader = LogUploader.produce(uploadListener)
 
-    ////////
+    // //////
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -100,8 +100,9 @@ class PickLogActivity : BaseActivity() {
     }
 
     private fun onVideoPicked(model: VideoFileModel) {
-        if (!isValidModelPicked(model))
-            return //onVideoPickCanceled()
+        if (!isValidModelPicked(model)) {
+            return
+        } // onVideoPickCanceled()
 
         val intent = Intent()
         intent.putExtra(RESULT_VIDEO_PATH, model.filepath)
@@ -131,7 +132,9 @@ class PickLogActivity : BaseActivity() {
 
         if (error != GEMError.KNoError) {
             Toast.makeText(
-                this@PickLogActivity, "uploadAtIndex error=$error", Toast.LENGTH_SHORT
+                this@PickLogActivity,
+                "uploadAtIndex error=$error",
+                Toast.LENGTH_SHORT
             ).show()
         }
     }
@@ -236,7 +239,7 @@ class PickLogActivity : BaseActivity() {
             return mDataset.size
         }
 
-        //----------------------------------------------------------------
+        // ----------------------------------------------------------------
         private fun itemClicked(index: Int) {
             onVideoPicked(mDataset[index])
         }
@@ -259,7 +262,7 @@ class PickLogActivity : BaseActivity() {
             notifyDataSetChanged()
         }
 
-        //----------------------------------------------------------------
+        // ----------------------------------------------------------------
         inner class ListItemViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val nameTextView: TextView = view.findViewById(R.id.name)
             val filepathTextView: TextView = view.findViewById(R.id.filepath)
@@ -286,7 +289,6 @@ class PickLogActivity : BaseActivity() {
                                 deleteAtIndex(adapterPosition)
                             }
                             else -> {
-
                             }
                         }
                         true
@@ -313,16 +315,19 @@ class PickLogActivity : BaseActivity() {
 
         if (!hasPermissions) {
             ActivityCompat.requestPermissions(context, permissions, REQUEST_PERMISSIONS)
-        } else
+        } else {
             hasStoragePermission = true
+        }
     }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
-        permissions: Array<String>, grantResults: IntArray
+        permissions: Array<String>,
+        grantResults: IntArray
     ) {
-        if (grantResults.isEmpty())
+        if (grantResults.isEmpty()) {
             return
+        }
 
         val result = grantResults[0]
         when (requestCode) {

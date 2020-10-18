@@ -16,18 +16,20 @@ import android.os.Looper
 import android.util.AttributeSet
 import android.widget.Toast
 import com.generalmagic.gemsdk.*
-import com.generalmagic.gemsdk.demo.util.MainMapStatusFollowingProvider
-import com.generalmagic.gemsdk.demo.util.StaticsHolder.Companion.gemMapScreen
-import com.generalmagic.gemsdk.demo.util.StaticsHolder.Companion.getMainMapView
+import com.generalmagic.gemsdk.demo.app.BaseLayoutController
+import com.generalmagic.gemsdk.demo.app.MapFollowingStatusProvider
+import com.generalmagic.gemsdk.demo.app.StaticsHolder.Companion.gemMapScreen
+import com.generalmagic.gemsdk.demo.app.StaticsHolder.Companion.getMainMapView
 import com.generalmagic.gemsdk.models.ContentStoreItem
 import com.generalmagic.gemsdk.models.TContentType
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import kotlinx.android.synthetic.main.app_bar_layout.view.*
 
 // --------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 
 class HelloViewController(context: Context, attrs: AttributeSet?) :
-    AppLayoutController(context, attrs) {
+    BaseLayoutController(context, attrs) {
 
     override fun onMapFollowStatusChanged(following: Boolean) {
         if (following) {
@@ -43,9 +45,10 @@ class HelloViewController(context: Context, attrs: AttributeSet?) :
 }
 
 // --------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 
 open class ManyMapsController(context: Context, attrs: AttributeSet?) :
-    AppLayoutController(context, attrs) {
+    BaseLayoutController(context, attrs) {
     protected val contentStore = ContentStore()
     protected val mapViews = ArrayList<View>()
     protected var mapStyles: ArrayList<ContentStoreItem> = ArrayList()
@@ -73,8 +76,8 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
         GEMSdkCall.checkCurrentThread()
         val screen = gemMapScreen() ?: return
 
-        val subview = View.produce(screen, rect, null)?: return
-        getMainMapView()?.getCamera()?.let{
+        val subview = View.produce(screen, rect, null) ?: return
+        getMainMapView()?.getCamera()?.let {
             subview.setCamera(it)
         }
         subview.preferences()?.setMapStyleById(styleId)
@@ -111,6 +114,7 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
     }
 }
 
+// --------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------
 
 class TwoTiledViewsController(context: Context, attrs: AttributeSet?) :
@@ -154,12 +158,13 @@ class TwoTiledViewsController(context: Context, attrs: AttributeSet?) :
         super.onMapFollowStatusChanged(following)
         bottomButtons()?.bottomLeftButton?.setOnClickListener {
             GEMSdkCall.execute {
-                MainMapStatusFollowingProvider.getInstance().doFollow()
+                MapFollowingStatusProvider.getInstance().doFollowStart()
             }
         }
     }
 }
 
+// --------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------
 
 class MultipleViewsController(context: Context, attrs: AttributeSet?) :
@@ -230,4 +235,5 @@ class MultipleViewsController(context: Context, attrs: AttributeSet?) :
     }
 }
 
+// --------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------

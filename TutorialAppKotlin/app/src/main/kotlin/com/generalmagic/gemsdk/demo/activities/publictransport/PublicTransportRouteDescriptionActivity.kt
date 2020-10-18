@@ -28,13 +28,12 @@ import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.doOnPreDraw
 import com.generalmagic.gemsdk.Route
-import com.generalmagic.gemsdk.TRect
 import com.generalmagic.gemsdk.demo.R
-import com.generalmagic.gemsdk.demo.activities.BaseActivity
+import com.generalmagic.gemsdk.demo.app.BaseActivity
+import com.generalmagic.gemsdk.demo.app.GEMApplication
+import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.demo.util.AppUtils
-import com.generalmagic.gemsdk.demo.util.GEMApplication
 import com.generalmagic.gemsdk.demo.util.IntentHelper
-import com.generalmagic.gemsdk.demo.util.StaticsHolder
 import kotlinx.android.synthetic.main.pt_route_description_activity.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -586,9 +585,9 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
 
                                 if (PublicTransportRouteDescriptionLineView.shouldSetCellHeight() ||
                                     PublicTransportRouteDescriptionLineView.shouldSetOffset(
-                                        0,
-                                        itemIndex - 1
-                                    )
+                                            0,
+                                            itemIndex - 1
+                                        )
                                 ) {
                                     segmentStartStationView.doOnPreDraw {
                                         val finalHeight =

@@ -17,13 +17,13 @@ import java.util.concurrent.Executors
 
 class MemoryCache {
 	private val cache = Collections.synchronizedMap(
-		LinkedHashMap<String, Bitmap>(10, 1.5f, true)
-	)//Last argument true for LRU ordering
-	private var size: Long = 0//current allocated size
-	private var limit: Long = 1000000//max memory in bytes
+	    LinkedHashMap<String, Bitmap>(10, 1.5f, true)
+	) // Last argument true for LRU ordering
+	private var size: Long = 0 // current allocated size
+	private var limit: Long = 1000000 // max memory in bytes
 
 	init {
-		//use 25% of available heap size
+		// use 25% of available heap size
 		setLimit(Runtime.getRuntime().maxMemory() / 4)
 	}
 
@@ -35,7 +35,7 @@ class MemoryCache {
 	operator fun get(id: String): Bitmap? {
 		return try {
 			if (!cache.containsKey(id)) null else cache[id]
-			//NullPointerException sometimes happen here http://code.google.com/p/osmdroid/issues/detail?id=78
+			// NullPointerException sometimes happen here http://code.google.com/p/osmdroid/issues/detail?id=78
 		} catch (ex: NullPointerException) {
 			ex.printStackTrace()
 			null
@@ -44,28 +44,29 @@ class MemoryCache {
 
 	fun put(id: String, bitmap: Bitmap) {
 		try {
-			if (cache.containsKey(id))
+			if (cache.containsKey(id)) {
 				size -= getSizeInBytes(cache[id])
+			}
 			cache[id] = bitmap
 			size += getSizeInBytes(bitmap)
 			checkSize()
 		} catch (th: Throwable) {
 			th.printStackTrace()
 		}
-
 	}
 
 	private fun checkSize() {
 		Log.i(TAG, "cache size=" + size + " length=" + cache.size)
 		if (size > limit) {
 			val iter =
-				cache.entries.iterator()//least recently accessed item will be the first one iterated
+				cache.entries.iterator() // least recently accessed item will be the first one iterated
 			while (iter.hasNext()) {
 				val entry = iter.next()
 				size -= getSizeInBytes(entry.value)
 				iter.remove()
-				if (size <= limit)
+				if (size <= limit) {
 					break
+				}
 			}
 			Log.i(TAG, "Clean cache. New size " + cache.size)
 		}
@@ -73,13 +74,12 @@ class MemoryCache {
 
 	fun clear() {
 		try {
-			//NullPointerException sometimes happen here http://code.google.com/p/osmdroid/issues/detail?id=78
+			// NullPointerException sometimes happen here http://code.google.com/p/osmdroid/issues/detail?id=78
 			cache.clear()
 			size = 0
 		} catch (ex: NullPointerException) {
 			ex.printStackTrace()
 		}
-
 	}
 
 	private fun getSizeInBytes(bitmap: Bitmap?): Long {
@@ -105,9 +105,9 @@ class ThumbnailLoader {
 	fun displayImage(url: String, imageView: ImageView) {
 		imageViews[imageView] = url
 		val bitmap = memoryCache[url]
-		if (bitmap != null)
+		if (bitmap != null) {
 			imageView.setImageBitmap(bitmap)
-		else {
+		} else {
 			queuePhoto(url, imageView)
 			imageView.setImageResource(stubId)
 		}
@@ -127,13 +127,14 @@ class ThumbnailLoader {
 		return ThumbnailUtils.createVideoThumbnail(File(url), size, signal)
 	}
 
-	//Task for the queue
+	// Task for the queue
 	inner class PhotoToLoad(var url: String, var imageView: ImageView)
 
 	internal inner class PhotosLoader(private var photoToLoad: PhotoToLoad) : Runnable {
 		override fun run() {
-			if (imageViewReused(photoToLoad))
+			if (imageViewReused(photoToLoad)) {
 				return
+			}
 
 			val size = Size(photoToLoad.imageView.width, photoToLoad.imageView.height)
 
@@ -143,11 +144,13 @@ class ThumbnailLoader {
 				getBitmap(photoToLoad.url)
 			}
 
-			if (bmp != null)
+			if (bmp != null) {
 				memoryCache.put(photoToLoad.url, bmp)
+			}
 
-			if (imageViewReused(photoToLoad))
+			if (imageViewReused(photoToLoad)) {
 				return
+			}
 			val bd = BitmapDisplayer(bmp, photoToLoad)
 			val a = photoToLoad.imageView.context as Activity
 			a.runOnUiThread(bd)
@@ -159,24 +162,25 @@ class ThumbnailLoader {
 		return tag == null || tag != photoToLoad.url
 	}
 
-	//Used to display bitmap in the UI thread
+	// Used to display bitmap in the UI thread
 	internal inner class BitmapDisplayer(
-		private var bitmap: Bitmap?,
-		private var photoToLoad: PhotoToLoad
+	    private var bitmap: Bitmap?,
+	    private var photoToLoad: PhotoToLoad
 	) :
 		Runnable {
 		override fun run() {
-			if (imageViewReused(photoToLoad))
+			if (imageViewReused(photoToLoad)) {
 				return
-			if (bitmap != null)
+			}
+			if (bitmap != null) {
 				photoToLoad.imageView.setImageBitmap(bitmap)
-			else
+			} else {
 				photoToLoad.imageView.setImageResource(stubId)
+			}
 		}
 	}
 
 	fun clearCache() {
 		memoryCache.clear()
 	}
-
 }

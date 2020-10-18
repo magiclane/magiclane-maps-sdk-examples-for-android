@@ -24,6 +24,7 @@ import com.generalmagic.gemsdk.MapDetails
 import com.generalmagic.gemsdk.TRgba
 import com.generalmagic.gemsdk.TUnitSystem
 import com.generalmagic.gemsdk.demo.R
+import com.generalmagic.gemsdk.demo.app.BaseActivity
 import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.demo.util.UtilUITexts
 import com.generalmagic.gemsdk.demo.util.Utils

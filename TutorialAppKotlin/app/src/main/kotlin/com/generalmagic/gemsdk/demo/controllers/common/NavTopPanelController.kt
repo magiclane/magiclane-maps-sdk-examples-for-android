@@ -20,7 +20,7 @@ import android.widget.FrameLayout
 import android.widget.RelativeLayout
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.R
-import com.generalmagic.gemsdk.demo.util.StaticsHolder
+import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.demo.util.Util.Companion.setPanelBackground
 import com.generalmagic.gemsdk.demo.util.UtilUITexts
@@ -591,28 +591,28 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     }
 
     /**---------------------------------------------------------------------------------------------
-    Get Images
-    ----------------------------------------------------------------------------------------------*/
+     Get Images
+     ----------------------------------------------------------------------------------------------*/
 
     fun getRoadCodeImage(from: NavigationInstruction?, width: Int, height: Int):
         Pair<Int, Bitmap?> {
-        val navInstr = from ?: return Pair(0, null)
-        val roadsInfo = navInstr.getNextRoadInformation() ?: return Pair(0, null)
-        if (roadsInfo.isEmpty()) return Pair(0, null)
+            val navInstr = from ?: return Pair(0, null)
+            val roadsInfo = navInstr.getNextRoadInformation() ?: return Pair(0, null)
+            if (roadsInfo.isEmpty()) return Pair(0, null)
 
-        var resultWidth = width
-        if (resultWidth == 0) {
-            resultWidth = (2.5 * height).toInt()
+            var resultWidth = width
+            if (resultWidth == 0) {
+                resultWidth = (2.5 * height).toInt()
+            }
+
+            val image = GEMSdkCall.execute { navInstr.getRoadInfoImage(roadsInfo) }
+
+            val resultPair =
+                Util.createBitmap(image, resultWidth, height)
+
+            resultWidth = resultPair.first
+            return Pair(resultWidth, resultPair.second)
         }
-
-        val image = GEMSdkCall.execute { navInstr.getRoadInfoImage(roadsInfo) }
-
-        val resultPair =
-            Util.createBitmap(image, resultWidth, height)
-
-        resultWidth = resultPair.first
-        return Pair(resultWidth, resultPair.second)
-    }
 
     fun getSafetyCameraAlarmImage(from: Marker?, height: Int): Pair<Int, Bitmap?> {
         GEMSdkCall.checkCurrentThread()

@@ -11,12 +11,9 @@
 package com.generalmagic.gemsdk.demo
 
 import android.Manifest
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
@@ -24,23 +21,17 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.generalmagic.apihelper.EnumHelp
 import com.generalmagic.gemsdk.*
-import com.generalmagic.gemsdk.demo.activities.BaseActivity
-import com.generalmagic.gemsdk.demo.activities.pickvideo.PickLogActivity
-import com.generalmagic.gemsdk.demo.activities.pickvideo.PickLogActivity.Companion.RESULT_VIDEO_PATH
-import com.generalmagic.gemsdk.demo.activities.searchaddress.SearchAddressActivity
-import com.generalmagic.gemsdk.demo.controllers.*
-import com.generalmagic.gemsdk.demo.util.GEMApplication
-import com.generalmagic.gemsdk.demo.util.KeyboardUtil
-import com.generalmagic.gemsdk.demo.util.MainMapStatusFollowingProvider
-import com.generalmagic.gemsdk.demo.util.StaticsHolder.Companion.gemMapScreen
-import com.generalmagic.gemsdk.demo.util.StaticsHolder.Companion.getGlContext
-import com.generalmagic.gemsdk.demo.util.StaticsHolder.Companion.getMainActivity
-import com.generalmagic.gemsdk.demo.util.StaticsHolder.Companion.getMainMapView
-import com.generalmagic.gemsdk.demo.util.StaticsHolder.Companion.getNavViewDrawerLayout
+import com.generalmagic.gemsdk.demo.app.BaseActivity
+import com.generalmagic.gemsdk.demo.app.GEMApplication
+import com.generalmagic.gemsdk.demo.app.MapFollowingStatusProvider
+import com.generalmagic.gemsdk.demo.app.StaticsHolder.Companion.gemMapScreen
+import com.generalmagic.gemsdk.demo.app.StaticsHolder.Companion.getGlContext
+import com.generalmagic.gemsdk.demo.app.StaticsHolder.Companion.getMainActivity
+import com.generalmagic.gemsdk.demo.app.StaticsHolder.Companion.getMainMapView
+import com.generalmagic.gemsdk.demo.app.StaticsHolder.Companion.getNavViewDrawerLayout
 import com.generalmagic.gemsdk.demo.util.network.NetworkManager
 import com.generalmagic.gemsdk.demo.util.network.NetworkProviderImpl
 import com.generalmagic.gemsdk.mapview.GEMMapSurface
-import com.generalmagic.gemsdk.models.ContentStoreItem
 import com.generalmagic.gemsdk.models.Screen
 import com.generalmagic.gemsdk.models.TContentType
 import com.generalmagic.gemsdk.models.ViewListener
@@ -51,35 +42,11 @@ import com.google.android.material.navigation.NavigationView
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_layout.*
 import kotlinx.android.synthetic.main.app_bar_layout.view.*
-import kotlinx.android.synthetic.main.tutorial_custom_nav.view.*
-import kotlinx.android.synthetic.main.tutorial_custom_ptnav.view.*
-import kotlinx.android.synthetic.main.tutorial_custom_sim.view.*
-import kotlinx.android.synthetic.main.tutorial_custom_url.view.*
-import kotlinx.android.synthetic.main.tutorial_flyto_area.view.*
-import kotlinx.android.synthetic.main.tutorial_flyto_coords.view.*
-import kotlinx.android.synthetic.main.tutorial_flyto_instr.view.*
-import kotlinx.android.synthetic.main.tutorial_flyto_route.view.*
-import kotlinx.android.synthetic.main.tutorial_flyto_traffic.view.*
-import kotlinx.android.synthetic.main.tutorial_hello.view.*
-import kotlinx.android.synthetic.main.tutorial_logplayer.view.*
-import kotlinx.android.synthetic.main.tutorial_logrecorder.view.*
-import kotlinx.android.synthetic.main.tutorial_multiplemaps.view.*
-import kotlinx.android.synthetic.main.tutorial_predef_nav.view.*
-import kotlinx.android.synthetic.main.tutorial_predef_ptnav.view.*
-import kotlinx.android.synthetic.main.tutorial_predef_sim.view.*
-import kotlinx.android.synthetic.main.tutorial_route_ab.view.*
-import kotlinx.android.synthetic.main.tutorial_route_abc.view.*
-import kotlinx.android.synthetic.main.tutorial_route_custom.view.*
-import kotlinx.android.synthetic.main.tutorial_twotiledviews.view.*
-import kotlinx.android.synthetic.main.tutorial_wiki.view.*
 import java.io.File
 import java.net.Proxy
 import java.util.*
 
 class MainActivity : BaseActivity() {
-    private var lastSelectedLayoutId: Int = R.id.tutorial_hello
-    private var defaultMapStyle: ContentStoreItem? = null
-
     private var mainMapView: View? = null
     private var bWasFollowingPosition = false
     private val mainMapViewListener = object : ViewListener() {}
@@ -97,7 +64,7 @@ class MainActivity : BaseActivity() {
     private var mapUpdater: ContentUpdater? = null
 
     private val offboardListener = object : OffboardListener() {
-        override fun onlineWorldMapSupportStatus(state: TStatus) {
+        override fun onOnlineWorldMapSupportStatus(state: TStatus) {
             val listener = object : ProgressListener() {
                 override fun notifyStatusChanged(status: Int) {
                     when (EnumHelp.fromInt<TContentUpdaterStatus>(status)) {
@@ -114,17 +81,16 @@ class MainActivity : BaseActivity() {
             }
 
             val result =
-                ContentStore().createContentUpdater(TContentType.ECT_RoadMap.value, listener)
-                    ?: return
+                ContentStore().createContentUpdater(TContentType.ECT_RoadMap.value) ?: return
 
             if (result.second == GEMError.KNoError.value) {
                 mapUpdater = result.first ?: return
-                mapUpdater?.update(true)
+                mapUpdater?.update(true, listener)
             }
         }
     }
 
-    private val mapFollowListener = object : MainMapStatusFollowingProvider.Listener() {
+    private val mapFollowListener = object : MapFollowingStatusProvider.Listener() {
         override fun statusChangedTo(following: Boolean) {
             runOnUiThread {
                 currentController?.onMapFollowStatusChanged(following)
@@ -134,9 +100,21 @@ class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val recordsDirName = "records"
+
+        val iRecordsPath = StringBuilder().append(SDKPathsHelper.getPhonePath(this))
+            .append(File.separator)
+            .append(recordsDirName)
+
+        val eRecordsPath = StringBuilder().append(SDKPathsHelper.getSdCardPath(this))
+            .append(File.separator)
+            .append(recordsDirName)
+
         GEMMapSurface.appVariant = AppVariant.VARIANT_MAGICEARTH_BETA
         GEMApplication.appContext = applicationContext
-        GEMApplication.recordsPath = SDKPathsHelper.getPhonePath(this) + File.separator + "records"
+        GEMApplication.iRecordsPath = iRecordsPath.toString()
+        GEMApplication.eRecordsPath = eRecordsPath.toString()
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
@@ -166,7 +144,7 @@ class MainActivity : BaseActivity() {
         drawerToggle.isDrawerIndicatorEnabled = true
         drawerToggle.syncState()
 
-        val followingProvider = MainMapStatusFollowingProvider.getInstance()
+        val followingProvider = MapFollowingStatusProvider.getInstance()
         followingProvider.listeners.add(mapFollowListener)
 
         gem_surface.onMainScreenCreated = { screen: Screen ->
@@ -198,7 +176,7 @@ class MainActivity : BaseActivity() {
 
             networkManager = NetworkManager(this)
             networkManager.onConnectionTypeChangedCallback = { type: NetworkManager.TConnectionType,
-                                                               proxyType: Proxy.Type, proxyHost: String, proxyPort: Int ->
+                proxyType: Proxy.Type, proxyHost: String, proxyPort: Int ->
                 networkProvider.onNetworkConnectionTypeChanged(
                     type,
                     proxyType,
@@ -232,7 +210,7 @@ class MainActivity : BaseActivity() {
                                 )
                                 button.setOnClickListener {
                                     GEMSdkCall.execute {
-                                        MainMapStatusFollowingProvider.getInstance().doFollow()
+                                        MapFollowingStatusProvider.getInstance().doFollowStart()
                                     }
                                 }
                             }
@@ -272,263 +250,6 @@ class MainActivity : BaseActivity() {
     }
 
     // ---------------------------------------------------------------------------------------------
-
-    private var currentController: AppLayoutController? = null
-    private fun selectLayout(layoutId: Int) {
-        val contentMain = main_container as ViewGroup
-        contentMain.removeAllViews()
-        toolbar_content.removeAllViews()
-        appBarLayout.visibility = android.view.View.VISIBLE
-
-        currentController = null
-
-        KeyboardUtil.hideKeyboard(this)
-
-        GEMSdkCall.execute {
-            val prefs = mainMapView?.preferences() ?: return@execute
-
-            prefs.routes()?.clear()
-            defaultMapStyle?.let { prefs.setMapStyleById(it.getId()) }
-        }
-
-        GEMSdkCall.execute { MainMapStatusFollowingProvider.getInstance().doUnFollow() }
-        bottomLeftButton?.visibility = android.view.View.INVISIBLE
-        bottomCenterButton?.visibility = android.view.View.INVISIBLE
-        bottomRightButton?.visibility = android.view.View.INVISIBLE
-
-        lastSelectedLayoutId = layoutId
-        when (layoutId) {
-            R.id.tutorial_hello -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_hello,
-                    contentMain
-                ).helloViewController
-            }
-
-            R.id.tutorial_styles -> {
-                val intent = Intent(this, StylesActivity::class.java)
-                startActivity(intent)
-            }
-
-            R.id.tutorial_twotiledViews -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_twotiledviews,
-                    contentMain
-                ).twoTiledViewsController
-            }
-
-            R.id.tutorial_multiple -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_multiplemaps,
-                    contentMain
-                ).multipleViewsController
-            }
-
-            R.id.tutorial_searchtext -> {
-                val intent = Intent(this, SearchTextActivity::class.java)
-                startActivity(intent)
-            }
-
-            R.id.tutorial_searchnearby -> {
-                val intent = Intent(this, SearchNearbyActivity::class.java)
-                startActivity(intent)
-            }
-
-            R.id.tutorial_searchpoi -> {
-                val intent = Intent(this, SearchPoiActivity::class.java)
-                startActivity(intent)
-            }
-
-            R.id.tutorial_addresssearch -> {
-                val intent = Intent(this, SearchAddressActivity::class.java)
-                startActivity(intent)
-            }
-
-            R.id.tutorial_route_ab -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_route_ab,
-                    contentMain
-                ).routeAbController
-            }
-
-            R.id.tutorial_route_abc -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_route_abc,
-                    contentMain
-                ).routeAbcController
-            }
-
-            R.id.tutorial_route_custom -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_route_custom,
-                    contentMain
-                ).routeCustomController
-            }
-
-            R.id.tutorial_predef_sim -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_predef_sim,
-                    contentMain
-                ).predefSimController
-            }
-
-            R.id.tutorial_predef_nav -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_predef_nav,
-                    contentMain
-                ).predefNavController
-            }
-
-            R.id.tutorial_predef_ptnav -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_predef_ptnav,
-                    contentMain
-                ).predefPtNavController
-            }
-
-            R.id.tutorial_custom_ptnav -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_custom_ptnav,
-                    contentMain
-                ).customPtNavController
-            }
-
-            R.id.tutorial_custom_sim -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_custom_sim,
-                    contentMain
-                ).customSimController
-            }
-
-            R.id.tutorial_custom_nav -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_custom_nav,
-                    contentMain
-                ).customNavController
-            }
-
-            R.id.tutorial_sensorsList -> {
-                val intent = Intent(this, SensorsListActivity::class.java)
-                startActivity(intent)
-            }
-
-            R.id.tutorial_directcam -> {
-                val intent = Intent(this, DirectCamActivity::class.java)
-                startActivity(intent)
-            }
-
-            R.id.tutorial_canvasDrawerCam -> {
-//                currentController = layoutInflater.inflate(
-//                    R.layout.tutorial_drawercam,
-//                    contentMain
-//                ).canvasDrawerCamController
-            }
-
-            R.id.tutorial_logRecorder -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_logrecorder,
-                    contentMain
-                ).logRecorderController
-            }
-
-            R.id.tutorial_logPlayer -> {
-                val intent = Intent(this, PickLogActivity::class.java)
-                intent.putExtra(PickLogActivity.INPUT_DIR, GEMApplication.recordsPath)
-                startActivityForResult(intent, CODE_RESULT_SELECT_VIDEO)
-            }
-
-            R.id.tutorial_flyto_coords -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_flyto_coords,
-                    contentMain
-                ).flyToCoordsController
-            }
-
-            R.id.tutorial_flyto_area -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_flyto_area,
-                    contentMain
-                ).flyToAreaController
-            }
-
-            R.id.tutorial_flyto_instr -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_flyto_instr,
-                    contentMain
-                ).flyToInstrController
-            }
-
-            R.id.tutorial_flyto_route -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_flyto_route,
-                    contentMain
-                ).flyToRouteController
-            }
-
-            R.id.tutorial_flyto_traffic -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_flyto_traffic,
-                    contentMain
-                ).flyToTrafficController
-            }
-
-            R.id.tutorial_online_maps -> {
-                val intent = Intent(this, OnlineMapsActivity::class.java)
-                startActivity(intent)
-            }
-
-            R.id.tutorial_wiki -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_wiki,
-                    contentMain
-                ).wikiController
-            }
-
-            R.id.tutorial_custom_url -> {
-                currentController = layoutInflater.inflate(
-                    R.layout.tutorial_custom_url,
-                    contentMain
-                ).customServerController
-            }
-
-            else -> {
-                /* NOTHING */
-            }
-        }
-
-        GEMSdkCall.execute { currentController?.doStart() }
-    }
-
-    private val CODE_RESULT_SELECT_VIDEO = 100
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        when (requestCode) {
-            CODE_RESULT_SELECT_VIDEO -> {
-                if (data == null) {
-                    Toast.makeText(this, "Please pick again!", Toast.LENGTH_SHORT).show()
-                    return
-                }
-
-                val contentMain = main_container as ViewGroup
-                val logPlayerController = layoutInflater.inflate(
-                    R.layout.tutorial_logplayer,
-                    contentMain
-                ).logPlayerController
-
-
-                val pickedPath = data.getStringExtra(RESULT_VIDEO_PATH) ?: return
-                logPlayerController.videoPath = pickedPath
-
-                currentController = logPlayerController
-                GEMSdkCall.execute { currentController?.doStart() }
-            }
-            else -> {
-                // uknown answer
-            }
-        }
-    }
-
 
     override fun onRequestPermissionsFinish(granted: Boolean) {
         if (!granted) {

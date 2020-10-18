@@ -18,6 +18,7 @@ import android.util.TypedValue
 import android.view.WindowManager
 import com.generalmagic.gemsdk.CommonSettings
 import com.generalmagic.gemsdk.TUnitSystem
+import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.extensions.LocalizationManager
 import com.generalmagic.gemsdk.extensions.StringIds
 import com.generalmagic.gemsdk.models.Image
@@ -216,9 +217,9 @@ class Utils {
             if (distance.indexOf(',') >= 0) {
                 distance.replace(',', decimalSeparator)
             } else // if (distance.find(".") >= 0)
-            {
-                distance.replace('.', decimalSeparator)
-            }
+                {
+                    distance.replace('.', decimalSeparator)
+                }
 
             var index: Int = distance.indexOf(decimalSeparator)
             if (index < 0) {
@@ -230,7 +231,7 @@ class Utils {
                 if (nRemaining == 0) {
                     distance.format(
                         "${
-                            distance.substring(0, i)
+                        distance.substring(0, i)
                         }${groupingSeparator}${distance.subSequence(i, distance.length)}"
                     )
                 }

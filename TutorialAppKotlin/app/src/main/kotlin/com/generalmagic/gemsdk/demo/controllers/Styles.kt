@@ -18,7 +18,7 @@ import com.generalmagic.gemsdk.ContentStore
 import com.generalmagic.gemsdk.GEMSdk
 import com.generalmagic.gemsdk.ProgressListener
 import com.generalmagic.gemsdk.demo.activities.*
-import com.generalmagic.gemsdk.demo.util.StaticsHolder.Companion.getMainMapView
+import com.generalmagic.gemsdk.demo.app.StaticsHolder.Companion.getMainMapView
 import com.generalmagic.gemsdk.models.ContentStoreItem
 import com.generalmagic.gemsdk.models.TContentStoreItemStatus
 import com.generalmagic.gemsdk.models.TContentType
