@@ -30,6 +30,7 @@ import com.generalmagic.gemsdk.demo.util.Utils
 import com.generalmagic.gemsdk.models.ContentStoreItem
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
+import com.generalmagic.apihelper.PermissionsHelper
 import kotlinx.android.synthetic.main.activity_list_view.progressBar
 import kotlinx.android.synthetic.main.app_bar_layout.*
 import kotlinx.android.synthetic.main.tutorial_custom_nav.view.*
@@ -457,6 +458,7 @@ open class BaseActivity : AppCompatActivity() {
         val result = grantResults[0]
         when (requestCode) {
             REQUEST_PERMISSIONS -> {
+                PermissionsHelper.notifyOnPermissionsStatusChanged()
                 onRequestPermissionsFinish(result == PackageManager.PERMISSION_GRANTED)
             }
         }

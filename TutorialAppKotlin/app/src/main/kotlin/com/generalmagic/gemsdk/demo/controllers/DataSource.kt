@@ -394,6 +394,7 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
 
                 val width = configs.frameWidth()
                 val height = configs.frameHeight()
+                val rotation = configs.recordedAngle().toInt()
 
 // 				try {
 // 					val yuvImage = YuvImage(buffer.array(), ImageFormat.NV21, width, height, null)
@@ -406,7 +407,7 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
 // 					Log.d("GEMSDK", "zz")
 // 				}
 
-                drawer?.uploadFrame(buffer, width, height, 90/*configs.recordedAngle().toInt()*/)
+                drawer?.uploadFrame(buffer, width, height, rotation)
                 getGlContext()?.needsRender()
             }
         }
@@ -586,7 +587,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
             currentDataSource.getAvailableDataTypes()
         ) ?: return
 
-        config.setVideoQuality(EVideoQuality.HD)
+        config.setVideoQuality(EVideoQuality.HD_720p)
 
         recorder = Recorder.produce(config, currentDataSource)
         recorder?.addListener(recorderListener)

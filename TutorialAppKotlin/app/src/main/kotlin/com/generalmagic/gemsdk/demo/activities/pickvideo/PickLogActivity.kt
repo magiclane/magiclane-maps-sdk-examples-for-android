@@ -16,6 +16,7 @@ import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.apihelper.EnumHelp
+import com.generalmagic.apihelper.PermissionsHelper
 import com.generalmagic.gemsdk.LogUploader
 import com.generalmagic.gemsdk.LogUploaderListener
 import com.generalmagic.gemsdk.TLogUploaderState
@@ -332,6 +333,8 @@ class PickLogActivity : BaseActivity() {
         val result = grantResults[0]
         when (requestCode) {
             REQUEST_PERMISSIONS -> {
+                PermissionsHelper.notifyOnPermissionsStatusChanged()
+                
                 // If request is cancelled, the result arrays are empty.
                 if (result == PackageManager.PERMISSION_GRANTED) {
                     hasStoragePermission = true
