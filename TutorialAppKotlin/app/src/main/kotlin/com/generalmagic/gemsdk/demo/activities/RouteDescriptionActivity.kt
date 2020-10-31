@@ -10,7 +10,6 @@
 
 package com.generalmagic.gemsdk.demo.activities
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -25,6 +24,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.util.IntentHelper
@@ -40,15 +40,14 @@ import com.generalmagic.gemsdk.util.GemIcons
 import kotlinx.android.synthetic.main.activity_route_description.*
 import kotlinx.android.synthetic.main.route_description_item.view.*
 
-class RouteDescriptionActivity : Activity() {
+class RouteDescriptionActivity : AppCompatActivity() {
     private lateinit var route: Route
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_route_description)
-        setActionBar(rd_toolbar)
-        actionBar?.title = "Route Description"
-        actionBar?.setDisplayHomeAsUpEnabled(true)
-        actionBar?.setDisplayShowHomeEnabled(true)
+        setSupportActionBar(rd_toolbar)
+        supportActionBar?.title = "Route Description"
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         val inRoute = IntentHelper.getObjectForKey(EXTRA_ROUTE) as Route?
         if (inRoute == null) {
@@ -64,7 +63,7 @@ class RouteDescriptionActivity : Activity() {
         }
     }
 
-    override fun onNavigateUp(): Boolean {
+    override fun onSupportNavigateUp(): Boolean {
         onBackPressed()
         return true
     }
@@ -193,8 +192,15 @@ class RouteAdapter(context: Context, items: ArrayList<ListViewItem>) :
         val bitmap = GEMSdkCall.execute { modelItem.getBitmap(iconSize, iconSize) }
 
         resultView.text.text = textToHtml(modelItem.text)
-        resultView.description.text = textToHtml(modelItem.description)
-        resultView.description.setTextColor(Util.getColor(modelItem.descriptionColor))
+        
+        if (modelItem.description.isEmpty()) {
+            resultView.description.visibility = View.GONE
+        } else {
+            resultView.description.visibility = View.VISIBLE
+            resultView.description.text = textToHtml(modelItem.description)
+            resultView.description.setTextColor(Util.getColor(modelItem.descriptionColor))
+        }
+        
         resultView.status_text.text = textToHtml(modelItem.statusText)
         resultView.status_description.text = textToHtml(modelItem.statusDescription)
 

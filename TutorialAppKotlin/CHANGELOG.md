@@ -4,11 +4,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2020-11-1
+### Changed
+- Log Player uses pause/resume functionality when using play/stop button.
+- Recorder's listeners not requesting critical data anymore.
+- Fixed visibility of start stop button of log player.
+- Public Transport Route Description now displays full information.
+- Public Transport route segments now can be expanded and tapped for map display.
+- Map Styles has a new design.
+
+### Fixed
+- Fixed not hiding canvas when ending log recorder/player.
+- Fixed route description button remain on screen after clearing the routes.
+- Fixed do search if spaces are added to the filter.
+
+### Issues
+- Camera might freeze after spamming log recorder start stop.
+- App works slow after a location with many wikipedia images is opened.
+- App works slow in simulation/ navigation mode after you pan away from current position.
+- Deleting a style after downloading it deletes the preview image as well.
+
 ## [2.0.0] - 2020-10-26
 ### Added
 - Map styles as downloadable content with preview images.
 - Custom car route.
-- Custom public transport route
+- Custom public transport route.
 - Navigate using GPS.
 - Fly to current GPS position.
 - Location details shows wikipedia images.
@@ -16,9 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Speed limit view.
 - Scrollable Main Menu window and Map Styles view.
 - Dialog before exiting the application with the back button.
-- Public transport route calculation and description
-- Log recorder and player
-- Simulation and navigation for predifined and custom routes
+- Public transport route calculation and description.
+- Log recorder and player.
+- Simulation and navigation for predifined and custom routes.
 - using PermissionsHelper.notifyOnPermissionsStatusChanged to notify permissions change.
 
 ### Changed
@@ -26,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better layout for route description items.
 - Better layout for the location details view.
 - Hide toolbar at Fly to Route Instruction or Traffic.
-- Providing pixelFormat and rotation to CanvasBufferRenderer.uploadFrame
+- Providing pixelFormat and rotation to CanvasBufferRenderer.uploadFrame.
 
 ### Fixed
 - Flying problem at Fly to Area.
@@ -39,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Issues
 - App works slow after a location with many wikipedia images is opened.
 - App works slow in simulation/ navigation mode after you pan away from current position.
+- Screen may turn off while recording.
 
 ## [Unreleased]
 [1.5.0]: Update demo apps for SDK v7.1.20.43.693001B4

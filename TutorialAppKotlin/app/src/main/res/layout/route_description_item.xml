@@ -24,14 +24,13 @@
 		android:layout_width="0dp"
 		android:layout_height="wrap_content"
 		android:layout_marginStart="@dimen/listItemPadding"
-		android:layout_marginTop="@dimen/listItemPadding"
 		android:textColor="@android:color/black"
 		android:textSize="@dimen/standardTextSize"
 		app:layout_constraintBottom_toTopOf="@id/description"
 		app:layout_constraintEnd_toStartOf="@id/status_text"
 		app:layout_constraintStart_toEndOf="@id/icon"
 		app:layout_constraintTop_toTopOf="parent"
-		app:layout_constraintVertical_bias="0.3"
+		app:layout_constraintVertical_bias="0.5"
 		app:layout_constraintVertical_chainStyle="packed" />
 
 	<TextView
@@ -39,7 +38,6 @@
 		android:layout_width="0dp"
 		android:layout_height="wrap_content"
 		android:layout_marginStart="@dimen/listItemPadding"
-		android:layout_marginBottom="@dimen/listItemPadding"
 		android:textSize="@dimen/smallTextSize"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toStartOf="@id/status_text"

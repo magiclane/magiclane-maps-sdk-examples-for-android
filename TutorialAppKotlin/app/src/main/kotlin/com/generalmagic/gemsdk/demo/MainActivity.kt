@@ -13,7 +13,11 @@ package com.generalmagic.gemsdk.demo
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
@@ -29,6 +33,7 @@ import com.generalmagic.gemsdk.demo.app.StaticsHolder.Companion.getGlContext
 import com.generalmagic.gemsdk.demo.app.StaticsHolder.Companion.getMainActivity
 import com.generalmagic.gemsdk.demo.app.StaticsHolder.Companion.getMainMapView
 import com.generalmagic.gemsdk.demo.app.StaticsHolder.Companion.getNavViewDrawerLayout
+import com.generalmagic.gemsdk.demo.controllers.WikiController
 import com.generalmagic.gemsdk.demo.util.network.NetworkManager
 import com.generalmagic.gemsdk.demo.util.network.NetworkProviderImpl
 import com.generalmagic.gemsdk.mapview.GEMMapSurface
@@ -38,6 +43,7 @@ import com.generalmagic.gemsdk.models.ViewListener
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import com.generalmagic.gemsdk.util.SDKPathsHelper
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.navigation.NavigationView
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_layout.*
@@ -158,18 +164,22 @@ class MainActivity : BaseActivity() {
 
             gem_surface.onPostHandleTouchListener = { _ ->
                 if (bWasFollowingPosition && mainMapView?.isFollowingPosition() != true) {
-                    GEMSdkCall.execute { followingProvider.noticePanInterruptFollow() }
+                    GEMSdkCall.execute { 
+                        followingProvider.noticePanInterruptFollow() 
+                    }
                 }
                 true
             }
 
-            val styles = ContentStore().getLocalContentList(TContentType.ECT_ViewStyleHighRes.value)
-            styles?.let {
-                for (style in styles) {
-                    val name = style.getName()?.toLowerCase(Locale.getDefault()) ?: continue
-                    if (name.contains("basic 1")) {
+            if (defaultMapStyle == null) {
+                val styles = ContentStore().getLocalContentList(TContentType.ECT_ViewStyleHighRes.value)
+                styles?.let {
+                    for (style in styles) {
+//                    val name = style.getName()?.toLowerCase(Locale.getDefault()) ?: continue
+//                    if (name.contains("basic 1")) {
                         defaultMapStyle = style
                         break
+//                    }
                     }
                 }
             }
@@ -242,11 +252,41 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onBackPressed() {
-        if (currentController?.onBackPressed() == true) {
-            return
-        }
+//        if (currentController?.onBackPressed() == true) {
+//            return
+//        }
 
-        terminateApp()
+        if (drawer_layout.isDrawerOpen(GravityCompat.START)) {
+            drawer_layout.closeDrawer(GravityCompat.START)
+        } else if (currentController?.onBackPressed() == false) {
+            val dialogView: android.view.View = android.view.View.inflate(this, R.layout.bottom_sheet_dialog, null)
+            val dialog = BottomSheetDialog(this)
+            dialog.setContentView(dialogView)
+
+            dialogView.findViewById<ImageView>(R.id.icon).setImageResource(R.drawable.ic_warning_blue_24dp)
+
+            dialogView.findViewById<TextView>(R.id.message).text = getText(R.string.exit_application)
+
+            val positiveButton = dialogView.findViewById<Button>(R.id.positiveButton)
+            positiveButton.text = getText(R.string.yes)
+            positiveButton.setOnClickListener {
+                super.onBackPressed()
+                dialog.dismiss()
+                terminateApp()
+            }
+
+            val negativeButton = dialogView.findViewById<Button>(R.id.negativeButton)
+            negativeButton.text = getText(R.string.no)
+            negativeButton.setOnClickListener {
+                dialog.dismiss()
+            }
+
+            dialog.setOnShowListener {
+                dialog.behavior.setPeekHeight(dialogView.height)
+            }
+
+            dialog.show()
+        }
     }
 
     // ---------------------------------------------------------------------------------------------

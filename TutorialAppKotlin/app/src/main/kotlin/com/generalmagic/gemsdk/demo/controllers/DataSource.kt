@@ -251,7 +251,7 @@ class SensorsListActivity : BasicSensorsActivity() {
         currentDataSource ?: return
 
         for (type in desiredTypes) {
-            val errorCode = currentDataSource.addListener(listener, type)
+            val errorCode = currentDataSource.addListener(listener, type, false)
 
             val gemError = GEMError.fromInt(errorCode)
             if (gemError != GEMError.KNoError) {
@@ -343,7 +343,7 @@ class DirectCamActivity : BaseActivity() {
 
         val type = EDataType.Camera
 
-        val errorCode = currentDataSource.addListener(listener, type)
+        val errorCode = currentDataSource.addListener(listener, type, false)
         val gemError = GEMError.fromInt(errorCode)
 
         if (gemError != GEMError.KNoError) {
@@ -395,19 +395,9 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
                 val width = configs.frameWidth()
                 val height = configs.frameHeight()
                 val rotation = configs.recordedAngle().toInt()
+                val format = configs.pixelFormat()
 
-// 				try {
-// 					val yuvImage = YuvImage(buffer.array(), ImageFormat.NV21, width, height, null)
-// 					val os = ByteArrayOutputStream()
-// 					yuvImage.compressToJpeg(Rect(0, 0, width, height), 100, os)
-// 					val jpegByteArray: ByteArray = os.toByteArray()
-// 					val bitmap = BitmapFactory.decodeByteArray(jpegByteArray, 0, jpegByteArray.size)
-//                    Log.d("GEMSDK", "bitmap !!!!")
-// 				}catch (e: Exception){
-// 					Log.d("GEMSDK", "zz")
-// 				}
-
-                drawer?.uploadFrame(buffer, width, height, rotation)
+                drawer?.uploadFrame(buffer, width, height, format, rotation)
                 getGlContext()?.needsRender()
             }
         }
@@ -419,8 +409,6 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
             GEMSdkCall.execute { drawer?.renderFrame() }
         }
     }
-
-    var isStarted = false
 
     fun doStart() {
         GEMSdkCall.checkCurrentThread()
@@ -448,13 +436,10 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
         val errorCode = currentDataSource.addListener(framesDrawerListener, EDataType.Camera)
         val error = GEMError.fromInt(errorCode)
 
-        isStarted = error == GEMError.KNoError
-
-        if (!isStarted) {
+        if (error != GEMError.KNoError) {
             postOnMain {
-                Toast.makeText(context, "camera error = $error", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "start error = ${error.name}", Toast.LENGTH_SHORT).show()
             }
-            return
         }
     }
 
@@ -463,12 +448,13 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
 
         currentDataSource.removeListener(framesDrawerListener, EDataType.Camera)
 
-        drawer?.release()
         canvas?.release()
-        drawer = null
         canvas = null
 
-        isStarted = false
+        getGlContext()?.needsRender()
+
+        drawer?.release()
+        drawer = null
     }
 }
 
@@ -548,19 +534,19 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
 
         override fun notifyStatusChanged(status: Int) {
             val recStatus = EnumHelp.fromInt<ERecorderStatus>(status)
-            val text = "Recorder ${recStatus.name}"
 
-//            postOnMain {
-//                
-//            }
             when (recStatus) {
                 ERecorderStatus.Stopped -> {
-                    postOnMain { doStoppedButtons() }
+                    postOnMain {
+                        Toast.makeText(context, "Recording Stopped!", Toast.LENGTH_SHORT).show()
+                        doStoppedButtons()
+                    }
                 }
                 ERecorderStatus.Starting,
                 ERecorderStatus.Recording -> {
                     postOnMain {
-                        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+                        if (status == ERecorderStatus.Recording.value)
+                            Toast.makeText(context, "Recording Running!", Toast.LENGTH_SHORT).show()
                         doRecordingButtons()
                     }
                 }
@@ -588,15 +574,28 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
         ) ?: return
 
         config.setVideoQuality(EVideoQuality.HD_720p)
+        config.setContinuousRecording(true);
+        config.setChunkDurationSeconds(300);
 
         recorder = Recorder.produce(config, currentDataSource)
         recorder?.addListener(recorderListener)
 
-        if (recorder?.startRecording() == GEMError.KNoError.value) {
+        val startError =
+            GEMError.fromInt(recorder?.startRecording() ?: GEMError.KInternalAbort.value)
+        if (startError == GEMError.KNoError) {
             val drawer = FrameDrawController(context, currentDataSource)
             drawer.doStart()
 
             this.drawer = drawer
+
+            postOnMain {
+                disableScreenLock();
+            }
+        } else {
+            postOnMain {
+                Toast.makeText(context, "Start error = ${startError.name}", Toast.LENGTH_SHORT)
+                    .show()
+            }
         }
     }
 
@@ -609,6 +608,10 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
 
         drawer?.doStop()
         drawer = null
+
+        postOnMain {
+            enableScreenLock();
+        }
     }
 
     fun doStoppedButtons() {
@@ -653,9 +656,15 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
         GEMSdkCall.checkCurrentThread()
 
         val currentDataSource = this.currentDataSource ?: return
-        val isPaused = currentDataSource.getPlayback()?.isPaused() ?: true
+        val playback = currentDataSource.getPlayback() ?: return
 
-        if (!isPaused) {
+        if (playback.isPaused()) {
+            playback.resume()
+        }
+
+        if (playback.isPaused()) {
+            postOnMain { doResumeButtons() }
+        } else {
             postOnMain { doPauseButtons() }
         }
 
@@ -663,8 +672,6 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
         drawer.doStart()
 
         this.drawer = drawer
-
-//        currentDataSource.getPlayback()?.resume()
     }
 
     override fun doStop() {
@@ -672,10 +679,10 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
 
         GEMSdkCall.checkCurrentThread()
 
-        currentDataSource?.getPlayback()?.pause()
-
         drawer?.doStop()
         drawer = null
+
+        currentDataSource?.getPlayback()?.pause()
 
         postOnMain { doResumeButtons() }
     }

@@ -162,6 +162,10 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
     private var lastWaypoints = ArrayList<Landmark>()
 
     override fun onBackPressed(): Boolean {
+        bottomButtons()?.bottomRightButton?.let {
+            it.visibility = View.GONE
+            it.parent.requestLayout()
+        }
         return GEMSdkCall.execute { clearRoutes() } ?: false
     }
 

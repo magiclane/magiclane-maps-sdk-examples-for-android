@@ -22,7 +22,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -235,7 +234,7 @@ open class WikiServiceController {
     open fun onImageDescriptionFetchStatusChanged(index: Int, status: TLoadState) {}
 }
 
-class WikiView(context: Context, attrs: AttributeSet?) : ConstraintLayout(context, attrs) {
+class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, attrs) {
     private var locationDetails = LocationDetails()
 
     var onWikiFetchCompleteCallback = { _: Int, _: String -> }
@@ -247,12 +246,22 @@ class WikiView(context: Context, attrs: AttributeSet?) : ConstraintLayout(contex
         override fun onWikiFetchComplete(reason: Int, hint: String) {
             GEMSdkCall.checkCurrentThread()
 
-            locationDetails.wikipediaText = eStrWikipedia
             locationDetails.wikipediaDescription = getWikiPageDescription()
             locationDetails.wikipediaUrl = getWikiPageURL()
+            
+            if (locationDetails.wikipediaUrl.isNullOrBlank())
+            {
+                locationDetails.wikipediaText = null
+            }
+            else 
+            {
+                locationDetails.wikipediaText = eStrWikipedia
+            }
+            
             val imagesCount = getWikiImagesCount()
 
-            startFetchingImages()
+            if (imagesCount > 0)
+                startFetchingImages()
 
             Handler(Looper.getMainLooper()).post {
                 images.clear()

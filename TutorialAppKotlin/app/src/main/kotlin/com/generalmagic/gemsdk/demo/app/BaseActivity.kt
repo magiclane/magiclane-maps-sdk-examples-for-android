@@ -19,6 +19,7 @@ import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.generalmagic.apihelper.PermissionsHelper
 import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.activities.WebActivity
 import com.generalmagic.gemsdk.demo.activities.pickvideo.PickLogActivity
@@ -30,7 +31,6 @@ import com.generalmagic.gemsdk.demo.util.Utils
 import com.generalmagic.gemsdk.models.ContentStoreItem
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
-import com.generalmagic.apihelper.PermissionsHelper
 import kotlinx.android.synthetic.main.activity_list_view.progressBar
 import kotlinx.android.synthetic.main.app_bar_layout.*
 import kotlinx.android.synthetic.main.tutorial_custom_nav.view.*
@@ -145,13 +145,13 @@ open class BaseActivity : AppCompatActivity() {
     @Suppress("deprecation")
     fun showSystemBars() {
         window?.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-        window?.decorView?.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+//        window?.decorView?.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
     }
 
     @Suppress("deprecation")
     fun hideSystemBars() {
         window?.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-        window?.decorView?.systemUiVisibility = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+//        window?.decorView?.systemUiVisibility = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -163,7 +163,7 @@ open class BaseActivity : AppCompatActivity() {
         val contentMain = main_container as ViewGroup
         contentMain.removeAllViews()
         toolbar_content.removeAllViews()
-        appBarLayout.visibility = android.view.View.VISIBLE
+        appBarLayout.visibility = View.VISIBLE
 
         currentController = null
 
@@ -177,9 +177,9 @@ open class BaseActivity : AppCompatActivity() {
         }
 
         GEMSdkCall.execute { MapFollowingStatusProvider.getInstance().doFollowStop() }
-        bottomLeftButton?.visibility = android.view.View.INVISIBLE
-        bottomCenterButton?.visibility = android.view.View.INVISIBLE
-        bottomRightButton?.visibility = android.view.View.INVISIBLE
+        bottomLeftButton?.visibility = View.INVISIBLE
+        bottomCenterButton?.visibility = View.INVISIBLE
+        bottomRightButton?.visibility = View.INVISIBLE
 
         lastSelectedLayoutId = layoutId
         when (layoutId) {

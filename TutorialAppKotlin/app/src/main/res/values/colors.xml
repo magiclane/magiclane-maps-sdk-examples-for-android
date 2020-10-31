@@ -5,7 +5,9 @@
 	<color name="colorAccent">#03DAC5</color>
 	<color name="divider_light">#3888</color>
 	<color name="blue_color">#0678f4</color>
-	<color name="list_view_bgnd_color">#DCDCDC</color>
+	<color name="list_view_bgnd_color">#FFFFFF</color>
+	<color name="map_styles_list_view_bgnd_color">#ACAAAA</color>
+	<color name="map_styles_list_item_bgnd_color">#D1CC9D</color>
 
 	<color name="colorBlackFull">#000000</color>
 	<color name="colorLightBlue">#3399FF</color>

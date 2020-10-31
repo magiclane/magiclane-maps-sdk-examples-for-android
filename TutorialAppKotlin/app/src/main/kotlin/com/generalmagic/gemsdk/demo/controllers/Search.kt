@@ -108,16 +108,6 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
         search.service.cancelRequest(search.listener)
     }
 
-    override fun onBackPressed() {
-        val listAdapter = list_view?.adapter
-        if (listAdapter != null && listAdapter.itemCount > 0) {
-            hideListView()
-            return
-        }
-
-        finish()
-    }
-
     private fun wrap(
         list: ArrayList<Landmark>,
         reference: Coordinates?
@@ -149,6 +139,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
 // -------------------------------------------------------------------------------------------------
 
 class SearchTextActivity : BaseSearchTutorialActivity() {
+    var lastFilter = ""
     private val searchViewListener = object : SearchView.OnQueryTextListener {
         override fun onQueryTextSubmit(text: String?): Boolean {
             GEMSdkCall.execute { doSearch(text) }
@@ -180,7 +171,11 @@ class SearchTextActivity : BaseSearchTutorialActivity() {
             }
             return
         }
+        
+        if (text.trim() == lastFilter) return
 
+        lastFilter = text
+        
         val coords =
             StaticsHolder.getMainMapView()?.getCursorWgsPosition() ?: return
 

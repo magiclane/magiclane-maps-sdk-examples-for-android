@@ -17,13 +17,16 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.Toast
 import com.generalmagic.gemsdk.*
+import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.app.BaseLayoutController
+import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.models.Coordinates
 import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.models.SearchPreferences
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_layout.view.*
 import kotlinx.android.synthetic.main.location_details_panel.view.*
 import kotlinx.android.synthetic.main.nav_top_panel.view.*
@@ -53,7 +56,12 @@ class FlyToCoords(context: Context, attrs: AttributeSet?) : FlyController(contex
     override fun doStart() {
         GEMSdkCall.checkCurrentThread()
         val mainMap = StaticsHolder.getMainMapView() ?: return
-
+        
+        GEMApplication.uiHandler.post { 
+            StaticsHolder.getMainActivity()?.nav_view?.setCheckedItem(R.id.tutorial_hello)
+            StaticsHolder.getMainActivity()?.nav_view?.menu?.performIdentifierAction(R.id.tutorial_hello, 0)
+        }
+        
         val coordinates = Coordinates(45.651178, 25.604872)
 
         val animation = Animation()
@@ -73,11 +81,11 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
         }
 
         override fun onSearchCompleted(reason: Int) {
-            val gemError = GEMError.fromInt(reason)
-            if (gemError == GEMError.KCancel) return
-
             hideProgress()
             updateStartStopBtn(false)
+            
+            val gemError = GEMError.fromInt(reason)
+            if (gemError == GEMError.KCancel) return
 
             if (gemError != GEMError.KNoError) {
                 Toast.makeText(context, "Search failed: $gemError", Toast.LENGTH_SHORT).show()
@@ -142,6 +150,13 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
         preferences.setSearchMapPOIs(true)
         search.service.searchByFilter(search.results, search.listener, text, preferences)
     }
+
+    override fun onBackPressed(): Boolean {
+        StaticsHolder.getMainMapView()?.deactivateHighlight()
+        StaticsHolder.getMainActivity()?.nav_view?.setCheckedItem(R.id.tutorial_hello)
+        StaticsHolder.getMainActivity()?.nav_view?.menu?.performIdentifierAction(R.id.tutorial_hello, 0)
+        return true
+    }
 }
 
 open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(context, attrs) {
@@ -201,6 +216,8 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
                     mainMap.centerOnRoute(route, TRect(), animation)
                 }
             } else {
+                hideAppBar()
+                hideSystemBars()
                 val instructionsList = GEMSdkCall.execute { segment.getInstructions() } ?: return
                 val instruction = if (instructionsList.size > 2) instructionsList[2] else return
 
@@ -237,6 +254,15 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
 
         routing.cancelCalculation()
     }
+
+    override fun onBackPressed(): Boolean {
+        showAppBar()
+        showSystemBars()
+        hideProgress()
+        StaticsHolder.getMainActivity()?.nav_view?.setCheckedItem(R.id.tutorial_hello)
+        StaticsHolder.getMainActivity()?.nav_view?.menu?.performIdentifierAction(R.id.tutorial_hello, 0)
+        return true
+    }
 }
 
 class FlyToRoute(context: Context, attrs: AttributeSet?) : FlyToInstr(context, attrs) {
@@ -258,6 +284,8 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
 
         override fun onCompleteCalculating(reason: Int) {
             hideProgress()
+            hideAppBar()
+            hideSystemBars()
             updateStartStopBtn(false)
 
             val gemError = GEMError.fromInt(reason)
@@ -327,5 +355,14 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
         GEMSdkCall.checkCurrentThread()
 
         routing.cancelCalculation()
+    }
+
+    override fun onBackPressed(): Boolean {
+        showAppBar()
+        showSystemBars()
+        hideProgress()
+        StaticsHolder.getMainActivity()?.nav_view?.setCheckedItem(R.id.tutorial_hello)
+        StaticsHolder.getMainActivity()?.nav_view?.menu?.performIdentifierAction(R.id.tutorial_hello, 0)
+        return true
     }
 }

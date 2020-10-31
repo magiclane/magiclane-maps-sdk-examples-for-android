@@ -95,12 +95,15 @@
 	<dimen name="nav_top_panel_voting_img_size">44dp</dimen>
 	<dimen name="nav_top_panel_traffic_margin_bottom">3dp</dimen>
 	<dimen name="address_search_list_item_height">48dp</dimen>
-	<dimen name="map_styles_item_padding">5dp</dimen>
-	<dimen name="map_styles_item_height">230dp</dimen>
-	<dimen name="map_styles_item_preview_height">180dp</dimen>
 	<dimen name="custom_toolbar_button_width">80dp</dimen>
 	<dimen name="custom_toolbar_button_height">40dp</dimen>
 	<dimen name="custom_toolbar_button_padding">5dp</dimen>
+	<dimen name="map_styles_item_padding">5dp</dimen>
+	<dimen name="map_styles_card_elevation">0dp</dimen>
+	<dimen name="map_styles_corner_radius">6dp</dimen>
+	<dimen name="map_styles_padding">6dp</dimen>
+	<dimen name="map_styles_min_height_footer">44dp</dimen>
+	<dimen name="map_styles_status_left_padding">30dp</dimen>
 
 	<!-- toolbar -->
 	<dimen name="toolbar_radius">4dp</dimen>

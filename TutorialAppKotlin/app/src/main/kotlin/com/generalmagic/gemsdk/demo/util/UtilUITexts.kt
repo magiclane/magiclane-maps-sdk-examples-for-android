@@ -365,10 +365,10 @@ class UtilUITexts {
             if (settlement.isNotEmpty() && city.isNotEmpty() && (settlement == city)) {
                 val posL = formattedDescription.indexOf(settlement)
                 if (posL == 0) {
-                    val fragment = formattedDescription.substring(settlement.length)
+                    var fragment = formattedDescription.substring(settlement.length)
                     if (fragment.indexOf(settlement) >= 0) {
                         if (fragment.indexOf(", ") == 0) {
-                            fragment.removeRange(0, 2)
+                            fragment = fragment.removeRange(0, 2)
                         }
                         formattedDescription = fragment
                     }

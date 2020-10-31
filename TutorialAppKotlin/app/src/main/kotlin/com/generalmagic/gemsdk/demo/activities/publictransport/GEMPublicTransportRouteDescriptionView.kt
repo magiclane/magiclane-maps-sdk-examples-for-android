@@ -94,7 +94,7 @@ object GEMPublicTransportRouteDescriptionView {
 
     // ---------------------------------------------------------------------------------------------
 
-    val iconSize =
+    private val iconSize =
         GEMApplication.getAppResources().getDimension(R.dimen.route_list_instr_icon_size).toInt()
 
     // ---------------------------------------------------------------------------------------------
@@ -114,6 +114,8 @@ object GEMPublicTransportRouteDescriptionView {
         var arrivalTime = Time()
         var bLookForPTSegment = true
 
+        m_header.m_tripSegments.clear()
+        
         if (m_route.toPTRoute()?.getPTFrequency() ?: 0 > 0) {
             val timeText = Utils.getTimeText(m_route.toPTRoute()?.getPTFrequency() ?: 0)
             val tmp = String.format("%s %s", timeText.first, timeText.second)
@@ -136,6 +138,8 @@ object GEMPublicTransportRouteDescriptionView {
                     routeSegmentItem.m_type = it.getTransitType()
                     routeSegmentItem.m_name = it.getShortName() ?: ""
 
+                    routeSegmentItem.m_visible = routeSegment.isSignificant()
+                    
                     val lineColor = it.getLineColor()
                     if (lineColor != null) {
                         bgColor = lineColor
@@ -293,14 +297,16 @@ object GEMPublicTransportRouteDescriptionView {
         setHeader(route)
         setItems(route)
 
+        m_nItems = 0
+        m_agencies.clear()
         if (m_routeDescriptionItems.size > 0) {
             m_nItems = m_routeDescriptionItems.size + 1 // header
             for (i in m_routeDescriptionItems.indices) {
-                if (!m_routeDescriptionItems[i].m_agencyName.isEmpty() &&
+                if (m_routeDescriptionItems[i].m_agencyName.isNotEmpty() &&
                     (
-                        !m_routeDescriptionItems[i].m_agencyURL.isEmpty() ||
-                            !m_routeDescriptionItems[i].m_agencyFareURL.isEmpty() ||
-                            !m_routeDescriptionItems[i].m_agencyPhone.isEmpty()
+                        m_routeDescriptionItems[i].m_agencyURL.isNotEmpty() ||
+                            m_routeDescriptionItems[i].m_agencyFareURL.isNotEmpty() ||
+                            m_routeDescriptionItems[i].m_agencyPhone.isNotEmpty()
                         )
                 ) {
                     var j = 0

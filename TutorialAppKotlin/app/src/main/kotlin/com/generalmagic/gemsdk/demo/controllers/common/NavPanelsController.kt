@@ -17,6 +17,7 @@ import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
+import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewTreeObserver
@@ -26,6 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.marginStart
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.R
+import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.demo.util.Util.Companion.setPanelBackground
@@ -154,6 +156,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
 
     fun showNavInfo() {
         allowRefresh = true
+        updateDemoPanel(navDataProvider.info)
         adjustNavInfoTextSize()
     }
 
@@ -408,7 +411,6 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
 
     private fun updateDemoTextAnimation(duration: Int, steps: Int) {
         if (navigationDemoText.visibility == View.GONE) return
-
         if (nDemoAnimationCount == steps) {
             nDemoAnimationCount = 0
         }
@@ -426,7 +428,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
 
         val stepDuration = (duration / steps).toLong()
 
-        Handler(Looper.getMainLooper()).postDelayed(
+        GEMApplication.uiHandler.postDelayed(
             {
                 if (demoAnimationRunning) {
                     updateDemoTextAnimation(duration, steps)
@@ -442,7 +444,6 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
 
     private fun updateAllPanels() {
         if (!allowRefresh) return
-
         /**-----------------------------------------------------------------------------------------
          Update the panels
          ------------------------------------------------------------------------------------------*/
@@ -451,8 +452,6 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
         topPanelController.update(navInstr, route, alarmService)
         updateSpeedPanel(navDataProvider.info)
         updateNavigationTopPanel(navDataProvider.info)
-
-        updateDemoPanel(navDataProvider.info)
     }
 
     private fun updateNavigationBottomPanel(navInfo: UINavDataProvider.NavInfo) {

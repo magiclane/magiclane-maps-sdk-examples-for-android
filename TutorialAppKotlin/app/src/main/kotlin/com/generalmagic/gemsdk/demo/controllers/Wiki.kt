@@ -15,9 +15,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
 import android.widget.Toast
-import com.generalmagic.gemsdk.Animation
-import com.generalmagic.gemsdk.TAnimation
-import com.generalmagic.gemsdk.TXy
+import com.generalmagic.gemsdk.*
+import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.app.BaseLayoutController
 import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.demo.util.IntentHelper
@@ -26,6 +25,7 @@ import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.models.SearchPreferences
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.location_details_panel.view.*
 
 class WikiController(context: Context, attrs: AttributeSet?) :
@@ -88,6 +88,18 @@ class WikiController(context: Context, attrs: AttributeSet?) :
                 val animation = Animation()
                 animation.setMethod(TAnimation.EAnimationFly)
                 val coords = landmark.getCoordinates() ?: return@execute
+
+                val area = GEMSdkCall.execute { landmark.getContourGeograficArea() }
+                val settings = HighlightRenderSettings()
+                settings.setOptions(
+                    if (area == null) {
+                        THighlightOptions.EHO_ShowLandmark.value
+                    } else {
+                        THighlightOptions.EHO_ShowContour.value
+                    }
+                )
+                
+                mainMap?.activateHighlightLandmarks(arrayListOf(landmark), settings)
                 mainMap?.centerOnCoordinates(coords, -1, TXy(), animation)
             }
 
@@ -104,15 +116,9 @@ class WikiController(context: Context, attrs: AttributeSet?) :
 
                     ignoreWikiErrorsCount--
                 }
-
-                Handler(Looper.getMainLooper()).post {
-                    hideProgress()
-                }
             }
 
-            showProgress()
             if (!wikiView.show(landmark)) {
-// 			Toast.makeText(context, "No Wiki!", Toast.LENGTH_SHORT).show()
                 hideProgress()
             }
         }
@@ -134,5 +140,13 @@ class WikiController(context: Context, attrs: AttributeSet?) :
 
     companion object {
         const val EXTRA_LANDMARK = "landmark"
+    }
+
+    override fun onBackPressed(): Boolean {
+        hideProgress()
+        StaticsHolder.getMainMapView()?.deactivateHighlight()
+        StaticsHolder.getMainActivity()?.nav_view?.setCheckedItem(R.id.tutorial_hello)
+        StaticsHolder.getMainActivity()?.nav_view?.menu?.performIdentifierAction(R.id.tutorial_hello, 0)
+        return true
     }
 }

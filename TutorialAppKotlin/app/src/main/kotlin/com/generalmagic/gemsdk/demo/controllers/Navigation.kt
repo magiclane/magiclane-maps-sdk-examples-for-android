@@ -14,16 +14,20 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import com.generalmagic.gemsdk.*
+import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.activities.RouteDescriptionActivity
 import com.generalmagic.gemsdk.demo.app.BaseLayoutController
+import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.app.MapFollowingStatusProvider
 import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.models.*
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_layout.view.*
 import kotlinx.android.synthetic.main.nav_layout.view.*
 import kotlinx.android.synthetic.main.pick_location.view.*
@@ -127,6 +131,12 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
         }
 
         override fun onWaypointReached(landmark: Landmark) {}
+
+        override fun onNavigationStarted() {
+            GEMApplication.uiHandler.post {
+                this@BaseNavControllerLayout.onNavigationStarted()
+            }
+        }
     }
 
     fun isTripActive(): Boolean {
@@ -247,7 +257,6 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
             PositionService().addListener(positionListener, EDataType.Position)
             MapFollowingStatusProvider.getInstance().doFollowStart()
         }
-
         showNavLayout()
     }
 
@@ -388,6 +397,12 @@ open class BaseNavigationController(context: Context, attrs: AttributeSet?) :
             routeCalcListener
         )
     }
+
+    override fun onBackPressed(): Boolean {
+        StaticsHolder.getMainActivity()?.nav_view?.setCheckedItem(R.id.tutorial_hello)
+        StaticsHolder.getMainActivity()?.nav_view?.menu?.performIdentifierAction(R.id.tutorial_hello, 0)
+        return true
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -415,7 +430,7 @@ open class PredefSimController(context: Context, attrs: AttributeSet?) :
     }
 
     override fun doStart() {
-        doStart(getWaypoints())
+        GEMSdkCall.execute { doStart(getWaypoints()) }
     }
 }
 

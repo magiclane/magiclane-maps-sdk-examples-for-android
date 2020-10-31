@@ -111,6 +111,8 @@ class Helper {
             val bWheelChairSupportRequested = false
             val bBicycleSupportRequested = false
 
+            routeDescriptionItems.clear()
+            
             for (nSegmentIndex in 0 until nSegmentsCount) {
                 val routeSegment = routeSegmentsList[nSegmentIndex]
                 val routeDescriptionItem = TRouteDescriptionItem()
@@ -150,12 +152,12 @@ class Helper {
                         }
                     }
 
-                    routeDescriptionItem.m_departureTime.format(
+                    routeDescriptionItem.m_departureTime = String.format(
                         "%d:%02d",
                         departureTimeHour,
                         departureTimeMinute
                     )
-                    routeDescriptionItem.m_arrivalTime.format(
+                    routeDescriptionItem.m_arrivalTime = String.format(
                         "%d:%02d",
                         arrivalTimeHour,
                         arrivalTimeMinute
@@ -175,14 +177,14 @@ class Helper {
                     val to = routeSegment.toPTRouteSegment()?.getLineTowards() ?: ""
 
                     if (from.isNotEmpty() && to.isNotEmpty()) {
-                        routeDescriptionItem.m_AtoBLineName.format("%s towards %s", from, to)
+                        routeDescriptionItem.m_AtoBLineName = String.format("%s towards %s", from, to)
                     } else {
                         routeDescriptionItem.m_AtoBLineName =
                             routeSegment.toPTRouteSegment()?.getName() ?: ""
                     }
 
                     if (to.isNotEmpty()) {
-                        routeDescriptionItem.m_toBLineName.format(
+                        routeDescriptionItem.m_toBLineName = String.format(
                             Utils.getUIString(StringIds.eStrTowardsXLocation),
                             to
                         )
@@ -193,7 +195,7 @@ class Helper {
                     val nTravelTime = (arrivalTime.asInt() - departureTime.asInt()) / 1000
 
                     var timeText = Utils.getTimeText(nTravelTime.toInt())
-                    routeDescriptionItem.m_timeToNextStation.format(
+                    routeDescriptionItem.m_timeToNextStation = String.format(
                         "%s %s",
                         timeText.first,
                         timeText.second
@@ -203,15 +205,15 @@ class Helper {
                     var bLastStationHasWheelChairSupport = false
 
                     if (instructionsCount > 1) {
-                        val tmp = ""
+                        var tmp = ""
                         if (instructionsCount == 2) {
-                            tmp.format(
+                            tmp = String.format(
                                 Utils.getUIString(StringIds.eSTrNoOfStopAndTime),
                                 instructionsCount - 1,
                                 routeDescriptionItem.m_timeToNextStation
                             )
                         } else {
-                            tmp.format(
+                            tmp = String.format(
                                 Utils.getUIString(StringIds.eSTrNoOfStopsAndTime),
                                 instructionsCount - 1,
                                 routeDescriptionItem.m_timeToNextStation
@@ -237,7 +239,7 @@ class Helper {
                         val startPlatformCode =
                             instructionList[0].toPTRouteInstruction()?.getPlatformCode() ?: ""
                         if (startPlatformCode.isNotEmpty()) {
-                            routeDescriptionItem.m_stationPlatform.format(
+                            routeDescriptionItem.m_stationPlatform = String.format(
                                 Utils.getUIString(StringIds.eStrPlatformNo),
                                 startPlatformCode
                             )
@@ -264,7 +266,7 @@ class Helper {
                             timeText = Utils.getTimeText(-departureDelayInSeconds)
                             val tmp = String.format("%s %s", timeText.first, timeText.second)
 
-                            routeDescriptionItem.m_stationEarlyTime.format(
+                            routeDescriptionItem.m_stationEarlyTime = String.format(
                                 Utils.getUIString(StringIds.eStrXTimeEarly),
                                 tmp
                             )
@@ -272,7 +274,7 @@ class Helper {
                             timeText = Utils.getTimeText(departureDelayInSeconds)
                             val tmp = String.format("%s %s", timeText.first, timeText.second)
 
-                            routeDescriptionItem.m_stationLaterTime.format(
+                            routeDescriptionItem.m_stationLaterTime = String.format(
                                 Utils.getUIString(StringIds.eStrXTimeLate),
                                 tmp
                             )
@@ -354,11 +356,7 @@ class Helper {
                         val timeText = Utils.getTimeText(
                             routeSegment.getTimeDistance()?.getTotalTime() ?: 0
                         )
-                        routeDescriptionItem.m_timeToNextStation.format(
-                            "%s %s",
-                            timeText.first,
-                            timeText.second
-                        )
+                        routeDescriptionItem.m_timeToNextStation = "${timeText.first} ${timeText.second}"
                     } else {
                         routeDescriptionItem.m_timeToNextStation = header.m_walkingTime
                     }
@@ -368,11 +366,8 @@ class Helper {
                         CommonSettings().getUnitSystem(),
                         true
                     )
-                    routeDescriptionItem.m_distanceToNextStation.format(
-                        "%s %s",
-                        distanceText.first,
-                        distanceText.second
-                    )
+                    
+                    routeDescriptionItem.m_distanceToNextStation = "${distanceText.first} ${distanceText.second}"
 
                     if (nSegmentIndex == 0) {
                         val waypoints = route.getWaypoints() ?: ArrayList()
@@ -419,13 +414,13 @@ class Helper {
 
                     if (!prevItem.m_isWalk && !nextItem.m_isWalk && nextItem.m_startStationPlatformCode.isNotEmpty()) {
                         if (prevItem.m_endStationPlatformCode.isNotEmpty()) {
-                            item.m_stationPlatform.format(
+                            item.m_stationPlatform = String.format(
                                 Utils.getUIString(StringIds.eStrChangeFromPlatformNoToPlatformNo),
                                 prevItem.m_endStationPlatformCode,
                                 nextItem.m_startStationPlatformCode
                             )
                         } else {
-                            item.m_stationPlatform.format(
+                            item.m_stationPlatform = String.format(
                                 Utils.getUIString(StringIds.eStrChangeToPlatformNo),
                                 nextItem.m_startStationPlatformCode
                             )

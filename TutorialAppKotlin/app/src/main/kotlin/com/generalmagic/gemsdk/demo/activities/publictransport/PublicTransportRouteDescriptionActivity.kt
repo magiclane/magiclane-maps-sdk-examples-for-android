@@ -41,7 +41,6 @@ import kotlin.math.roundToInt
 // -------------------------------------------------------------------------------------------------
 
 class PublicTransportRouteDescriptionActivity : BaseActivity() {
-    // ---------------------------------------------------------------------------------------------
 
     private var viewId: Long = 0
 
@@ -1365,10 +1364,10 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
     fun didTapItem(index: Int) {
         val itemIndex = index - 1
         if (itemIndex >= 0 && itemIndex < GEMPublicTransportRouteDescriptionView.m_routeDescriptionItems.size) {
-            val item = GEMPublicTransportRouteDescriptionView.m_routeDescriptionItems[index]
+            val item = GEMPublicTransportRouteDescriptionView.m_routeDescriptionItems[itemIndex]
             val area = item.m_geographicArea
             if (area != null) {
-                StaticsHolder.getMainMapView()?.centerOnRectArea(area, 2)
+                StaticsHolder.getMainMapView()?.centerOnRectArea(area)
             }
             finish()
         }

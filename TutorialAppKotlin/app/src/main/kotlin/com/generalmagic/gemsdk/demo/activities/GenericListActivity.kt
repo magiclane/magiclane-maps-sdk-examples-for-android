@@ -25,6 +25,7 @@ import com.generalmagic.gemsdk.TRgba
 import com.generalmagic.gemsdk.TUnitSystem
 import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.app.BaseActivity
+import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.demo.util.UtilUITexts
 import com.generalmagic.gemsdk.demo.util.Utils
@@ -36,6 +37,7 @@ import io.github.luizgrp.sectionedrecyclerviewadapter.SectionParameters
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionedRecyclerViewAdapter
 import io.github.luizgrp.sectionedrecyclerviewadapter.utils.EmptyViewHolder
 import kotlinx.android.synthetic.main.activity_list_view.*
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.filter_view.*
 
 abstract class BaseListItem
@@ -89,6 +91,39 @@ open class ListItemStatusImage : BaseListItem() {
     }
 }
 
+open class StylesListItem : BaseListItem() {
+    var mOnClick: (holder: StylesViewHolder) -> Unit = {}
+    var progressVisible: Boolean = false 
+
+    open fun getIcon(width: Int, height: Int): Bitmap? {
+        return null
+    }
+
+    open fun getText(): String {
+        return ""
+    }
+
+    open fun getStatusIcon(width: Int, height: Int): Bitmap? {
+        return null
+    }
+
+    open fun getStatusIconColor(): Int {
+        return 0
+    }
+
+    open fun getImagePreview(): Bitmap? {
+        return null
+    }
+
+    open fun canDeleteContent(): Boolean {
+        return true
+    }
+    
+    open fun isSelectedStyle(): Boolean {
+        return true
+    }
+}
+
 // -------------------------------------------------------------------------------------------------
 
 open class GenericListActivity : BaseActivity() {
@@ -126,6 +161,17 @@ open class GenericListActivity : BaseActivity() {
     fun hideListView() {
         list_view?.adapter = SectionedRecyclerViewAdapter()
     }
+
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressed()
+        return super.onSupportNavigateUp()
+    }
+
+    override fun onBackPressed() {
+        StaticsHolder.getMainActivity()?.nav_view?.setCheckedItem(R.id.tutorial_hello)
+        StaticsHolder.getMainActivity()?.nav_view?.menu?.performIdentifierAction(R.id.tutorial_hello, 0)
+        super.onBackPressed()
+    }
 }
 
 open class SearchListActivity : GenericListActivity() {
@@ -135,10 +181,10 @@ open class SearchListActivity : GenericListActivity() {
         filterView.visibility = View.VISIBLE
 
         // set search field hint
-// 		searchInput.queryHint = "Search"
+        searchInput.queryHint = "Search"
 
         // set focus on search bar and open keyboard
-// 		searchInput.requestFocus()
+        searchInput.requestFocus()
 
         searchInput.setOnQueryTextListener(
             object : SearchView.OnQueryTextListener {
@@ -280,6 +326,154 @@ open class LISIViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) {
     }
 }
 // -------------------------------------------------------------------------------------------------
+
+class ChapterStylesAdapter : SectionedRecyclerViewAdapter {
+    var onStatusIconTapped: (chapterIndex: Int, item: BaseListItem, holder: StylesViewHolder) -> Unit =
+        { _: Int, _: BaseListItem, _: StylesViewHolder -> }
+
+    var onDeleteIconTapped: (chapterIndex: Int, item: BaseListItem, holder: StylesViewHolder) -> Unit =
+        { _: Int, _: BaseListItem, _: StylesViewHolder -> }
+
+    constructor(dataChapters: ArrayList<StylesListItem>) : super() {
+        val wrap = ArrayList<ArrayList<StylesListItem>>()
+        wrap.add(dataChapters)
+        init(wrap, false)
+    }
+
+    constructor(
+        dataChapters: ArrayList<ArrayList<StylesListItem>>,
+        addHeaderRes: Boolean = true
+    ) : super() {
+        init(dataChapters, addHeaderRes)
+    }
+
+    private fun init(
+        dataChapters: ArrayList<ArrayList<StylesListItem>>,
+        addHeaderRes: Boolean
+    ) {
+        val provideHolder = provideHolder@{ view: View ->
+            return@provideHolder StylesViewHolder(view)
+        }
+
+        val builder = SectionParameters.builder()
+        builder.itemResourceId(StylesViewHolder.resId)
+        if (addHeaderRes) {
+            builder.headerResourceId(StylesViewHolder.headerResId)
+        }
+
+        val sectionParams = builder.build()
+
+        for (i in 0 until dataChapters.size) {
+            val section = object : StylesViewHolder.Chapter<StylesListItem>(
+                dataChapters[i],
+                provideHolder,
+                sectionParams
+            ) {
+                override fun onStatusIconTapped(item: BaseListItem, holder: StylesViewHolder) {
+                    onStatusIconTapped(i, item, holder)
+                }
+
+                override fun onDeleteIconTapped(item: BaseListItem, holder: StylesViewHolder) {
+                    onDeleteIconTapped(i, item, holder)
+                }
+            }
+            addSection(section)
+        }
+        notifyDataSetChanged()
+    }
+}
+
+open class StylesViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) {
+    companion object {
+        const val resId = R.layout.list_item_preview_status_image
+        const val headerResId = R.layout.list_chapter_header
+    }
+
+    val previewImage: ImageView = parent.findViewById(R.id.preview_image)
+    val text: TextView = parent.findViewById(R.id.text)
+    val statusIcon: ImageView = parent.findViewById(R.id.status_icon)
+    val statusProgress: ProgressBar = parent.findViewById(R.id.item_progress_bar)
+    val deleteIcon: ImageView = parent.findViewById(R.id.delete_icon)
+
+    private val iconSize = parent.resources.getDimension(R.dimen.listIconSize).toInt()
+    private val statusIconSize = parent.resources.getDimension(R.dimen.statusIconSize).toInt()
+
+    open fun updateViews(it: StylesListItem) {
+        val previewBitmap = it.getImagePreview()
+        previewImage.setImageBitmap(previewBitmap)
+        text.text = it.getText()
+        
+        val statusBmp = it.getStatusIcon(statusIconSize, statusIconSize)
+        if (statusBmp != null) {
+            statusIcon.visibility = View.VISIBLE
+            statusIcon.setImageBitmap(statusBmp)
+        } else {
+            statusIcon.visibility = View.GONE
+        }
+
+        when (it.canDeleteContent()) {
+            true    -> deleteIcon.visibility = View.VISIBLE
+            false   -> deleteIcon.visibility = View.GONE
+        }
+        
+        if (it.isSelectedStyle()) {
+            deleteIcon.visibility = View.GONE
+        }
+
+        val uiColor = it.getStatusIconColor()
+        if (uiColor != 0) {
+            statusIcon.setColorFilter(uiColor)
+        } else statusIcon.colorFilter = null
+
+        statusProgress.visibility = View.GONE
+
+        parent.setOnClickListener { _ ->
+            it.mOnClick(this)
+        }
+    }
+
+    open class Chapter<T : StylesListItem>(
+        val nItems: ArrayList<T>,
+        val holderProvider: (View) -> RecyclerView.ViewHolder,
+        params: SectionParameters
+    ) : Section(params) {
+        open fun onStatusIconTapped(item: BaseListItem, holder: StylesViewHolder) {}
+        
+        open fun onDeleteIconTapped(item: BaseListItem, holder: StylesViewHolder) {}
+
+        override fun getContentItemsTotal(): Int {
+            return nItems.size
+        }
+
+        override fun getItemViewHolder(view: View): RecyclerView.ViewHolder {
+            return holderProvider(view)
+        }
+
+        override fun onBindItemViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            if (position < 0 || position >= nItems.size) {
+                return
+            }
+
+            (holder as StylesViewHolder).let { stylesHolder ->
+                holder.statusIcon.setOnClickListener {
+                    onStatusIconTapped(nItems[position], stylesHolder)
+                }
+                
+                holder.deleteIcon.setOnClickListener {
+                    onDeleteIconTapped(nItems[position], stylesHolder)
+                }
+
+                stylesHolder.updateViews(nItems[position])
+            }
+        }
+
+        override fun getHeaderViewHolder(view: View?): RecyclerView.ViewHolder {
+            return EmptyViewHolder(view)
+        }
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
 /** SearchListItem */
 class SLIAdapter(data: ArrayList<SearchListItem>) : SectionedRecyclerViewAdapter() {
     init {
@@ -397,6 +591,64 @@ open class ContentStoreItemViewModel(val it: ContentStoreItem) : ListItemStatusI
 }
 
 // -----------------------------------------------------------------------------------------
+
+open class StylesContentStoreItemViewModel(val it: ContentStoreItem) : StylesListItem() {
+    override fun getIcon(width: Int, height: Int): Bitmap? {
+        val countryCodes = it.getCountryCodes()
+
+        var countryFlagImage: Image? = null
+        if (countryCodes != null && countryCodes.size > 0) {
+            val countryCode = countryCodes[0]
+            if (countryCode.isNotEmpty()) {
+                countryFlagImage = MapDetails().getCountryFlag(countryCode)
+            }
+        }
+
+        return GEMSdkCall.execute {
+            Util.createBitmap(countryFlagImage, width, height)
+        }
+    }
+
+    override fun getStatusIcon(width: Int, height: Int): Bitmap? {
+        return GEMSdkCall.execute {
+            Util.getContentStoreStatusAsBitmap(it.getStatus(), width, height)
+        }
+    }
+
+    override fun getText(): String {
+        return it.getName() ?: ""
+    }
+
+    override fun getStatusIconColor(): Int {
+        return Util.getColor(
+            when (it.getStatus()) {
+                TContentStoreItemStatus.ECIS_Completed -> 0
+                TContentStoreItemStatus.ECIS_DownloadQueued -> 0
+                else -> {
+                    TRgba(0, 0, 255, 255).value()
+                }
+            }
+        )
+    }
+
+    override fun getImagePreview(): Bitmap? {
+        return GEMSdkCall.execute {
+            val previewImage = it.getImagePreview()
+            val height = previewImage?.getSize()?.height() ?: 0
+            val width = previewImage?.getSize()?.width() ?: 0
+            Util.createBitmap(previewImage, width, height)
+        }
+    }
+
+    override fun canDeleteContent(): Boolean {
+        return GEMSdkCall.execute { it.canDeleteContent() } ?: false
+    }
+
+    override fun isSelectedStyle(): Boolean {
+        return it.getId() == StaticsHolder.getMainMapView()?.preferences()?.getMapStyleId()
+    }
+}
+
 // -----------------------------------------------------------------------------------------
 
 open class LandmarkViewModel(val it: Landmark?, reference: Coordinates?) : SearchListItem() {
@@ -431,7 +683,7 @@ open class LandmarkViewModel(val it: Landmark?, reference: Coordinates?) : Searc
 }
 
 // -----------------------------------------------------------------------------------------
-open class StyleItemViewModel(item: ContentStoreItem) : ContentStoreItemViewModel(item) {
+open class StyleItemViewModel(item: ContentStoreItem) : StylesContentStoreItemViewModel(item) {
     var m_checked = false
 
     override fun getIcon(width: Int, height: Int): Bitmap? {
@@ -475,7 +727,7 @@ open class StyleItemViewModel(item: ContentStoreItem) : ContentStoreItemViewMode
     }
 
     override fun getText(): String {
-        return it.getName() ?: ""
+        return GEMSdkCall.execute { it.getName() } ?: ""
     }
 
     override fun getStatusIconColor(): Int {
