@@ -13,7 +13,7 @@ package com.generalmagic.gemsdk.demo.util
 import com.generalmagic.gemsdk.CommonSettings
 import com.generalmagic.gemsdk.Route
 import com.generalmagic.gemsdk.TUnitSystem
-import com.generalmagic.gemsdk.demo.app.StaticsHolder
+import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getDistText
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getTimeText
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getUIString
@@ -22,6 +22,7 @@ import com.generalmagic.gemsdk.models.AddressInfo
 import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.models.RouteTrafficEvent
 import com.generalmagic.gemsdk.models.TAddressField
+import com.generalmagic.gemsdk.util.GEMSdkCall
 import com.generalmagic.gemsdk.util.GemIcons
 import java.util.*
 
@@ -60,7 +61,7 @@ class UtilUITexts {
 
         fun formatSizeAsText(inSizeInBytes: Long): String {
             var sizeInBytes: Double = inSizeInBytes.toDouble()
-            var unit = ""
+            var unit: String
 
             if (sizeInBytes < (1024.0 * 1024.0)) {
                 sizeInBytes /= 1024.0
@@ -148,59 +149,62 @@ class UtilUITexts {
         }
 
         fun fillLandmarkAddressInfo(landmark: Landmark, bFillAllFields: Boolean = false) {
-            val landmarkAddress = landmark.getAddress() ?: AddressInfo()
+            GEMSdkCall.execute {
+                val landmarkAddress = landmark.getAddress() ?: AddressInfo()
 
-            val street = landmarkAddress.getField(TAddressField.EStreetName) ?: ""
-            val city = landmarkAddress.getField(TAddressField.ECity) ?: ""
-            val settlement = landmarkAddress.getField(TAddressField.ESettlement) ?: ""
-            val county = landmarkAddress.getField(TAddressField.ECounty) ?: ""
+                val street = landmarkAddress.getField(TAddressField.EStreetName) ?: ""
+                val city = landmarkAddress.getField(TAddressField.ECity) ?: ""
+                val settlement = landmarkAddress.getField(TAddressField.ESettlement) ?: ""
+                val county = landmarkAddress.getField(TAddressField.ECounty) ?: ""
 
-            if (bFillAllFields || (city.isEmpty() && settlement.isEmpty() && county.isEmpty())) {
-                var landmarkList = ArrayList<Landmark>()
-                val coords = landmark.getCoordinates()
-                if (coords != null) {
-                    val mainView = StaticsHolder.getMainMapView()
-                    landmarkList = mainView?.getNearestLocations(coords) ?: landmarkList
-                }
-
-                if (landmarkList.isNotEmpty()) {
-                    val lmk = landmarkList[0]
-                    val lmkAddress = lmk.getAddress()
-
-                    val aStreet = lmkAddress?.getField(TAddressField.EStreetName) ?: ""
-                    val aCity = lmkAddress?.getField(TAddressField.ECity) ?: ""
-                    val aSettlement = lmkAddress?.getField(TAddressField.ESettlement) ?: ""
-                    val aCounty = lmkAddress?.getField(TAddressField.ECounty) ?: ""
-
-                    if (street.isEmpty() && aStreet.isNotEmpty()) {
-                        landmarkAddress.setField(aStreet, TAddressField.EStreetName)
+                if (bFillAllFields || (city.isEmpty() && settlement.isEmpty() && county.isEmpty())) {
+                    var landmarkList = ArrayList<Landmark>()
+                    val coords = landmark.getCoordinates()
+                    if (coords != null) {
+                        val mainView = GEMApplication.getMainMapView()
+                        landmarkList = mainView?.getNearestLocations(coords) ?: landmarkList
                     }
 
-                    if (city.isEmpty() && aCity.isNotEmpty()) {
-                        landmarkAddress.setField(aCity, TAddressField.ECity)
-                    }
+                    if (landmarkList.isNotEmpty()) {
+                        val lmk = landmarkList[0]
+                        val lmkAddress = lmk.getAddress()
 
-                    if (settlement.isEmpty() && aSettlement.isNotEmpty()) {
-                        landmarkAddress.setField(aSettlement, TAddressField.ESettlement)
-                    }
+                        val aStreet = lmkAddress?.getField(TAddressField.EStreetName) ?: ""
+                        val aCity = lmkAddress?.getField(TAddressField.ECity) ?: ""
+                        val aSettlement = lmkAddress?.getField(TAddressField.ESettlement) ?: ""
+                        val aCounty = lmkAddress?.getField(TAddressField.ECounty) ?: ""
 
-                    if (county.isEmpty() && aCounty.isNotEmpty()) {
-                        landmarkAddress.setField(aCounty, TAddressField.ECounty)
-                    }
-
-                    if (bFillAllFields) {
-                        val aCountry = lmkAddress?.getField(TAddressField.ECountry) ?: ""
-                        val aCountryCode = lmkAddress?.getField(TAddressField.ECountryCode) ?: ""
-                        val country = landmarkAddress.getField(TAddressField.ECountry) ?: ""
-                        val countryCode =
-                            landmarkAddress.getField(TAddressField.ECountryCode) ?: ""
-
-                        if (country.isEmpty() && aCountry.isNotEmpty()) {
-                            landmarkAddress.setField(aCountry, TAddressField.ECountry)
+                        if (street.isEmpty() && aStreet.isNotEmpty()) {
+                            landmarkAddress.setField(aStreet, TAddressField.EStreetName)
                         }
 
-                        if (countryCode.isEmpty() && aCountryCode.isNotEmpty()) {
-                            landmarkAddress.setField(aCountryCode, TAddressField.ECountryCode)
+                        if (city.isEmpty() && aCity.isNotEmpty()) {
+                            landmarkAddress.setField(aCity, TAddressField.ECity)
+                        }
+
+                        if (settlement.isEmpty() && aSettlement.isNotEmpty()) {
+                            landmarkAddress.setField(aSettlement, TAddressField.ESettlement)
+                        }
+
+                        if (county.isEmpty() && aCounty.isNotEmpty()) {
+                            landmarkAddress.setField(aCounty, TAddressField.ECounty)
+                        }
+
+                        if (bFillAllFields) {
+                            val aCountry = lmkAddress?.getField(TAddressField.ECountry) ?: ""
+                            val aCountryCode =
+                                lmkAddress?.getField(TAddressField.ECountryCode) ?: ""
+                            val country = landmarkAddress.getField(TAddressField.ECountry) ?: ""
+                            val countryCode =
+                                landmarkAddress.getField(TAddressField.ECountryCode) ?: ""
+
+                            if (country.isEmpty() && aCountry.isNotEmpty()) {
+                                landmarkAddress.setField(aCountry, TAddressField.ECountry)
+                            }
+
+                            if (countryCode.isEmpty() && aCountryCode.isNotEmpty()) {
+                                landmarkAddress.setField(aCountryCode, TAddressField.ECountryCode)
+                            }
                         }
                     }
                 }
@@ -208,189 +212,193 @@ class UtilUITexts {
         }
 
         fun formatLandmarkDetails(landmark: Landmark, excludeCountry: Boolean = false): String {
-            val formatted: Pair<String, String> =
-                pairFormatLandmarkDetails(landmark, excludeCountry)
+            return GEMSdkCall.execute {
+                val formatted = pairFormatLandmarkDetails(landmark, excludeCountry)
 
-            return if (formatted.second.isNotEmpty()) {
-                String.format("%s, %s", formatted.first, formatted.second)
-            } else {
-                formatted.first
-            }
+                return@execute if (formatted.second.isNotEmpty()) {
+                    String.format("%s, %s", formatted.first, formatted.second)
+                } else {
+                    formatted.first
+                }
+            } ?: ""
         }
 
         fun formatName(landmark: Landmark): String {
-            var name = "" // result
+            return GEMSdkCall.execute {
+                var name = "" // result
 
-            var str = landmark.getName() ?: ""
+                var str = landmark.getName() ?: ""
 
-            if (str.isNotEmpty()) {
-                name = str
-                return name
-            }
-
-            val landmarkAddress = landmark.getAddress()
-            str = landmarkAddress?.getField(TAddressField.EStreetName) ?: ""
-
-            if (str.isNotEmpty()) {
-                val includeList = arrayListOf(
-                    TAddressField.EStreetName.value,
-                    TAddressField.EStreetNumber.value
-                )
-
-                name = landmarkAddress?.format(ArrayList(), includeList) ?: name
-                return name
-            }
-
-            str = landmarkAddress?.getField(TAddressField.ECity) ?: ""
-            if (str.isNotEmpty()) {
-                name = str
-                val image = landmark.getImage() ?: return name
-                if (image.getUid() == GemIcons.Other_UI.LocationDetails_SendDetails.value.toLong()) {
-                    val postalCode = landmarkAddress?.getField(TAddressField.EPostalCode) ?: ""
-
-                    if (postalCode.isNotEmpty()) {
-                        name += " "
-                        name += landmarkAddress?.getField(TAddressField.EPostalCode)
-                    }
+                if (str.isNotEmpty()) {
+                    name = str
+                    return@execute name
                 }
-                return name
-            }
 
-            str = landmarkAddress?.getField(TAddressField.ESettlement) ?: ""
-            if (str.isNotEmpty()) {
-                name = str
-                return name
-            }
+                val landmarkAddress = landmark.getAddress()
+                str = landmarkAddress?.getField(TAddressField.EStreetName) ?: ""
 
-            str = landmarkAddress?.getField(TAddressField.ECounty) ?: ""
-            if (str.isNotEmpty()) {
-                name = str
-                return name
-            }
+                if (str.isNotEmpty()) {
+                    val includeList = arrayListOf(
+                        TAddressField.EStreetName.value,
+                        TAddressField.EStreetNumber.value
+                    )
 
-            str = landmarkAddress?.getField(TAddressField.EState) ?: ""
-            if (str.isNotEmpty()) {
-                name = str
-                return name
-            }
+                    name = landmarkAddress?.format(ArrayList(), includeList) ?: name
+                    return@execute name
+                }
 
-            str = landmarkAddress?.getField(TAddressField.ECountry) ?: ""
-            if (str.isNotEmpty()) {
-                name = str
-                return name
-            }
+                str = landmarkAddress?.getField(TAddressField.ECity) ?: ""
+                if (str.isNotEmpty()) {
+                    name = str
+                    val image = landmark.getImage() ?: return@execute name
+                    if (image.getUid() == GemIcons.Other_UI.LocationDetails_SendDetails.value.toLong()) {
+                        val postalCode = landmarkAddress?.getField(TAddressField.EPostalCode) ?: ""
 
-            name = getUIString(StringIds.eStrUnknown)
-            return name
+                        if (postalCode.isNotEmpty()) {
+                            name += " "
+                            name += landmarkAddress?.getField(TAddressField.EPostalCode)
+                        }
+                    }
+                    return@execute name
+                }
+
+                str = landmarkAddress?.getField(TAddressField.ESettlement) ?: ""
+                if (str.isNotEmpty()) {
+                    name = str
+                    return@execute name
+                }
+
+                str = landmarkAddress?.getField(TAddressField.ECounty) ?: ""
+                if (str.isNotEmpty()) {
+                    name = str
+                    return@execute name
+                }
+
+                str = landmarkAddress?.getField(TAddressField.EState) ?: ""
+                if (str.isNotEmpty()) {
+                    name = str
+                    return@execute name
+                }
+
+                str = landmarkAddress?.getField(TAddressField.ECountry) ?: ""
+                if (str.isNotEmpty()) {
+                    name = str
+                    return@execute name
+                }
+
+                name = getUIString(StringIds.eStrUnknown)
+                return@execute name
+            } ?: ""
         }
 
         fun pairFormatLandmarkDetails(
-            landmark: Landmark?,
-            excludeCountry: Boolean = false
+            landmark: Landmark?, excludeCountry: Boolean = false
         ): Pair<String, String> {
-            landmark ?: return Pair("", "")
+            return GEMSdkCall.execute {
+                landmark ?: return@execute Pair("", "")
 
-            var formattedDescription: String
-            val landmarkAddress = landmark.getAddress()
+                var formattedDescription: String
+                val landmarkAddress = landmark.getAddress()
 
-            var formattedName = formatName(landmark)
-            formattedName.trim()
+                var formattedName = formatName(landmark)
+                formattedName.trim()
 
-            val pos = formattedName.indexOf("<")
-            val pos1 = formattedName.indexOf("<<")
+                val pos = formattedName.indexOf("<")
+                val pos1 = formattedName.indexOf("<<")
 
-            val include = ArrayList<Int>()
-            if ((pos == 0) && (pos1 < 0)) {
-                include.add(TAddressField.EStreetName.value)
-                include.add(TAddressField.EStreetNumber.value)
-                formattedName = landmarkAddress?.format(ArrayList(), include) ?: ""
-                include.clear()
-            }
+                val include = ArrayList<Int>()
+                if ((pos == 0) && (pos1 < 0)) {
+                    include.add(TAddressField.EStreetName.value)
+                    include.add(TAddressField.EStreetNumber.value)
+                    formattedName = landmarkAddress?.format(ArrayList(), include) ?: ""
+                    include.clear()
+                }
 
-            var fieldValue = landmarkAddress?.getField(TAddressField.EStreetName) ?: ""
-            if ((fieldValue.isNotEmpty()) && (formattedName.indexOf(fieldValue) < 0)) {
-                include.add(TAddressField.EStreetName.value)
-                include.add(TAddressField.EStreetNumber.value)
-            }
-
-            fieldValue = landmarkAddress?.getField(TAddressField.ESettlement) ?: ""
-            if ((fieldValue.isNotEmpty()) && (formattedName.indexOf(fieldValue) < 0)) {
-                include.add(TAddressField.ESettlement.value)
-            }
-
-            fieldValue = landmarkAddress?.getField(TAddressField.ECity) ?: ""
-            if ((fieldValue.isNotEmpty()) && (formattedName.indexOf(fieldValue) < 0)) {
-                include.add(TAddressField.ECity.value)
-            }
-
-            fieldValue = landmarkAddress?.getField(TAddressField.EDistrict) ?: ""
-            if ((fieldValue.isNotEmpty()) && (formattedName.indexOf(fieldValue) < 0)) {
-                include.add(TAddressField.EDistrict.value)
-            }
-
-            fieldValue = landmarkAddress?.getField(TAddressField.ECounty) ?: ""
-            if ((fieldValue.isNotEmpty()) && (formattedName.indexOf(fieldValue) < 0)) {
-                include.add(TAddressField.ECounty.value)
-            }
-
-            fieldValue = landmarkAddress?.getField(TAddressField.EState) ?: ""
-            if ((fieldValue.isNotEmpty()) && (formattedName.indexOf(fieldValue) < 0)) {
-                include.add(TAddressField.EState.value)
-            }
-
-            if (!excludeCountry) {
-                fieldValue = landmarkAddress?.getField(TAddressField.ECountry) ?: ""
+                var fieldValue = landmarkAddress?.getField(TAddressField.EStreetName) ?: ""
                 if ((fieldValue.isNotEmpty()) && (formattedName.indexOf(fieldValue) < 0)) {
-                    include.add(TAddressField.ECountry.value)
+                    include.add(TAddressField.EStreetName.value)
+                    include.add(TAddressField.EStreetNumber.value)
                 }
-            }
 
-            formattedDescription = landmarkAddress?.format(ArrayList(), include) ?: ""
-            formattedName.trim()
-            formattedDescription.trim()
+                fieldValue = landmarkAddress?.getField(TAddressField.ESettlement) ?: ""
+                if ((fieldValue.isNotEmpty()) && (formattedName.indexOf(fieldValue) < 0)) {
+                    include.add(TAddressField.ESettlement.value)
+                }
 
-            if (formattedDescription.indexOf(", ") == 0) {
-                formattedDescription.removeRange(0, 2)
-            }
+                fieldValue = landmarkAddress?.getField(TAddressField.ECity) ?: ""
+                if ((fieldValue.isNotEmpty()) && (formattedName.indexOf(fieldValue) < 0)) {
+                    include.add(TAddressField.ECity.value)
+                }
 
-            if (formattedDescription.indexOf(", ") == formattedDescription.length - 2) {
-                formattedDescription.removeRange(
-                    formattedDescription.length - 2,
-                    formattedDescription.length
-                )
-            }
+                fieldValue = landmarkAddress?.getField(TAddressField.EDistrict) ?: ""
+                if ((fieldValue.isNotEmpty()) && (formattedName.indexOf(fieldValue) < 0)) {
+                    include.add(TAddressField.EDistrict.value)
+                }
 
-            val settlement = landmarkAddress?.getField(TAddressField.ESettlement) ?: ""
-            val city = landmarkAddress?.getField(TAddressField.ECity) ?: ""
-            if (settlement.isNotEmpty() && city.isNotEmpty() && (settlement == city)) {
-                val posL = formattedDescription.indexOf(settlement)
-                if (posL == 0) {
-                    var fragment = formattedDescription.substring(settlement.length)
-                    if (fragment.indexOf(settlement) >= 0) {
-                        if (fragment.indexOf(", ") == 0) {
-                            fragment = fragment.removeRange(0, 2)
-                        }
-                        formattedDescription = fragment
-                    }
-                } else if (posL > 0) {
-                    val fragment1 = formattedDescription.substring(0, posL)
-                    val fragment2 = formattedDescription.substring(posL + settlement.length)
-                    if (fragment2.indexOf(settlement) > 0) {
-                        if (fragment2.indexOf(", ") == 0) {
-                            fragment2.removeRange(0, 2)
-                        }
-                        formattedDescription = fragment1 + fragment2
+                fieldValue = landmarkAddress?.getField(TAddressField.ECounty) ?: ""
+                if ((fieldValue.isNotEmpty()) && (formattedName.indexOf(fieldValue) < 0)) {
+                    include.add(TAddressField.ECounty.value)
+                }
+
+                fieldValue = landmarkAddress?.getField(TAddressField.EState) ?: ""
+                if ((fieldValue.isNotEmpty()) && (formattedName.indexOf(fieldValue) < 0)) {
+                    include.add(TAddressField.EState.value)
+                }
+
+                if (!excludeCountry) {
+                    fieldValue = landmarkAddress?.getField(TAddressField.ECountry) ?: ""
+                    if ((fieldValue.isNotEmpty()) && (formattedName.indexOf(fieldValue) < 0)) {
+                        include.add(TAddressField.ECountry.value)
                     }
                 }
-            }
 
-            val landmarkDescrpition = landmark.getDescription() ?: ""
+                formattedDescription = landmarkAddress?.format(ArrayList(), include) ?: ""
+                formattedName.trim()
+                formattedDescription.trim()
 
-            return if (formattedDescription.isEmpty() && landmarkDescrpition.isNotEmpty()) {
-                Pair(formattedName, landmarkDescrpition)
-            } else {
-                Pair(formattedName, formattedDescription)
-            }
+                if (formattedDescription.indexOf(", ") == 0) {
+                    formattedDescription.removeRange(0, 2)
+                }
+
+                if (formattedDescription.indexOf(", ") == formattedDescription.length - 2) {
+                    formattedDescription.removeRange(
+                        formattedDescription.length - 2,
+                        formattedDescription.length
+                    )
+                }
+
+                val settlement = landmarkAddress?.getField(TAddressField.ESettlement) ?: ""
+                val city = landmarkAddress?.getField(TAddressField.ECity) ?: ""
+                if (settlement.isNotEmpty() && city.isNotEmpty() && (settlement == city)) {
+                    val posL = formattedDescription.indexOf(settlement)
+                    if (posL == 0) {
+                        var fragment = formattedDescription.substring(settlement.length)
+                        if (fragment.indexOf(settlement) >= 0) {
+                            if (fragment.indexOf(", ") == 0) {
+                                fragment = fragment.removeRange(0, 2)
+                            }
+                            formattedDescription = fragment
+                        }
+                    } else if (posL > 0) {
+                        val fragment1 = formattedDescription.substring(0, posL)
+                        val fragment2 = formattedDescription.substring(posL + settlement.length)
+                        if (fragment2.indexOf(settlement) > 0) {
+                            if (fragment2.indexOf(", ") == 0) {
+                                fragment2.removeRange(0, 2)
+                            }
+                            formattedDescription = fragment1 + fragment2
+                        }
+                    }
+                }
+
+                val landmarkDescrpition = landmark.getDescription() ?: ""
+
+                return@execute if (formattedDescription.isEmpty() && landmarkDescrpition.isNotEmpty()) {
+                    Pair(formattedName, landmarkDescrpition)
+                } else {
+                    Pair(formattedName, formattedDescription)
+                }
+            } ?: Pair("", "")
         }
 
         // ---------------------------------------------------------------------------------------------

@@ -13,7 +13,7 @@
 		<!--/////////////////////////////////////////////////////////////////////////////////////-->
 
 		<activity
-			android:name=".MainActivity"
+			android:name=".activities.mainactivity.MainActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale"
 			android:windowSoftInputMode="stateAlwaysVisible"> <!-- must exist on all activities ! -->
 			<intent-filter>
@@ -26,11 +26,11 @@
 		<!--/////////////////////////////////////////////////////////////////////////////////////-->
 
 		<activity
-			android:name=".controllers.SensorsListActivity"
+			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SensorsListActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 		<activity
-			android:name=".controllers.DirectCamActivity"
+			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.DirectCamActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 		<!--/////////////////////////////////////////////////////////////////////////////////////-->
@@ -70,26 +70,32 @@
 		<!--/////////////////////////////////////////////////////////////////////////////////////-->
 
 		<activity
-			android:name=".controllers.StylesActivity"
+			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.StylesActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 		<!--/////////////////////////////////////////////////////////////////////////////////////-->
 
 		<activity
-			android:name=".controllers.OnlineMapsActivity"
+			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.OnlineMapsActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 		<activity
-			android:name=".controllers.SearchTextActivity"
+			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SearchTextActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 		<activity
-			android:name=".controllers.SearchNearbyActivity"
+			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SearchNearbyActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 		<activity
-			android:name=".controllers.SearchPoiActivity"
+			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SearchPoiActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+        <!--/////////////////////////////////////////////////////////////////////////////////////-->
+
+        <activity
+            android:name=".activities.settings.SettingsActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 
 	</application>

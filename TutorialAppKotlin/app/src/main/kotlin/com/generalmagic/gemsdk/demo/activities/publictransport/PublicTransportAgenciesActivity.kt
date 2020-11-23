@@ -37,7 +37,7 @@ import kotlinx.android.synthetic.main.agencies_activity.*
 class PublicTransportAgenciesActivity : BaseActivity() {
     // ---------------------------------------------------------------------------------------------
 
-    val iconSize = GEMApplication.getAppResources().getDimension(R.dimen.listIconSize).toInt()
+    val iconSize = GEMApplication.appResources().getDimension(R.dimen.listIconSize).toInt()
     private var agenciesListAdapter: AgenciesListAdapter? = null
     var urlBmp: Bitmap? = null
     var fareBmp: Bitmap? = null
@@ -229,7 +229,7 @@ class PublicTransportAgenciesActivity : BaseActivity() {
         // set root view background (we used grouped style for list view)
         root_view.setBackgroundResource(R.color.list_view_bgnd_color)
         val lateralPadding =
-            GEMApplication.getAppResources().getDimension(R.dimen.bigPadding).toInt()
+            GEMApplication.appResources().getDimension(R.dimen.bigPadding).toInt()
         mapsList.setPadding(lateralPadding, 0, lateralPadding, 0)
 
         val title = GEMSdkCall.execute { GEMPublicTransportRouteDescriptionView.getAgencyText() }

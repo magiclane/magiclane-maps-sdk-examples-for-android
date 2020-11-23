@@ -29,6 +29,19 @@
 		</menu>
 	</item>
 
+    <!--/////////////////////////////////////////////////////// -->
+
+    <item android:title="Settings">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/tutorial_settings"
+                    android:title="Settings"
+                    app:showAsAction="never" />
+            </group>
+        </menu>
+    </item>
+
 	<!--/////////////////////////////////////////////////////// -->
 	<item android:title="Data Source">
 		<menu>

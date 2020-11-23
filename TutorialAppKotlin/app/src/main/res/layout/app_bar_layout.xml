@@ -7,7 +7,7 @@
 	android:background="@android:color/transparent"
 	android:orientation="vertical"
 	android:clipChildren="false"
-	tools:context=".MainActivity">
+	tools:context=".activities.mainactivity.MainActivity">
 
 	<com.google.android.material.appbar.AppBarLayout
 		android:id="@+id/appBarLayout"

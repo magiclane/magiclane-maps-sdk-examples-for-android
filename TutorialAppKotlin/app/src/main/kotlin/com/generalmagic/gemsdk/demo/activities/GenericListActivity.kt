@@ -10,6 +10,7 @@
 
 package com.generalmagic.gemsdk.demo.activities
 
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
@@ -17,7 +18,9 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.SearchView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.gemsdk.MapDetails
@@ -25,7 +28,7 @@ import com.generalmagic.gemsdk.TRgba
 import com.generalmagic.gemsdk.TUnitSystem
 import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.app.BaseActivity
-import com.generalmagic.gemsdk.demo.app.StaticsHolder
+import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.demo.util.UtilUITexts
 import com.generalmagic.gemsdk.demo.util.Utils
@@ -37,7 +40,6 @@ import io.github.luizgrp.sectionedrecyclerviewadapter.SectionParameters
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionedRecyclerViewAdapter
 import io.github.luizgrp.sectionedrecyclerviewadapter.utils.EmptyViewHolder
 import kotlinx.android.synthetic.main.activity_list_view.*
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.filter_view.*
 
 abstract class BaseListItem
@@ -93,7 +95,7 @@ open class ListItemStatusImage : BaseListItem() {
 
 open class StylesListItem : BaseListItem() {
     var mOnClick: (holder: StylesViewHolder) -> Unit = {}
-    var progressVisible: Boolean = false 
+    var progressVisible: Boolean = false
 
     open fun getIcon(width: Int, height: Int): Bitmap? {
         return null
@@ -118,7 +120,7 @@ open class StylesListItem : BaseListItem() {
     open fun canDeleteContent(): Boolean {
         return true
     }
-    
+
     open fun isSelectedStyle(): Boolean {
         return true
     }
@@ -161,17 +163,38 @@ open class GenericListActivity : BaseActivity() {
     fun hideListView() {
         list_view?.adapter = SectionedRecyclerViewAdapter()
     }
+}
 
-    override fun onSupportNavigateUp(): Boolean {
-        onBackPressed()
-        return super.onSupportNavigateUp()
+open class StylesListActivity : GenericListActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        list_view.layoutManager = GridLayoutManager(
+            this,
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) 2 else 1
+        )
+
+        val separator = list_view.getItemDecorationAt(0)
+        list_view.removeItemDecoration(separator)
     }
 
-    override fun onBackPressed() {
-        StaticsHolder.getMainActivity()?.nav_view?.setCheckedItem(R.id.tutorial_hello)
-        StaticsHolder.getMainActivity()?.nav_view?.menu?.performIdentifierAction(R.id.tutorial_hello, 0)
-        super.onBackPressed()
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        list_view.layoutManager = GridLayoutManager(
+            this,
+            if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) 2 else 1
+        )
+        super.onConfigurationChanged(newConfig)
     }
+}
+
+open class MapsListActivity : GenericListActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        list_view.setBackgroundColor(ContextCompat.getColor(this, R.color.maps_view_bgnd_color))
+    }
+
+    open fun applyFilter(filter: String) {}
 }
 
 open class SearchListActivity : GenericListActivity() {
@@ -402,7 +425,7 @@ open class StylesViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) 
         val previewBitmap = it.getImagePreview()
         previewImage.setImageBitmap(previewBitmap)
         text.text = it.getText()
-        
+
         val statusBmp = it.getStatusIcon(statusIconSize, statusIconSize)
         if (statusBmp != null) {
             statusIcon.visibility = View.VISIBLE
@@ -412,10 +435,10 @@ open class StylesViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) 
         }
 
         when (it.canDeleteContent()) {
-            true    -> deleteIcon.visibility = View.VISIBLE
-            false   -> deleteIcon.visibility = View.GONE
+            true -> deleteIcon.visibility = View.VISIBLE
+            false -> deleteIcon.visibility = View.GONE
         }
-        
+
         if (it.isSelectedStyle()) {
             deleteIcon.visibility = View.GONE
         }
@@ -438,7 +461,7 @@ open class StylesViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) 
         params: SectionParameters
     ) : Section(params) {
         open fun onStatusIconTapped(item: BaseListItem, holder: StylesViewHolder) {}
-        
+
         open fun onDeleteIconTapped(item: BaseListItem, holder: StylesViewHolder) {}
 
         override fun getContentItemsTotal(): Int {
@@ -458,7 +481,7 @@ open class StylesViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) 
                 holder.statusIcon.setOnClickListener {
                     onStatusIconTapped(nItems[position], stylesHolder)
                 }
-                
+
                 holder.deleteIcon.setOnClickListener {
                     onDeleteIconTapped(nItems[position], stylesHolder)
                 }
@@ -547,38 +570,33 @@ open class SLIViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) {
 // -----------------------------------------------------------------------------------------
 
 open class ContentStoreItemViewModel(val it: ContentStoreItem) : ListItemStatusImage() {
-    override fun getIcon(width: Int, height: Int): Bitmap? {
-        val countryCodes = it.getCountryCodes()
+    override fun getIcon(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
+        val countryCodes = it.getCountryCodes() ?: return@execute null
 
         var countryFlagImage: Image? = null
-        if (countryCodes != null && countryCodes.size > 0) {
+        if (countryCodes.size > 0) {
             val countryCode = countryCodes[0]
             if (countryCode.isNotEmpty()) {
                 countryFlagImage = MapDetails().getCountryFlag(countryCode)
             }
         }
 
-        return GEMSdkCall.execute {
-            Util.createBitmap(countryFlagImage, width, height)
-        }
+        return@execute Util.createBitmap(countryFlagImage, width, height)
     }
 
-    override fun getStatusIcon(width: Int, height: Int): Bitmap? {
-        return GEMSdkCall.execute {
-            Util.getContentStoreStatusAsBitmap(it.getStatus(), width, height)
-        }
+    override fun getStatusIcon(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
+        return@execute Util.getContentStoreStatusAsBitmap(it.getStatus(), width, height)
     }
 
-    override fun getText(): String {
-        return it.getName() ?: ""
-    }
+    override fun getText(): String = GEMSdkCall.execute {
+        return@execute it.getName()
+    } ?: ""
 
-    override fun getDescription(): String {
-        return UtilUITexts.formatSizeAsText(it.getTotalSize())
-    }
+    override fun getDescription(): String =
+        UtilUITexts.formatSizeAsText(GEMSdkCall.execute { it.getTotalSize() } ?: 0)
 
-    override fun getStatusIconColor(): Int {
-        return Util.getColor(
+    override fun getStatusIconColor(): Int = GEMSdkCall.execute {
+        return@execute Util.getColor(
             when (it.getStatus()) {
                 TContentStoreItemStatus.ECIS_Completed -> 0
                 TContentStoreItemStatus.ECIS_DownloadQueued -> 0
@@ -587,13 +605,13 @@ open class ContentStoreItemViewModel(val it: ContentStoreItem) : ListItemStatusI
                 }
             }
         )
-    }
+    } ?: 0
 }
 
 // -----------------------------------------------------------------------------------------
 
 open class StylesContentStoreItemViewModel(val it: ContentStoreItem) : StylesListItem() {
-    override fun getIcon(width: Int, height: Int): Bitmap? {
+    override fun getIcon(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
         val countryCodes = it.getCountryCodes()
 
         var countryFlagImage: Image? = null
@@ -604,23 +622,21 @@ open class StylesContentStoreItemViewModel(val it: ContentStoreItem) : StylesLis
             }
         }
 
-        return GEMSdkCall.execute {
-            Util.createBitmap(countryFlagImage, width, height)
-        }
+        return@execute Util.createBitmap(countryFlagImage, width, height)
     }
 
-    override fun getStatusIcon(width: Int, height: Int): Bitmap? {
-        return GEMSdkCall.execute {
-            Util.getContentStoreStatusAsBitmap(it.getStatus(), width, height)
-        }
+    override fun getStatusIcon(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
+        return@execute Util.getContentStoreStatusAsBitmap(it.getStatus(), width, height)
     }
 
-    override fun getText(): String {
-        return it.getName() ?: ""
-    }
 
-    override fun getStatusIconColor(): Int {
-        return Util.getColor(
+    override fun getText(): String = GEMSdkCall.execute {
+        return@execute it.getName()
+    } ?: ""
+
+
+    override fun getStatusIconColor(): Int = GEMSdkCall.execute {
+        return@execute Util.getColor(
             when (it.getStatus()) {
                 TContentStoreItemStatus.ECIS_Completed -> 0
                 TContentStoreItemStatus.ECIS_DownloadQueued -> 0
@@ -629,24 +645,24 @@ open class StylesContentStoreItemViewModel(val it: ContentStoreItem) : StylesLis
                 }
             }
         )
+    } ?: 0
+
+    override fun getImagePreview(): Bitmap? = GEMSdkCall.execute {
+        val previewImage = it.getImagePreview()
+        val height = previewImage?.getSize()?.height() ?: 0
+        val width = previewImage?.getSize()?.width() ?: 0
+        return@execute Util.createBitmap(previewImage, width, height)
     }
 
-    override fun getImagePreview(): Bitmap? {
-        return GEMSdkCall.execute {
-            val previewImage = it.getImagePreview()
-            val height = previewImage?.getSize()?.height() ?: 0
-            val width = previewImage?.getSize()?.width() ?: 0
-            Util.createBitmap(previewImage, width, height)
-        }
-    }
 
-    override fun canDeleteContent(): Boolean {
-        return GEMSdkCall.execute { it.canDeleteContent() } ?: false
-    }
+    override fun canDeleteContent(): Boolean = GEMSdkCall.execute {
+        return@execute it.canDeleteContent()
+    } ?: false
 
-    override fun isSelectedStyle(): Boolean {
-        return it.getId() == StaticsHolder.getMainMapView()?.preferences()?.getMapStyleId()
-    }
+
+    override fun isSelectedStyle(): Boolean = GEMSdkCall.execute {
+        return@execute it.getId() == GEMApplication.getMainMapView()?.preferences()?.getMapStyleId()
+    } ?: false
 }
 
 // -----------------------------------------------------------------------------------------
@@ -655,14 +671,16 @@ open class LandmarkViewModel(val it: Landmark?, reference: Coordinates?) : Searc
     private val dist: Pair<String, String>
 
     init {
-        val coords = it?.getCoordinates()
-        val meters: Int = if (reference != null) coords?.getDistance(reference)?.toInt() ?: 0 else 0
+        val meters = GEMSdkCall.execute {
+            reference ?: return@execute 0
+            return@execute it?.getCoordinates()?.getDistance(reference)?.toInt()
+        } ?: 0
 
         dist = Utils.getDistText(meters, TUnitSystem.EMetric, true)
     }
 
-    override fun getIcon(width: Int, height: Int): Bitmap? {
-        return GEMSdkCall.execute { Util.createBitmap(it?.getImage(), width, height) }
+    override fun getIcon(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
+        return@execute Util.createBitmap(it?.getImage(), width, height)
     }
 
     override fun getStatus(): String {
@@ -673,20 +691,22 @@ open class LandmarkViewModel(val it: Landmark?, reference: Coordinates?) : Searc
         return dist.second
     }
 
-    override fun getText(): String {
-        return it?.getName() ?: ""
-    }
+    override fun getText(): String = GEMSdkCall.execute {
+        return@execute it?.getName()
+    } ?: ""
 
-    override fun getDescription(): String {
-        return UtilUITexts.pairFormatLandmarkDetails(it).second
-    }
+
+    override fun getDescription(): String = GEMSdkCall.execute {
+        return@execute UtilUITexts.pairFormatLandmarkDetails(it).second
+    } ?: ""
+
 }
 
 // -----------------------------------------------------------------------------------------
 open class StyleItemViewModel(item: ContentStoreItem) : StylesContentStoreItemViewModel(item) {
     var m_checked = false
 
-    override fun getIcon(width: Int, height: Int): Bitmap? {
+    override fun getIcon(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
         val m_text = it.getName() ?: ""
         var iconId = GemIcons.Other_UI.ShowMapStandard
         if ((m_text.indexOf("Cloud") >= 0) ||
@@ -698,40 +718,34 @@ open class StyleItemViewModel(item: ContentStoreItem) : StylesContentStoreItemVi
         ) {
             iconId = GemIcons.Other_UI.ShowWeather
         } else if (m_text.indexOf("Terrain") >= 0) {
-            if (m_text.indexOf("Satellite") >= 0) {
-                iconId = GemIcons.Other_UI.ShowMapTerrainAndSatellite
+            iconId = if (m_text.indexOf("Satellite") >= 0) {
+                GemIcons.Other_UI.ShowMapTerrainAndSatellite
             } else {
-                iconId = GemIcons.Other_UI.ShowMapTerrain
+                GemIcons.Other_UI.ShowMapTerrain
             }
         } else if (m_text.indexOf("Satellite") >= 0) {
             iconId = GemIcons.Other_UI.ShowMapTerrainAndSatellite
         }
 
-        return GEMSdkCall.execute {
-            Util.getImageIdAsBitmap(iconId.value, width, height)
+        return@execute Util.getImageIdAsBitmap(iconId.value, width, height)
+    }
+
+    override fun getStatusIcon(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
+        return@execute if (m_checked) {
+            Util.getImageIdAsBitmap(
+                GemIcons.Other_UI.Button_DownloadCheckmark.value, width, height
+            )
+        } else {
+            Util.getContentStoreStatusAsBitmap(it.getStatus(), width, height)
         }
     }
 
-    override fun getStatusIcon(width: Int, height: Int): Bitmap? {
-        return GEMSdkCall.execute {
-            if (m_checked) {
-                Util.getImageIdAsBitmap(
-                    GemIcons.Other_UI.Button_DownloadCheckmark.value,
-                    width,
-                    height
-                )
-            } else {
-                Util.getContentStoreStatusAsBitmap(it.getStatus(), width, height)
-            }
-        }
-    }
+    override fun getText(): String = GEMSdkCall.execute {
+        return@execute it.getName()
+    } ?: ""
 
-    override fun getText(): String {
-        return GEMSdkCall.execute { it.getName() } ?: ""
-    }
-
-    override fun getStatusIconColor(): Int {
-        return Util.getColor(
+    override fun getStatusIconColor(): Int = GEMSdkCall.execute {
+        return@execute Util.getColor(
             when (it.getStatus()) {
                 TContentStoreItemStatus.ECIS_Completed -> 0
                 TContentStoreItemStatus.ECIS_DownloadQueued -> 0
@@ -740,6 +754,6 @@ open class StyleItemViewModel(item: ContentStoreItem) : StylesContentStoreItemVi
                 }
             }
         )
-    }
+    } ?: 0
 }
 // -----------------------------------------------------------------------------------------

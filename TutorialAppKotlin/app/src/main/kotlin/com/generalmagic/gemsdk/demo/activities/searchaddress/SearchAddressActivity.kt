@@ -18,7 +18,6 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.DisplayMetrics
 import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -27,6 +26,7 @@ import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.app.BaseActivity
 import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.util.AppUtils
+import com.generalmagic.gemsdk.demo.util.Utils
 import com.generalmagic.gemsdk.models.TAddressField
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import kotlinx.android.synthetic.main.search_address_view.*
@@ -39,7 +39,7 @@ class SearchAddressActivity : BaseActivity() {
     private var searchAddressAdapter: SearchAddressAdapter? = null
     private var streetTopPadding: Int = 0
     private val iconSize =
-        GEMApplication.getAppResources().getDimension(R.dimen.listIconSize).toInt()
+        GEMApplication.appResources().getDimension(R.dimen.listIconSize).toInt()
     var viewId: Long = 0
 
     // ---------------------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ class SearchAddressActivity : BaseActivity() {
         // -----------------------------------------------------------------------------------------
 
         fun start() {
-            GEMApplication.uiHandler.postDelayed(this, 100)
+            GEMApplication.postOnMainDelayed(this, 100)
         }
 
         // -----------------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ class SearchAddressActivity : BaseActivity() {
 
     // ---------------------------------------------------------------------------------------------
 
-    class CustomTextWatcher(private val viewId: Long, private val field: Int) :
+    class CustomTextWatcher(private val field: Int) :
         TextWatcher,
         TextChangeNotifiable {
         // -----------------------------------------------------------------------------------------
@@ -94,7 +94,7 @@ class SearchAddressActivity : BaseActivity() {
 
         override fun notifyTextChanged(charSequence: CharSequence?) {
             GEMSdkCall.execute {
-                GEMAddressSearchView.didChangeFilter(viewId, field, charSequence.toString())
+                GEMAddressSearchView.didChangeFilter(field, charSequence.toString())
             }
             notifier = null
         }
@@ -145,8 +145,8 @@ class SearchAddressActivity : BaseActivity() {
         var title = ""
         var flag: Bitmap? = null
         GEMSdkCall.execute {
-            title = GEMAddressSearchView.getTitle(viewId)
-            flag = GEMAddressSearchView.getCountryFlag(viewId, iconSize, iconSize)
+            title = GEMAddressSearchView.getTitle()
+            flag = GEMAddressSearchView.getCountryFlag(iconSize, iconSize)
         }
 
         // set title
@@ -155,7 +155,7 @@ class SearchAddressActivity : BaseActivity() {
         flag_icon?.let { icon ->
             icon.setOnClickListener {
                 GEMSdkCall.execute {
-                    GEMAddressSearchView.didTapCountryFlag(viewId)
+                    GEMAddressSearchView.didTapCountryFlag()
                 }
             }
 
@@ -168,7 +168,7 @@ class SearchAddressActivity : BaseActivity() {
         }
 
         val bLandscape =
-            GEMApplication.getAppResources().configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+            GEMApplication.appResources().configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
         street?.let { streetTopPadding = it.paddingTop }
 
@@ -189,7 +189,6 @@ class SearchAddressActivity : BaseActivity() {
                     GEMSdkCall.execute {
                         GEMAddressSearchView.shouldChangeText = true
                         GEMAddressSearchView.didChangeFilter(
-                            viewId,
                             TAddressField.ECity.value,
                             city?.text.toString()
                         )
@@ -204,7 +203,6 @@ class SearchAddressActivity : BaseActivity() {
                     GEMSdkCall.execute {
                         GEMAddressSearchView.shouldChangeText = true
                         GEMAddressSearchView.didChangeFilter(
-                            viewId,
                             TAddressField.EStreetName.value,
                             street?.text.toString()
                         )
@@ -219,7 +217,6 @@ class SearchAddressActivity : BaseActivity() {
                     GEMSdkCall.execute {
                         GEMAddressSearchView.shouldChangeText = true
                         GEMAddressSearchView.didChangeFilter(
-                            viewId,
                             TAddressField.EStreetNumber.value,
                             street_number?.text.toString()
                         )
@@ -234,7 +231,6 @@ class SearchAddressActivity : BaseActivity() {
                     GEMSdkCall.execute {
                         GEMAddressSearchView.shouldChangeText = true
                         GEMAddressSearchView.didChangeFilter(
-                            viewId,
                             TAddressField.ECrossing1.value,
                             intersection?.text.toString()
                         )
@@ -243,7 +239,7 @@ class SearchAddressActivity : BaseActivity() {
             }
         }
 
-        searchAddressAdapter = SearchAddressAdapter(viewId)
+        searchAddressAdapter = SearchAddressAdapter()
 
         state?.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
@@ -296,7 +292,6 @@ class SearchAddressActivity : BaseActivity() {
                     if (!it.isFocused) {
                         GEMSdkCall.execute {
                             GEMAddressSearchView.didChangeFilter(
-                                viewId,
                                 TAddressField.EState.value,
                                 it.text.toString()
                             )
@@ -340,10 +335,10 @@ class SearchAddressActivity : BaseActivity() {
                     )
                 } else if (state?.text.isNullOrEmpty()) {
                     val text = GEMSdkCall.execute {
-                        GEMAddressSearchView.getItemText(viewId, 0)
+                        GEMAddressSearchView.getItemText(0)
                     } ?: ""
 
-                    GEMApplication.uiHandler.post {
+                    GEMApplication.postOnMain {
                         state?.text = Editable.Factory.getInstance().newEditable(text)
                     }
 
@@ -355,7 +350,6 @@ class SearchAddressActivity : BaseActivity() {
 
                 GEMSdkCall.execute {
                     GEMAddressSearchView.didChangeFilter(
-                        viewId,
                         TAddressField.ECity.value,
                         city?.text.toString()
                     )
@@ -368,10 +362,10 @@ class SearchAddressActivity : BaseActivity() {
             if (event.action == MotionEvent.ACTION_DOWN) {
                 if (city?.text.isNullOrEmpty()) {
                     val text = GEMSdkCall.execute {
-                        GEMAddressSearchView.getItemText(viewId, 0)
+                        GEMAddressSearchView.getItemText(0)
                     } ?: ""
 
-                    GEMApplication.uiHandler.post {
+                    GEMApplication.postOnMain {
                         city?.text = Editable.Factory.getInstance().newEditable(text)
                     }
 
@@ -383,7 +377,6 @@ class SearchAddressActivity : BaseActivity() {
 
                 GEMSdkCall.execute {
                     GEMAddressSearchView.didChangeFilter(
-                        viewId,
                         TAddressField.EStreetName.value,
                         street?.text.toString()
                     )
@@ -396,10 +389,10 @@ class SearchAddressActivity : BaseActivity() {
             if (event.action == MotionEvent.ACTION_DOWN) {
                 if (street?.text.isNullOrEmpty()) {
                     val text = GEMSdkCall.execute {
-                        GEMAddressSearchView.getItemText(viewId, 0)
+                        GEMAddressSearchView.getItemText(0)
                     } ?: ""
 
-                    GEMApplication.uiHandler.post {
+                    GEMApplication.postOnMain {
                         street?.text = Editable.Factory.getInstance().newEditable(text)
                     }
 
@@ -411,7 +404,6 @@ class SearchAddressActivity : BaseActivity() {
 
                 GEMSdkCall.execute {
                     GEMAddressSearchView.didChangeFilter(
-                        viewId,
                         TAddressField.EStreetNumber.value,
                         street_number?.text.toString()
                     )
@@ -424,10 +416,10 @@ class SearchAddressActivity : BaseActivity() {
             if (event.action == MotionEvent.ACTION_DOWN) {
                 if (street?.text.isNullOrEmpty()) {
                     val text = GEMSdkCall.execute {
-                        GEMAddressSearchView.getItemText(viewId, 0)
+                        GEMAddressSearchView.getItemText(0)
                     }
 
-                    GEMApplication.uiHandler.post {
+                    GEMApplication.postOnMain {
                         street?.text = Editable.Factory.getInstance().newEditable(text)
                     }
 
@@ -439,7 +431,6 @@ class SearchAddressActivity : BaseActivity() {
 
                 GEMSdkCall.execute {
                     GEMAddressSearchView.didChangeFilter(
-                        viewId,
                         TAddressField.ECrossing1.value,
                         intersection?.text.toString()
                     )
@@ -449,16 +440,16 @@ class SearchAddressActivity : BaseActivity() {
         }
 
         city?.addTextChangedListener(
-            CustomTextWatcher(viewId, TAddressField.ECity.value)
+            CustomTextWatcher(TAddressField.ECity.value)
         )
         street?.addTextChangedListener(
-            CustomTextWatcher(viewId, TAddressField.EStreetName.value)
+            CustomTextWatcher(TAddressField.EStreetName.value)
         )
         street_number?.addTextChangedListener(
-            CustomTextWatcher(viewId, TAddressField.EStreetNumber.value)
+            CustomTextWatcher(TAddressField.EStreetNumber.value)
         )
         intersection?.addTextChangedListener(
-            CustomTextWatcher(viewId, TAddressField.ECrossing1.value)
+            CustomTextWatcher(TAddressField.ECrossing1.value)
         )
 
         setAddressFieldImeAction(city)
@@ -475,19 +466,15 @@ class SearchAddressActivity : BaseActivity() {
 
         GEMSdkCall.execute {
             cityHint = GEMAddressSearchView.getHint(
-                viewId,
                 TAddressField.ECity.value
             )
             streetHint = GEMAddressSearchView.getHint(
-                viewId,
                 TAddressField.EStreetName.value
             )
             streetNumberHint = GEMAddressSearchView.getHint(
-                viewId,
                 TAddressField.EStreetNumber.value
             )
             intersectionHint = GEMAddressSearchView.getHint(
-                viewId,
                 TAddressField.ECrossing1.value
             )
         }
@@ -519,7 +506,7 @@ class SearchAddressActivity : BaseActivity() {
 
         submit_button?.setOnClickListener {
             GEMSdkCall.execute {
-                GEMAddressSearchView.didTapSearchButton(viewId)
+                GEMAddressSearchView.didTapSearchButton()
             }
         }
 
@@ -530,7 +517,7 @@ class SearchAddressActivity : BaseActivity() {
         }
 
         if (updateItems != null) {
-            GEMApplication.uiHandler.post {
+            GEMApplication.postOnMain {
                 updateItems
             }
         }
@@ -583,14 +570,11 @@ class SearchAddressActivity : BaseActivity() {
     override fun onWindowAttributesChanged(attrs: WindowManager.LayoutParams) {
         super.onWindowAttributesChanged(attrs)
 
-        GEMApplication.uiHandler.postDelayed(
-            {
-                if (GEMApplication.getAppResources().configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    setAddressFieldsLayoutParams(Configuration.ORIENTATION_LANDSCAPE)
-                }
-            },
-            20
-        )
+        GEMApplication.postOnMainDelayed({
+            if (GEMApplication.appResources().configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                setAddressFieldsLayoutParams(Configuration.ORIENTATION_LANDSCAPE)
+            }
+        }, 20)
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -611,13 +595,12 @@ class SearchAddressActivity : BaseActivity() {
         state.requestFocus()
 
         state.addTextChangedListener(
-            CustomTextWatcher(viewId, TAddressField.EState.value)
+            CustomTextWatcher(TAddressField.EState.value)
         )
         setAddressFieldImeAction(state)
 
         state.hint = GEMSdkCall.execute {
             GEMAddressSearchView.getHint(
-                viewId,
                 TAddressField.EState.value
             )
         }
@@ -648,12 +631,9 @@ class SearchAddressActivity : BaseActivity() {
 
     private fun setAddressFieldsLandscapeLayoutParams() {
         val fieldMargin =
-            GEMApplication.getAppResources().getDimensionPixelSize(R.dimen.smallPadding)
+            GEMApplication.appResources().getDimensionPixelSize(R.dimen.smallPadding)
 
-        val displayMetrics = DisplayMetrics()
-        windowManager?.defaultDisplay?.getMetrics(displayMetrics)
-
-        val availableWidth = displayMetrics.widthPixels
+        val availableWidth = Utils.getScreenWidth(this)
         val w = availableWidth / 2 + iconSize / 2 + fieldMargin
 
         val hasState = GEMSdkCall.execute {
@@ -707,7 +687,7 @@ class SearchAddressActivity : BaseActivity() {
 
     private fun setAddressFieldsPortraitLayoutParams() {
         val fieldMargin =
-            GEMApplication.getAppResources().getDimensionPixelSize(R.dimen.smallPadding)
+            GEMApplication.appResources().getDimensionPixelSize(R.dimen.smallPadding)
 
         if (findViewById<LinearLayout>(R.id.flag_city_container) != null) {
             val params = RelativeLayout.LayoutParams(
@@ -743,11 +723,11 @@ class SearchAddressActivity : BaseActivity() {
 
     // ---------------------------------------------------------------------------------------------
 
-    class SearchAddressAdapter(private val viewId: Long) : BaseAdapter() {
+    class SearchAddressAdapter() : BaseAdapter() {
         private lateinit var holder: ViewHolder
 
         override fun getCount(): Int {
-            return GEMSdkCall.execute { GEMAddressSearchView.getItemsCount(viewId) } ?: 0
+            return GEMSdkCall.execute { GEMAddressSearchView.getItemsCount() } ?: 0
         }
 
         override fun getItem(position: Int): Any? {
@@ -767,7 +747,7 @@ class SearchAddressActivity : BaseActivity() {
                 holder = ViewHolder()
                 holder.setViews(i)
 
-                val context = GEMApplication.getApplicationContext()
+                val context = GEMApplication.applicationContext()
                 val view = View.inflate(context, R.layout.search_address_item, null)
                 view?.let {
                     holder.mItemIcon = it.findViewById<View>(R.id.address_icon) as ImageView
@@ -782,7 +762,7 @@ class SearchAddressActivity : BaseActivity() {
             var mItemLabel: TextView? = null
             var mItemIcon: ImageView? = null
             private val iconSize =
-                GEMApplication.getAppResources().getDimension(R.dimen.listIconSize).toInt()
+                GEMApplication.appResources().getDimension(R.dimen.listIconSize).toInt()
 
             fun setViews(itemIndex: Int) {
                 var text = ""
@@ -790,10 +770,10 @@ class SearchAddressActivity : BaseActivity() {
                 var icon: Bitmap? = null
 
                 GEMSdkCall.execute {
-                    text = GEMAddressSearchView.getItemText(viewId, itemIndex)
-                    description = GEMAddressSearchView.getItemDescription(viewId, itemIndex)
+                    text = GEMAddressSearchView.getItemText(itemIndex)
+                    description = GEMAddressSearchView.getItemDescription(itemIndex)
 
-                    icon = GEMAddressSearchView.getItemImage(viewId, itemIndex, iconSize, iconSize)
+                    icon = GEMAddressSearchView.getItemImage(itemIndex, iconSize, iconSize)
                 }
 
                 mItemLabel?.let {
@@ -835,12 +815,12 @@ class SearchAddressActivity : BaseActivity() {
             }
 
             if (actionId == EditorInfo.IME_ACTION_SEARCH || event == null || event.keyCode == KeyEvent.KEYCODE_ENTER) {
-                if (GEMApplication.getAppResources().configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                if (GEMApplication.appResources().configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
                     val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                     imm.hideSoftInputFromWindow(v.windowToken, 0)
                 } else {
                     if (submit_button?.isEnabled == true) {
-                        GEMSdkCall.execute { GEMAddressSearchView.didTapSearchButton(viewId) }
+                        GEMSdkCall.execute { GEMAddressSearchView.didTapSearchButton() }
                     }
                 }
                 return@setOnEditorActionListener true
@@ -860,7 +840,7 @@ class SearchAddressActivity : BaseActivity() {
 
         GEMAddressSearchView.setEnabledState(field, value)
 
-        GEMApplication.uiHandler.post {
+        GEMApplication.postOnMain {
             addressField.isEnabled = value
             addressField.isClickable = value
             addressField.isFocusable = value
@@ -893,7 +873,6 @@ class SearchAddressActivity : BaseActivity() {
         intersection?.requestFocus()
         GEMSdkCall.execute {
             GEMAddressSearchView.didChangeFilter(
-                viewId,
                 TAddressField.ECrossing1.value,
                 intersection?.text.toString()
             )
@@ -950,7 +929,7 @@ class SearchAddressActivity : BaseActivity() {
         var hasState = false
 
         GEMSdkCall.execute {
-            flag = GEMAddressSearchView.getCountryFlag(viewId, iconSize, iconSize)
+            flag = GEMAddressSearchView.getCountryFlag(iconSize, iconSize)
             hasState = GEMAddressSearchView.hasState()
         }
 
@@ -964,7 +943,7 @@ class SearchAddressActivity : BaseActivity() {
             setAddressFieldEnabledState(city, TAddressField.ECity, false)
 
             GEMSdkCall.execute {
-                GEMAddressSearchView.didChangeFilter(viewId, TAddressField.EState.value, "")
+                GEMAddressSearchView.didChangeFilter(TAddressField.EState.value, "")
             }
         } else {
             city?.text?.clear()
@@ -973,7 +952,7 @@ class SearchAddressActivity : BaseActivity() {
             city?.requestFocus()
 
             GEMSdkCall.execute {
-                GEMAddressSearchView.didChangeFilter(viewId, TAddressField.ECity.value, "")
+                GEMAddressSearchView.didChangeFilter(TAddressField.ECity.value, "")
             }
         }
 

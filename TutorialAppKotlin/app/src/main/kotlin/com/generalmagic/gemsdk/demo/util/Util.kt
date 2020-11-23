@@ -17,11 +17,11 @@ import android.os.Build
 import android.util.DisplayMetrics
 import android.util.TypedValue
 import android.view.View
-import android.view.WindowManager
 import android.widget.TextView
 import com.generalmagic.gemsdk.Route
 import com.generalmagic.gemsdk.SignpostImageRef
 import com.generalmagic.gemsdk.TRgba
+import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.models.*
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMHelper
@@ -98,14 +98,14 @@ class Util {
         // ---------------------------------------------------------------------------------------------
 
         fun createBitmap(img: RoadInfoImageRef?, width: Int, height: Int): Pair<Int, Bitmap?> {
-            GEMSdkCall.checkCurrentThread()
-
             img ?: return Pair(0, null)
 
-            val resultPair = GEMHelper.imageToBitmap(img, width, height)
-            val bmp = createBitmap(resultPair?.second, resultPair?.first ?: 0, height)
+            return GEMSdkCall.execute {
+                val resultPair = GEMHelper.imageToBitmap(img, width, height)
+                val bmp = createBitmap(resultPair?.second, resultPair?.first ?: 0, height)
 
-            return Pair(resultPair?.first ?: 0, bmp)
+                return@execute Pair(resultPair?.first ?: 0, bmp)
+            } ?: Pair(0, null)
         }
 
         fun createBitmap(
@@ -116,25 +116,27 @@ class Util {
             activeColor: TRgba? = null,
             inactiveColor: TRgba? = null
         ): Pair<Int, Bitmap?> {
-            GEMSdkCall.checkCurrentThread()
-
             img ?: return Pair(0, null)
 
-            val resultPair =
-                GEMHelper.imageToBitmap(img, width, height, bkColor, activeColor, inactiveColor)
-            val bmp = createBitmap(resultPair?.second, resultPair?.first ?: 0, height)
+            return GEMSdkCall.execute {
 
-            return Pair(resultPair?.first ?: 0, bmp)
+
+                val resultPair =
+                    GEMHelper.imageToBitmap(img, width, height, bkColor, activeColor, inactiveColor)
+                val bmp = createBitmap(resultPair?.second, resultPair?.first ?: 0, height)
+
+                return@execute Pair(resultPair?.first ?: 0, bmp)
+            } ?: Pair(0, null)
         }
 
         fun createBitmap(img: SignpostImageRef?, width: Int, height: Int): Pair<Int, Bitmap?> {
-            GEMSdkCall.checkCurrentThread()
-
             img ?: return Pair(0, null)
-            val resultPair = GEMHelper.imageToBitmap(img, width, height)
-            val bmp = createBitmap(resultPair?.second, resultPair?.first ?: 0, height)
+            return GEMSdkCall.execute {
+                val resultPair = GEMHelper.imageToBitmap(img, width, height)
+                val bmp = createBitmap(resultPair?.second, resultPair?.first ?: 0, height)
 
-            return Pair(resultPair?.first ?: 0, bmp)
+                return@execute Pair(resultPair?.first ?: 0, bmp)
+            } ?: Pair(0, null)
         }
 
         // ---------------------------------------------------------------------------------------------
@@ -148,27 +150,28 @@ class Util {
             inactiveInnerColor: TRgba? = null,
             inactiveOuterColor: TRgba? = null
         ): Bitmap? {
-            GEMSdkCall.checkCurrentThread()
-
             img ?: return null
-            val byteArray = GEMHelper.imageToBitmap(
-                img,
-                width,
-                height,
-                activeInnerColor,
-                activeOuterColor,
-                inactiveInnerColor,
-                inactiveOuterColor
-            )
-            return createBitmap(byteArray, width, height)
+
+            return GEMSdkCall.execute {
+                val byteArray = GEMHelper.imageToBitmap(
+                    img,
+                    width,
+                    height,
+                    activeInnerColor,
+                    activeOuterColor,
+                    inactiveInnerColor,
+                    inactiveOuterColor
+                )
+                return@execute createBitmap(byteArray, width, height)
+            }
         }
 
         fun createBitmap(img: Image?, width: Int, height: Int): Bitmap? {
-            GEMSdkCall.checkCurrentThread()
-
             img ?: return null
-            val byteArray = GEMHelper.imageToBitmap(img, width, height)
-            return createBitmap(byteArray, width, height)
+            return GEMSdkCall.execute {
+                val byteArray = GEMHelper.imageToBitmap(img, width, height)
+                return@execute createBitmap(byteArray, width, height)
+            }
         }
 
         fun createBitmapFromNV21(data: ByteArray?, width: Int, height: Int): Bitmap? {
@@ -209,16 +212,15 @@ class Util {
             return result
         }
 
-        fun getImageIdAsImage(id: Int, width: Int, height: Int): Image? {
-            GEMSdkCall.checkCurrentThread()
-            return ImageDatabase().getImageById(id)
+        fun getImageIdAsImage(id: Int): Image? {
+            return GEMSdkCall.execute { ImageDatabase().getImageById(id) }
         }
 
         fun getImageIdAsBitmap(id: Int, width: Int, height: Int): Bitmap? {
-            GEMSdkCall.checkCurrentThread()
-
-            val image = getImageIdAsImage(id, width, height)
-            return createBitmap(image, width, height)
+            return GEMSdkCall.execute {
+                val image = getImageIdAsImage(id)
+                return@execute createBitmap(image, width, height)
+            }
         }
 
         // ---------------------------------------------------------------------------------------------
@@ -322,10 +324,8 @@ class Util {
 
         // ---------------------------------------------------------------------------------------------
 
-        fun getSizeInPixels(context: Context, dpi: Int): Int {
-            val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            val metrics = DisplayMetrics()
-            wm.defaultDisplay.getMetrics(metrics)
+        fun getSizeInPixels(dpi: Int): Int {
+            val metrics = GEMApplication.applicationContext().resources.displayMetrics
             return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpi.toFloat(), metrics)
                 .toInt()
         }

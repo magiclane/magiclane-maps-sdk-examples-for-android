@@ -58,14 +58,22 @@ class NetworkManager(val context: Context) {
 
     init {
         when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.N -> connectivityManager.registerDefaultNetworkCallback(
-                getConnectivityManagerCallback()
-            )
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> lollipopNetworkAvailableRequest()
-            else -> context.registerReceiver(
-                networkReceiver,
-                IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
-            )
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.N -> {
+                connectivityManager.registerDefaultNetworkCallback(
+                    getConnectivityManagerCallback()
+                )
+            }
+
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> {
+                lollipopNetworkAvailableRequest()
+            }
+
+            else -> {
+                context.registerReceiver(
+                    networkReceiver,
+                    IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
+                )
+            }
         }
     }
 

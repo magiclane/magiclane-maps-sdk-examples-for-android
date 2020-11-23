@@ -27,13 +27,14 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.doOnPreDraw
+import com.generalmagic.gemsdk.GEMSdk
 import com.generalmagic.gemsdk.Route
 import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.app.BaseActivity
 import com.generalmagic.gemsdk.demo.app.GEMApplication
-import com.generalmagic.gemsdk.demo.app.StaticsHolder
 import com.generalmagic.gemsdk.demo.util.AppUtils
 import com.generalmagic.gemsdk.demo.util.IntentHelper
+import com.generalmagic.gemsdk.util.GEMSdkCall
 import kotlinx.android.synthetic.main.pt_route_description_activity.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -108,7 +109,9 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
         }
         route = inRoute
 
-        GEMPublicTransportRouteDescriptionView.loadItems(route)
+        GEMSdkCall.execute {
+            GEMPublicTransportRouteDescriptionView.loadItems(route)
+        }
 
         val title = GEMPublicTransportRouteDescriptionView.title
 
@@ -159,12 +162,12 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
 
             val params2 = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                GEMApplication.getAppResources().getDimensionPixelSize(R.dimen.route_list_icon_size)
+                GEMApplication.appResources().getDimensionPixelSize(R.dimen.route_list_icon_size)
             )
 
             val params3 = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                GEMApplication.getAppResources()
+                GEMApplication.appResources()
                     .getDimensionPixelSize(R.dimen.route_list_separator_size)
             )
 
@@ -584,9 +587,9 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
 
                                 if (PublicTransportRouteDescriptionLineView.shouldSetCellHeight() ||
                                     PublicTransportRouteDescriptionLineView.shouldSetOffset(
-                                            0,
-                                            itemIndex - 1
-                                        )
+                                        0,
+                                        itemIndex - 1
+                                    )
                                 ) {
                                     segmentStartStationView.doOnPreDraw {
                                         val finalHeight =
@@ -1234,7 +1237,7 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
             var detailStatusTextView: TextView?
 
             val textSize =
-                GEMApplication.getAppResources().getDimension(R.dimen.route_list_font_size_medium)
+                GEMApplication.appResources().getDimension(R.dimen.route_list_font_size_medium)
 
             val genericListItem =
                 View.inflate(this, R.layout.icon_text_status_list_item, null) as ConstraintLayout
@@ -1251,9 +1254,9 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
 
             val layoutParams = imageView.layoutParams
             if (layoutParams != null) {
-                layoutParams.width = GEMApplication.getAppResources()
+                layoutParams.width = GEMApplication.appResources()
                     .getDimension(R.dimen.route_list_instr_icon_size).toInt()
-                layoutParams.height = GEMApplication.getAppResources()
+                layoutParams.height = GEMApplication.appResources()
                     .getDimension(R.dimen.route_list_instr_icon_size).toInt()
                 imageView.layoutParams = layoutParams
             }
@@ -1367,7 +1370,7 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
             val item = GEMPublicTransportRouteDescriptionView.m_routeDescriptionItems[itemIndex]
             val area = item.m_geographicArea
             if (area != null) {
-                StaticsHolder.getMainMapView()?.centerOnRectArea(area)
+                GEMApplication.getMainMapView()?.centerOnRectArea(area)
             }
             finish()
         }

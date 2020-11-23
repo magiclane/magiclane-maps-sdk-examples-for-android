@@ -95,7 +95,7 @@ object GEMPublicTransportRouteDescriptionView {
     // ---------------------------------------------------------------------------------------------
 
     private val iconSize =
-        GEMApplication.getAppResources().getDimension(R.dimen.route_list_instr_icon_size).toInt()
+        GEMApplication.appResources().getDimension(R.dimen.route_list_instr_icon_size).toInt()
 
     // ---------------------------------------------------------------------------------------------
 
@@ -104,7 +104,8 @@ object GEMPublicTransportRouteDescriptionView {
     }
 
     private fun setHeader(m_route: Route) {
-        val routeSummary = m_route.getSummary()
+        GEMSdkCall.checkCurrentThread()
+
         val routeSegmentsList = m_route.getSegments() ?: ArrayList()
         val nSegmentsCount = routeSegmentsList.size
         var nWalkingTime = 0
@@ -115,7 +116,7 @@ object GEMPublicTransportRouteDescriptionView {
         var bLookForPTSegment = true
 
         m_header.m_tripSegments.clear()
-        
+
         if (m_route.toPTRoute()?.getPTFrequency() ?: 0 > 0) {
             val timeText = Utils.getTimeText(m_route.toPTRoute()?.getPTFrequency() ?: 0)
             val tmp = String.format("%s %s", timeText.first, timeText.second)
@@ -126,7 +127,6 @@ object GEMPublicTransportRouteDescriptionView {
         for (nSegmentIndex in 0 until nSegmentsCount) {
             val routeSegment = routeSegmentsList[nSegmentIndex]
 
-            val segmentSummary = routeSegment.getSummary()
             val routeSegmentItem = TRouteSegmentItem()
 
             if (routeSegment.getSegmentType() == ERouteSegmentType.ESTPublicTransport) {
@@ -139,7 +139,7 @@ object GEMPublicTransportRouteDescriptionView {
                     routeSegmentItem.m_name = it.getShortName() ?: ""
 
                     routeSegmentItem.m_visible = routeSegment.isSignificant()
-                    
+
                     val lineColor = it.getLineColor()
                     if (lineColor != null) {
                         bgColor = lineColor
@@ -337,104 +337,104 @@ object GEMPublicTransportRouteDescriptionView {
     // ---------------------------------------------------------------------------------------------
 
     fun loadItems(route: Route) {
-        GEMSdkCall.execute {
-            internalLoadItems(route)
+        GEMSdkCall.checkCurrentThread()
+        
+        internalLoadItems(route)
 
-            routeItem = RouteItem()
+        routeItem = RouteItem()
 
-            title = getTitle()
-            agencyText = getAgencyText()
-            itemsCount = getItemsCount()
+        title = getTitle()
+        agencyText = getAgencyText()
+        itemsCount = getItemsCount()
 
-            val width = TImageWidth()
-            separatorIcon = getSeparatorImage(width, iconSize)
+        val width = TImageWidth()
+        separatorIcon = getSeparatorImage(width, iconSize)
 
-            routeItem.tripTimeInterval = getTripTimeInterval()
-            routeItem.tripDuration = getTripDuration()
-            routeItem.numberOfChanges = getNumberOfChanges()
-            routeItem.walkingInfo = getWalkingInfo()
-            routeItem.frequency = getFrequency()
-            routeItem.fare = getFare()
-            routeItem.warning = getWarning()
+        routeItem.tripTimeInterval = getTripTimeInterval()
+        routeItem.tripDuration = getTripDuration()
+        routeItem.numberOfChanges = getNumberOfChanges()
+        routeItem.walkingInfo = getWalkingInfo()
+        routeItem.frequency = getFrequency()
+        routeItem.fare = getFare()
+        routeItem.warning = getWarning()
 
-            val segmentsCount = getRouteSegmentsCount()
-            routeItem.segmentCounts = segmentsCount.coerceAtLeast(0)
+        val segmentsCount = getRouteSegmentsCount()
+        routeItem.segmentCounts = segmentsCount.coerceAtLeast(0)
 
-            routeItem.tripSegments = arrayOfNulls(segmentsCount)
+        routeItem.tripSegments = arrayOfNulls(segmentsCount)
 
-            for (segmentIndex in 0 until segmentsCount) {
-                routeItem.tripSegments[segmentIndex] = RouteSegmentItem()
+        for (segmentIndex in 0 until segmentsCount) {
+            routeItem.tripSegments[segmentIndex] = RouteSegmentItem()
 
-                var color = getRouteSegmentBackgroundColor(segmentIndex)
-                routeItem.tripSegments[segmentIndex]?.backgroundColor = AppUtils.getColor(color)
+            var color = getRouteSegmentBackgroundColor(segmentIndex)
+            routeItem.tripSegments[segmentIndex]?.backgroundColor = AppUtils.getColor(color)
 
-                color = getRouteSegmentForegroundColor(segmentIndex)
-                routeItem.tripSegments[segmentIndex]?.foregroundColor = AppUtils.getColor(color)
+            color = getRouteSegmentForegroundColor(segmentIndex)
+            routeItem.tripSegments[segmentIndex]?.foregroundColor = AppUtils.getColor(color)
 
-                routeItem.tripSegments[segmentIndex]?.name = getRouteSegmentName(segmentIndex)
-                routeItem.tripSegments[segmentIndex]?.travelTimeValue =
-                    getRouteSegmentTravelTimeValue(segmentIndex)
-                routeItem.tripSegments[segmentIndex]?.travelTimeUnit =
-                    getRouteSegmentTravelTimeUnit(segmentIndex)
-                routeItem.tripSegments[segmentIndex]?.visible = isRouteSegmentVisible(segmentIndex)
+            routeItem.tripSegments[segmentIndex]?.name = getRouteSegmentName(segmentIndex)
+            routeItem.tripSegments[segmentIndex]?.travelTimeValue =
+                getRouteSegmentTravelTimeValue(segmentIndex)
+            routeItem.tripSegments[segmentIndex]?.travelTimeUnit =
+                getRouteSegmentTravelTimeUnit(segmentIndex)
+            routeItem.tripSegments[segmentIndex]?.visible = isRouteSegmentVisible(segmentIndex)
 
-                routeItem.tripSegments[segmentIndex]?.icon =
-                    getRouteSegmentImage(segmentIndex, width, iconSize)
+            routeItem.tripSegments[segmentIndex]?.icon =
+                getRouteSegmentImage(segmentIndex, width, iconSize)
 
-                val index = segmentIndex + 1
+            val index = segmentIndex + 1
 
-                routeItem.tripSegments[segmentIndex]?.departureTime = getStationDepartureTime(index)
-                routeItem.tripSegments[segmentIndex]?.arrivalTime = getStationArrivalTime(index)
-                routeItem.tripSegments[segmentIndex]?.startStationName = getStartStationName(index)
-                routeItem.tripSegments[segmentIndex]?.stopStationName = getStopStationName(index)
-                routeItem.tripSegments[segmentIndex]?.stationTimeInfo = getStationTimeInfo(index)
+            routeItem.tripSegments[segmentIndex]?.departureTime = getStationDepartureTime(index)
+            routeItem.tripSegments[segmentIndex]?.arrivalTime = getStationArrivalTime(index)
+            routeItem.tripSegments[segmentIndex]?.startStationName = getStartStationName(index)
+            routeItem.tripSegments[segmentIndex]?.stopStationName = getStopStationName(index)
+            routeItem.tripSegments[segmentIndex]?.stationTimeInfo = getStationTimeInfo(index)
 
-                color = getStationTimeInfoColor(index)
-                routeItem.tripSegments[segmentIndex]?.stationTimeInfoColor =
-                    AppUtils.getColor(color)
+            color = getStationTimeInfoColor(index)
+            routeItem.tripSegments[segmentIndex]?.stationTimeInfoColor =
+                AppUtils.getColor(color)
 
-                routeItem.tripSegments[segmentIndex]?.stationPlatform = getStationPlatform(index)
-                routeItem.tripSegments[segmentIndex]?.toBLineName = getToBLineName(index)
-                routeItem.tripSegments[segmentIndex]?.timeToNextStation =
-                    getTimeToNextStation(index)
-                routeItem.tripSegments[segmentIndex]?.distanceToNextStation =
-                    getDistanceToNextStation(index)
-                routeItem.tripSegments[segmentIndex]?.stayOnSameVehicle =
-                    getStayOnSameVehicle(index)
-                routeItem.tripSegments[segmentIndex]?.supportLineInfo = getSupportLineInfo(index)
-                routeItem.tripSegments[segmentIndex]?.isWalk = isWalking(index)
-                routeItem.tripSegments[segmentIndex]?.numberOfStops = getNumberOfStops(index)
+            routeItem.tripSegments[segmentIndex]?.stationPlatform = getStationPlatform(index)
+            routeItem.tripSegments[segmentIndex]?.toBLineName = getToBLineName(index)
+            routeItem.tripSegments[segmentIndex]?.timeToNextStation =
+                getTimeToNextStation(index)
+            routeItem.tripSegments[segmentIndex]?.distanceToNextStation =
+                getDistanceToNextStation(index)
+            routeItem.tripSegments[segmentIndex]?.stayOnSameVehicle =
+                getStayOnSameVehicle(index)
+            routeItem.tripSegments[segmentIndex]?.supportLineInfo = getSupportLineInfo(index)
+            routeItem.tripSegments[segmentIndex]?.isWalk = isWalking(index)
+            routeItem.tripSegments[segmentIndex]?.numberOfStops = getNumberOfStops(index)
 
-                if (routeItem.tripSegments[segmentIndex]?.isWalk == false) {
-                    val nStops =
-                        routeItem.tripSegments[segmentIndex]?.numberOfStops?.coerceAtLeast(0)!!
-                    routeItem.tripSegments[segmentIndex]?.stopNames = arrayOfNulls(nStops)
+            if (routeItem.tripSegments[segmentIndex]?.isWalk == false) {
+                val nStops =
+                    routeItem.tripSegments[segmentIndex]?.numberOfStops?.coerceAtLeast(0)!!
+                routeItem.tripSegments[segmentIndex]?.stopNames = arrayOfNulls(nStops)
 
-                    for (stopIndex in 0 until nStops) {
-                        routeItem.tripSegments[segmentIndex]?.stopNames!![stopIndex] =
-                            getStopName(index, stopIndex)
-                    }
-                } else {
-                    routeItem.tripSegments[segmentIndex]?.stopNames = arrayOfNulls(0)
+                for (stopIndex in 0 until nStops) {
+                    routeItem.tripSegments[segmentIndex]?.stopNames!![stopIndex] =
+                        getStopName(index, stopIndex)
+                }
+            } else {
+                routeItem.tripSegments[segmentIndex]?.stopNames = arrayOfNulls(0)
 
-                    var routeInstructionsCount = getInstructionsListCount(index)
-                    routeInstructionsCount = routeInstructionsCount.coerceAtLeast(0)
+                var routeInstructionsCount = getInstructionsListCount(index)
+                routeInstructionsCount = routeInstructionsCount.coerceAtLeast(0)
 
-                    routeItem.tripSegments[segmentIndex]?.routeInstructionsList =
-                        arrayOfNulls(routeInstructionsCount)
-                    for (routeInstructionIndex in 0 until routeInstructionsCount) {
-                        val item = RouteInstructionItem()
-                        item.icon =
-                            getInstructionImage(index, routeInstructionIndex, iconSize, iconSize)
-                        item.simpleText = getInstructionText(index, routeInstructionIndex)
-                        item.detailText = getInstructionDescription(index, routeInstructionIndex)
-                        item.simpleStatusText = getInstructionDistance(index, routeInstructionIndex)
-                        item.detailStatusText =
-                            getInstructionDistanceUnit(index, routeInstructionIndex)
+                routeItem.tripSegments[segmentIndex]?.routeInstructionsList =
+                    arrayOfNulls(routeInstructionsCount)
+                for (routeInstructionIndex in 0 until routeInstructionsCount) {
+                    val item = RouteInstructionItem()
+                    item.icon =
+                        getInstructionImage(index, routeInstructionIndex, iconSize, iconSize)
+                    item.simpleText = getInstructionText(index, routeInstructionIndex)
+                    item.detailText = getInstructionDescription(index, routeInstructionIndex)
+                    item.simpleStatusText = getInstructionDistance(index, routeInstructionIndex)
+                    item.detailStatusText =
+                        getInstructionDistanceUnit(index, routeInstructionIndex)
 
-                        routeItem.tripSegments[segmentIndex]?.routeInstructionsList!![routeInstructionIndex] =
-                            item
-                    }
+                    routeItem.tripSegments[segmentIndex]?.routeInstructionsList!![routeInstructionIndex] =
+                        item
                 }
             }
         }
@@ -499,7 +499,7 @@ object GEMPublicTransportRouteDescriptionView {
             val iconId = m_header.m_tripSegments[segmentIndex].m_iconId
             width.width = (height * Utils.getImageAspectRatio(iconId)).toInt()
 
-            return Utils.getImageAsBitmap(iconId, width.width, height, true)
+            return Utils.getImageAsBitmap(iconId, width.width, height)
         }
 
         return null

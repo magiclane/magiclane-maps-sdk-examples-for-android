@@ -5,6 +5,7 @@
 	android:id="@+id/search_item"
 	android:layout_width="fill_parent"
 	android:layout_height="wrap_content"
+    android:background="@color/list_view_bgnd_color"
 	android:minHeight="@dimen/listCellMinHeight">
 
 	<View

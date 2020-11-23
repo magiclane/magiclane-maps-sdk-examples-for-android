@@ -10,12 +10,14 @@
 
 package com.generalmagic.gemsdk.demo.util
 
-import android.content.Context
+import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Insets
+import android.os.Build
 import android.util.DisplayMetrics
 import android.util.TypedValue
-import android.view.WindowManager
+import android.view.WindowInsets
 import com.generalmagic.gemsdk.CommonSettings
 import com.generalmagic.gemsdk.TUnitSystem
 import com.generalmagic.gemsdk.demo.app.GEMApplication
@@ -26,30 +28,34 @@ import com.generalmagic.gemsdk.models.ImageDatabase
 import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.models.TAddressField
 import com.generalmagic.gemsdk.util.GEMError
+import com.generalmagic.gemsdk.util.GEMSdkCall
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.IntBuffer
 import java.util.*
 
+
 // //// copied from android-kt
 class Utils {
     companion object {
         fun getUIString(strId: StringIds): String {
-            return LocalizationManager().getString(strId) ?: ""
+            return GEMSdkCall.execute { LocalizationManager().getString(strId) } ?: ""
         }
 
         fun getImageAspectRatio(nImageId: Int): Float {
-            var fAspectRatio = 1.0f
-            val icon = ImageDatabase().getImageById(nImageId)
-            if (icon != null) {
-                val size = icon.getSize()
+            return GEMSdkCall.execute {
+                var fAspectRatio = 1.0f
+                val icon = ImageDatabase().getImageById(nImageId)
+                if (icon != null) {
+                    val size = icon.getSize()
 
-                if (size != null && size.height() != 0) {
-                    fAspectRatio = (size.width().toFloat() / size.height())
+                    if (size != null && size.height() != 0) {
+                        fAspectRatio = (size.width().toFloat() / size.height())
+                    }
                 }
-            }
 
-            return fAspectRatio
+                return@execute fAspectRatio
+            } ?: 0.0f
         }
 
         fun getTimeText(
@@ -57,41 +63,43 @@ class Utils {
             bForceHours: Boolean = false,
             bCapitalizeResult: Boolean = false
         ): Pair<String, String> {
-            val time: String
-            val unit: String
-            if (timeInSeconds == 0) {
-                time = "0"
-                unit = getUIString(StringIds.eStrTimeMin)
+            return GEMSdkCall.execute {
+                val time: String
+                val unit: String
+                if (timeInSeconds == 0) {
+                    time = "0"
+                    unit = getUIString(StringIds.eStrTimeMin)
 
-                return Pair(time, unit)
-            }
+                    return@execute Pair(time, unit)
+                }
 
-            var nMin: Int
-            val nHour: Int
+                var nMin: Int
+                val nHour: Int
 
-            if ((timeInSeconds >= 3600) || bForceHours) {
-                nMin = timeInSeconds / 60
-                nHour = nMin / 60
-                nMin -= (nHour * 60)
+                if ((timeInSeconds >= 3600) || bForceHours) {
+                    nMin = timeInSeconds / 60
+                    nHour = nMin / 60
+                    nMin -= (nHour * 60)
 
-                time = String.format("%d:%02d", nHour, nMin)
-                unit = getUIString(StringIds.eStrHoursAbbrev)
-            } else if (timeInSeconds >= 60) {
-                nMin = timeInSeconds / 60
-                time = String.format("%d", nMin)
+                    time = String.format("%d:%02d", nHour, nMin)
+                    unit = getUIString(StringIds.eStrHoursAbbrev)
+                } else if (timeInSeconds >= 60) {
+                    nMin = timeInSeconds / 60
+                    time = String.format("%d", nMin)
 
-                unit = getUIString(StringIds.eStrTimeMin)
-            } else {
-                time = String.format("%d", 1)
-                unit = getUIString(StringIds.eStrTimeMin)
-            }
+                    unit = getUIString(StringIds.eStrTimeMin)
+                } else {
+                    time = String.format("%d", 1)
+                    unit = getUIString(StringIds.eStrTimeMin)
+                }
 
-            if (bCapitalizeResult) {
-                time.toUpperCase(Locale.getDefault())
-                unit.toUpperCase(Locale.getDefault())
-            }
+                if (bCapitalizeResult) {
+                    time.toUpperCase(Locale.getDefault())
+                    unit.toUpperCase(Locale.getDefault())
+                }
 
-            return Pair(time, unit)
+                return@execute Pair(time, unit)
+            } ?: Pair("", "")
         }
 
         fun getDistText(
@@ -211,29 +219,31 @@ class Utils {
                 unit.toUpperCase(Locale.getDefault())
             }
 
-            val decimalSeparator = CommonSettings().getDecimalSeparator()
-            val groupingSeparator = CommonSettings().getDigitGroupSeparator()
+            GEMSdkCall.execute {
+                val decimalSeparator = CommonSettings().getDecimalSeparator()
+                val groupingSeparator = CommonSettings().getDigitGroupSeparator()
 
-            if (distance.indexOf(',') >= 0) {
-                distance.replace(',', decimalSeparator)
-            } else // if (distance.find(".") >= 0)
+                if (distance.indexOf(',') >= 0) {
+                    distance.replace(',', decimalSeparator)
+                } else // if (distance.find(".") >= 0)
                 {
                     distance.replace('.', decimalSeparator)
                 }
 
-            var index: Int = distance.indexOf(decimalSeparator)
-            if (index < 0) {
-                index = distance.length
-            }
+                var index: Int = distance.indexOf(decimalSeparator)
+                if (index < 0) {
+                    index = distance.length
+                }
 
-            for ((j, i) in (index - 1 downTo 0).withIndex()) {
-                val nRemaining: Int = j % 3
-                if (nRemaining == 0) {
-                    distance.format(
-                        "${
-                        distance.substring(0, i)
-                        }${groupingSeparator}${distance.subSequence(i, distance.length)}"
-                    )
+                for ((j, i) in (index - 1 downTo 0).withIndex()) {
+                    val nRemaining: Int = j % 3
+                    if (nRemaining == 0) {
+                        distance.format(
+                            "${
+                                distance.substring(0, i)
+                            }${groupingSeparator}${distance.subSequence(i, distance.length)}"
+                        )
+                    }
                 }
             }
 
@@ -244,182 +254,181 @@ class Utils {
             landmark: Landmark,
             bFillAddressInfo: Boolean = false
         ): String {
-            if (bFillAddressInfo) {
-                UtilUITexts.fillLandmarkAddressInfo(landmark)
-            }
-
-            var text = "" // result
-
-            val landmarkAddress = landmark.getAddress() ?: return ""
-
-            var name = landmark.getName() ?: ""
-            val streetName = landmarkAddress.getField(TAddressField.EStreetName) ?: ""
-            val streetNumber = landmarkAddress.getField(TAddressField.EStreetNumber) ?: ""
-            val settlement = landmarkAddress.getField(TAddressField.ESettlement) ?: ""
-            val city = landmarkAddress.getField(TAddressField.ECity) ?: ""
-            val county = landmarkAddress.getField(TAddressField.ECounty) ?: ""
-            val state = landmarkAddress.getField(TAddressField.EState) ?: ""
-            val nearCity = ""
-            val nearSettlement = ""
-
-            if (city.isNotEmpty()) {
-                nearCity.format(getUIString(StringIds.eStringNodeNearby), city)
-            }
-
-            if (settlement.isNotEmpty()) {
-                nearSettlement.format(getUIString(StringIds.eStringNodeNearby), settlement)
-            }
-
-            if (streetName.isNotEmpty() && name.isNotEmpty()) {
-                if ((name == nearCity) || (name == nearSettlement)) {
-                    name = ""
+            return GEMSdkCall.execute {
+                if (bFillAddressInfo) {
+                    UtilUITexts.fillLandmarkAddressInfo(landmark)
                 }
-            }
 
-            if (name.isNotEmpty()) {
-                val pos = name.indexOf("; ")
-                if (pos > 0) {
-                    val description = name.substring(pos + 2)
-                    if (description.isNotEmpty()) {
-                        if (((settlement.isNotEmpty()) && (description.indexOf(settlement) >= 0)) ||
-                            ((city.isNotEmpty()) && (description.indexOf(city) >= 0)) ||
-                            ((county.isNotEmpty()) && (description.indexOf(county) >= 0)) ||
-                            ((state.isNotEmpty()) && (description.indexOf(state) >= 0))
-                        ) {
-                            // waypoint name was already formatted
-                            text = name
-                            text.replace(";", ",")
-                            return text
+                var text = "" // result
+
+                val landmarkAddress = landmark.getAddress() ?: return@execute ""
+
+                var name = landmark.getName() ?: ""
+                val streetName = landmarkAddress.getField(TAddressField.EStreetName) ?: ""
+                val streetNumber = landmarkAddress.getField(TAddressField.EStreetNumber) ?: ""
+                val settlement = landmarkAddress.getField(TAddressField.ESettlement) ?: ""
+                val city = landmarkAddress.getField(TAddressField.ECity) ?: ""
+                val county = landmarkAddress.getField(TAddressField.ECounty) ?: ""
+                val state = landmarkAddress.getField(TAddressField.EState) ?: ""
+                val nearCity = ""
+                val nearSettlement = ""
+
+                if (city.isNotEmpty()) {
+                    nearCity.format(getUIString(StringIds.eStringNodeNearby), city)
+                }
+
+                if (settlement.isNotEmpty()) {
+                    nearSettlement.format(getUIString(StringIds.eStringNodeNearby), settlement)
+                }
+
+                if (streetName.isNotEmpty() && name.isNotEmpty()) {
+                    if ((name == nearCity) || (name == nearSettlement)) {
+                        name = ""
+                    }
+                }
+
+                if (name.isNotEmpty()) {
+                    val pos = name.indexOf("; ")
+                    if (pos > 0) {
+                        val description = name.substring(pos + 2)
+                        if (description.isNotEmpty()) {
+                            if (((settlement.isNotEmpty()) && (description.indexOf(settlement) >= 0)) ||
+                                ((city.isNotEmpty()) && (description.indexOf(city) >= 0)) ||
+                                ((county.isNotEmpty()) && (description.indexOf(county) >= 0)) ||
+                                ((state.isNotEmpty()) && (description.indexOf(state) >= 0))
+                            ) {
+                                // waypoint name was already formatted
+                                text = name
+                                text.replace(";", ",")
+                                return@execute text
+                            }
                         }
                     }
                 }
-            }
 
-            val unknownXYZ = "Unknown_xyz"
-            val bNameEmpty = name.isEmpty()
-            var bRestoreStreetName = false
+                val unknownXYZ = "Unknown_xyz"
+                val bNameEmpty = name.isEmpty()
+                var bRestoreStreetName = false
 
-            landmark.setName("")
-            if ((streetName.isEmpty()) && !bNameEmpty) {
-                landmarkAddress.setField(unknownXYZ, TAddressField.EStreetName)
-                bRestoreStreetName = true
-            }
-
-            val nameDescription = UtilUITexts.pairFormatLandmarkDetails(landmark, true)
-            var landmarkName = nameDescription.first
-            val landmarkDescription = nameDescription.second
-
-            landmarkName.trim()
-            landmarkDescription.trim()
-
-            if (landmarkName == unknownXYZ) {
-                landmarkName = ""
-            }
-
-            landmark.setName(name)
-            if (bRestoreStreetName) {
-                landmarkAddress.setField(streetName, TAddressField.EStreetName)
-            }
-
-            var nameParts = listOf<String>()
-            if (!bNameEmpty) {
-                nameParts = name.split(";,")
-
-                for (str in nameParts) {
-                    str.trim()
+                landmark.setName("")
+                if ((streetName.isEmpty()) && !bNameEmpty) {
+                    landmarkAddress.setField(unknownXYZ, TAddressField.EStreetName)
+                    bRestoreStreetName = true
                 }
-            }
 
-            val bContainsStreetNumber = (name.indexOf("<") == 0) && (name.indexOf("<<") < 0) &&
-                (name.indexOf(">") > 0) && (name.indexOf(">>") < 0) &&
-                (name.indexOf(streetNumber) == 1)
+                val nameDescription = UtilUITexts.pairFormatLandmarkDetails(landmark, true)
+                var landmarkName = nameDescription.first
+                val landmarkDescription = nameDescription.second
 
-            val nameContainsText: (text: String) -> Boolean = {
-                var result = false
-                for (str in nameParts) {
-                    if (str == text) {
-                        result = true
-                        break
+                landmarkName.trim()
+                landmarkDescription.trim()
+
+                if (landmarkName == unknownXYZ) {
+                    landmarkName = ""
+                }
+
+                landmark.setName(name)
+                if (bRestoreStreetName) {
+                    landmarkAddress.setField(streetName, TAddressField.EStreetName)
+                }
+
+                var nameParts = listOf<String>()
+                if (!bNameEmpty) {
+                    nameParts = name.split(";,")
+
+                    for (str in nameParts) {
+                        str.trim()
                     }
                 }
 
-                result
-            }
+                val bContainsStreetNumber = (name.indexOf("<") == 0) && (name.indexOf("<<") < 0) &&
+                    (name.indexOf(">") > 0) && (name.indexOf(">>") < 0) &&
+                    (name.indexOf(streetNumber) == 1)
 
-            val bContainsStreetName = nameContainsText(streetName) ||
-                (
-                    bContainsStreetNumber && (nameParts.isNotEmpty()) && (
-                        nameParts[0].indexOf(
-                            streetName
-                        ) > 0
+                val nameContainsText: (text: String) -> Boolean = {
+                    var result = false
+                    for (str in nameParts) {
+                        if (str == text) {
+                            result = true
+                            break
+                        }
+                    }
+
+                    result
+                }
+
+                val bContainsStreetName = nameContainsText(streetName) ||
+                    (
+                        bContainsStreetNumber && (nameParts.isNotEmpty()) && (
+                            nameParts[0].indexOf(
+                                streetName
+                            ) > 0
+                            )
                         )
-                    )
 
-            val bContainsCityOrSettlementName = nameContainsText(city) ||
-                nameContainsText(settlement) ||
-                nameContainsText(nearCity) ||
-                nameContainsText(nearSettlement)
+                val bContainsCityOrSettlementName = nameContainsText(city) ||
+                    nameContainsText(settlement) ||
+                    nameContainsText(nearCity) ||
+                    nameContainsText(nearSettlement)
 
-            val bContainsLandmarkDescription = nameContainsText(landmarkDescription)
+                val bContainsLandmarkDescription = nameContainsText(landmarkDescription)
 
-            if (bNameEmpty || bContainsStreetName) {
-                text = landmarkName
-                if ((text.isNotEmpty()) && (landmarkDescription.isNotEmpty())) {
-                    text += ", $landmarkDescription"
-                } else if (text.isEmpty()) {
-                    if (bNameEmpty) {
-                        text = getUIString(StringIds.eStringUnnamedStreet)
-                        if (landmarkDescription.isNotEmpty()) {
-                            text += ", $landmarkDescription"
-                        }
-                    } else {
-                        text = name
-                        if (!bContainsLandmarkDescription &&
-                            (landmarkDescription.isNotEmpty()) &&
-                            !bContainsCityOrSettlementName
-                        ) {
-                            text += ", $landmarkDescription"
+                if (bNameEmpty || bContainsStreetName) {
+                    text = landmarkName
+                    if ((text.isNotEmpty()) && (landmarkDescription.isNotEmpty())) {
+                        text += ", $landmarkDescription"
+                    } else if (text.isEmpty()) {
+                        if (bNameEmpty) {
+                            text = getUIString(StringIds.eStringUnnamedStreet)
+                            if (landmarkDescription.isNotEmpty()) {
+                                text += ", $landmarkDescription"
+                            }
+                        } else {
+                            text = name
+                            if (!bContainsLandmarkDescription &&
+                                (landmarkDescription.isNotEmpty()) &&
+                                !bContainsCityOrSettlementName
+                            ) {
+                                text += ", $landmarkDescription"
+                            }
                         }
                     }
+                } else if (!bNameEmpty) {
+                    text = name
+                    if (!bContainsLandmarkDescription &&
+                        (landmarkDescription.isNotEmpty()) &&
+                        !bContainsCityOrSettlementName
+                    ) {
+                        text += ", $landmarkDescription"
+                    }
                 }
-            } else if (!bNameEmpty) {
-                text = name
-                if (!bContainsLandmarkDescription &&
-                    (landmarkDescription.isNotEmpty()) &&
-                    !bContainsCityOrSettlementName
-                ) {
-                    text += ", $landmarkDescription"
-                }
-            }
 
-            return text
+                return@execute text
+            } ?: ""
         }
 
         fun getImageAsBitmap(
             iconId: Int,
             width: Int,
-            height: Int,
-            permuteChannels: Boolean = false
+            height: Int
         ): Bitmap? {
-            return Util.getImageIdAsBitmap(iconId, width, height)
+            return GEMSdkCall.execute { Util.getImageIdAsBitmap(iconId, width, height) }
         }
 
         fun getImageAsBitmap(
             icon: Image?,
             width: Int,
-            height: Int,
-            permuteChannels: Boolean = false
+            height: Int
         ): Bitmap? {
-            return Util.createBitmap(icon, width, height)
+            return GEMSdkCall.execute { Util.createBitmap(icon, width, height) }
         }
 
         fun getImageIdAsBitmap(
             iconId: Int,
             width: Int,
-            height: Int,
-            permuteChannels: Boolean = false
+            height: Int
         ): Bitmap? {
-            return Util.getImageIdAsBitmap(iconId, width, height)
+            return GEMSdkCall.execute { Util.getImageIdAsBitmap(iconId, width, height) }
         }
 
         fun getErrorMessage(nError: GEMError): String {
@@ -466,6 +475,30 @@ class Utils {
                 }
             }
         }
+
+        fun getScreenWidth(activity: Activity): Int {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val windowMetrics = activity.windowManager.currentWindowMetrics
+                val insets: Insets = windowMetrics.windowInsets
+                    .getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
+                windowMetrics.bounds.width() - insets.left - insets.right
+            } else {
+                val displayMetrics = GEMApplication.applicationContext().resources.displayMetrics
+                displayMetrics.widthPixels
+            }
+        }
+
+        fun getScreenHeight(activity: Activity): Int {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val windowMetrics = activity.windowManager.currentWindowMetrics
+                val insets: Insets = windowMetrics.windowInsets
+                    .getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
+                windowMetrics.bounds.height() - insets.top - insets.bottom
+            } else {
+                val displayMetrics = GEMApplication.applicationContext().resources.displayMetrics
+                displayMetrics.heightPixels
+            }
+        }
     }
 }
 
@@ -485,10 +518,7 @@ class AppUtils {
         // ---------------------------------------------------------------------------------------------
 
         fun getSizeInPixels(dpi: Int): Int {
-            val wm = GEMApplication.getApplicationContext()
-                .getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            val metrics = DisplayMetrics()
-            wm.defaultDisplay.getMetrics(metrics)
+            val metrics = GEMApplication.applicationContext().resources.displayMetrics
             return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpi.toFloat(), metrics)
                 .toInt()
         }
@@ -496,10 +526,7 @@ class AppUtils {
         // ---------------------------------------------------------------------------------------------
 
         fun getSizeInPixelsFromMM(mm: Int): Int {
-            val wm = GEMApplication.getApplicationContext()
-                .getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            val metrics = DisplayMetrics()
-            wm.defaultDisplay.getMetrics(metrics)
+            val metrics = GEMApplication.applicationContext().resources.displayMetrics
             return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, mm.toFloat(), metrics)
                 .toInt()
         }

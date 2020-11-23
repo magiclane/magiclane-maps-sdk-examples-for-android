@@ -65,7 +65,6 @@ class PublicTransportRouteDescriptionLineView : View {
             0,
             0
         )
-            ?: return
 
         try {
             mRadius =

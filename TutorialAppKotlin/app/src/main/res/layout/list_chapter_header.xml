@@ -3,6 +3,7 @@
 	android:id="@+id/generic_list_item_status_image"
 	android:layout_width="fill_parent"
 	android:layout_height="wrap_content"
+    android:background="@color/maps_view_bgnd_color"
 	android:descendantFocusability="beforeDescendants">
 
 	<TextView
@@ -10,6 +11,7 @@
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:layout_gravity="left|center_vertical"
+        android:layout_margin="5dp"
 		android:text=" "
 		android:textSize="@dimen/standardTextSize" />
 

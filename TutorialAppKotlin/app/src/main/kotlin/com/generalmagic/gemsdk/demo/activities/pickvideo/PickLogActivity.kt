@@ -3,7 +3,6 @@ package com.generalmagic.gemsdk.demo.activities.pickvideo
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,17 +11,17 @@ import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.apihelper.EnumHelp
-import com.generalmagic.apihelper.PermissionsHelper
 import com.generalmagic.gemsdk.LogUploader
 import com.generalmagic.gemsdk.LogUploaderListener
 import com.generalmagic.gemsdk.TLogUploaderState
 import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.app.BaseActivity
+import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.util.GEMError
+import com.generalmagic.gemsdk.util.GEMSdkCall
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -34,9 +33,9 @@ class PickLogActivity : BaseActivity() {
     private lateinit var viewManager: RecyclerView.LayoutManager
 
     companion object {
+        val CODE_RESULT_SELECT_VIDEO = 100
         const val RESULT_VIDEO_PATH = "RESULT_VIDEO_PATH"
         const val INPUT_DIR = "INPUT_DIR"
-        private const val REQUEST_PERMISSIONS = 113
     }
 
     data class VideoFileModel(
@@ -44,34 +43,34 @@ class PickLogActivity : BaseActivity() {
         var filepath: String = ""
     )
 
-    private var hasStoragePermission = false
+    private var hasPermissions = false
     private var inputDirectoryPath: String = ""
 
     private val uploadUsername = ""
     private val uploadEmail = "mstoica@generalmagic.com"
     private val uploadListener = object : LogUploaderListener() {
         override fun onLogStatusChanged(sLogPath: String, nProgress: Int, nStatus: Int) {
-            if (nStatus < 0) {
-                val error = GEMError.fromInt(nStatus)
+            GEMApplication.postOnMain {
+                if (nStatus < 0) {
+                    val error = GEMError.fromInt(nStatus)
 
-                return
-            }
-
-            when (EnumHelp.fromInt<TLogUploaderState>(nStatus)) {
-                TLogUploaderState.ELU_Progress -> {
-                    //
+                    return@postOnMain
                 }
-                TLogUploaderState.ELU_Ready -> {
-                    Toast.makeText(
-                        this@PickLogActivity,
-                        "$nStatus - $sLogPath",
-                        Toast.LENGTH_SHORT
-                    ).show()
+
+                when (EnumHelp.fromInt<TLogUploaderState>(nStatus)) {
+                    TLogUploaderState.ELU_Progress -> {
+                        //
+                    }
+                    TLogUploaderState.ELU_Ready -> {
+                        Toast.makeText(
+                            this@PickLogActivity, "$nStatus - $sLogPath", Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             }
         }
     }
-    private val logUploader = LogUploader.produce(uploadListener)
+    private var logUploader: LogUploader? = null
 
     // //////
 
@@ -88,14 +87,27 @@ class PickLogActivity : BaseActivity() {
 
         val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
         recyclerView.setPadding(lateralPadding, 0, lateralPadding, 0)
+
+        logUploader = GEMSdkCall.execute {
+            LogUploader.produce(uploadListener)
+        }
     }
 
     override fun onResume() {
         super.onResume()
 
-        requestPermissions(this)
+        val permissions = arrayOf(
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
 
-        if (hasStoragePermission) {
+        hasPermissions = GEMApplication.hasPermissions(this, permissions)
+
+        if (!hasPermissions) {
+            GEMApplication.requestPermissions(this, permissions)
+        }
+
+        if (hasPermissions) {
             updateListAdapter(inputDirectoryPath)
         }
     }
@@ -116,20 +128,34 @@ class PickLogActivity : BaseActivity() {
         finish()
     }
 
-    override fun onBackPressed() {
+    override fun doBackPressed(): Boolean {
         onVideoPickCanceled()
+        return true
+    }
+
+    override fun onRequestPermissionsFinish(granted: Boolean) {
+        if (granted) {
+            hasPermissions = true
+            updateListAdapter(inputDirectoryPath)
+        } else {
+            onVideoPickCanceled()
+        }
     }
 
     //
-// Business code
-//
+    // Business code
+    //
     private fun upload(filepath: String) {
         val logUploader = logUploader ?: return
         val username = ""
         val email = "mstoica@generalmagic.com"
         val details = ""
 
-        val error = GEMError.fromInt(logUploader.upload(filepath, username, email, details))
+        val resultCode = GEMSdkCall.execute {
+            logUploader.upload(filepath, username, email, details)
+        } ?: GEMError.KGeneral.value
+
+        val error = GEMError.fromInt(resultCode)
 
         if (error != GEMError.KNoError) {
             Toast.makeText(
@@ -179,7 +205,7 @@ class PickLogActivity : BaseActivity() {
 
     private fun getAvailableFileLogs(dirPath: String): ArrayList<File> {
         if (dirPath.isEmpty()) return ArrayList()
-        if (!hasStoragePermission) return ArrayList()
+        if (!hasPermissions) return ArrayList()
 
         val moviesDir = File(dirPath)
         if (!moviesDir.exists() || !moviesDir.isDirectory) return ArrayList()
@@ -212,8 +238,8 @@ class PickLogActivity : BaseActivity() {
     }
 
     //
-// LIST ADAPTER
-//
+    // LIST ADAPTER
+    //
     inner class CustomAdapter(private val mDataset: ArrayList<VideoFileModel>) :
         RecyclerView.Adapter<CustomAdapter.ListItemViewHolder>() {
         private val imageLoader = ThumbnailLoader()
@@ -299,62 +325,5 @@ class PickLogActivity : BaseActivity() {
                 }
             }
         }
-    }
-
-    //
-//    permissions
-//
-    private fun requestPermissions(context: Activity) {
-        val permissions = arrayOf(
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        )
-
-        val hasPermissions = permissions.all {
-            ActivityCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-        }
-
-        if (!hasPermissions) {
-            ActivityCompat.requestPermissions(context, permissions, REQUEST_PERMISSIONS)
-        } else {
-            hasStoragePermission = true
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        if (grantResults.isEmpty()) {
-            return
-        }
-
-        val result = grantResults[0]
-        when (requestCode) {
-            REQUEST_PERMISSIONS -> {
-                PermissionsHelper.notifyOnPermissionsStatusChanged()
-                
-                // If request is cancelled, the result arrays are empty.
-                if (result == PackageManager.PERMISSION_GRANTED) {
-                    hasStoragePermission = true
-                } else if (result == PackageManager.PERMISSION_DENIED) {
-                    onVideoPickCanceled()
-
-//                    val showRationale =
-//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//                            shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE)
-//                        } else {
-//                            //show toast??
-//                        }
-//
-//                    if (!showRationale) {
-//                        showDialog("Storage permission is mandatory for log playback!")
-//                    }
-                }
-            }
-        }
-
-        updateListAdapter(inputDirectoryPath)
     }
 }

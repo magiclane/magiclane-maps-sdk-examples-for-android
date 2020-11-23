@@ -4,6 +4,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2020-11-23
+### Added
+- Settings Tutorial.
+- Button decorator helper which prepares buttons as needed across the map activity tutorials.
+- Management of tutorials. See Tutorials.kt.
+
+### Changed
+- Renamed BaseLayoutController to MapLayoutController.
+- Bottom buttons used across tutorials over the map are now accesible only by BaseLayoutController.
+- All System Activity actions are final and will notice GEMApplication.
+- Tutorials can be opened in a static way. Ex: Tutorials.openHelloWorldTutorial().
+- Moved SDK init things from MainActivity to GEMApplication. See GEMApplication.init.
+- Changed way of handling thread calls.
+
+### Removed
+- StaticsHoler
+- MapFollowingProvider
+
+### Issues
+- Camera might freeze after spamming log recorder start stop.
+- App works slow after a location with many wikipedia images is opened.
+- App works slow in simulation/ navigation mode after you pan away from current position.
+- Deleting a style after downloading it deletes the preview image as well.
+
+## [2.2.0] - 2020-11-12
+### Added
+- Tap on route description items displayes them on the map.
+- Close button on location details view.
+
+### Changed
+- BaseActivity and BaseLayoutController: disableScreenLock and enableScreenLock merged into setScreenAlwaysOn.
+- BaseLayoutController added setRequestedOrientation.
+- Updated Online Maps design.
+- Display marker or area contour on map after going to a search result.
+- Filtering at searching in the Online Maps list.
+- Replaced deprecated methods used.
+
+### Fixed
+- Log Recording not displaying images.
+- Log Player not freezing when pressing X button.
+- Wikipedia images stop loading if one image failes to load.
+
+### Issues
+- Camera might freeze after spamming log recorder start stop.
+- App works slow after a location with many wikipedia images is opened.
+- App works slow in simulation/ navigation mode after you pan away from current position.
+- Deleting a style after downloading it deletes the preview image as well.
+
 ## [2.1.0] - 2020-11-1
 ### Changed
 - Log Player uses pause/resume functionality when using play/stop button.

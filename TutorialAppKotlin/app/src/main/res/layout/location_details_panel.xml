@@ -1,19 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.generalmagic.gemsdk.demo.controllers.common.WikiView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.common.WikiView xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
 	android:id="@+id/wikiView"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
-	android:background="@drawable/top_rounded_white_background"
 	android:fillViewport="true"
 	android:clickable="true"
 	android:focusable="true"
 	android:orientation="vertical"
 	android:visibility="gone">
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/closeButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:tint="@color/colorWhiteFull"
+        android:visibility="invisible"
+        android:layout_margin="@dimen/listItemPadding"
+        tools:ignore="ContentDescription" />
+
 	<androidx.constraintlayout.widget.ConstraintLayout
 		android:id="@+id/header"
+        android:background="@drawable/top_rounded_white_background"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content">
 		
@@ -62,6 +71,7 @@
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
 		android:fillViewport="true"
+        android:background="@android:color/white"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
 		app:layout_constraintTop_toBottomOf="@id/header">
@@ -112,5 +122,5 @@
 
 		</androidx.constraintlayout.widget.ConstraintLayout>
 	</androidx.core.widget.NestedScrollView>
-</com.generalmagic.gemsdk.demo.controllers.common.WikiView>
+</com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.common.WikiView>
 
