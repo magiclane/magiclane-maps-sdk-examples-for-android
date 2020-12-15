@@ -1,5 +1,3 @@
-// -------------------------------------------------------------------------------------------------
-
 /*
  * Copyright (C) 2019-2020, General Magic B.V.
  * All rights reserved.
@@ -10,11 +8,7 @@
  * license agreement you entered into with General Magic.
  */
 
-// -------------------------------------------------------------------------------------------------
-
 package com.generalmagic.gemsdk.demo.activities.settings
-
-// -------------------------------------------------------------------------------------------------
 
 import android.content.Context
 import android.graphics.Color
@@ -36,16 +30,10 @@ import com.generalmagic.gemsdk.demo.app.Tutorials
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import kotlinx.android.synthetic.main.settings_activity.*
 
-// -------------------------------------------------------------------------------------------------
-
 class SettingsActivity : BaseActivity(), ISettingsView {
-
-    // ---------------------------------------------------------------------------------------------
 
     private var viewId: Long = 0
     private var settingsListAdapter: SettingsListAdapter? = null
-
-    // ---------------------------------------------------------------------------------------------
 
     data class SettingsListItem(
         var itemType: Int = 0,
@@ -71,8 +59,6 @@ class SettingsActivity : BaseActivity(), ISettingsView {
         var chapterIndex: Int = 0
     )
 
-    // ---------------------------------------------------------------------------------------------
-
     inner class SettingsListChapter(
         index: Int,
         itemArrayList: MutableList<SettingsListItem>,
@@ -81,37 +67,25 @@ class SettingsActivity : BaseActivity(), ISettingsView {
         constructor() : this(0, mutableListOf(), "")
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     inner class SettingsListAdapter(
         context: Context,
         recyclerViewType: SectionedListType
     ) : GenericSectionedAdapter<SettingsListChapter>(context, recyclerViewType) {
 
-        // -----------------------------------------------------------------------------------------
-
         init {
             load()
         }
 
-        // -----------------------------------------------------------------------------------------
-
         inner class ChapterItemsAdapter(itemsList: MutableList<SettingsListItem?>) :
             GEMGenericAdapter<SettingsListItem>(itemsList) {
 
-            // -------------------------------------------------------------------------------------
-
             inner class SimpleItemViewHolder(view: View) :
                 GEMGenericViewHolder<SettingsListItem>(view) {
-
-                // ---------------------------------------------------------------------------------
 
                 val text: TextView = view.findViewById(R.id.settingsText)
                 val description: TextView = view.findViewById(R.id.settingsDescription)
                 private val optionsListSelected: TextView =
                     view.findViewById(R.id.settingsOptionListSelected)
-
-                // ---------------------------------------------------------------------------------
 
                 override fun bind(data: SettingsListItem?, position: Int) {
                     if (data != null) {
@@ -197,22 +171,14 @@ class SettingsActivity : BaseActivity(), ISettingsView {
                         }
                     }
                 }
-
-                // ---------------------------------------------------------------------------------
             }
-
-            // -------------------------------------------------------------------------------------
 
             inner class SwitchItemViewHolder(view: View) :
                 GEMGenericViewHolder<SettingsListItem>(view) {
 
-                // ---------------------------------------------------------------------------------
-
                 val text: TextView = view.findViewById(R.id.settingsText)
                 private val switch: SwitchCompat = view.findViewById(R.id.settingsSwitch)
                 val description: TextView = view.findViewById(R.id.settingsDescription)
-
-                // ---------------------------------------------------------------------------------
 
                 override fun bind(data: SettingsListItem?, position: Int) {
                     if (data != null) {
@@ -257,24 +223,16 @@ class SettingsActivity : BaseActivity(), ISettingsView {
                         }
                     }
                 }
-
-                // ---------------------------------------------------------------------------------
             }
-
-            // -------------------------------------------------------------------------------------
 
             inner class SeekBarItemViewHolder(view: View) :
                 GEMGenericViewHolder<SettingsListItem>(view) {
-
-                // ---------------------------------------------------------------------------------
 
                 val text: TextView = view.findViewById(R.id.settingsText)
                 private val seekBar: AppCompatSeekBar = view.findViewById(R.id.settingsSeekBar)
                 private val minValueText: TextView = view.findViewById(R.id.minValueText)
                 private val currentValueText: TextView = view.findViewById(R.id.currentValueText)
                 private val maxValueText: TextView = view.findViewById(R.id.maxValueText)
-
-                // ---------------------------------------------------------------------------------
 
                 override fun bind(data: SettingsListItem?, position: Int) {
                     if (data != null) {
@@ -377,11 +335,7 @@ class SettingsActivity : BaseActivity(), ISettingsView {
                         }
                     }
                 }
-
-                // ---------------------------------------------------------------------------------
             }
-
-            // -------------------------------------------------------------------------------------
 
             override fun getLayoutId(position: Int): Int {
                 return if ((position >= 0) && (position < listItems.size)) {
@@ -398,8 +352,6 @@ class SettingsActivity : BaseActivity(), ISettingsView {
                 }
             }
 
-            // -------------------------------------------------------------------------------------
-
             override fun getViewHolder(
                 view: View,
                 viewType: Int
@@ -411,16 +363,10 @@ class SettingsActivity : BaseActivity(), ISettingsView {
                     else -> SimpleItemViewHolder(view)
                 }
             }
-
-            // -------------------------------------------------------------------------------------
         }
-
-        // -----------------------------------------------------------------------------------------
 
         inner class ChapterViewHolder(view: View) :
             GenericSectionedViewHolder<SettingsListChapter>(view) {
-
-            // -------------------------------------------------------------------------------------
 
             override fun bind(data: SettingsListChapter?, position: Int) {
                 if (data != null) {
@@ -434,11 +380,7 @@ class SettingsActivity : BaseActivity(), ISettingsView {
                     setAdapterToSectionRecyclerView(data.sectionIndex, adapter)
                 }
             }
-
-            // -------------------------------------------------------------------------------------
         }
-
-        // -----------------------------------------------------------------------------------------
 
         override fun getViewHolder(
             view: View,
@@ -447,14 +389,10 @@ class SettingsActivity : BaseActivity(), ISettingsView {
             return ChapterViewHolder(view)
         }
 
-        // -----------------------------------------------------------------------------------------
-
         fun refresh() {
             load()
             notifyDataSetChanged()
         }
-
-        // -----------------------------------------------------------------------------------------
 
         fun refreshItemState(chapter: Int, index: Int, enabled: Boolean) {
             if ((chapter >= 0) && (chapter < listItems.size) &&
@@ -465,8 +403,6 @@ class SettingsActivity : BaseActivity(), ISettingsView {
                 notifyItemChanged(chapter, index)
             }
         }
-
-        // -----------------------------------------------------------------------------------------
 
         private fun load() {
             GEMSdkCall.execute {
@@ -531,12 +467,7 @@ class SettingsActivity : BaseActivity(), ISettingsView {
                 }
             }
         }
-
-        // -----------------------------------------------------------------------------------------
     }
-
-
-    // ---------------------------------------------------------------------------------------------
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -576,8 +507,6 @@ class SettingsActivity : BaseActivity(), ISettingsView {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     override fun onDestroy() {
         super.onDestroy()
         GEMSettingsView.onViewClosed(viewId)
@@ -585,27 +514,17 @@ class SettingsActivity : BaseActivity(), ISettingsView {
         Tutorials.openHelloWorldTutorial()
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     override fun doBackPressed(): Boolean {
         finish()
         return true
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     override fun refreshItemState(chapter: Int, index: Int, enabled: Boolean) {
         settingsListAdapter?.refreshItemState(chapter, index, enabled)
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     override fun refresh() {
         super.refresh()
         settingsListAdapter?.refresh()
     }
-
-    // ---------------------------------------------------------------------------------------------
 }
-
-// -------------------------------------------------------------------------------------------------

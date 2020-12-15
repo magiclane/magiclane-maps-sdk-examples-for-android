@@ -4,6 +4,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2020-12-16
+### Added
+- Audio setting and used it in log recorder tutorial.
+
+### Fixed
+- Pick log activity list sort.
+- App working slow while in a simulation/navigation after you pan away from current position.
+
+### Issues
+- Camera might freeze after spamming log recorder start stop.
+- App works slow after a location with many wikipedia images is opened.
+
+## [2.4.0] - 2020-12-09
+### Added
+- Settings : Keep recent minutes and disk limit for recorder.
+- LogRecorderController uses new added settings.
+- Pick Log Activity: protect and export log options when long pressing a list item.
+- Pick Log Activity: accepts multiple directories as input.
+- Traffic, toll and ferry icons on route overview bubble.
+- Download a second style at the first app run and apply it for multi-views.
+
+### Changed
+- Recorder directories are no longer created by user, they are done internally if not exists.
+- Logs are not auto exported to public storage! You must export them manually.
+- Canvas buffer renderer frame fit setting from eCenter to eFitInside.
+- Pick location design.
+
+### Fixed
+- Simulation starting
+- Deleting a style after downloading it no longer deletes the preview image as well.
+- Typing fast in search gets bad results.
+- Permissions not granted when you first run the app.
+
+### Issues
+- Camera might freeze after spamming log recorder start stop.
+- App works slow after a location with many wikipedia images is opened.
+- App works slow in simulation/ navigation mode after you pan away from current position.
+
 ## [2.3.0] - 2020-11-23
 ### Added
 - Settings Tutorial.

@@ -1,10 +1,19 @@
+/*
+ * Copyright (C) 2019-2020, General Magic B.V.
+ * All rights reserved.
+ *
+ * This software is confidential and proprietary information of General Magic
+ * ("Confidential Information"). You shall not disclose such Confidential
+ * Information and shall use it only in accordance with the terms of the
+ * license agreement you entered into with General Magic.
+ */
+
 package com.generalmagic.gemsdk.demo.activities.settings
 
 import com.generalmagic.apihelper.EnumHelp
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.util.GEMSdkCall
 
-// -------------------------------------------------------------------------------------------------
 enum class TBoolSettings(val value: Int) {
     EBooleanSettingsBase(0),
     EUseMobileData(1),
@@ -15,10 +24,9 @@ enum class TBoolSettings(val value: Int) {
     EAvoidTollRoadsCar(6),
     EAvoidFerriesCar(7),
     EAvoidUnpavedRoadsCar(8),
-    EBooleanSettingsCount(9)
+    ERecordAudio(9),
+    EBooleanSettingsCount(10)
 }
-
-// ---------------------------------------------------------------------------------------------
 
 enum class TIntSettings(val value: Int) {
     EIntSettingsBase(TBoolSettings.EBooleanSettingsCount.value + 1),
@@ -28,10 +36,10 @@ enum class TIntSettings(val value: Int) {
     EDemoSpeed(ETravelModeCar.value + 1),
     EUnitsSystem(EDemoSpeed.value + 1),
     ERecordingChunk(EUnitsSystem.value + 1),
-    EIntSettingsCount(ERecordingChunk.value + 1)
+    EMinMinutes(ERecordingChunk.value + 1),
+    EDiskLimit(EMinMinutes.value + 1),
+    EIntSettingsCount(EDiskLimit.value + 1)
 }
-
-// ---------------------------------------------------------------------------------------------
 
 enum class TDoubleSettings(val value: Int) {
     EDoubleSettingsBase(TIntSettings.EIntSettingsCount.value + 1),
@@ -41,8 +49,6 @@ enum class TDoubleSettings(val value: Int) {
     EDoubleSettingsCount(EMapStyle.value + 1)
 }
 
-// ---------------------------------------------------------------------------------------------
-
 enum class TStringSettings(val value: Int) {
     EStringSettingsBase(TDoubleSettings.EDoubleSettingsCount.value + 1),
     EVoice(EStringSettingsBase.value + 1),
@@ -50,16 +56,9 @@ enum class TStringSettings(val value: Int) {
     EStringSettingsCount(EVoice.value + 1)
 }
 
-// ---------------------------------------------------------------------------------------------
-
 enum class TSettingsLimit(value: Int) {
     ESettingsCount(TStringSettings.EStringSettingsCount.value)
 }
-
-// ---------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------
 
 object SettingsProvider {
     var m_service: SettingsService? = null
@@ -189,12 +188,8 @@ object SettingsProvider {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun setNames() {
-        // -----------------------------------------------------------------------------------------
         // bool settings
-        // -----------------------------------------------------------------------------------------
 
         m_names[TBoolSettings.EUseMobileData.value] = "use mobile data"
         m_names[TBoolSettings.EUseMobileDataForTraffic.value] = "use mobile data for traffic"
@@ -206,10 +201,9 @@ object SettingsProvider {
         m_names[TBoolSettings.EAvoidTollRoadsCar.value] = "avoid toll roads car"
         m_names[TBoolSettings.EAvoidFerriesCar.value] = "avoid ferries car"
         m_names[TBoolSettings.EAvoidUnpavedRoadsCar.value] = "avoid unpaved roads car"
+        m_names[TBoolSettings.ERecordAudio.value] = "recording audio"
 
-        // -----------------------------------------------------------------------------------------
         // int settings
-        // -----------------------------------------------------------------------------------------
 
         m_names[TIntSettings.EMapViewAngle.value] = "map view angle"
         m_names[TIntSettings.EZoomLevel.value] = "zoom level"
@@ -217,28 +211,22 @@ object SettingsProvider {
         m_names[TIntSettings.EDemoSpeed.value] = "demo speed"
         m_names[TIntSettings.EUnitsSystem.value] = "units system"
         m_names[TIntSettings.ERecordingChunk.value] = "recording chunk"
+        m_names[TIntSettings.EMinMinutes.value] = "min minutes to keep"
+        m_names[TIntSettings.EDiskLimit.value] = "recording disk limit"
 
-        // -----------------------------------------------------------------------------------------
         // double settings
-        // -----------------------------------------------------------------------------------------
 
         m_names[TDoubleSettings.ELatitude.value] = "latitude"
         m_names[TDoubleSettings.ELongitude.value] = "longitude"
         m_names[TDoubleSettings.EMapStyle.value] = "map style"
 
-        // -----------------------------------------------------------------------------------------
         // string settings
-        // -----------------------------------------------------------------------------------------
 
         m_names[TStringSettings.EVoice.value] = "voice"
-
-        // -----------------------------------------------------------------------------------------
     }
 
     private fun setDefaultValues() {
-        // -----------------------------------------------------------------------------------------
         // bool settings
-        // -----------------------------------------------------------------------------------------
 
         m_boolDefaultValues[TBoolSettings.EUseMobileData.value] = true
         m_boolDefaultValues[TBoolSettings.EUseMobileDataForTraffic.value] = true
@@ -249,9 +237,7 @@ object SettingsProvider {
         m_boolDefaultValues[TBoolSettings.EAvoidFerriesCar.value] = false
         m_boolDefaultValues[TBoolSettings.EAvoidUnpavedRoadsCar.value] = true
 
-        // -----------------------------------------------------------------------------------------
         // int settings
-        // -----------------------------------------------------------------------------------------
 
         m_intDefaultValues[TIntSettings.EMapViewAngle.value - TIntSettings.EIntSettingsBase.value] =
             0
@@ -262,9 +248,7 @@ object SettingsProvider {
         m_intDefaultValues[TIntSettings.EUnitsSystem.value - TIntSettings.EIntSettingsBase.value] =
             TUnitSystem.EMetric.value
 
-        // -----------------------------------------------------------------------------------------
         // double settings
-        // -----------------------------------------------------------------------------------------
 
         m_doubleDefaultValues[TDoubleSettings.ELatitude.value - TDoubleSettings.EDoubleSettingsBase.value] =
             Double.MAX_VALUE
@@ -273,29 +257,24 @@ object SettingsProvider {
         m_doubleDefaultValues[TDoubleSettings.EMapStyle.value - TDoubleSettings.EDoubleSettingsBase.value] =
             0.0
 
-        // -----------------------------------------------------------------------------------------
         // string settings
-        // -----------------------------------------------------------------------------------------
 
         m_stringDefaultValues[TStringSettings.EVoice.value - TStringSettings.EStringSettingsBase.value] =
             ""
         m_stringDefaultValues[TStringSettings.EAddressSearchCountryISOCode.value - TStringSettings.EStringSettingsBase.value] =
             ""
 
-        // -----------------------------------------------------------------------------------------
         // Recorder
-        // -----------------------------------------------------------------------------------------
 
         m_intDefaultValues[TIntSettings.ERecordingChunk.value] = 5 //5 min
-
-        // -----------------------------------------------------------------------------------------
+        m_boolDefaultValues[TBoolSettings.ERecordAudio.value] = false
+        m_intDefaultValues[TIntSettings.EMinMinutes.value] = 30 //30 min
+        m_intDefaultValues[TIntSettings.EDiskLimit.value] = 1000 //1gb
     }
 
     private fun setCallbacks() {
         GEMSdkCall.checkCurrentThread()
-        // -----------------------------------------------------------------------------------------
         // bool settings
-        // -----------------------------------------------------------------------------------------
 
         val useMobileData = { value: Boolean ->
             if (m_service != null) {
@@ -376,9 +355,7 @@ object SettingsProvider {
         m_boolCallbacks[TBoolSettings.EUseMobileDataForTerrainAndSatellite.value] =
             useMobileDataForTerrainAndSatellite
 
-        // -----------------------------------------------------------------------------------------
         // int settings
-        // -----------------------------------------------------------------------------------------
 
         val unitsSystem = { value: Int ->
             if (m_service != null) {
@@ -388,14 +365,12 @@ object SettingsProvider {
         m_intCallbacks[TIntSettings.EUnitsSystem.value - TIntSettings.EIntSettingsBase.value] =
             unitsSystem
 
-        // -----------------------------------------------------------------------------------------
     }
 
-    // ---------------------------------------------------------------------------------------------
 
     fun loadRoutePreferences(): RoutePreferences {
         GEMSdkCall.checkCurrentThread()
-        
+
         val routeTypeSetting = getIntValue(TIntSettings.ETravelModeCar.value)
         val avoidMotorwaysSetting = getBooleanValue(TBoolSettings.EAvoidMotorwaysCar.value)
         val avoidTollSetting = getBooleanValue(TBoolSettings.EAvoidTollRoadsCar.value)

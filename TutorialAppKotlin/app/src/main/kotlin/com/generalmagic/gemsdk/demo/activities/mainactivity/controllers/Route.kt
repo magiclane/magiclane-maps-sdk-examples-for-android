@@ -20,9 +20,11 @@ import com.generalmagic.gemsdk.demo.activities.publictransport.PublicTransportRo
 import com.generalmagic.gemsdk.demo.activities.settings.SettingsProvider
 import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.app.MapLayoutController
+import com.generalmagic.gemsdk.demo.app.Tutorials
 import com.generalmagic.gemsdk.demo.app.elements.ButtonsDecorator
 import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.demo.util.UtilUITexts
+import com.generalmagic.gemsdk.demo.util.Utils
 import com.generalmagic.gemsdk.models.Coordinates
 import com.generalmagic.gemsdk.models.Image
 import com.generalmagic.gemsdk.models.ImageDatabase
@@ -65,6 +67,8 @@ abstract class RouteServiceWrapper {
 
 abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
+    
+    private var calculatedRoutes = ArrayList<Route>()
 
     private val routing = object : RouteServiceWrapper() {
         override fun onStartCalculating() {
@@ -89,6 +93,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
 
             GEMSdkCall.execute {
                 val routes = getResults()
+                calculatedRoutes = routes
 
                 val mainRoute: Route? = if (routes.size > MAIN_ROUTE_INDEX) {
                     routes[MAIN_ROUTE_INDEX]
@@ -110,6 +115,18 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
                     val imageList = arrayListOf<Image>()
                     ImageDatabase().getImageById(Util.getTrafficIconId(route))?.let {
                         imageList.add(it)
+                    }
+                    
+                    if (route.hasTollRoads()) {
+                        ImageDatabase().getImageById(Util.getTollIconId())?.let {
+                            imageList.add(it)
+                        }
+                    }
+
+                    if (route.hasFerryConnections()) {
+                        ImageDatabase().getImageById(Util.getFerryIconId())?.let {
+                            imageList.add(it)
+                        }
                     }
 
                     mainMap.preferences()?.routes()?.add(
@@ -135,6 +152,10 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
     }
 
     fun doStart(waypoints: ArrayList<Landmark>) {
+        if(calculatedRoutes.size > 0){
+            Tutorials.openRouteSimulationTutorial(calculatedRoutes[0])
+            return
+        }
         lastWaypoints = waypoints
 
         GEMApplication.clearMapVisibleRoutes()
@@ -190,9 +211,6 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
     }
 }
 
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
-
 class RouteAb(context: Context, attrs: AttributeSet?) : BaseUiRouteController(context, attrs) {
     override fun doStart() {
         doStart(
@@ -227,9 +245,9 @@ open class RouteCustom(context: Context, attrs: AttributeSet?) :
 
         pickLocation?.let {
             it.onCancelPressed = {
-                hideAllButtons()
                 pickLocation.visibility = View.GONE
                 GEMApplication.doMapFollow(false)
+                Tutorials.openHelloWorldTutorial()
             }
             it.onStartPicked = { landmark ->
                 landmarks.add(0, landmark)
@@ -259,9 +277,6 @@ open class RouteCustom(context: Context, attrs: AttributeSet?) :
     }
 }
 
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
-
 class PredefPTNavController(context: Context, attrs: AttributeSet?) :
     BaseUiRouteController(context, attrs) {
 
@@ -284,6 +299,3 @@ class CustomPTNavController(context: Context, attrs: AttributeSet?) : RouteCusto
         mode = TTransportMode.ETM_Public
     }
 }
-
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------

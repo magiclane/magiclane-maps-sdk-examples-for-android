@@ -97,9 +97,7 @@ class UtilUITexts {
 
             val timeTextPair = getTimeText(timeInSeconds)
 
-            return String.format(
-                "${distTextPair.first} ${distTextPair.second} \n ${timeTextPair.first} ${timeTextPair.second}"
-            )
+            return String.format("%%%%0%%%% ${distTextPair.first} ${distTextPair.second} \n%%%%-1%%%% ${timeTextPair.first} ${timeTextPair.second} %%%%1%%%% %%%%2%%%%")
         }
 
         const val MILES_TO_KM = 1.6093
@@ -401,8 +399,6 @@ class UtilUITexts {
             } ?: Pair("", "")
         }
 
-        // ---------------------------------------------------------------------------------------------
-
         private const val MPS_TO_KMH = 3.6
         private const val MPS_TO_MPH = 2.237
 
@@ -420,8 +416,6 @@ class UtilUITexts {
 
             return Pair(String.format("%d", nSpeed), speedUnitText)
         }
-
-        // ---------------------------------------------------------------------------------------------
 
         fun getTimeTextWithDays(
             timeInSeconds: Int,

@@ -63,8 +63,6 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
 
     private var laneInfoImage: Bitmap? = null
 
-    // ---------------------------------------------------------------------------------------------
-
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
 
@@ -88,21 +86,17 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
     }
 
     fun routeUpdated(value: Route?) {
+        GEMSdkCall.checkCurrentThread()
         route = value
-
-        GEMSdkCall.execute {
-            navDataProvider.updateNavigationInfo(navInstr, value)
-        }
-
-        updateAllPanels()
+        
+        navDataProvider.updateNavigationInfo(navInstr, value)
     }
 
     fun updatePosition(value: PositionData) {
+        GEMSdkCall.checkCurrentThread()
         position = value
 
-        GEMSdkCall.execute { navDataProvider.updatePositionInfo(value, navInstr) }
-
-        updateAllPanels()
+        navDataProvider.updatePositionInfo(value, navInstr)
     }
 
     fun updateNavInstruction(value: NavigationInstruction?) {
@@ -143,11 +137,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
 
     fun updateAlarmsInfo(value: AlarmService?) {
         alarmService = value
-
-        updateAllPanels()
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun showNavInfo() {
         allowRefresh = true
@@ -163,8 +153,6 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
         navigationLanePanel.visibility = View.GONE
         navigationDemoText.visibility = View.GONE
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun adjustNavInfoTextSize() {
         val layoutListener = ViewTreeObserver.OnGlobalLayoutListener {
@@ -259,8 +247,6 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
         navigationBottomPanel?.viewTreeObserver?.addOnGlobalLayoutListener(layoutListener)
         navigationBottomPanel?.viewTreeObserver?.removeOnGlobalLayoutListener(layoutListener)
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun adjustViewsForOrientation(orientation: Int) {
         run {
@@ -402,8 +388,6 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun updateDemoTextAnimation(duration: Int, steps: Int) {
         if (navigationDemoText.visibility == View.GONE) return
         if (nDemoAnimationCount == steps) {
@@ -442,17 +426,14 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
         updateNavigationBottomPanel(navDataProvider.info)
 
         topPanelController.update(navInstr, route, alarmService)
-        updateSpeedPanel(navDataProvider.info)
         updateNavigationTopPanel()
+        updateSpeedPanel(navDataProvider.info)
     }
 
     private fun updateNavigationBottomPanel(navInfo: UINavDataProvider.NavInfo) {
         navigationBottomPanel.visibility = View.VISIBLE
 
         val color = Util.getColor(navInfo.rttColor.value())
-
-// 			val trgba = navInfo.rttColor
-// 			Color.argb(trgba.alpha(), trgba.red(), trgba.green(), trgba.blue())
 
         navMenuETAText.text = navInfo.eta
         navMenuETAUnit.text = navInfo.etaUnit
@@ -486,12 +467,30 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
     }
 
     private fun updateSpeedPanel(navInfo: UINavDataProvider.NavInfo) {
-        if (navInfo.currentSpeed.isNullOrEmpty()) {
-            navigationSpeedPanel.visibility = View.GONE
-            return
-        }
+        if (!navInfo.currentSpeed.isNullOrEmpty()) {
+            navigationSpeedPanel.visibility = View.VISIBLE
 
-        navigationSpeedPanel.visibility = View.VISIBLE
+            navCurrentSpeed.text = navInfo.currentSpeed
+            navCurrentSpeedUnit.text = navInfo.currentSpeedUnit
+            val isOverspeeding = navInfo.isOverspeeding
+
+            if (isOverspeeding) {
+                setPanelBackground(this.background, speedPanelBackgroundColor)
+                val textColor = ContextCompat.getColor(context, android.R.color.white)
+
+                navCurrentSpeed.setTextColor(textColor)
+                navCurrentSpeedUnit.setTextColor(textColor)
+            } else {
+                setPanelBackground(
+                    this.background,
+                    ContextCompat.getColor(context, android.R.color.white)
+                )
+
+                val textColor = ContextCompat.getColor(context, android.R.color.black)
+                navCurrentSpeed.setTextColor(textColor)
+                navCurrentSpeedUnit.setTextColor(textColor)
+            }
+        }
 
         val limitText = navInfo.currentSpeedLimit
 
@@ -505,27 +504,6 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
             val sp = if (limitText.length >= 3) defaultSize * 0.75f else defaultSize
             navCurrentSpeedLimit.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
             navCurrentSpeedLimit.text = limitText
-        }
-
-        navCurrentSpeed.text = navInfo.currentSpeed
-        navCurrentSpeedUnit.text = navInfo.currentSpeedUnit
-        val isOverspeeding = navInfo.isOverspeeding
-
-        if (isOverspeeding) {
-            setPanelBackground(this.background, speedPanelBackgroundColor)
-            val textColor = ContextCompat.getColor(context, android.R.color.white)
-
-            navCurrentSpeed.setTextColor(textColor)
-            navCurrentSpeedUnit.setTextColor(textColor)
-        } else {
-            setPanelBackground(
-                this.background,
-                ContextCompat.getColor(context, android.R.color.white)
-            )
-
-            val textColor = ContextCompat.getColor(context, android.R.color.black)
-            navCurrentSpeed.setTextColor(textColor)
-            navCurrentSpeedUnit.setTextColor(textColor)
         }
     }
 
@@ -688,11 +666,7 @@ class UINavDataProvider {
         }
     }
 
-    /**---------------------------------------------------------------------------------------------
-    Private methods
-    ----------------------------------------------------------------------------------------------*/
-
-    // ---------------------------------------------------------------------------------------------
+    // Private methods
 
     private fun resetPositionInfo() {
         info.currentSpeed = null
@@ -711,9 +685,6 @@ class UINavDataProvider {
         info.rttColor = TRgba(0, 0, 0, 0)
     }
 
-    /**---------------------------------------------------------------------------------------------
-    data class NavInfo
-    ----------------------------------------------------------------------------------------------*/
     data class NavInfo(
         var demoText: String? = null,
         var eta: String? = null,

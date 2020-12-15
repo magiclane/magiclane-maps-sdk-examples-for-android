@@ -1,5 +1,3 @@
-// -------------------------------------------------------------------------------------------------
-
 /*
  * Copyright (C) 2019-2020, General Magic B.V.
  * All rights reserved.
@@ -10,36 +8,24 @@
  * license agreement you entered into with General Magic.
  */
 
-// -------------------------------------------------------------------------------------------------
-
 package com.generalmagic.gemsdk.demo.adapters.expandablelist
-
-// -------------------------------------------------------------------------------------------------
 
 import android.util.SparseIntArray
 import android.view.View
 import android.widget.ImageView
 import com.generalmagic.gemsdk.demo.adapters.GEMGenericAdapter
 
-// -------------------------------------------------------------------------------------------------
-
 abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableListItem>(private var mode: ExpandableListMode) :
     GEMGenericAdapter<T>() {
-
-    // ---------------------------------------------------------------------------------------------
 
     protected var visibleItems: MutableList<T?> = mutableListOf()
     private var indexList: MutableList<Int> = mutableListOf()
     private var expandMap = SparseIntArray()
 
-    // ---------------------------------------------------------------------------------------------
-
     enum class ExpandableListMode {
         MODE_MULTIPLE_ITEMS_EXPANDED,
         MODE_SINGLE_ITEM_EXPANDED
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     open class ExpandableListItem(
         var itemType: Int,
@@ -47,35 +33,23 @@ abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableL
         var positionInChapter: Int = 0
     )
 
-    // ---------------------------------------------------------------------------------------------
-
     override fun getItemId(i: Int): Long {
         return i.toLong()
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     override fun getItemCount(): Int {
         return visibleItems.size
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     abstract inner class HeaderViewHolder<T> : GEMGenericViewHolder<T> {
 
-        // -----------------------------------------------------------------------------------------
-
         private lateinit var arrow: ImageView
-
-        // -----------------------------------------------------------------------------------------
 
         constructor(view: View) : super(view) {
             view.setOnClickListener {
                 toggleExpandedItems(layoutPosition, false)
             }
         }
-
-        // -----------------------------------------------------------------------------------------
 
         constructor(view: View, arrow: ImageView) : super(view) {
             this.arrow = arrow
@@ -84,15 +58,11 @@ abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableL
             }
         }
 
-        // -----------------------------------------------------------------------------------------
-
         override fun bind(data: T?, position: Int) {
             arrow.rotation = if (isExpanded(position)) {
                 180f
             } else 0f
         }
-
-        // -----------------------------------------------------------------------------------------
 
         private fun handleClick() {
             if (toggleExpandedItems(layoutPosition, false)) {
@@ -101,11 +71,7 @@ abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableL
                 closeArrow(arrow)
             }
         }
-
-        // -----------------------------------------------------------------------------------------
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     override fun setItems(listItems: MutableList<T?>) {
         this.listItems = listItems
@@ -121,8 +87,6 @@ abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableL
         this.visibleItems = visibleItems
         notifyDataSetChanged()
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun expandItems(position: Int, notify: Boolean) {
         if (listItems.isNotEmpty()) {
@@ -146,8 +110,6 @@ abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableL
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun collapseItems(position: Int, notify: Boolean) {
         if (listItems.isNotEmpty()) {
             var count = 0
@@ -168,8 +130,6 @@ abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableL
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun expandAll() {
         for (i in visibleItems.indices.reversed()) {
             if (visibleItems[i]?.itemType == TYPE_HEADER) {
@@ -180,13 +140,9 @@ abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableL
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun collapseAll() {
         collapseAllExcept(-1)
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun toggleExpandedItems(position: Int, notify: Boolean): Boolean {
         return if (isExpanded(position)) {
@@ -201,14 +157,10 @@ abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableL
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     protected fun isExpanded(position: Int): Boolean {
         val allItemsPosition = indexList[position]
         return expandMap[allItemsPosition, -1] >= 0
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     protected fun removeItemAt(visiblePosition: Int) {
         val allItemsPosition = indexList[visiblePosition]
@@ -219,8 +171,6 @@ abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableL
         notifyItemRemoved(visiblePosition)
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun incrementExpandMapAfter(position: Int, direction: Int) {
         val newExpandMap = SparseIntArray()
         for (i in 0 until expandMap.size()) {
@@ -229,8 +179,6 @@ abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableL
         }
         expandMap = newExpandMap
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun incrementIndexList(allItemsPosition: Int, visiblePosition: Int, direction: Int) {
         val newIndexList: MutableList<Int> = ArrayList()
@@ -246,8 +194,6 @@ abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableL
         indexList = newIndexList
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun collapseAllExcept(position: Int) {
         for (i in visibleItems.indices.reversed()) {
             if (i != position && visibleItems[i]?.itemType == TYPE_HEADER) {
@@ -257,8 +203,6 @@ abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableL
             }
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     companion object {
         const val TYPE_HEADER = 1000
@@ -273,8 +217,4 @@ abstract class GenericExpandableAdapter<T : GenericExpandableAdapter.ExpandableL
             view.animate().setDuration(ARROW_ROTATION_DURATION.toLong()).rotation(0f)
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 }
-
-// -------------------------------------------------------------------------------------------------

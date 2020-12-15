@@ -21,16 +21,16 @@ import com.generalmagic.gemsdk.demo.activities.settings.TIntSettings
 import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.app.MapLayoutController
 import com.generalmagic.gemsdk.demo.app.Tutorials
+import com.generalmagic.gemsdk.demo.app.TutorialsOpener
 import com.generalmagic.gemsdk.demo.app.elements.ButtonsDecorator
+import com.generalmagic.gemsdk.demo.util.IntentHelper
 import com.generalmagic.gemsdk.models.*
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import kotlinx.android.synthetic.main.nav_layout.view.*
 import kotlinx.android.synthetic.main.pick_location.view.*
 
-// ---------------------------------------------------------------------------------------------
 // BASE
-// ---------------------------------------------------------------------------------------------
 
 abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
@@ -53,10 +53,17 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
 
             GEMApplication.postOnMain {
                 hideProgress()
-                if (gemError == GEMError.KNoError) {
-                    navLayout?.routeUpdated(route)
-                } else {
-                    Toast.makeText(context, "Routing service error: $gemError", Toast.LENGTH_SHORT)
+            }
+            
+            if (gemError == GEMError.KNoError) {
+                navLayout?.routeUpdated(route)
+            } else {
+                GEMApplication.postOnMain {
+                    Toast.makeText(
+                        context,
+                        "Routing service error: $gemError",
+                        Toast.LENGTH_SHORT
+                    )
                         .show()
                 }
             }
@@ -109,9 +116,7 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
         override fun onNavigationSound(sound: ISound) {}
 
         override fun onRouteUpdated(route: Route) {
-            GEMApplication.postOnMain {
-                navLayout?.routeUpdated(route)
-            }
+            navLayout?.routeUpdated(route)
         }
 
         override fun onWaypointReached(landmark: Landmark) {}
@@ -187,16 +192,12 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
     }
 }
 
-// ---------------------------------------------------------------------------------------------
-
 abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
     BaseNavControllerLayout(context, attrs) {
 
     private val positionListener = object : PositionListener() {
         override fun onNewPosition(value: PositionData) {
-            GEMApplication.postOnMain {
-                navLayout.updatePosition(value)
-            }
+            navLayout.updatePosition(value)
         }
     }
 
@@ -250,6 +251,7 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
     override fun onMapFollowStatusChanged(following: Boolean) {
         if (following) {
             visibility = View.VISIBLE
+            navLayout.showNavInfo()
             GEMApplication.setAppBarVisible(false)
             GEMApplication.setSystemBarsVisible(false)
             setScreenAlwaysOn(true)
@@ -258,6 +260,7 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
             else doNotNavBotButtons()
         } else {
             visibility = View.GONE
+            navLayout.hideNavInfo()
             GEMApplication.setAppBarVisible(true)
             GEMApplication.setSystemBarsVisible(true)
             setScreenAlwaysOn(false)
@@ -291,8 +294,6 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
         GEMApplication.setSystemBarsVisible(true)
         setScreenAlwaysOn(false)
 
-        doNotNavBotButtons()
-
         val mainMap = GEMApplication.getMainMapView() ?: return
 
         GEMSdkCall.execute {
@@ -300,6 +301,7 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
             mainMap.preferences()?.routes()?.clear()
 // 			MainMapStatusFollowingProvider.getInstance().doUnFollow()
         }
+        Tutorials.openHelloWorldTutorial()
     }
 
     private fun showNavLayout() {
@@ -343,13 +345,21 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
 
 open class BaseSimulationController(context: Context, attrs: AttributeSet?) :
     BaseTurnByTurnLayout(context, attrs) {
+
+    private val progressListener = object : ProgressListener() {}
+
     fun doStart(waypoints: ArrayList<Landmark>) {
         if (isTripActive()) return
+        if (waypoints.size < 2) return
 
         doStop() // stop any sim in progress
 
         GEMSdkCall.execute {
-            val demoSpeedSetting = SettingsProvider.getIntValue(TIntSettings.EDemoSpeed.value)
+            var speedMultiplier = 1
+            SettingsProvider.getIntValue(TIntSettings.EDemoSpeed.value).let {
+                if (it.second > 0)
+                    speedMultiplier = it.second
+            }
 
             val preferences = SettingsProvider.loadRoutePreferences()
             preferences.setTransportMode(TTransportMode.ETM_Car)
@@ -360,7 +370,35 @@ open class BaseSimulationController(context: Context, attrs: AttributeSet?) :
                 preferences,
                 navigationListener,
                 routeCalcListener,
-                demoSpeedSetting.second.toFloat()
+                speedMultiplier.toFloat()
+            )
+        }
+    }
+
+    fun doStart(route: Route?) {
+        route ?: return
+        if (isTripActive()) return
+
+        doStop() // stop any sim in progress
+
+        navLayout?.routeUpdated(route)
+
+        GEMSdkCall.execute {
+            var speedMultiplier = 1
+            SettingsProvider.getIntValue(TIntSettings.EDemoSpeed.value).let {
+                if (it.second > 0)
+                    speedMultiplier = it.second
+            }
+
+            val preferences = SettingsProvider.loadRoutePreferences()
+            preferences.setTransportMode(TTransportMode.ETM_Car)
+            preferences.setAvoidTraffic(true)
+
+            navigationService.startSimulationWithRoute(
+                route,
+                navigationListener,
+                progressListener,
+                speedMultiplier.toFloat()
             )
         }
     }
@@ -385,22 +423,33 @@ open class BaseNavigationController(context: Context, attrs: AttributeSet?) :
     }
 }
 
-// ---------------------------------------------------------------------------------------------
 // PREDEFINED
-// ---------------------------------------------------------------------------------------------
 
-open class PredefSimController(context: Context, attrs: AttributeSet?) :
+open class SimLandmarksController(context: Context, attrs: AttributeSet?) :
     BaseSimulationController(context, attrs) {
-
     override fun doStart() {
-        val waypoints = GEMSdkCall.execute {
-            arrayListOf(
-                Landmark("San Francisco", Coordinates(37.77903, -122.41991)),
-                Landmark("San Jose", Coordinates(37.33619, -121.89058))
-            )
-        } ?: return
+        val waypoints = IntentHelper.getObjectForKey(EXTRA_WAYPOINTS) as ArrayList<Landmark>?
+        waypoints ?: return
 
         doStart(waypoints)
+    }
+
+    companion object {
+        const val EXTRA_WAYPOINTS = "waypoints"
+    }
+}
+
+open class SimRouteController(context: Context, attrs: AttributeSet?) :
+    BaseSimulationController(context, attrs) {
+    override fun doStart() {
+        val route = IntentHelper.getObjectForKey(EXTRA_ROUTE) as Route?
+        route ?: return
+
+        doStart(route)
+    }
+
+    companion object {
+        const val EXTRA_ROUTE = "route"
     }
 }
 
@@ -486,9 +535,7 @@ open class PredefNavController(context: Context, attrs: AttributeSet?) :
     }
 }
 
-// ---------------------------------------------------------------------------------------------
 // CUSTOM
-// ---------------------------------------------------------------------------------------------
 
 class CustomSimController(context: Context, attrs: AttributeSet?) :
     BaseSimulationController(context, attrs) {
@@ -585,5 +632,3 @@ class CustomNavController(context: Context, attrs: AttributeSet?) :
         super.onMapFollowStatusChanged(following)
     }
 }
-
-// ---------------------------------------------------------------------------------------------

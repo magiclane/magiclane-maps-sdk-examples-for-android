@@ -10,8 +10,6 @@
 
 package com.generalmagic.gemsdk.demo.activities.publictransport
 
-// -------------------------------------------------------------------------------------------------
-
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -24,10 +22,7 @@ import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.util.AppUtils
 import kotlin.math.abs
 
-// -------------------------------------------------------------------------------------------------
-
 class PublicTransportRouteDescriptionLineView : View {
-    // ---------------------------------------------------------------------------------------------
 
     private val mCircleBounds = RectF()
     private val mOvalBounds = RectF()
@@ -48,11 +43,7 @@ class PublicTransportRouteDescriptionLineView : View {
     private var mDrawDown = true
     private var mDrawDownDashed = false
 
-    // ---------------------------------------------------------------------------------------------
-
     constructor(context: Context) : super(context)
-
-    // ---------------------------------------------------------------------------------------------
 
     constructor(context: Context?, attrs: AttributeSet) : super(context, attrs) {
         if (context == null || context.theme == null) {
@@ -86,11 +77,7 @@ class PublicTransportRouteDescriptionLineView : View {
         mFillPaint.style = Paint.Style.FILL
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {}
-
-    // ---------------------------------------------------------------------------------------------
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -186,19 +173,13 @@ class PublicTransportRouteDescriptionLineView : View {
         canvas.drawCircle(mCircleBounds.centerX(), mCircleBounds.centerY(), mRadius, mSolidPaint)
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     override fun getSuggestedMinimumWidth(): Int {
         return mRadius.toInt() * 4
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     override fun getSuggestedMinimumHeight(): Int {
         return mRadius.toInt() * 6
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         setMeasuredDimension(
@@ -208,20 +189,14 @@ class PublicTransportRouteDescriptionLineView : View {
         invalidate()
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         invalidate()
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     override fun onTouchEvent(event: MotionEvent): Boolean {
         return true
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun setInfo(
         segmentIndex: Int,
@@ -249,31 +224,21 @@ class PublicTransportRouteDescriptionLineView : View {
         private var sCellHeightExt = 0.0f
         private var sOffsets: Array<FloatArray>? = Array(nOffsets) { FloatArray(0) }
 
-        // -----------------------------------------------------------------------------------------
-
         fun setCellHeight(cellHeight: Float) {
             sCellHeight = cellHeight
         }
-
-        // -----------------------------------------------------------------------------------------
 
         fun setCellHeightExt(cellHeightExt: Float) {
             sCellHeightExt = cellHeightExt
         }
 
-        // -----------------------------------------------------------------------------------------
-
         fun shouldSetCellHeight(): Boolean {
             return abs(sCellHeight) < 0.0001f
         }
 
-        // -----------------------------------------------------------------------------------------
-
         fun shouldSetCellHeightExt(): Boolean {
             return abs(sCellHeightExt) < 0.0001f
         }
-
-        // -----------------------------------------------------------------------------------------
 
         fun resetIntermediatePointsOffsets(nSegments: Int) {
             if (nSegments > 0) {
@@ -287,8 +252,6 @@ class PublicTransportRouteDescriptionLineView : View {
             }
         }
 
-        // -----------------------------------------------------------------------------------------
-
         fun shouldSetOffset(i: Int, itemIndex: Int): Boolean {
             if (sOffsets != null) {
                 if (i >= 0 && i < sOffsets!!.size) {
@@ -300,8 +263,6 @@ class PublicTransportRouteDescriptionLineView : View {
             return false
         }
 
-        // -----------------------------------------------------------------------------------------
-
         fun setOffset(i: Int, segmentIndex: Int, offset: Float) {
             if (sOffsets != null && i >= 0 && i < sOffsets!!.size) {
                 if (segmentIndex >= 0 && segmentIndex < sOffsets!![i].size) {
@@ -310,7 +271,4 @@ class PublicTransportRouteDescriptionLineView : View {
             }
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 }
-// -------------------------------------------------------------------------------------------------

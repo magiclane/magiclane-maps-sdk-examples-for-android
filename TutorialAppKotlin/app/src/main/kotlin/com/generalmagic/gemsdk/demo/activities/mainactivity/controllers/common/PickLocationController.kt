@@ -118,9 +118,6 @@ class PickLocationController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    // ----------------------------------------------------------------------------------------------
-
-
     private fun setPickIntermediateButtonVisible(visible: Boolean, action: () -> Unit) {
         val button = getBottomCenterButton() ?: return
 

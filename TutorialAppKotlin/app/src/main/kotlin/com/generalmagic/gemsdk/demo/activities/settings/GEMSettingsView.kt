@@ -1,5 +1,3 @@
-// -------------------------------------------------------------------------------------------------
-
 /*
  * Copyright (C) 2019-2020, General Magic B.V.
  * All rights reserved.
@@ -10,11 +8,7 @@
  * license agreement you entered into with General Magic.
  */
 
-// -------------------------------------------------------------------------------------------------
-
 package com.generalmagic.gemsdk.demo.activities.settings
-
-// -------------------------------------------------------------------------------------------------
 
 import android.content.Intent
 import com.generalmagic.gemsdk.TRouteType
@@ -24,8 +18,6 @@ import com.generalmagic.gemsdk.demo.util.Utils
 import com.generalmagic.gemsdk.extensions.StringIds
 import com.generalmagic.gemsdk.util.GEMSdkCall
 
-// ---------------------------------------------------------------------------------------------
-
 enum class TSettingItemType(val value: Int) {
     EBoolean(0),
     EInt(1),
@@ -33,8 +25,6 @@ enum class TSettingItemType(val value: Int) {
     EText(3),
     EOptionsList(4);
 }
-
-// ---------------------------------------------------------------------------------------------
 
 abstract class CSettingItem(protected var m_setting: Int) {
     open fun getText() = ""
@@ -91,6 +81,21 @@ open class CIntItem(val m_text: String, setting: Int, val m_min: Int, val m_max:
     }
 }
 
+class CInfinityIntSetting(
+    m_text: String, setting: Int, m_min: Int, m_max: Int, val m_infinity: Int
+) :
+    CIntItem(m_text, setting, m_min, m_max) {
+    override fun getIntTextValue(): String {
+        if (getIntValue() == m_infinity) return "∞"
+        return super.getIntTextValue()
+    }
+
+    override fun getIntMaxTextValue(): String {
+        if (getIntMaxValue() == m_infinity) return "∞"
+        return super.getIntMaxTextValue()
+    }
+}
+
 open class COptionsListItem(val m_text: String, setting: Int) : CSettingItem(setting) {
     val m_options = ArrayList<Pair<String, Int>>()
 
@@ -109,26 +114,6 @@ open class COptionsListItem(val m_text: String, setting: Int) : CSettingItem(set
 
     override fun didTapOptionsListItem(index: Int) {
         GEMSdkCall.execute { SettingsProvider.setIntValue(m_setting, m_options[index].second) }
-    }
-}
-
-
-class RecorderChunkMinutesSetting(m_text: String, setting: Int, m_min: Int, m_max: Int) :
-    CIntItem(m_text, setting, m_min, m_max) {
-    override fun getIntTextValue(): String {
-        val value = getIntValue()
-        if (value > 60)
-            return "∞"
-
-        return String.format("%d", value)
-    }
-
-    override fun getIntMaxTextValue(): String {
-        val value = getIntMaxValue()
-        if (value > 60)
-            return "∞"
-
-        return String.format("%d", value)
     }
 }
 
@@ -163,8 +148,6 @@ class UnitsSystemOptions(m_text: String, setting: Int) : COptionsListItem(m_text
     }
 }
 
-// ---------------------------------------------------------------------------------------------
-
 interface ISettingsView {
     fun refreshItemState(chapter: Int, index: Int, enabled: Boolean)
 }
@@ -178,24 +161,16 @@ object GEMSettingsView {
     val m_nUseMobileDataForMapAndWikipedia = 2
     val m_nTerrainAndSatelliteItemIndex = 3
 
-    // ---------------------------------------------------------------------------------------------
-
     private val settingsActivitiesMap: HashMap<Long, SettingsActivity> = HashMap()
-
-    // ---------------------------------------------------------------------------------------------
 
     fun registerActivity(viewId: Long, settingsActivity: SettingsActivity) {
         settingsActivitiesMap[viewId] = settingsActivity
         m_view = settingsActivity
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun unregisterActivity(viewId: Long) {
         settingsActivitiesMap.remove(viewId)
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun open(viewId: Long) {
         GEMApplication.postOnMain {
@@ -206,8 +181,6 @@ object GEMSettingsView {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun close(viewId: Long) {
         GEMApplication.postOnMain {
             if (settingsActivitiesMap.containsKey(viewId)) {
@@ -216,15 +189,11 @@ object GEMSettingsView {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun refreshItemState(viewId: Long, chapter: Int, index: Int, enabled: Boolean) {
         GEMApplication.postOnMain {
             settingsActivitiesMap[viewId]?.refreshItemState(chapter, index, enabled)
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun onViewClosed(viewId: Long) {
         unregisterActivity(viewId)
@@ -235,9 +204,7 @@ object GEMSettingsView {
     }
 
     init {
-        // -----------------------------------------------------------------------------------------
         // mobile data
-        // -----------------------------------------------------------------------------------------
         val mapDataAndWikipedia = String.format(
             "%s / %s",
             Utils.getUIString(StringIds.eStrMapData),
@@ -267,9 +234,7 @@ object GEMSettingsView {
             )
         )
 
-        // -----------------------------------------------------------------------------------------
         // navigation
-        // -----------------------------------------------------------------------------------------
 
         m_chapters.add(
             Pair(
@@ -307,126 +272,93 @@ object GEMSettingsView {
             )
         )
 
-        // -----------------------------------------------------------------------------------------
         // Recorder
-        // -----------------------------------------------------------------------------------------
 
         m_chapters.add(
             Pair(
                 Utils.getUIString(StringIds.eStrRecording), arrayListOf(
-                    RecorderChunkMinutesSetting(
-                        "Recording chunk size in minutes",
-                        TIntSettings.ERecordingChunk.value, 1, 61
+                    CBoolItem(
+                        "Record audio",
+                        TBoolSettings.ERecordAudio.value
+                    ),
+
+                    CInfinityIntSetting(
+                        "Log length (min)",
+                        TIntSettings.ERecordingChunk.value, 1, 61, 61
+                    ),
+
+                    CInfinityIntSetting(
+                        "Avoid auto delete recent logs (min)",
+                        TIntSettings.EMinMinutes.value, 1, 61, 61
+                    ),
+
+                    CInfinityIntSetting(
+                        "Recording storage limit (MB)",
+                        TIntSettings.EDiskLimit.value, 300, 2001, 2001
                     )
                 )
             )
         )
-
-        // -----------------------------------------------------------------------------------------
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getTitle(viewId: Long): String = Utils.getUIString(StringIds.eStrSettings)
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getChaptersCount(viewId: Long): Int = m_chapters.size
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getItemsCount(viewId: Long, chapter: Int): Int = m_chapters[chapter].second.size
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getChapterText(viewId: Long, chapter: Int): String = m_chapters[chapter].first
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getItemType(viewId: Long, chapter: Int, index: Int): Int =
         m_chapters[chapter].second[index].getType().value
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getItemText(viewId: Long, chapter: Int, index: Int): String =
         m_chapters[chapter].second[index].getText()
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getItemDescription(viewId: Long, chapter: Int, index: Int): String = ""
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getBoolValue(viewId: Long, chapter: Int, index: Int): Boolean =
         m_chapters[chapter].second[index].getBoolValue()
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getIntValue(viewId: Long, chapter: Int, index: Int): Int =
         m_chapters[chapter].second[index].getIntValue()
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getIntTextValue(viewId: Long, chapter: Int, index: Int): String =
         m_chapters[chapter].second[index].getIntTextValue()
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getIntMinValue(viewId: Long, chapter: Int, index: Int): Int =
         m_chapters[chapter].second[index].getIntMinValue()
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getIntMinTextValue(viewId: Long, chapter: Int, index: Int): String =
         m_chapters[chapter].second[index].getIntMinTextValue()
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getIntMaxValue(viewId: Long, chapter: Int, index: Int): Int =
         m_chapters[chapter].second[index].getIntMaxValue()
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getIntMaxTextValue(viewId: Long, chapter: Int, index: Int): String =
         m_chapters[chapter].second[index].getIntMaxTextValue()
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getOptionsListCount(viewId: Long, chapter: Int, index: Int): Int =
         m_chapters[chapter].second[index].getOptionsListCount()
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getDoubleValue(viewId: Long, chapter: Int, index: Int): Double =
         m_chapters[chapter].second[index].getDoubleValue()
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getDoubleTextValue(viewId: Long, chapter: Int, index: Int): String =
         m_chapters[chapter].second[index].getDoubleTextValue()
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getDoubleMinValue(viewId: Long, chapter: Int, index: Int): Double =
         m_chapters[chapter].second[index].getDoubleMinValue()
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getDoubleMinTextValue(viewId: Long, chapter: Int, index: Int): String =
         m_chapters[chapter].second[index].getDoubleMinTextValue()
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getDoubleMaxValue(viewId: Long, chapter: Int, index: Int): Double =
         m_chapters[chapter].second[index].getDoubleMaxValue()
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getDoubleMaxTextValue(viewId: Long, chapter: Int, index: Int): String =
         m_chapters[chapter].second[index].getDoubleMaxTextValue()
 
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getOptionsListText(
         viewId: Long,
@@ -436,12 +368,8 @@ object GEMSettingsView {
     ): String =
         m_chapters[chapter].second[index].getOptionsListText(optionsListIndex)
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getOptionsListSelectedItemIndex(viewId: Long, chapter: Int, index: Int): Int =
         m_chapters[chapter].second[index].getOptionsListSelectedItemIndex()
-
-    // ---------------------------------------------------------------------------------------------
 
     fun isItemEnabled(viewId: Long, chapter: Int, index: Int): Boolean {
         if ((chapter == m_nMobileDataChapterIndex) && (index > 0)) // mobile data chapter
@@ -464,11 +392,7 @@ object GEMSettingsView {
         return true
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun didTapItem(viewId: Long, chapter: Int, index: Int) {}
-
-    // ---------------------------------------------------------------------------------------------
 
     fun didTapOptionsListItem(
         viewId: Long,
@@ -476,9 +400,6 @@ object GEMSettingsView {
         index: Int,
         optionsListIndex: Int
     ) = m_chapters[chapter].second[index].didTapOptionsListItem(optionsListIndex)
-
-
-    // ---------------------------------------------------------------------------------------------
 
     fun didChooseNewBoolValue(viewId: Long, chapter: Int, index: Int, value: Boolean) {
         if (chapterIndexIsValid(chapter, index)) {
@@ -509,21 +430,13 @@ object GEMSettingsView {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun didChooseNewIntValue(viewId: Long, chapter: Int, index: Int, value: Int) =
         m_chapters[chapter].second[index].didChooseNewIntValue(value)
-
-    // ---------------------------------------------------------------------------------------------
 
     fun didChooseNewDoubleValue(viewId: Long, chapter: Int, index: Int, value: Double) =
         m_chapters[chapter].second[index].didChooseNewDoubleValue(value)
 
-    // ---------------------------------------------------------------------------------------------
-
     fun didCloseView(viewId: Long) {}
-
-    // ---------------------------------------------------------------------------------------------
 
     fun chapterIndexIsValid(chapter: Int, index: Int): Boolean {
         return (chapter >= 0) &&
@@ -532,5 +445,3 @@ object GEMSettingsView {
             (index < m_chapters[chapter].second.size)
     }
 }
-
-// -------------------------------------------------------------------------------------------------

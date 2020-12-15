@@ -73,9 +73,8 @@ class WikiController(context: Context, attrs: AttributeSet?) :
 
             return
         }
-        landmark = inLandmark
 
-        doStart(landmark)
+        doStart(inLandmark)
     }
 
     override fun doStop() {

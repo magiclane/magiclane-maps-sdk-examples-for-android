@@ -27,7 +27,6 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 object GEMPublicTransportRouteDescriptionView {
-    // ---------------------------------------------------------------------------------------------
 
     internal lateinit var routeItem: RouteItem
     internal var separatorIcon: Bitmap? = null
@@ -40,7 +39,6 @@ object GEMPublicTransportRouteDescriptionView {
     var m_agencies = ArrayList<TAgencyInfo>()
     var m_routeDescriptionItems = ArrayList<TRouteDescriptionItem>()
 
-    // ---------------------------------------------------------------------------------------------
     internal class RouteInstructionItem {
         var icon: Bitmap? = null
         var simpleText: String? = null
@@ -48,8 +46,6 @@ object GEMPublicTransportRouteDescriptionView {
         var simpleStatusText: String? = null
         var detailStatusText: String? = null
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     internal class RouteSegmentItem {
         var backgroundColor: Int = 0
@@ -78,8 +74,6 @@ object GEMPublicTransportRouteDescriptionView {
         var isExpended: Boolean = false
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     internal class RouteItem {
         var segmentCounts = 0
         var tripTimeInterval = ""
@@ -92,12 +86,8 @@ object GEMPublicTransportRouteDescriptionView {
         var tripSegments = arrayOfNulls<RouteSegmentItem>(0)
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private val iconSize =
         GEMApplication.appResources().getDimension(R.dimen.route_list_instr_icon_size).toInt()
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun setItems(m_route: Route) {
         Helper.fillRouteDescriptionItems(m_route, m_header, m_routeDescriptionItems)
@@ -334,8 +324,6 @@ object GEMPublicTransportRouteDescriptionView {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun loadItems(route: Route) {
         GEMSdkCall.checkCurrentThread()
         
@@ -440,55 +428,37 @@ object GEMPublicTransportRouteDescriptionView {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     class TImageWidth(var width: Int = 0)
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getTitle(): String {
         return getUIString(StringIds.eStrRouteDetails)
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getItemsCount(): Int {
         return m_nItems
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getTripTimeInterval(): String {
         return m_header.m_tripTimeInterval
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getTripDuration(): String {
         return m_header.m_tripDuration
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getNumberOfChanges(): String {
         return m_header.m_numberOfChanges
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getRouteSegmentsCount(): Int {
         return m_header.m_tripSegments.size
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun isRouteSegmentVisible(segmentIndex: Int): Boolean {
         return if (segmentIndex >= 0 && segmentIndex < m_header.m_tripSegments.size) {
             m_header.m_tripSegments[segmentIndex].m_visible
         } else false
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getRouteSegmentImage(
         segmentIndex: Int,
@@ -505,16 +475,12 @@ object GEMPublicTransportRouteDescriptionView {
         return null
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getRouteSegmentName(segmentIndex: Int): String {
         if ((segmentIndex >= 0) && (segmentIndex < m_header.m_tripSegments.size)) {
             return m_header.m_tripSegments[segmentIndex].m_name
         }
         return ""
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getRouteSegmentBackgroundColor(segmentIndex: Int): Int {
         if ((segmentIndex >= 0) && (segmentIndex < m_header.m_tripSegments.size)) {
@@ -523,16 +489,12 @@ object GEMPublicTransportRouteDescriptionView {
         return 0
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getRouteSegmentForegroundColor(segmentIndex: Int): Int {
         if ((segmentIndex >= 0) && (segmentIndex < m_header.m_tripSegments.size)) {
             return m_header.m_tripSegments[segmentIndex].m_foregroundColor
         }
         return 0
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getRouteSegmentTravelTimeValue(segmentIndex: Int): String {
         if ((segmentIndex >= 0) && (segmentIndex < m_header.m_tripSegments.size)) {
@@ -541,16 +503,12 @@ object GEMPublicTransportRouteDescriptionView {
         return ""
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getRouteSegmentTravelTimeUnit(segmentIndex: Int): String {
         if ((segmentIndex >= 0) && (segmentIndex < m_header.m_tripSegments.size)) {
             return m_header.m_tripSegments[segmentIndex].m_travelTimeUnit
         }
         return ""
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getSeparatorImage(width: TImageWidth, height: Int): Bitmap? {
         val iconId = GemIcons.PublicTransport.PublicTransport_Arrow.value
@@ -563,31 +521,21 @@ object GEMPublicTransportRouteDescriptionView {
         )
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getWalkingInfo(): String {
         return m_header.m_walkingInfo
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getFrequency(): String {
         return m_header.m_frequency
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getFare(): String {
         return m_header.m_fare
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getWarning(): String {
         return m_header.m_warning
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getStartStationName(index: Int): String {
         var tmp = ""
@@ -598,8 +546,6 @@ object GEMPublicTransportRouteDescriptionView {
         return tmp
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getStopStationName(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
@@ -608,8 +554,6 @@ object GEMPublicTransportRouteDescriptionView {
         }
         return tmp
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getStationTimeInfo(index: Int): String {
         var tmp = ""
@@ -624,8 +568,6 @@ object GEMPublicTransportRouteDescriptionView {
         return tmp
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getStationTimeInfoColor(index: Int): Int {
         val itemIndex = index - 1
         if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
@@ -639,8 +581,6 @@ object GEMPublicTransportRouteDescriptionView {
         return TRgba(0, 0, 0, 255).value()
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getStationPlatform(index: Int): String {
         val itemIndex = index - 1
         if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
@@ -648,8 +588,6 @@ object GEMPublicTransportRouteDescriptionView {
         }
         return ""
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getStationDepartureTime(index: Int): String {
         var tmp = ""
@@ -659,8 +597,6 @@ object GEMPublicTransportRouteDescriptionView {
         }
         return tmp
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getStationArrivalTime(index: Int): String {
         var tmp = ""
@@ -676,8 +612,6 @@ object GEMPublicTransportRouteDescriptionView {
         return tmp
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getToBLineName(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
@@ -686,8 +620,6 @@ object GEMPublicTransportRouteDescriptionView {
         }
         return tmp
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getSupportLineInfo(index: Int): String {
         var tmp = ""
@@ -698,16 +630,12 @@ object GEMPublicTransportRouteDescriptionView {
         return tmp
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun isWalking(index: Int): Boolean {
         val itemIndex = index - 1
         return if (itemIndex >= 0 && itemIndex < m_routeDescriptionItems.size) {
             m_routeDescriptionItems[itemIndex].m_isWalk
         } else false
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getNumberOfStops(index: Int): Int {
         val itemIndex = index - 1
@@ -716,8 +644,6 @@ object GEMPublicTransportRouteDescriptionView {
         }
         return 0
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getStopName(index: Int, stopIndex: Int): String {
         var tmp = ""
@@ -728,8 +654,6 @@ object GEMPublicTransportRouteDescriptionView {
         return tmp
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getTimeToNextStation(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
@@ -738,8 +662,6 @@ object GEMPublicTransportRouteDescriptionView {
         }
         return tmp
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getDistanceToNextStation(index: Int): String {
         var tmp = ""
@@ -750,8 +672,6 @@ object GEMPublicTransportRouteDescriptionView {
         return tmp
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getStayOnSameVehicle(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
@@ -761,8 +681,6 @@ object GEMPublicTransportRouteDescriptionView {
         return tmp
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getInstructionsListCount(index: Int): Int {
         val itemIndex = index - 1
         if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
@@ -770,8 +688,6 @@ object GEMPublicTransportRouteDescriptionView {
         }
         return 0
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getInstructionText(index: Int, routeInstructionIndex: Int): String {
         val itemIndex = index - 1
@@ -783,8 +699,6 @@ object GEMPublicTransportRouteDescriptionView {
         return ""
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getInstructionDescription(index: Int, routeInstructionIndex: Int): String {
         val itemIndex = index - 1
         if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
@@ -795,8 +709,6 @@ object GEMPublicTransportRouteDescriptionView {
         return ""
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getInstructionDistance(index: Int, routeInstructionIndex: Int): String {
         val itemIndex = index - 1
         if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
@@ -806,7 +718,6 @@ object GEMPublicTransportRouteDescriptionView {
         }
         return ""
     }
-    // ---------------------------------------------------------------------------------------------
 
     fun getInstructionDistanceUnit(index: Int, routeInstructionIndex: Int): String {
         val itemIndex = index - 1
@@ -817,8 +728,6 @@ object GEMPublicTransportRouteDescriptionView {
         }
         return ""
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getInstructionImage(
         index: Int,
@@ -837,12 +746,9 @@ object GEMPublicTransportRouteDescriptionView {
         return null
     }
 
-    // ---------------------------------------------------------------------------------------------
     fun getAgenciesCount(): Int {
         return m_agencies.size
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getAgencyText(): String {
         var tmp = ""
@@ -853,16 +759,12 @@ object GEMPublicTransportRouteDescriptionView {
         return tmp
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getAgencyName(index: Int): String {
         if (index >= 0 && index < m_agencies.size) {
             return m_agencies[index].m_name
         }
         return ""
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getAgencyURL(index: Int): String {
         if (index >= 0 && index < m_agencies.size) {
@@ -871,16 +773,12 @@ object GEMPublicTransportRouteDescriptionView {
         return ""
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getAgencyFareURL(index: Int): String {
         if (index >= 0 && index < m_agencies.size) {
             return m_agencies[index].m_fare_url
         }
         return ""
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getAgencyPhone(index: Int): String {
         if (index >= 0 && index < m_agencies.size) {
@@ -889,25 +787,15 @@ object GEMPublicTransportRouteDescriptionView {
         return ""
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getAgencyURLImage(): Image? {
         return ImageDatabase().getImageById(GemIcons.Other_UI.LocationDetails_OpenWebsite.value)
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getAgencyFareImage(): Image? {
         return ImageDatabase().getImageById(GemIcons.Other_UI.LocationDetails_BuyTickets.value)
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getAgencyPhoneImage(): Image? {
         return ImageDatabase().getImageById(GemIcons.Other_UI.LocationDetails_PhoneCall.value)
     }
-
-    // ---------------------------------------------------------------------------------------------
-
-    // --------------------------------------------------------------------------------------------- 
 }

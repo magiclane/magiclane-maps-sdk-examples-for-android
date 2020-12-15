@@ -10,12 +10,8 @@
 
 package com.generalmagic.gemsdk.demo.activities.mainactivity.controllers
 
-import android.content.ContentValues
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
-import android.os.Environment
-import android.provider.MediaStore
 import android.util.AttributeSet
 import android.util.Log
 import android.view.Surface
@@ -30,13 +26,13 @@ import com.generalmagic.gemsdk.demo.activities.ChapterLISIAdapter
 import com.generalmagic.gemsdk.demo.activities.GenericListActivity
 import com.generalmagic.gemsdk.demo.activities.ListItemStatusImage
 import com.generalmagic.gemsdk.demo.activities.settings.SettingsProvider
+import com.generalmagic.gemsdk.demo.activities.settings.TBoolSettings
 import com.generalmagic.gemsdk.demo.activities.settings.TIntSettings
 import com.generalmagic.gemsdk.demo.app.BaseActivity
 import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.app.GEMApplication.postOnMain
 import com.generalmagic.gemsdk.demo.app.MapLayoutController
 import com.generalmagic.gemsdk.demo.util.IntentHelper
-import com.generalmagic.gemsdk.demo.util.Util.Companion.moveFile
 import com.generalmagic.gemsdk.extensions.*
 import com.generalmagic.gemsdk.models.Canvas
 import com.generalmagic.gemsdk.models.CanvasListener
@@ -47,7 +43,6 @@ import kotlinx.android.synthetic.main.activity_camera.*
 import kotlinx.android.synthetic.main.activity_list_view.*
 import kotlinx.android.synthetic.main.activity_list_view.root_view
 import kotlinx.android.synthetic.main.activity_list_view.toolbar
-import java.io.File
 import java.util.concurrent.Executors
 
 open class BasicSensorsActivity : GenericListActivity() {
@@ -83,7 +78,7 @@ open class BasicSensorsActivity : GenericListActivity() {
 
     companion object {
         fun toString(SenseData: SenseData): String {
-            return when (val type = SenseData.getType()) {
+            return when (SenseData.getType()) {
                 EDataType.Acceleration -> {
                     val data = AccelerationData(SenseData)
                     val x = data.getX()
@@ -252,7 +247,7 @@ class SensorsListActivity : BasicSensorsActivity() {
             currentDataSource ?: return@execute
 
             for (type in desiredTypes) {
-                val errorCode = currentDataSource.addListener(listener, type, false)
+                val errorCode = currentDataSource.addListener(listener, type, null, false)
 
                 val gemError = GEMError.fromInt(errorCode)
                 if (gemError != GEMError.KNoError) {
@@ -282,8 +277,8 @@ class DirectCamActivity : BaseActivity() {
         override fun onNewData(data: SenseData?) {
             if (data?.getType() != EDataType.Camera) return
 
-            val camData = CameraData(data)
-            val configs = camData.getCameraConfiguration() ?: return
+//            val camData = CameraData(data)
+//            val configs = camData.getCameraConfiguration() ?: return
 
 // 			val bmp = Util.createBitmap(data.getBuffer()?.array(), configs.frameWidth(), configs.frameHeight())
 
@@ -340,7 +335,7 @@ class DirectCamActivity : BaseActivity() {
 
             val type = EDataType.Camera
 
-            val errorCode = currentDataSource.addListener(listener, type, false)
+            val errorCode = currentDataSource.addListener(listener, type, null, false)
             val gemError = GEMError.fromInt(errorCode)
 
             if (gemError != GEMError.KNoError) {
@@ -370,8 +365,6 @@ class DirectCamActivity : BaseActivity() {
         }
     }
 }
-
-// ------------------------------------------------------------------------------------------------------
 
 open class DataSourceController(context: Context, attrs: AttributeSet) :
     MapLayoutController(context, attrs) {
@@ -435,22 +428,21 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
 
         this.canvas = Canvas.produce(screen, subViewCoords, canvasListener) ?: return@execute
         this.drawer = CanvasBufferRenderer.produce(canvas)
-        this.drawer?.setFrameFit(TFrameFit.eCenter)
+        this.drawer?.setFrameFit(TFrameFit.eFitInside)
+//        this.drawer?.setFrameFit(TFrameFit.eStretch)
 
-        val requiredTypes = arrayListOf(EDataType.Camera)
+        val cameraType = EDataType.Camera
 
-        for (type in requiredTypes) {
-            val errorCode = currentDataSource.addListener(framesDrawerListener, type)
-            val error = GEMError.fromInt(errorCode)
+        val errorCode = currentDataSource.addListener(framesDrawerListener, cameraType)
+        val error = GEMError.fromInt(errorCode)
 
-            if (error != GEMError.KNoError) {
-                postOnMain {
-                    Toast.makeText(
-                        context,
-                        "starting ${type.name} error = ${error.name}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+        if (error != GEMError.KNoError) {
+            postOnMain {
+                Toast.makeText(
+                    context,
+                    "starting ${cameraType.name} error = ${error.name}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -475,8 +467,7 @@ open class LiveDataSourceController(context: Context, attrs: AttributeSet) :
         super.doStart()
 
         GEMSdkCall.execute {
-            val currentDataSource = GMDataSourceFactory.produceLive() ?: return@execute
-            this.currentDataSource = currentDataSource
+            this.currentDataSource = GMDataSourceFactory.produceLive() ?: return@execute
         }
     }
 }
@@ -486,7 +477,7 @@ open class LogDataSourceController(context: Context, attrs: AttributeSet) :
     private var videoPath = IntentHelper.getObjectForKey(EXTRA_FILEPATH) as String
 
     companion object {
-        val EXTRA_FILEPATH = "filepath"
+        const val EXTRA_FILEPATH = "filepath"
     }
 
     override fun doStart() {
@@ -501,49 +492,32 @@ open class LogDataSourceController(context: Context, attrs: AttributeSet) :
     }
 }
 
-// ------------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------------
-
 class LogRecorderController(context: Context, attrs: AttributeSet) :
     LiveDataSourceController(context, attrs) {
 
     private var drawer: FrameDrawController? = null
     private var recorder: Recorder? = null
     private val recorderListener = object : ProgressListener() {
+//        private fun export(filepath: String): Boolean {
+//            val videoFile = File(filepath)
+//            if (!videoFile.exists())
+//                return false
+//
+//            return Util.exportVideo(context, videoFile, GEMApplication.getPublicRecordsDir())
+//        }
+
         override fun notifyComplete(reason: Int, hint: String) {
             when (val error = GEMError.fromInt(reason)) {
                 GEMError.KNoError -> {
-                    val inputFile = File(hint)
-                    val videosDir = context.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
-                    if (videosDir == null) {
-                        val text = "Export Failed!"
-                        postOnMain { Toast.makeText(context, text, Toast.LENGTH_SHORT).show() }
-                        return
-                    }
-
-                    var text = "Not Exported!"
-                    val newFile = moveFile(inputFile, videosDir)
-                    if (newFile != null) {
-                        text = "Exported!"
-
-                        val cr = context.contentResolver
-
-                        val values = ContentValues()
-                        values.put(MediaStore.Video.Media.TITLE, inputFile.name)
-                        values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
-                        values.put(MediaStore.Video.Media.DATA, newFile.absolutePath)
-                        val uri = cr.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
-                        context.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri))
-                    }
-
-                    postOnMain { Toast.makeText(context, text, Toast.LENGTH_SHORT).show() }
+//                    val text = if (export(hint)) "Exported!"
+//                    else "Not Exported!"
+//
+//                    postOnMain { Toast.makeText(context, text, Toast.LENGTH_SHORT).show() }
                 }
                 else -> {
-                    val text = "${error.name} - $hint"
-                    postOnMain { Toast.makeText(context, text, Toast.LENGTH_SHORT).show() }
+                    postOnMain {
+                        Toast.makeText(context, "${error.name} - $hint", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -554,13 +528,22 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
             postOnMain {
                 when (recStatus) {
                     ERecorderStatus.Stopped -> {
+                        setScreenAlwaysOn(false)
+                        GEMApplication.setAppBarVisible(true)
+
                         Toast.makeText(context, "Recording Stopped!", Toast.LENGTH_SHORT).show()
+
                         doStoppedButtons()
                     }
                     ERecorderStatus.Starting,
                     ERecorderStatus.Recording -> {
-                        if (status == ERecorderStatus.Recording.value)
-                            Toast.makeText(context, "Recording Running!", Toast.LENGTH_SHORT).show()
+                        setScreenAlwaysOn(true)
+                        GEMApplication.setAppBarVisible(false)
+
+                        if (status == ERecorderStatus.Recording.value) {
+                            Toast.makeText(context, "Recording!", Toast.LENGTH_SHORT).show()
+                        }
+
                         doRecordingButtons()
                     }
 
@@ -588,7 +571,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
                             mOrientation = orientation
 
                             if (!wasUnknown) {
-                                postOnMain{
+                                postOnMain {
                                     doStop()
                                     doStart()
                                 }
@@ -607,53 +590,70 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
         super.doStart()
         val logsDir = GEMApplication.getInternalRecordsPath()
 
-        File(logsDir).mkdirs()
-
         GEMSdkCall.execute {
             val currentDataSource = this.currentDataSource ?: return@execute
 
-            val config = TRecorderConfiguration.produce(
-                logsDir,
-                currentDataSource.getAvailableDataTypes()
-            ) ?: return@execute
+            val availableTypes = currentDataSource.getAvailableDataTypes()
 
             val chunkSizeSetting = SettingsProvider.getIntValue(TIntSettings.ERecordingChunk.value)
+            val recordAudioSetting =
+                SettingsProvider.getBooleanValue(TBoolSettings.ERecordAudio.value)
+            val keepRecentSetting = SettingsProvider.getIntValue(TIntSettings.EMinMinutes.value)
+            val diskLimitSetting = SettingsProvider.getIntValue(TIntSettings.EDiskLimit.value)
 
-            val chunkSeconds = if (chunkSizeSetting.second == 61) {
-                -1 // INFINITY
-            } else chunkSizeSetting.second * 60L
+            val chunkLengthInMin = if (chunkSizeSetting.second == 61) {
+                TRecorderConfiguration.INFINITE_RECORDING
+            } else chunkSizeSetting.second.toLong()
+
+            val recordAudio = recordAudioSetting.second
+
+            val keepRecentMin = if (keepRecentSetting.second == 181) {
+                TRecorderConfiguration.KEEP_ALL_RECORDINGS
+            } else keepRecentSetting.second.toLong()
+
+            val diskLimitMB = if (diskLimitSetting.second == 10001) {
+                TRecorderConfiguration.IGNORE_DISK_LIMIT
+            } else diskLimitSetting.second.toLong()
 
             val quality = EResolution.HD_720p
+//            val chunkLengthInMin = 5 //or TRecorderConfiguration.INFINITE_RECORDING
+            val minimumBatteryPercent = 5
+            val continuousRecording = true
 
+            val config = TRecorderConfiguration(logsDir, availableTypes)
             config.setVideoQuality(quality)
-            config.setContinuousRecording(true)
-            config.setChunkDurationSeconds(chunkSeconds)
+            config.setRecordingAudio(recordAudio)
+            config.setContinuousRecording(continuousRecording)
+            config.setChunkDurationSeconds(chunkLengthInMin * 60L)
+            config.setMinimumBatteryPercent(minimumBatteryPercent)
+            config.setKeepMinimumSeconds(keepRecentMin * 60L)
+            config.setDiskSpaceLimit(diskLimitMB * 1024 * 1024)
 
             recorder = Recorder.produce(config, currentDataSource)
             recorder?.addListener(recorderListener)
 
-            val startErrorInt = recorder?.startRecording() ?: GEMError.KInternalAbort.value
-            val startError = GEMError.fromInt(startErrorInt)
+            Executors.newSingleThreadExecutor().submit {
+                GEMSdkCall.execute {
+                    val startErrorInt = recorder?.startRecording() ?: GEMError.KInternalAbort.value
+                    val startError = GEMError.fromInt(startErrorInt)
 
-            if (startError == GEMError.KNoError) {
-                currentDataSource.addListener(orientationListener, EDataType.Orientation)
+                    if (startError == GEMError.KNoError) {
+                        currentDataSource.addListener(orientationListener, EDataType.Orientation)
 
-                val drawer = FrameDrawController(context, currentDataSource)
-                drawer.doStart()
+                        drawer = FrameDrawController(context, currentDataSource)
+                        drawer?.doStart()
 
-                this.drawer = drawer
-                currentDataSource.startNotifyCameraBuffers(
-                    quality.size.width, quality.size.height,
-                    EImagePixelFormat.YUV_420_888
-                )
-
-                postOnMain {
-                    setScreenAlwaysOn(true)
-                }
-            } else {
-                postOnMain {
-                    Toast.makeText(context, "Start error = ${startError.name}", Toast.LENGTH_SHORT)
-                        .show()
+                        //actual starting of providing images
+                        currentDataSource.startNotifyCameraBuffers(
+                            quality.width, quality.height,
+                            EImagePixelFormat.YUV_420_888
+                        )
+                    } else {
+                        postOnMain {
+                            val text = "Start error = ${startError.name}"
+                            Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
             }
         }
@@ -662,16 +662,17 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
     override fun doStop() {
         super.doStop()
 
-        GEMSdkCall.execute {
-            recorder?.stopRecording()
-            currentDataSource?.removeListener(orientationListener)
-            currentDataSource?.stopNotifyCameraBuffers()
+        Executors.newSingleThreadExecutor().submit {
+            GEMSdkCall.execute {
+                recorder?.stopRecording()
 
-            drawer?.doStop()
-            drawer = null
+                currentDataSource?.removeListener(orientationListener)
+                currentDataSource?.stopNotifyCameraBuffers()
+
+                drawer?.doStop()
+                drawer = null
+            }
         }
-
-        setScreenAlwaysOn(false)
     }
 
     fun doStoppedButtons() {
@@ -684,8 +685,6 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
         setStopButtonVisible(true)
     }
 }
-
-// ------------------------------------------------------------------------------------------------------
 
 class LogPlayerController(context: Context, attrs: AttributeSet) :
     LogDataSourceController(context, attrs) {
@@ -708,6 +707,21 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
                 }
             }
         }
+
+//        override fun onNewData(data: SenseData?) {
+//            data ?: return
+//
+//            GEMSdkCall.execute {
+//                when (data.getType()) {
+//                    EDataType.Position -> {
+//                        val posData = PositionData(data)
+//                        
+//                        Log.d("gemsdk", "here, ${posData.getLatitude()}")
+//                    }
+//                    else ->{}
+//                }
+//            }
+//        }
     }
 
     /** doStart/doResume */
@@ -789,5 +803,3 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
         setStopButtonVisible(true)
     }
 }
-
-// ------------------------------------------------------------------------------------------------------

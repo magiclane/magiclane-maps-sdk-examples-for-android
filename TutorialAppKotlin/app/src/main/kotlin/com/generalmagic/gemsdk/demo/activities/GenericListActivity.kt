@@ -126,8 +126,6 @@ open class StylesListItem : BaseListItem() {
     }
 }
 
-// -------------------------------------------------------------------------------------------------
-
 open class GenericListActivity : BaseActivity() {
     private var statusIconSize: Int = 0
     private var iconSize: Int = 0
@@ -227,7 +225,6 @@ open class SearchListActivity : GenericListActivity() {
     open fun applyFilter(filter: String) {}
 }
 
-// -----------------------------------------------------------------------------------------
 /**ListItemStatusImageViewHolder*/
 class ChapterLISIAdapter : SectionedRecyclerViewAdapter {
     var onStatusIconTapped: (chapterIndex: Int, item: BaseListItem, holder: LISIViewHolder) -> Unit =
@@ -309,6 +306,7 @@ open class LISIViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) {
         parent.setOnLongClickListener { _ ->
             it.mOnLongClick(this)
         }
+        
         parent.setOnClickListener { _ ->
             it.mOnClick(this)
         }
@@ -348,7 +346,6 @@ open class LISIViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) {
         }
     }
 }
-// -------------------------------------------------------------------------------------------------
 
 class ChapterStylesAdapter : SectionedRecyclerViewAdapter {
     var onStatusIconTapped: (chapterIndex: Int, item: BaseListItem, holder: StylesViewHolder) -> Unit =
@@ -418,12 +415,19 @@ open class StylesViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) 
     val statusProgress: ProgressBar = parent.findViewById(R.id.item_progress_bar)
     val deleteIcon: ImageView = parent.findViewById(R.id.delete_icon)
 
-    private val iconSize = parent.resources.getDimension(R.dimen.listIconSize).toInt()
     private val statusIconSize = parent.resources.getDimension(R.dimen.statusIconSize).toInt()
 
     open fun updateViews(it: StylesListItem) {
         val previewBitmap = it.getImagePreview()
-        previewImage.setImageBitmap(previewBitmap)
+        if (previewBitmap != null)
+        {
+            val emptyBitmap =
+                Bitmap.createBitmap(previewBitmap.width, previewBitmap.height, previewBitmap.config)
+            if (!previewBitmap.sameAs(emptyBitmap)) {
+                previewImage.setImageBitmap(previewBitmap)
+            }
+        }
+
         text.text = it.getText()
 
         val statusBmp = it.getStatusIcon(statusIconSize, statusIconSize)
@@ -496,7 +500,6 @@ open class StylesViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) 
     }
 }
 
-// -------------------------------------------------------------------------------------------------
 /** SearchListItem */
 class SLIAdapter(data: ArrayList<SearchListItem>) : SectionedRecyclerViewAdapter() {
     init {
@@ -562,12 +565,8 @@ open class SLIViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) {
         }
     }
 }
-// -------------------------------------------------------------------------------------------------
 
-// -----------------------------------------------------------------------------------------
-// -----------------------------------------------------------------------------------------
 // ContentStoreItem
-// -----------------------------------------------------------------------------------------
 
 open class ContentStoreItemViewModel(val it: ContentStoreItem) : ListItemStatusImage() {
     override fun getIcon(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
@@ -607,8 +606,6 @@ open class ContentStoreItemViewModel(val it: ContentStoreItem) : ListItemStatusI
         )
     } ?: 0
 }
-
-// -----------------------------------------------------------------------------------------
 
 open class StylesContentStoreItemViewModel(val it: ContentStoreItem) : StylesListItem() {
     override fun getIcon(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
@@ -665,8 +662,6 @@ open class StylesContentStoreItemViewModel(val it: ContentStoreItem) : StylesLis
     } ?: false
 }
 
-// -----------------------------------------------------------------------------------------
-
 open class LandmarkViewModel(val it: Landmark?, reference: Coordinates?) : SearchListItem() {
     private val dist: Pair<String, String>
 
@@ -702,7 +697,6 @@ open class LandmarkViewModel(val it: Landmark?, reference: Coordinates?) : Searc
 
 }
 
-// -----------------------------------------------------------------------------------------
 open class StyleItemViewModel(item: ContentStoreItem) : StylesContentStoreItemViewModel(item) {
     var m_checked = false
 
@@ -756,4 +750,3 @@ open class StyleItemViewModel(item: ContentStoreItem) : StylesContentStoreItemVi
         )
     } ?: 0
 }
-// -----------------------------------------------------------------------------------------

@@ -10,17 +10,19 @@
 
 package com.generalmagic.gemsdk.demo.util
 
+import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.graphics.*
+import android.graphics.Bitmap
 import android.graphics.drawable.*
 import android.os.Build
+import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.util.TypedValue
 import android.view.View
 import android.widget.TextView
-import com.generalmagic.gemsdk.Route
-import com.generalmagic.gemsdk.SignpostImageRef
-import com.generalmagic.gemsdk.TRgba
+import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.models.*
 import com.generalmagic.gemsdk.util.GEMError
@@ -38,6 +40,32 @@ import java.nio.channels.FileChannel
 
 class Util {
     companion object {
+        fun isInternalLog(filepath: String): Boolean {
+            val internalDir = GEMApplication.getInternalRecordsPath()
+
+            return filepath.startsWith(internalDir)
+        }
+
+        fun exportVideo(context: Context, videoFile: File?, outDir: File?): File? {
+            if (outDir == null) return null
+            if (videoFile == null) return null
+
+            val newFile = moveFile(videoFile, outDir)
+            if (newFile != null) {
+                val cr = context.contentResolver
+
+                val values = ContentValues()
+                values.put(MediaStore.Video.Media.TITLE, videoFile.name)
+                values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+                values.put(MediaStore.Video.Media.DATA, newFile.absolutePath)
+                val uri = cr.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
+                context.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri))
+                return newFile
+            }
+
+            return null
+        }
+
         fun Double.round(decimals: Int = 2): Double {
             return String.format("%.${decimals}f", this).toDouble()
         }
@@ -95,8 +123,6 @@ class Util {
             return Color.argb(a, r, g, b)
         }
 
-        // ---------------------------------------------------------------------------------------------
-
         fun createBitmap(img: RoadInfoImageRef?, width: Int, height: Int): Pair<Int, Bitmap?> {
             img ?: return Pair(0, null)
 
@@ -138,8 +164,6 @@ class Util {
                 return@execute Pair(resultPair?.first ?: 0, bmp)
             } ?: Pair(0, null)
         }
-
-        // ---------------------------------------------------------------------------------------------
 
         fun createBitmap(
             img: AbstractGeometryImageRef?,
@@ -223,8 +247,6 @@ class Util {
             }
         }
 
-        // ---------------------------------------------------------------------------------------------
-
         const val BIG_TRAFFIC_DELAY_IN_MINUTES = 10
         const val ROAD_BLOCK_DELAY = 3600 // one hour
 
@@ -263,7 +285,13 @@ class Util {
             }
         }
 
-        // ---------------------------------------------------------------------------------------------
+        fun getFerryIconId(): Int {
+            return GemIcons.RoutePreviewBubble.Icon_Ferry.value
+        }
+
+        fun getTollIconId(): Int {
+            return GemIcons.RoutePreviewBubble.Icon_Toll.value
+        }
 
         fun getContentStoreStatusIconId(status: TContentStoreItemStatus): Int {
             return when (status) {
@@ -303,8 +331,6 @@ class Util {
             return getImageIdAsBitmap(getContentStoreStatusIconId(status), width, height)
         }
 
-        // ---------------------------------------------------------------------------------------------
-
         fun getTextWidth(textView: TextView?, maxWidth: Int): Int {
             val widthMeasureSpec =
                 View.MeasureSpec.makeMeasureSpec(maxWidth, View.MeasureSpec.AT_MOST)
@@ -321,8 +347,6 @@ class Util {
 
             return (w1 + w2) <= width
         }
-
-        // ---------------------------------------------------------------------------------------------
 
         fun getSizeInPixels(dpi: Int): Int {
             val metrics = GEMApplication.applicationContext().resources.displayMetrics
@@ -341,8 +365,6 @@ class Util {
 
             return fAspectRatio
         }
-
-        // ---------------------------------------------------------------------------------------------
 
         fun levenshtein(lhs: CharSequence, rhs: CharSequence): Int {
             val lhsLength = lhs.length
@@ -418,6 +440,41 @@ class Util {
                 outputChannel?.close()
             }
             return result
+        }
+
+        private const val DELAY_BEFORE_DOWNLOADING_STYLE = 5000L // 5 seconds
+
+        fun downloadSecondStyle() {
+            GEMApplication.postOnMainDelayed({
+                // download another style
+                GEMSdkCall.execute {
+                    val listener = object : ProgressListener() {
+                        override fun notifyComplete(reason: Int, hint: String) {
+                            // select the downloaded style
+                            val result =
+                                ContentStore().getStoreContentList(TContentType.ECT_ViewStyleHighRes.value)
+                            result ?: return
+
+                            val contentStoreStyles = result.first
+                            if (contentStoreStyles.isNotEmpty() && contentStoreStyles.size > 1) {
+                                val styleListener = object : ProgressListener() {
+                                    override fun notifyComplete(reason: Int, hint: String) {}
+                                }
+                                contentStoreStyles[1].asyncDownload(
+                                    styleListener,
+                                    GEMSdk.TDataSavePolicy.EUseDefault,
+                                    true
+                                )
+                            }
+                        }
+                    }
+
+                    ContentStore().asyncGetStoreContentList(
+                        TContentType.ECT_ViewStyleHighRes.value,
+                        listener
+                    )
+                }
+            }, DELAY_BEFORE_DOWNLOADING_STYLE)
         }
     }
 }

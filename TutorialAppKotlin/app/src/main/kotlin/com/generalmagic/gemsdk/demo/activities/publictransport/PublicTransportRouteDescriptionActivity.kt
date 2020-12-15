@@ -10,8 +10,6 @@
 
 package com.generalmagic.gemsdk.demo.activities.publictransport
 
-// -------------------------------------------------------------------------------------------------
-
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -39,13 +37,9 @@ import kotlinx.android.synthetic.main.pt_route_description_activity.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-// -------------------------------------------------------------------------------------------------
-
 class PublicTransportRouteDescriptionActivity : BaseActivity() {
 
     private var viewId: Long = 0
-
-    // ----------------------------------------------------------------------------------------------
 
     private lateinit var route: Route
 
@@ -64,8 +58,6 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
     private var clickThreshold: Float = 0f
     private val segmentViews = TRouteSegmentViews()
 
-    // ----------------------------------------------------------------------------------------------
-
     internal inner class TRouteSegmentViews {
         var iconView: ImageView? = null
         var textView: TextView? = null
@@ -83,8 +75,6 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
             separatorView = null
         }
     }
-
-    // ----------------------------------------------------------------------------------------------
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -137,8 +127,6 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
             }
         }
     }
-
-    // ----------------------------------------------------------------------------------------------
 
     private fun fillHeaderView(convertView: View?) {
         if (convertView != null) {
@@ -366,8 +354,6 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
             }
         }
     }
-
-    // ----------------------------------------------------------------------------------------------
 
     private fun initRouteDescriptionListAdapter() {
         routeDescriptionAdapter = object : BaseAdapter() {
@@ -1082,8 +1068,6 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
         }
     }
 
-    // ----------------------------------------------------------------------------------------------
-
     internal fun getSegmentLineColor(segmentIndex: Int): Int {
         var lineColor = 0
         if (segmentIndex >= 0) {
@@ -1104,8 +1088,6 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
         return lineColor
     }
 
-    // ----------------------------------------------------------------------------------------------
-
     fun reloadData() {
         if (routeDescriptionAdapter != null && routeDescriptionViews != null) {
             routeDescriptionViews!!.clear()
@@ -1119,8 +1101,6 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
         }
     }
 
-    // ----------------------------------------------------------------------------------------------
-
     private fun getTextViewWidth(textView: TextView?, text: String?): Int {
         if (textView != null && text != null && text.isNotEmpty()) {
             val textPaint = textView.paint
@@ -1130,8 +1110,6 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
         }
         return 0
     }
-
-    // ----------------------------------------------------------------------------------------------
 
     @SuppressLint("ClickableViewAccessibility")
     internal fun initStationsListView(itemIndex: Int, stationsContainer: LinearLayout?) {
@@ -1207,8 +1185,6 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
             false
         }
     }
-
-    // ----------------------------------------------------------------------------------------------
 
     @SuppressLint("ClickableViewAccessibility")
     internal fun initPedestrianRouteInstructionsListView(
@@ -1322,8 +1298,6 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
         }
     }
 
-    // ----------------------------------------------------------------------------------------------
-
     private fun fillSegmentViews(segmentIndex: Int, convertView: View?): Boolean {
         segmentViews.reset()
 
@@ -1362,8 +1336,6 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
         return false
     }
 
-    // ----------------------------------------------------------------------------------------------
-
     fun didTapItem(index: Int) {
         val itemIndex = index - 1
         if (itemIndex >= 0 && itemIndex < GEMPublicTransportRouteDescriptionView.m_routeDescriptionItems.size) {
@@ -1387,4 +1359,3 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
         }
     }
 }
-// -------------------------------------------------------------------------------------------------- 

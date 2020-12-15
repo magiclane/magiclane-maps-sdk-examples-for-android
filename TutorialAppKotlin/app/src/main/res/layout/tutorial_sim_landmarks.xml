@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.PredefSimController xmlns:android="http://schemas.android.com/apk/res/android"
-	android:id="@+id/predefSimController"
+<com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SimLandmarksController xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/simLandmarksController"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
 	android:gravity="center_horizontal"
@@ -11,4 +11,4 @@
 		android:layout_width="match_parent"
 		android:layout_height="match_parent" />
 
-</com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.PredefSimController>
+</com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SimLandmarksController>

@@ -10,8 +10,6 @@
 
 package com.generalmagic.gemsdk.demo.activities.publictransport
 
-// -------------------------------------------------------------------------------------------------
-
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -32,18 +30,13 @@ import io.github.luizgrp.sectionedrecyclerviewadapter.SectionParameters
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionedRecyclerViewAdapter
 import kotlinx.android.synthetic.main.agencies_activity.*
 
-// -------------------------------------------------------------------------------------------------
-
 class PublicTransportAgenciesActivity : BaseActivity() {
-    // ---------------------------------------------------------------------------------------------
 
     val iconSize = GEMApplication.appResources().getDimension(R.dimen.listIconSize).toInt()
     private var agenciesListAdapter: AgenciesListAdapter? = null
     var urlBmp: Bitmap? = null
     var fareBmp: Bitmap? = null
     var phoneBmp: Bitmap? = null
-
-    // ---------------------------------------------------------------------------------------------
 
     data class AgencyListItem(
         var name: String = "",
@@ -52,14 +45,9 @@ class PublicTransportAgenciesActivity : BaseActivity() {
         var phone: String = ""
     )
 
-    // ---------------------------------------------------------------------------------------------
-
     inner class AgenciesListAdapter : SectionedRecyclerViewAdapter() {
-        // -----------------------------------------------------------------------------------------
 
         private var chapters: Array<AgencyListItem> = Array(0) { AgencyListItem() }
-
-        // -----------------------------------------------------------------------------------------
 
         inner class Chapter(private val index: Int, private val nItems: Int) : Section(
             SectionParameters.builder().itemResourceId(R.layout.list_item_status_image)
@@ -157,13 +145,9 @@ class PublicTransportAgenciesActivity : BaseActivity() {
             }
         }
 
-        // -----------------------------------------------------------------------------------------
-
         init {
             load()
         }
-
-        // -----------------------------------------------------------------------------------------
 
         private fun load() {
             GEMSdkCall.execute {
@@ -205,10 +189,7 @@ class PublicTransportAgenciesActivity : BaseActivity() {
                 }
             }
         }
-        // -----------------------------------------------------------------------------------------
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

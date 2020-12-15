@@ -14,10 +14,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Resources
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.*
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
@@ -30,6 +27,7 @@ import com.generalmagic.gemsdk.demo.activities.pickvideo.PickLogActivity
 import com.generalmagic.gemsdk.demo.activities.settings.SettingsProvider
 import com.generalmagic.gemsdk.demo.app.TutorialsOpener.getCurrentTutorial
 import com.generalmagic.gemsdk.demo.util.KeyboardUtil
+import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.demo.util.Utils
 import com.generalmagic.gemsdk.demo.util.network.NetworkManager
 import com.generalmagic.gemsdk.demo.util.network.NetworkProviderImpl
@@ -94,10 +92,20 @@ object GEMApplication {
 
     fun appResources(): Resources = applicationContext().resources
 
-    fun init(context: Context, mapSurface: GEMMapSurface) {
+    fun init(context: Context, mapSurface: GEMMapSurface, onFinish: () -> Unit = {}) {
         this.mapSurface = mapSurface
 
-        mapSurface.onMainScreenCreated = { screen: Screen -> onInit(context, screen) }
+        mapSurface.onMainScreenCreated = { screen: Screen ->
+            onInit(context, screen)
+            postOnMain(onFinish)
+            val styles =
+                ContentStore().getLocalContentList(TContentType.ECT_ViewStyleHighRes.value)
+            styles?.run {
+                if (size < 2) {
+                    Util.downloadSecondStyle()
+                }
+            }
+        }
     }
 
     private fun onInit(context: Context, screen: Screen) {
@@ -168,8 +176,12 @@ object GEMApplication {
         postOnMain { Tutorials.openHelloWorldTutorial() }
     }
 
-    /** absolute path temporary internal records path*/
+    /** absolute path to internal records */
     fun getInternalRecordsPath() = iRecordsPath
+    
+    fun getPublicRecordsDir() : File? {
+        return appContext?.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
+    }
 
     /** absolute path where records will be externally saved. */
     fun getExternalRecordsPath() = eRecordsPath
@@ -424,7 +436,11 @@ object GEMApplication {
         topActivity()?.requestedOrientation = orientation
     }
 
+    fun postOnMain(action: () -> Unit) = postOnMainDelayed(Runnable { action() })
     fun postOnMain(action: Runnable) = postOnMainDelayed(action)
+    fun postOnMainDelayed(action: () -> Unit, delay: Long = 0L) =
+        postOnMainDelayed(Runnable { action() }, delay)
+
     fun postOnMainDelayed(action: Runnable, delay: Long = 0L) {
         val uiHandler = Handler(Looper.getMainLooper())
         if (delay == 0L)

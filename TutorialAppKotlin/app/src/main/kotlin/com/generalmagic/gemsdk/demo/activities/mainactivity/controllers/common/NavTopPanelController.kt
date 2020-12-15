@@ -58,8 +58,6 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
     private val trafficPanelBackgroundColor = Color.rgb(255, 175, 63)
 
-    // ----------------------------------------------------------------------------------------------
-
     fun update(navInstr: NavigationInstruction?, route: Route?, alarmService: AlarmService?) {
         reset()
 
@@ -99,8 +97,6 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
         updateNavigationTopPanel()
     }
-
-    // ----------------------------------------------------------------------------------------------
 
     private fun updateNavigationInfo(navInstr: NavigationInstruction?) {
         GEMSdkCall.checkCurrentThread()
@@ -209,8 +205,6 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         distanceToNextTurn = distanceToNextTurnTexts.first
         distanceToNextTurnUnit = distanceToNextTurnTexts.second
     }
-
-    // ----------------------------------------------------------------------------------------------
 
     private fun updateTrafficEvent(trafficEvent: RouteTrafficEvent?) {
         GEMSdkCall.checkCurrentThread()
@@ -333,8 +327,6 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
             currentAlarmedMarker = markersList.getItem(0)
         }
     }
-
-    // ----------------------------------------------------------------------------------------------
 
     private fun updateNavigationTopPanel() {
         this.visibility = View.VISIBLE
@@ -520,7 +512,6 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    // ----------------------------------------------------------------------------------------------
     private var alarmService: AlarmService? = null
     private var navInstr: NavigationInstruction? = null
     private var route: Route? = null

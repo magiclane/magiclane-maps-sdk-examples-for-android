@@ -378,8 +378,6 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private val eStrWikipedia = "Wikipedia"
     private var wikiListAdapter: WikiImagesListAdapter? = null
     private fun updateWikiContents() {
@@ -436,15 +434,11 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
     )
 }
 
-// -----------------------------------------------------------------------------------------
-
 data class ImageViewModel(
     var status: WikiServiceController.TLoadState = WikiServiceController.TLoadState.ENotRequested,
     var image: Bitmap? = null,
     var description: String = ""
 )
-
-// -----------------------------------------------------------------------------------------
 
 class WikiImagesListAdapter(
     val context: Context,
@@ -455,13 +449,9 @@ class WikiImagesListAdapter(
     private val standardHeight = Util.mmToPixels(context, 25)
     private var nImagesHeight: Int
 
-    // -----------------------------------------------------------------------------------------
-
     init {
         nImagesHeight = standardHeight
     }
-
-    // -----------------------------------------------------------------------------------------
 
     inner class ImageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val container: ConstraintLayout = view.findViewById(R.id.wiki_image_list_item)
@@ -470,21 +460,15 @@ class WikiImagesListAdapter(
         val description: Button = view.findViewById(R.id.wiki_image_description)
     }
 
-    // -----------------------------------------------------------------------------------------
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ImageViewHolder {
         val view: View = LayoutInflater.from(parent.context)
             .inflate(R.layout.wiki_image_list_item, parent, false)
         return ImageViewHolder(view)
     }
 
-    // -----------------------------------------------------------------------------------------
-
     override fun getItemCount(): Int {
         return models.size
     }
-
-    // -----------------------------------------------------------------------------------------
 
     override fun onBindViewHolder(holder: ImageViewHolder, position: Int) {
         if (position < 0 || position >= models.size) {
@@ -562,8 +546,6 @@ class WikiImagesListAdapter(
         }
     }
 
-    // -----------------------------------------------------------------------------------------
-
     private val imagesExecutor = Executors.newSingleThreadExecutor()
     fun didLoadImage(index: Int, image: Image) {
         if (index < 0 || index >= models.size) return
@@ -590,8 +572,6 @@ class WikiImagesListAdapter(
             }
         }
     }
-
-    // -----------------------------------------------------------------------------------------
 
     fun didLoadDescription(index: Int, value: String) {
         if (index < 0 || index >= models.size) return

@@ -22,12 +22,24 @@
 
 	<ImageView
 		android:id="@+id/pickIcon"
-		android:layout_width="30dp"
-		android:layout_height="30dp"
-		android:translationY="-45dp"
-		app:layout_constraintBottom_toBottomOf="parent"
+		android:layout_width="@dimen/mapButtonWidth"
+		android:layout_height="@dimen/mapButtonHeight"
+        app:layout_constraintVertical_bias="0.85"
+		app:layout_constraintBottom_toTopOf="@id/pickLocationX"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
 		app:layout_constraintTop_toTopOf="parent" />
+    
+    <ImageView
+        android:id="@+id/pickLocationX"
+        android:layout_width="@dimen/pink_location_center_x_size"
+        android:layout_height="@dimen/pink_location_center_x_size"
+        android:translationY="-45dp"
+        android:src="@drawable/ic_close_gray_24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+        
 
 </com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.common.PickLocationController>

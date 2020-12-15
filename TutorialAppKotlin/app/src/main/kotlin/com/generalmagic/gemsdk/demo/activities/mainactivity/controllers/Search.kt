@@ -124,8 +124,6 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
     }
 }
 
-// -------------------------------------------------------------------------------------------------
-
 class SearchTextActivity : BaseSearchTutorialActivity() {
     var lastFilter = ""
     private val searchViewListener = object : SearchView.OnQueryTextListener {
@@ -148,8 +146,8 @@ class SearchTextActivity : BaseSearchTutorialActivity() {
     }
 
     private fun doSearch(text: String?) {
+        doStop() // if there is any in progress
         if (text.isNullOrEmpty()) {
-            doStop() // if there is any in progress
             hideListView()
             return
         }
@@ -170,8 +168,6 @@ class SearchTextActivity : BaseSearchTutorialActivity() {
         }
     }
 }
-
-// -------------------------------------------------------------------------------------------------
 
 class SearchNearbyActivity : BaseSearchTutorialActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -195,8 +191,6 @@ class SearchNearbyActivity : BaseSearchTutorialActivity() {
     }
 }
 
-// --------------------------------------------------------------------------------------------------
-
 class SearchPoiActivity : BaseSearchTutorialActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -210,7 +204,7 @@ class SearchPoiActivity : BaseSearchTutorialActivity() {
         if (categoriesList.size > 0) {
             category = categoriesList[0]
         }
-        
+
         return@execute category
     }
 

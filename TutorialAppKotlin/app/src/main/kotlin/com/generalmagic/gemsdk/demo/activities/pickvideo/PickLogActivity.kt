@@ -20,6 +20,8 @@ import com.generalmagic.gemsdk.TLogUploaderState
 import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.app.BaseActivity
 import com.generalmagic.gemsdk.demo.app.GEMApplication
+import com.generalmagic.gemsdk.demo.util.Util
+import com.generalmagic.gemsdk.extensions.RecorderBookmarks
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import java.io.File
@@ -44,7 +46,7 @@ class PickLogActivity : BaseActivity() {
     )
 
     private var hasPermissions = false
-    private var inputDirectoryPath: String = ""
+    private var inputDirectories: ArrayList<String>? = null
 
     private val uploadUsername = ""
     private val uploadEmail = "mstoica@generalmagic.com"
@@ -78,7 +80,7 @@ class PickLogActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pick_video)
 
-        inputDirectoryPath = intent.getStringExtra(INPUT_DIR) ?: ""
+        inputDirectories = intent.getStringArrayListExtra(INPUT_DIR)
 
         recyclerView = findViewById(R.id.list_files)
 
@@ -108,7 +110,7 @@ class PickLogActivity : BaseActivity() {
         }
 
         if (hasPermissions) {
-            updateListAdapter(inputDirectoryPath)
+            updateListAdapter(inputDirectories)
         }
     }
 
@@ -136,7 +138,7 @@ class PickLogActivity : BaseActivity() {
     override fun onRequestPermissionsFinish(granted: Boolean) {
         if (granted) {
             hasPermissions = true
-            updateListAdapter(inputDirectoryPath)
+            updateListAdapter(inputDirectories)
         } else {
             onVideoPickCanceled()
         }
@@ -145,6 +147,29 @@ class PickLogActivity : BaseActivity() {
     //
     // Business code
     //
+    private fun isProtectedLog(filepath: String): Boolean {
+        val recordsPath = GEMApplication.getInternalRecordsPath()
+
+        return GEMSdkCall.execute {
+            val bookmarks = RecorderBookmarks.produce(recordsPath) ?: return@execute false
+
+            val fileMeta = bookmarks.getMetadata(filepath) ?: return@execute false
+            return@execute fileMeta.isProtected()
+        } ?: false
+    }
+
+    private fun protect(filepath: String, protect: Boolean) {
+        val recordsPath = GEMApplication.getInternalRecordsPath()
+
+        GEMSdkCall.execute {
+            val bookmarks = RecorderBookmarks.produce(recordsPath) ?: return@execute
+
+            if (protect) {
+                bookmarks.markLogProtected(filepath)
+            }
+        }
+    }
+
     private fun upload(filepath: String) {
         val logUploader = logUploader ?: return
         val username = ""
@@ -166,8 +191,18 @@ class PickLogActivity : BaseActivity() {
         }
     }
 
-    private fun updateListAdapter(dirPath: String) {
-        val dataModel = getVideoFileModels(dirPath)
+    private fun export(filepath: String): File? {
+        val videoFile = File(filepath)
+        if (!videoFile.exists())
+            return null
+
+        val context = GEMApplication.applicationContext()
+
+        return Util.exportVideo(context, videoFile, GEMApplication.getPublicRecordsDir())
+    }
+
+    private fun updateListAdapter(inputPaths: ArrayList<String>?) {
+        val dataModel = getVideoFileModels(inputPaths)
 
         viewAdapter = CustomAdapter(dataModel)
         recyclerView.adapter = viewAdapter
@@ -181,9 +216,9 @@ class PickLogActivity : BaseActivity() {
         return true
     }
 
-    private fun getVideoFileModels(dirPath: String): ArrayList<VideoFileModel> {
+    private fun getVideoFileModels(inputPaths: ArrayList<String>?): ArrayList<VideoFileModel> {
         val result = ArrayList<VideoFileModel>()
-        val allVideoFiles = getAvailableFileLogs(dirPath)
+        val allVideoFiles = getAvailableFileLogs(inputPaths)
 
         // PROCESS FILES
         if (allVideoFiles.size > 0) {
@@ -203,31 +238,34 @@ class PickLogActivity : BaseActivity() {
         return result
     }
 
-    private fun getAvailableFileLogs(dirPath: String): ArrayList<File> {
-        if (dirPath.isEmpty()) return ArrayList()
+    private fun getAvailableFileLogs(inputPaths: ArrayList<String>?): ArrayList<File> {
+        if (inputPaths == null) return ArrayList()
+        if (inputPaths.isEmpty()) return ArrayList()
         if (!hasPermissions) return ArrayList()
 
-        val moviesDir = File(dirPath)
-        if (!moviesDir.exists() || !moviesDir.isDirectory) return ArrayList()
-
-        // OBTAIN ALL FILES
-        val logs = ArrayList<File>()
-
-        moviesDir.listFiles { _, name ->
-            name.toLowerCase(Locale.getDefault()).endsWith(".mp4")
-        }?.let {
-            logs.addAll(it)
-        }
-        moviesDir.listFiles { _, name ->
-            name.toLowerCase(Locale.getDefault()).endsWith(".gm")
-        }?.let {
-            logs.addAll(it)
-        }
-
-        logs.sortByDescending { it.lastModified() }
-
         val result = ArrayList<File>()
-        result.addAll(logs)
+        for (dirPath in inputPaths) {
+            val moviesDir = File(dirPath)
+            if (!moviesDir.exists() || !moviesDir.isDirectory) return ArrayList()
+
+            // OBTAIN ALL FILES
+            val logs = ArrayList<File>()
+
+            moviesDir.listFiles { _, name ->
+                name.toLowerCase(Locale.getDefault()).endsWith(".mp4")
+            }?.let {
+                logs.addAll(it)
+            }
+            moviesDir.listFiles { _, name ->
+                name.toLowerCase(Locale.getDefault()).endsWith(".gm")
+            }?.let {
+                logs.addAll(it)
+            }
+
+            result.addAll(logs)
+        }
+
+        result.sortByDescending { it.lastModified() }
 
         return result
     }
@@ -266,7 +304,6 @@ class PickLogActivity : BaseActivity() {
             return mDataset.size
         }
 
-        // ----------------------------------------------------------------
         private fun itemClicked(index: Int) {
             onVideoPicked(mDataset[index])
         }
@@ -275,6 +312,42 @@ class PickLogActivity : BaseActivity() {
             val it = mDataset[index]
 
             upload(it.filepath)
+        }
+
+        private fun isProtectedLog(index: Int): Boolean {
+            val it = mDataset[index]
+
+            return isProtectedLog(it.filepath)
+        }
+
+        private fun setProtectAtIndex(index: Int, protect: Boolean) {
+            val it = mDataset[index]
+
+            protect(it.filepath, protect)
+            notifyDataSetChanged()
+        }
+
+        private fun exportAtIndex(index: Int) {
+            val it = mDataset[index]
+
+            val context = GEMApplication.applicationContext()
+
+            val newFilepath = export(it.filepath)?.absolutePath
+
+            val text = if (newFilepath != null) {
+                mDataset[index].filepath = newFilepath
+                "Exported!"
+            } else "Not Exported!"
+
+            notifyDataSetChanged()
+
+            GEMApplication.postOnMain { Toast.makeText(context, text, Toast.LENGTH_SHORT).show() }
+        }
+
+        private fun isInternalLog(index: Int): Boolean {
+            val it = mDataset[index]
+
+            return Util.isInternalLog(it.filepath)
         }
 
         private fun deleteAtIndex(index: Int) {
@@ -289,7 +362,6 @@ class PickLogActivity : BaseActivity() {
             notifyDataSetChanged()
         }
 
-        // ----------------------------------------------------------------
         inner class ListItemViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val nameTextView: TextView = view.findViewById(R.id.name)
             val filepathTextView: TextView = view.findViewById(R.id.filepath)
@@ -301,6 +373,13 @@ class PickLogActivity : BaseActivity() {
                 }
                 view.setOnLongClickListener { _ ->
                     val menu = PopupMenu(view.context, view)
+
+                    if (isInternalLog(adapterPosition)) {
+                        menu.menu.add("Export")
+                        if (!isProtectedLog(adapterPosition))
+                            menu.menu.add("Protect")
+                    }
+
                     menu.menu.add("Upload")
                     menu.menu.add("Delete")
                     menu.show()
@@ -309,6 +388,12 @@ class PickLogActivity : BaseActivity() {
                         val title = it.title.toString()
 
                         when (title.toLowerCase(Locale.getDefault())) {
+                            "export" -> {
+                                exportAtIndex(adapterPosition)
+                            }
+                            "protect" -> {
+                                setProtectAtIndex(adapterPosition, true)
+                            }
                             "upload" -> {
                                 uploadAtIndex(adapterPosition)
                             }

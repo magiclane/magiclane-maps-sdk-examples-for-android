@@ -1,5 +1,3 @@
-// -------------------------------------------------------------------------------------------------
-
 /*
  * Copyright (C) 2019-2020, General Magic B.V.
  * All rights reserved.
@@ -10,11 +8,7 @@
  * license agreement you entered into with General Magic.
  */
 
-// -------------------------------------------------------------------------------------------------
-
 package com.generalmagic.gemsdk.demo.adapters.sectionedlist
-
-// -------------------------------------------------------------------------------------------------
 
 import android.content.Context
 import android.view.View
@@ -30,12 +24,9 @@ abstract class GenericSectionedAdapter<T : GenericSectionedAdapter.SectionModel?
     private val context: Context,
     private val recyclerViewType: SectionedListType
 ) : GEMGenericAdapter<T?>() {
-    // ---------------------------------------------------------------------------------------------
 
     // 2 columns by default
     var gridColumnsNumber: Int = 2
-
-    // ---------------------------------------------------------------------------------------------
 
     constructor(
         context: Context,
@@ -46,14 +37,10 @@ abstract class GenericSectionedAdapter<T : GenericSectionedAdapter.SectionModel?
         listItems = sectionedItemsList
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     open class SectionModel(
         var sectionIndex: Int,
         var itemArrayList: MutableList<*>
     )
-
-    // ---------------------------------------------------------------------------------------------
 
     enum class SectionedListType {
         LINEAR_VERTICAL,
@@ -61,34 +48,23 @@ abstract class GenericSectionedAdapter<T : GenericSectionedAdapter.SectionModel?
         GRID
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private inner class SectionAdapterHolder(
         val sectionId: Int,
         val sectionAdapter: GEMGenericAdapter<*>
     )
 
-    // ---------------------------------------------------------------------------------------------
-
     private val sectionAdapterHolderList = arrayListOf<SectionAdapterHolder>()
-
-    // ---------------------------------------------------------------------------------------------
 
     abstract inner class GenericSectionedViewHolder<T : SectionModel?>(itemView: View) :
         GEMGenericViewHolder<T?>(itemView) {
-        // -----------------------------------------------------------------------------------------
 
         private var sectionRecyclerView: RecyclerView =
             itemView.findViewById(R.id.section_recycler_view)
         val text: TextView = itemView.findViewById(R.id.header_text)
 
-        // -----------------------------------------------------------------------------------------
-
         init {
             setRecyclerViewLayout()
         }
-
-        // -----------------------------------------------------------------------------------------
 
         private fun setRecyclerViewLayout() {
             // recycler view for sections
@@ -124,24 +100,16 @@ abstract class GenericSectionedAdapter<T : GenericSectionedAdapter.SectionModel?
             }
         }
 
-        // -----------------------------------------------------------------------------------------
-
         fun setAdapterToSectionRecyclerView(sectionIndex: Int, adapter: GEMGenericAdapter<*>) {
             adapter.setHasStableIds(true)
             sectionRecyclerView.adapter = adapter
             sectionAdapterHolderList.add(SectionAdapterHolder(sectionIndex, adapter))
         }
-
-        // -----------------------------------------------------------------------------------------
     }
-
-    // -----------------------------------------------------------------------------------------
 
     override fun getLayoutId(position: Int): Int {
         return R.layout.sectioned_list_chapter
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun notifyItemChanged(sectionId: Int, itemSectionPosition: Int) {
         for (i in sectionAdapterHolderList) {
@@ -150,6 +118,4 @@ abstract class GenericSectionedAdapter<T : GenericSectionedAdapter.SectionModel?
             }
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 }

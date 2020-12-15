@@ -26,12 +26,16 @@ import androidx.core.view.GravityCompat
 import androidx.core.view.iterator
 import androidx.drawerlayout.widget.DrawerLayout
 import com.generalmagic.gemsdk.AppVariant
+import com.generalmagic.gemsdk.Route
 import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.LogDataSourceController
+import com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SimLandmarksController.Companion.EXTRA_WAYPOINTS
+import com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SimRouteController.Companion.EXTRA_ROUTE
 import com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.WikiController
 import com.generalmagic.gemsdk.demo.app.*
 import com.generalmagic.gemsdk.demo.util.IntentHelper
 import com.generalmagic.gemsdk.mapview.GEMMapSurface
+import com.generalmagic.gemsdk.models.Coordinates
 import com.generalmagic.gemsdk.models.Landmark
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -54,10 +58,11 @@ import kotlinx.android.synthetic.main.tutorial_logrecorder.view.*
 import kotlinx.android.synthetic.main.tutorial_multiplemaps.view.*
 import kotlinx.android.synthetic.main.tutorial_predef_nav.view.*
 import kotlinx.android.synthetic.main.tutorial_predef_ptnav.view.*
-import kotlinx.android.synthetic.main.tutorial_predef_sim.view.*
 import kotlinx.android.synthetic.main.tutorial_route_ab.view.*
 import kotlinx.android.synthetic.main.tutorial_route_abc.view.*
 import kotlinx.android.synthetic.main.tutorial_route_custom.view.*
+import kotlinx.android.synthetic.main.tutorial_sim_landmarks.view.*
+import kotlinx.android.synthetic.main.tutorial_sim_route.view.*
 import kotlinx.android.synthetic.main.tutorial_twotiledviews.view.*
 import kotlinx.android.synthetic.main.tutorial_wiki.view.*
 
@@ -77,7 +82,12 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
             R.id.tutorial_route_ab -> Tutorials.openRouteAbTutorial()
             R.id.tutorial_route_abc -> Tutorials.openRouteAbcTutorial()
             R.id.tutorial_route_custom -> Tutorials.openCustomRouteTutorial()
-            R.id.tutorial_predef_sim -> Tutorials.openPredefSimulationTutorial()
+            R.id.tutorial_predef_sim -> {
+                val waypoints = ArrayList<Landmark>()
+                waypoints.add(Landmark("San Francisco", Coordinates(37.77903, -122.41991)))
+                waypoints.add(Landmark("San Jose", Coordinates(37.33619, -121.89058)))
+                Tutorials.openLandmarksSimulationTutorial(waypoints)
+            }
             R.id.tutorial_predef_nav -> Tutorials.openPredefNavigationTutorial()
             R.id.tutorial_predef_ptnav -> Tutorials.openPredefPublicNavTutorial()
             R.id.tutorial_custom_ptnav -> Tutorials.openCustomPublicNavTutorial()
@@ -114,8 +124,6 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
-        requestPermissions()
-
         // make status bar transparent
         window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
 
@@ -142,11 +150,9 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
 
         mapTutorialsOpener.init(this)
         TutorialsOpener.setMapTutorialsOpener(mapTutorialsOpener)
-        GEMApplication.init(this, gem_surface)
-
-        /*DEFAULT*/
-        nav_view.setCheckedItem(R.id.tutorial_hello)
-        nav_view.menu.performIdentifierAction(R.id.tutorial_hello, 0)
+        GEMApplication.init(this, gem_surface) {
+            requestPermissions()
+        }
     }
 
     override fun onPause() {
@@ -200,8 +206,6 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
 
         dialog.show()
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     override fun onRequestPermissionsFinish(granted: Boolean) {
         if (!granted) {
@@ -260,7 +264,7 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
     override fun getBottomLeftButton(): FloatingActionButton? = bottomButtons.bottomLeftButton
     override fun getBottomCenterButton(): FloatingActionButton? = bottomButtons.bottomCenterButton
     override fun getBottomRightButton(): FloatingActionButton? = bottomButtons.bottomRightButton
-    
+
     override fun setFixedOrientation(orientation: Int) {
         requestedOrientation = orientation
     }
@@ -304,7 +308,7 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
                 }
 
                 Tutorials.Id.Wiki -> {
-                    if(args.isNotEmpty()){
+                    if (args.isNotEmpty()) {
                         val landmark = args[0] as Landmark?
                         landmark ?: return false
                         IntentHelper.addObjectForKey(landmark, WikiController.EXTRA_LANDMARK)
@@ -363,11 +367,36 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
                     ).routeCustomController
                 }
 
-                Tutorials.Id.Simulation_Predef -> {
+                Tutorials.Id.Simulation_Landmarks -> {
+                    val waypoints = ArrayList<Landmark>()
+                    if (args.isNotEmpty()) {
+                        val genericArrayList = args[0] as ArrayList<*>
+                        for (item in genericArrayList) {
+                            val castedItem = item as Landmark
+                            waypoints.add(castedItem)
+                        }
+                    }
+
+                    IntentHelper.addObjectForKey(waypoints, EXTRA_WAYPOINTS)
+
                     layoutInflater.inflate(
-                        R.layout.tutorial_predef_sim,
+                        R.layout.tutorial_sim_landmarks,
                         contentMain
-                    ).predefSimController
+                    ).simLandmarksController
+                }
+
+                Tutorials.Id.Simulation_Route -> {
+                    var route: Route? = null
+                    if (args.isNotEmpty()) {
+                        route = args[0] as Route?
+                    }
+
+                    IntentHelper.addObjectForKey(route, EXTRA_ROUTE)
+
+                    layoutInflater.inflate(
+                        R.layout.tutorial_sim_route,
+                        contentMain
+                    ).simRouteController
                 }
 
                 Tutorials.Id.Navigation_Predef -> {

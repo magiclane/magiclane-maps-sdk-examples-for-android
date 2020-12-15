@@ -504,8 +504,6 @@ class Utils {
 
 class AppUtils {
     companion object {
-        // ----------------------------------------------------------------------------------------------
-
         fun getColor(gemSdkColor: Int): Int {
             val r = 0x000000ff and gemSdkColor
             val g = 0x000000ff and (gemSdkColor shr 8)
@@ -515,23 +513,17 @@ class AppUtils {
             return Color.argb(a, r, g, b)
         }
 
-        // ---------------------------------------------------------------------------------------------
-
         fun getSizeInPixels(dpi: Int): Int {
             val metrics = GEMApplication.applicationContext().resources.displayMetrics
             return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpi.toFloat(), metrics)
                 .toInt()
         }
 
-        // ---------------------------------------------------------------------------------------------
-
         fun getSizeInPixelsFromMM(mm: Int): Int {
             val metrics = GEMApplication.applicationContext().resources.displayMetrics
             return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, mm.toFloat(), metrics)
                 .toInt()
         }
-
-        // ---------------------------------------------------------------------------------------------- 
 
         fun createBitmap(img: ByteArray?, width: Int, height: Int): Bitmap? {
             if (img == null || width <= 0 || height <= 0) {
@@ -547,7 +539,5 @@ class AppUtils {
             result.density = DisplayMetrics.DENSITY_MEDIUM
             return result
         }
-
-        // ----------------------------------------------------------------------------------------------
     }
 }

@@ -10,13 +10,9 @@
 
 package com.generalmagic.gemsdk.demo.util.network
 
-// -------------------------------------------------------------------------------------------------
-
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.SocketAddress
-
-// -------------------------------------------------------------------------------------------------
 
 class ProxyConfiguration(val proxyHost: String, val proxyPort: Int, val proxyType: Proxy.Type) {
     val proxy: Proxy
@@ -31,5 +27,3 @@ class ProxyConfiguration(val proxyHost: String, val proxyPort: Int, val proxyTyp
             Proxy.NO_PROXY
         }
 }
-
-// -------------------------------------------------------------------------------------------------

@@ -10,8 +10,6 @@
 
 package com.generalmagic.gemsdk.demo.activities
 
-// -------------------------------------------------------------------------------------------------
-
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -22,8 +20,6 @@ import android.webkit.WebViewClient
 import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.app.BaseActivity
 import kotlinx.android.synthetic.main.web_activity.*
-
-// -------------------------------------------------------------------------------------------------
 
 class WebActivity : BaseActivity() {
     companion object {
@@ -68,8 +64,4 @@ class WebActivity : BaseActivity() {
         val url = intent.getStringExtra("url")
         webView.loadUrl(url ?: "https://www.google.co.in/")
     }
-
-    // ---------------------------------------------------------------------------------------------
 }
-
-// -------------------------------------------------------------------------------------------------

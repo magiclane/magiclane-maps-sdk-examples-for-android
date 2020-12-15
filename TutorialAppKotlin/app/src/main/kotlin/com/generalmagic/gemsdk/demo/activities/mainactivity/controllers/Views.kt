@@ -23,17 +23,11 @@ import com.generalmagic.gemsdk.models.ContentStoreItem
 import com.generalmagic.gemsdk.models.TContentType
 import com.generalmagic.gemsdk.util.GEMSdkCall
 
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
-
 class HelloViewController(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
 
     override fun doBackPressed(): Boolean = false
 }
-
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
 
 open class ManyMapsController(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
@@ -96,9 +90,6 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
     }
 }
 
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
-
 class TwoTiledViewsController(context: Context, attrs: AttributeSet?) :
     ManyMapsController(context, attrs) {
     private val mainViewCoords = TRectF(0.0f, 0.5f, 1.0f, 1.0f)
@@ -134,9 +125,6 @@ class TwoTiledViewsController(context: Context, attrs: AttributeSet?) :
         }
     }
 }
-
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
 
 class MultipleViewsController(context: Context, attrs: AttributeSet?) :
     ManyMapsController(context, attrs) {
@@ -215,6 +203,3 @@ class MultipleViewsController(context: Context, attrs: AttributeSet?) :
         }
     }
 }
-
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------

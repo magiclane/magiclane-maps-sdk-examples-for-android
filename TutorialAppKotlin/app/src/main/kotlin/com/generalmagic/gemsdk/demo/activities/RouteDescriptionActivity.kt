@@ -150,8 +150,6 @@ class RouteDescriptionActivity : AppCompatActivity() {
     }
 }
 
-// --------------------------------------------------------------------------------------------------
-
 abstract class ListViewItem {
     var mSortKey = 0
     var text: String = ""
@@ -162,8 +160,6 @@ abstract class ListViewItem {
 
     abstract fun getBitmap(width: Int, height: Int): Bitmap?
 }
-
-// --------------------------------------------------------------------------------------------------
 
 class RouteAdapter(context: Context, items: ArrayList<ListViewItem>) :
     ArrayAdapter<ListViewItem>(context, -1, items.toList()) {
@@ -230,9 +226,7 @@ class RouteAdapter(context: Context, items: ArrayList<ListViewItem>) :
     }
 }
 
-// --------------------------------------------------------------------------------------------------
 // List Items
-// --------------------------------------------------------------------------------------------------
 
 class RouteTitleItem(route: Route, sortKey: Int) : ListViewItem() {
     init {

@@ -2,6 +2,7 @@ package com.generalmagic.gemsdk.demo.app
 
 import android.content.Intent
 import android.os.Environment
+import com.generalmagic.gemsdk.Route
 import com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.*
 import com.generalmagic.gemsdk.demo.activities.pickvideo.PickLogActivity
 import com.generalmagic.gemsdk.demo.activities.searchaddress.SearchAddressActivity
@@ -60,7 +61,7 @@ object TutorialsOpener {
 
     fun onTutorialDestroyed(value: ITutorialController) {
         value.doStop()
-        
+
         try {
             if (value == tutorialStack.peek())
                 tutorialStack.pop()
@@ -150,11 +151,16 @@ object TutorialsOpener {
                 }
 
                 Tutorials.Id.LogPlayer_PICK -> {
-                    val videosDir = activity.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
-                    videosDir ?: return false
+                    val internalDir = GEMApplication.getInternalRecordsPath()
+                    val publicDir = activity.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
+                    publicDir ?: return false
 
                     val intent = Intent(activity, PickLogActivity::class.java)
-                    intent.putExtra(PickLogActivity.INPUT_DIR, videosDir.absolutePath)
+                    intent.putStringArrayListExtra(PickLogActivity.INPUT_DIR, arrayListOf<String>(
+                        publicDir.absolutePath,
+                        internalDir
+                    ))
+                    
                     activity.startActivityForResult(
                         intent, PickLogActivity.CODE_RESULT_SELECT_VIDEO
                     )
@@ -193,7 +199,8 @@ object Tutorials {
         PublicNav_Custom,
         PublicNav_Predef,
         Navigation_Predef,
-        Simulation_Predef,
+        Simulation_Landmarks,
+        Simulation_Route,
         Route_Custom,
         Route_ABC,
         Route_AB,
@@ -225,7 +232,8 @@ object Tutorials {
     fun openRouteAbTutorial() = TutorialsOpener.openTutorial(Id.Route_AB)
     fun openRouteAbcTutorial() = TutorialsOpener.openTutorial(Id.Route_ABC)
     fun openCustomRouteTutorial() = TutorialsOpener.openTutorial(Id.Route_Custom)
-    fun openPredefSimulationTutorial() = TutorialsOpener.openTutorial(Id.Simulation_Predef)
+    fun openLandmarksSimulationTutorial(landmarks: ArrayList<Landmark>) = TutorialsOpener.openTutorial(Id.Simulation_Landmarks, landmarks)
+    fun openRouteSimulationTutorial(route: Route) = TutorialsOpener.openTutorial(Id.Simulation_Route, route)
     fun openPredefNavigationTutorial() = TutorialsOpener.openTutorial(Id.Navigation_Predef)
     fun openPredefPublicNavTutorial() = TutorialsOpener.openTutorial(Id.PublicNav_Predef)
     fun openDirectCamTutorial() = TutorialsOpener.openTutorial(Id.DirectCam)

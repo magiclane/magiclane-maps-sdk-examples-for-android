@@ -21,8 +21,8 @@
     <dimen name="filterMinHeight">34dp</dimen>
     <dimen name="smallPadding">4dp</dimen>
     <dimen name="bigPadding">8dip</dimen>
-	<dimen name="mapButtonWidth">50dp</dimen>
-	<dimen name="mapButtonHeight">50dp</dimen>
+	<dimen name="mapButtonWidth">40dp</dimen>
+	<dimen name="mapButtonHeight">40dp</dimen>
 	<dimen name="mapButtonMargin">10dp</dimen>
 	<dimen name="dialogIconSize">36dp</dimen>
 	<dimen name="filterHeight">35dp</dimen>
@@ -119,6 +119,7 @@
 	<dimen name="slider_margin">6dp</dimen>
 	<dimen name="map_buttons_padding">5dp</dimen>
     <dimen name="login_input_text_size">21sp</dimen>
+    <dimen name="pink_location_center_x_size">12dp</dimen>
 	
 	<!-- toolbar -->
 	<dimen name ="toolbar_radius">4dp</dimen>

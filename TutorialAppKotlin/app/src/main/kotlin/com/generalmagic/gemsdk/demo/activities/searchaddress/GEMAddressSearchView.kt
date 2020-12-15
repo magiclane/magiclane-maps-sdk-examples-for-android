@@ -28,10 +28,7 @@ import com.generalmagic.gemsdk.util.GEMList
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import com.generalmagic.gemsdk.util.GemIcons
 
-// -------------------------------------------------------------------------------------------------
-
 object GEMAddressSearchView {
-    // ---------------------------------------------------------------------------------------------
 
 // 	enum class TAddressField(val value: Int) {
 // 		EAFCountry(0),
@@ -46,8 +43,6 @@ object GEMAddressSearchView {
 // 		}
 // 	}
 
-    // ---------------------------------------------------------------------------------------------
-
     private val addressSearchActivitiesMap: HashMap<Long, SearchAddressActivity> = HashMap()
     var shouldChangeText = true
 
@@ -60,20 +55,14 @@ object GEMAddressSearchView {
         Pair(TAddressField.ECrossing1, false)
     )
 
-    // ---------------------------------------------------------------------------------------------
-
     fun registerActivity(viewId: Long, searchAddressActivity: SearchAddressActivity) {
         addressSearchActivitiesMap[viewId] = searchAddressActivity
 // 		GEMSdkCall.execute { didCreateView(viewId) }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun unregisterActivity(viewId: Long) {
         addressSearchActivitiesMap.remove(viewId)
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun open(viewId: Long) {
         GEMApplication.postOnMain {
@@ -84,15 +73,11 @@ object GEMAddressSearchView {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun close(viewId: Long) {
         GEMApplication.postOnMain {
             addressSearchActivitiesMap[viewId]?.finish()
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun onViewClosed(viewId: Long) {
         unregisterActivity(viewId)
@@ -102,15 +87,11 @@ object GEMAddressSearchView {
 // 		}
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun showBusyIndicator(viewId: Long) {
         GEMApplication.postOnMain {
             addressSearchActivitiesMap[viewId]?.showProgress()
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun hideBusyIndicator(viewId: Long) {
         GEMApplication.postOnMain {
@@ -118,15 +99,11 @@ object GEMAddressSearchView {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun refresh(viewId: Long) {
         GEMApplication.postOnMain {
             addressSearchActivitiesMap[viewId]?.refresh()
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun refreshSearchResultsList(viewId: Long) {
         GEMApplication.postOnMain {
@@ -134,15 +111,11 @@ object GEMAddressSearchView {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun selectIntersectionField(viewId: Long) {
         GEMApplication.postOnMain {
             addressSearchActivitiesMap[viewId]?.selectIntersectionField()
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun setFilter(viewId: Long, field: Int, filter: String) {
         GEMApplication.postOnMain {
@@ -150,37 +123,24 @@ object GEMAddressSearchView {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun isEnabled(field: TAddressField): Boolean {
         return fieldEnabledMap[field] ?: false
     }
 
-    // ---------------------------------------------------------------------------------------------
 
     fun setEnabledState(field: TAddressField, value: Boolean) {
         fieldEnabledMap[field] = value
     }
 
-    // ---------------------------------------------------------------------------------------------
-
 // 	external fun didCreateView(viewId: Long)
-
-    // ---------------------------------------------------------------------------------------------
 
 // 	external fun didCloseView(viewId: Long)
 
-    // ---------------------------------------------------------------------------------------------
-
     external fun didTapItem(viewId: Long, index: Int)
-
-    // ---------------------------------------------------------------------------------------------
 
     fun didTapCountryFlag() {
         // TODO:
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun didChangeFilter(iField: Int, filter: String) {
         filter.trim()
@@ -251,8 +211,6 @@ object GEMAddressSearchView {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun didTapSearchButton() {
         var landmark: Landmark? = null
         when (m_field) {
@@ -300,13 +258,9 @@ object GEMAddressSearchView {
 //        finish()
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getTitle(): String {
         return Utils.getUIString(StringIds.eStrAddress)
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     data class AddressSearchModelItem(
         var m_landmark: Landmark?,
@@ -435,8 +389,6 @@ object GEMAddressSearchView {
         return list.isNotEmpty() && list[0] == TAddressDetailLevel.EAD_State.value
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getCountryFlag(width: Int, height: Int): Bitmap? {
         GEMSdkCall.checkCurrentThread()
         val isoCode = m_country?.getAddress()?.getField(TAddressField.ECountryCode)
@@ -447,8 +399,6 @@ object GEMAddressSearchView {
 
         return null
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getHint(field: Int): String {
         when (EnumHelp.fromInt<TAddressField>(field)) {
@@ -473,13 +423,9 @@ object GEMAddressSearchView {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getItemsCount(): Int {
         return m_items.size
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getItemText(index: Int): String {
         if (index > m_items.size || index < 0) return ""
@@ -513,8 +459,6 @@ object GEMAddressSearchView {
         return m_text ?: ""
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getItemDescription(index: Int): String {
         if (index > m_items.size || index < 0) return ""
         val item = m_items[index]
@@ -530,8 +474,6 @@ object GEMAddressSearchView {
         return m_description ?: ""
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun getItemImage(index: Int, width: Int, height: Int): Bitmap? {
         if (index > m_items.size || index < 0) return null
 
@@ -545,8 +487,4 @@ object GEMAddressSearchView {
 
         return null
     }
-
-    // ---------------------------------------------------------------------------------------------
 }
-
-// -------------------------------------------------------------------------------------------------

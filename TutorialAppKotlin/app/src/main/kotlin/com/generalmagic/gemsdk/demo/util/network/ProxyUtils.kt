@@ -10,22 +10,15 @@
 
 package com.generalmagic.gemsdk.demo.util.network
 
-// -------------------------------------------------------------------------------------------------
-
 import android.os.Build
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.ProxySelector
 import java.net.URI
 
-// -------------------------------------------------------------------------------------------------
-
 object ProxyUtils {
-    // ---------------------------------------------------------------------------------------------
 
     private val sdkInt = Build.VERSION.SDK_INT
-
-    // ---------------------------------------------------------------------------------------------
 
     fun getProxyConfiguration(bWiFi: Boolean): ProxyConfiguration? {
         if (bWiFi) {
@@ -34,8 +27,6 @@ object ProxyUtils {
 
         return getMobileDataProxyConfiguration(URI.create("https://www.generalmagic.com"))
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun getWifiProxyConfiguration(): ProxyConfiguration? {
         var proxyAddress = ""
@@ -54,8 +45,6 @@ object ProxyUtils {
         } else null
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     @Throws(Exception::class)
     fun getMobileDataProxyConfiguration(uri: URI?): ProxyConfiguration? {
         if (sdkInt >= 12) {
@@ -64,8 +53,6 @@ object ProxyUtils {
 
         return null
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun getProxySelectorConfiguration(uri: URI?): ProxyConfiguration? {
         val defaultProxySelector = ProxySelector.getDefault()
@@ -90,8 +77,4 @@ object ProxyUtils {
 
         return proxyConfig
     }
-
-    // ---------------------------------------------------------------------------------------------
 }
-
-// -------------------------------------------------------------------------------------------------

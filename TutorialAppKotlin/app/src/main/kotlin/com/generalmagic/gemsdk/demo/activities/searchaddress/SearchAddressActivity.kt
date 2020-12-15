@@ -31,10 +31,7 @@ import com.generalmagic.gemsdk.models.TAddressField
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import kotlinx.android.synthetic.main.search_address_view.*
 
-// -------------------------------------------------------------------------------------------------
-
 class SearchAddressActivity : BaseActivity() {
-    // ---------------------------------------------------------------------------------------------
 
     private var searchAddressAdapter: SearchAddressAdapter? = null
     private var streetTopPadding: Int = 0
@@ -42,55 +39,37 @@ class SearchAddressActivity : BaseActivity() {
         GEMApplication.appResources().getDimension(R.dimen.listIconSize).toInt()
     var viewId: Long = 0
 
-    // ---------------------------------------------------------------------------------------------
-
     companion object {
         var updateItems: Runnable? = null
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     internal interface TextChangeNotifiable {
         fun notifyTextChanged(charSequence: CharSequence?)
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     internal class TextChangeNotifier(
         private var charSequence: CharSequence?,
         private val notifiable: TextChangeNotifiable
     ) : Runnable {
-        // -----------------------------------------------------------------------------------------
 
         fun setCharSequence(charSequence: CharSequence) {
             this.charSequence = charSequence
         }
 
-        // -----------------------------------------------------------------------------------------
-
         override fun run() {
             notifiable.notifyTextChanged(charSequence)
         }
 
-        // -----------------------------------------------------------------------------------------
-
         fun start() {
             GEMApplication.postOnMainDelayed(this, 100)
         }
-
-        // -----------------------------------------------------------------------------------------
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     class CustomTextWatcher(private val field: Int) :
         TextWatcher,
         TextChangeNotifiable {
-        // -----------------------------------------------------------------------------------------
 
         private var notifier: TextChangeNotifier? = null
-
-        // -----------------------------------------------------------------------------------------
 
         override fun notifyTextChanged(charSequence: CharSequence?) {
             GEMSdkCall.execute {
@@ -99,11 +78,7 @@ class SearchAddressActivity : BaseActivity() {
             notifier = null
         }
 
-        // -----------------------------------------------------------------------------------------
-
         override fun beforeTextChanged(charSequence: CharSequence, i: Int, i1: Int, i2: Int) {}
-
-        // -----------------------------------------------------------------------------------------
 
         override fun onTextChanged(charSequence: CharSequence, i: Int, i1: Int, i2: Int) {
             if (GEMAddressSearchView.shouldChangeText) {
@@ -116,16 +91,10 @@ class SearchAddressActivity : BaseActivity() {
             }
         }
 
-        // -----------------------------------------------------------------------------------------
-
         override fun afterTextChanged(editable: Editable) {
             GEMAddressSearchView.shouldChangeText = true
         }
-
-        // -----------------------------------------------------------------------------------------
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -523,8 +492,6 @@ class SearchAddressActivity : BaseActivity() {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     override fun onResume() {
         super.onResume()
 
@@ -548,14 +515,10 @@ class SearchAddressActivity : BaseActivity() {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     override fun onDestroy() {
         super.onDestroy()
         GEMAddressSearchView.onViewClosed(viewId)
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
@@ -564,8 +527,6 @@ class SearchAddressActivity : BaseActivity() {
             setAddressFieldsLayoutParams(newConfig.orientation)
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     override fun onWindowAttributesChanged(attrs: WindowManager.LayoutParams) {
         super.onWindowAttributesChanged(attrs)
@@ -576,8 +537,6 @@ class SearchAddressActivity : BaseActivity() {
             }
         }, 20)
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun setStateField(visible: Boolean) {
         val state = this.state ?: return
@@ -608,8 +567,6 @@ class SearchAddressActivity : BaseActivity() {
         setAddressFieldEnabledState(state, TAddressField.EState, true)
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun setAddressFieldsLayoutParams(newOrientation: Int) {
         if (newOrientation == Configuration.ORIENTATION_LANDSCAPE) {
             setAddressFieldsLandscapeLayoutParams()
@@ -626,8 +583,6 @@ class SearchAddressActivity : BaseActivity() {
             street?.let { setAddressFieldPadding(it) }
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun setAddressFieldsLandscapeLayoutParams() {
         val fieldMargin =
@@ -670,8 +625,6 @@ class SearchAddressActivity : BaseActivity() {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun getBaseLandscapeLayoutParams(
         fieldMargin: Int,
         fieldWidth: Int
@@ -682,8 +635,6 @@ class SearchAddressActivity : BaseActivity() {
 
         return params
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun setAddressFieldsPortraitLayoutParams() {
         val fieldMargin =
@@ -708,8 +659,6 @@ class SearchAddressActivity : BaseActivity() {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun getBasePortraitLayoutParams(fieldMargin: Int): RelativeLayout.LayoutParams {
         val params = RelativeLayout.LayoutParams(
             RelativeLayout.LayoutParams.MATCH_PARENT,
@@ -720,8 +669,6 @@ class SearchAddressActivity : BaseActivity() {
 
         return params
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     class SearchAddressAdapter() : BaseAdapter() {
         private lateinit var holder: ViewHolder
@@ -793,14 +740,10 @@ class SearchAddressActivity : BaseActivity() {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun notifyDataChanged() {
         searchAddressAdapter?.notifyDataSetChanged()
         recent_list?.let { it.post { it.setSelection(0) } }
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     private fun setAddressFieldImeAction(addressField: EditText?) {
         addressField ?: return
@@ -829,8 +772,6 @@ class SearchAddressActivity : BaseActivity() {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun setAddressFieldEnabledState(
         addressField: EditText?,
         field: TAddressField,
@@ -848,8 +789,6 @@ class SearchAddressActivity : BaseActivity() {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun setAddressFieldPadding(addressField: EditText?) {
         addressField ?: return
 
@@ -861,8 +800,6 @@ class SearchAddressActivity : BaseActivity() {
             addressField.paddingBottom
         )
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun selectIntersectionField() {
         setAddressFieldEnabledState(
@@ -878,8 +815,6 @@ class SearchAddressActivity : BaseActivity() {
             )
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     fun setField(field: Int, filter: String) {
         when (field) {
@@ -904,8 +839,6 @@ class SearchAddressActivity : BaseActivity() {
             }
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     override fun refresh() {
         street.text?.clear()
@@ -959,8 +892,6 @@ class SearchAddressActivity : BaseActivity() {
         flag_icon.setImageBitmap(flag)
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     fun refreshSearchResultsList() {
         notifyDataChanged()
         when {
@@ -978,8 +909,4 @@ class SearchAddressActivity : BaseActivity() {
             }
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 }
-
-// -------------------------------------------------------------------------------------------------

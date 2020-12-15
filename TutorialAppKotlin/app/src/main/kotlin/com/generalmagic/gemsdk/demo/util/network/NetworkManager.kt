@@ -23,10 +23,7 @@ import android.os.Build
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import java.net.Proxy
 
-// -------------------------------------------------------------------------------------------------
-
 class NetworkManager(val context: Context) {
-    // ---------------------------------------------------------------------------------------------
 
     private var mConnectionType =
         TConnectionType.TYPE_NOT_CONNECTED
@@ -54,8 +51,6 @@ class NetworkManager(val context: Context) {
         uninitialize()
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     init {
         when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.N -> {
@@ -77,7 +72,6 @@ class NetworkManager(val context: Context) {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
     private fun getConnectionType(): TConnectionType {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
         var connectionType =
@@ -111,8 +105,6 @@ class NetworkManager(val context: Context) {
         return connectionType
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun uninitialize() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             connectivityManager.unregisterNetworkCallback(connectivityManagerCallback)
@@ -120,8 +112,6 @@ class NetworkManager(val context: Context) {
             context.unregisterReceiver(networkReceiver)
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private fun lollipopNetworkAvailableRequest() {
@@ -135,8 +125,6 @@ class NetworkManager(val context: Context) {
         )
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     private fun getConnectivityManagerCallback(): ConnectivityManager.NetworkCallback {
         connectivityManagerCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
@@ -149,8 +137,6 @@ class NetworkManager(val context: Context) {
         }
         return connectivityManagerCallback
     }
-
-    // -----------------------------------------------------------------------------------------
 
     private fun updateConnection() {
         val actualConnectionType = getConnectionType()
@@ -189,8 +175,6 @@ class NetworkManager(val context: Context) {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-
     enum class TConnectionType(val value: Int) {
         TYPE_NOT_CONNECTED(-1),
         TYPE_WIFI(0),
@@ -201,8 +185,4 @@ class NetworkManager(val context: Context) {
             fun fromInt(value: Int) = values().first { it.value == value }
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
 }
-
-// -------------------------------------------------------------------------------------------------

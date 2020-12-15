@@ -21,9 +21,7 @@ import com.google.android.material.navigation.NavigationView
 import kotlinx.android.synthetic.main.activity_list_view.*
 
 open class BaseActivity : AppCompatActivity(), TutorialsOpener.ITutorialController {
-    // ----------------------------------------------------------------------------------------------
     // SYSTEM METHODS
-    // ----------------------------------------------------------------------------------------------
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         GEMApplication.onActivityCreated(this, savedInstanceState)
@@ -71,9 +69,7 @@ open class BaseActivity : AppCompatActivity(), TutorialsOpener.ITutorialControll
         requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) = GEMApplication.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
 
-    // ----------------------------------------------------------------------------------------------
     // APP METHODS
-    // ----------------------------------------------------------------------------------------------
 
     fun setScreenAlwaysOn(enabled: Boolean) {
         if (enabled) window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -101,9 +97,7 @@ open class BaseActivity : AppCompatActivity(), TutorialsOpener.ITutorialControll
             progressBar?.visibility = View.GONE
     }
 
-    // ----------------------------------------------------------------------------------------------
     // ITutorialController
-    // ----------------------------------------------------------------------------------------------
 
     override fun doBackPressed(): Boolean {
         finish()
@@ -116,11 +110,7 @@ open class BaseActivity : AppCompatActivity(), TutorialsOpener.ITutorialControll
     override fun doStop() {}
     override fun onMapFollowStatusChanged(following: Boolean) {}
 
-    // ----------------------------------------------------------------------------------------------
-
     open fun onRequestPermissionsFinish(granted: Boolean) {}
-
-    ////////////
 
     open fun refresh() {}
 
