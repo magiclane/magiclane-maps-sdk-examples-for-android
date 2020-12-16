@@ -207,9 +207,21 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
         dialog.show()
     }
 
+    private var firstWave = true
     override fun onRequestPermissionsFinish(granted: Boolean) {
         if (!granted) {
             GEMApplication.terminateApp()
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (firstWave) {
+                GEMApplication.requestPermissions(
+                    this, arrayListOf(
+                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                    ).toTypedArray()
+                )
+                firstWave = false
+            }
         }
     }
 
@@ -237,7 +249,7 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             permissions.add(Manifest.permission.ACTIVITY_RECOGNITION)
-            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+//            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION) //DO NOT UNCOMMENT!
         }
 
         return GEMApplication.requestPermissions(this, permissions.toTypedArray())
