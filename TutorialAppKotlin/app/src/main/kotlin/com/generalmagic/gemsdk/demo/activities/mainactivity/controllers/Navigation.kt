@@ -552,9 +552,11 @@ class CustomSimController(context: Context, attrs: AttributeSet?) :
 
                 Tutorials.openHelloWorldTutorial()
             }
+            
             it.onStartPicked = { landmark ->
                 landmarks.add(0, landmark)
             }
+            
             it.onIntermediatePicked = { landmark ->
                 landmarks.add(landmark)
                 GEMSdkCall.execute { landmark.setName("Intermediate") }
@@ -565,6 +567,7 @@ class CustomSimController(context: Context, attrs: AttributeSet?) :
                 landmarks.add(landmark)
                 GEMSdkCall.execute { doStart(landmarks) }
                 picking = false
+                TutorialsOpener.onTutorialDestroyed(it)
             }
         }
     }
@@ -611,8 +614,9 @@ class CustomNavController(context: Context, attrs: AttributeSet?) :
             it.onDestinationPicked = { landmark ->
                 pickLocation.visibility = View.GONE
                 landmarks.add(landmark)
-                GEMSdkCall.execute { doStart(landmarks) }
+                doStart(landmarks)
                 picking = false
+                TutorialsOpener.onTutorialDestroyed(it)
             }
         }
     }

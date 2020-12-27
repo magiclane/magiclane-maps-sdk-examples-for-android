@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Environment
 import com.generalmagic.gemsdk.Route
 import com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.*
+import com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.common.PickLocationController
 import com.generalmagic.gemsdk.demo.activities.pickvideo.PickLogActivity
 import com.generalmagic.gemsdk.demo.activities.searchaddress.SearchAddressActivity
 import com.generalmagic.gemsdk.demo.activities.settings.SettingsActivity
@@ -28,11 +29,8 @@ object TutorialsOpener {
             return true
 
         GEMSdkCall.execute {
-            val prefs = GEMApplication.getMainMapView()?.preferences() ?: return@execute
-
             GEMApplication.clearMapVisibleRoutes()
             GEMApplication.getMainMapView()?.deactivateHighlight()
-//            defaultMapStyle?.let { prefs.setMapStyleById(it.getId()) }
         }
 
         GEMApplication.doMapFollow(false)
@@ -60,7 +58,9 @@ object TutorialsOpener {
     }
 
     fun onTutorialDestroyed(value: ITutorialController) {
-        value.doStop()
+        if (value !is PickLocationController) {
+            value.doStop()
+        }
 
         try {
             if (value == tutorialStack.peek())

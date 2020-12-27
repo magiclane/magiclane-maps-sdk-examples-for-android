@@ -2,32 +2,173 @@ package com.generalmagic.gemsdk.demo.activities.pickvideo
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.PopupMenu
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.generalmagic.apihelper.EnumHelp
-import com.generalmagic.gemsdk.LogUploader
 import com.generalmagic.gemsdk.LogUploaderListener
-import com.generalmagic.gemsdk.TLogUploaderState
+import com.generalmagic.gemsdk.SettingsService
 import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.app.BaseActivity
 import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.util.Util
+import com.generalmagic.gemsdk.demo.util.Util.Companion.getFileLastModifiedDate
+import com.generalmagic.gemsdk.demo.util.Util.Companion.getFileSize
+import com.generalmagic.gemsdk.demo.util.UtilUITexts.Companion.formatSizeAsText
+import com.generalmagic.gemsdk.extensions.LogMetadata
 import com.generalmagic.gemsdk.extensions.RecorderBookmarks
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
+import kotlinx.android.synthetic.main.upload_view.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
+
+class UploadLogActivity : BaseActivity() {
+    private lateinit var m_data: UploadViewData
+    var m_name: EditText? = null
+    var m_email: EditText? = null
+    var m_issueDescription: EditText? = null
+
+    companion object {
+        const val VIDEO_PATH = "RESULT_VIDEO_PATH"
+        const val UPLOAD_SAVED_EMAIL = "UPLOAD_SAVED_EMAIL"
+    }
+
+    class UploadViewData(val context: Context, val inputFilepath : String) {
+        var m_service: SettingsService? = null
+
+        private var m_uploadString: String? = null
+        private var m_title: String? = null
+        private var m_info: String? = null
+        private var m_nameString: String? = null
+        private var m_name: String? = null
+        private var m_nameHint: String? = null
+        private var m_emailString: String? = null
+        private var m_email: String? = null
+        private var m_emailHint: String? = null
+        private var m_emailExplanationString: String? = null
+        private var m_issueDescriptionString: String? = null
+        private var m_issueDescriptionHint: String? = null
+        private var m_issueDescription: String? = null
+
+        init {
+            GEMSdkCall.execute { m_service = SettingsService.produce("Settings.ini") }
+
+            m_email = m_service?.getStringValue(UPLOAD_SAVED_EMAIL, "")
+
+            val theDate = getFileLastModifiedDate(inputFilepath)
+
+            val datePattern = "yyyy-MM-dd"
+            val dateFormat = SimpleDateFormat(datePattern, Locale.getDefault())
+            val dateText = dateFormat.format(theDate)
+
+            val timePattern = "HH:mm:ss"
+            val timeFormat = SimpleDateFormat(timePattern, Locale.getDefault())
+            val timeText = timeFormat.format(theDate)
+
+            val sizeText = formatSizeAsText(getFileSize(inputFilepath))
+
+            m_info = String.format("VideoLog : $dateText ($timeText) (Size: $sizeText)")
+        }
+
+        fun getUploadString(): String = m_uploadString ?: "Upload"
+        fun getTitle(): String = m_title ?: "Upload Video Log"
+        fun getUploadInfo(): String = m_info ?: "Video Log: 1970-01-01 (00:00:00) (Size: 0 B)"
+        fun getNameString(): String = m_nameString ?: "Name"
+        fun getName(): String = m_name ?: ""
+        fun getNameHint(): String = m_nameHint ?: "Enter your name (optional)"
+        fun getEmailString(): String = m_emailString ?: "Email"
+        fun getEmail(): String = m_email ?: ""
+        fun getEmailHint(): String = m_emailHint ?: "Enter your email (mandatory)"
+        fun getEmailExplanationString(): String = m_emailExplanationString
+            ?: "Your email is needed to contact you about the reported problem."
+
+        fun getIssueDescriptionString(): String = m_issueDescriptionString ?: ""
+        fun getIssueDescription(): String = m_issueDescription ?: ""
+        fun getIssueDescriptionHint(): String =
+            m_issueDescriptionHint ?: "Enter a brief description of the problem(optional)"
+
+        fun didPushUploadButton(
+            filepath: String, username: String, email: String, details: String
+        ) {
+            if (email != m_email) {
+                m_email = email
+                m_service?.setStringValue(UPLOAD_SAVED_EMAIL, email)
+            }
+
+            val resultCode = GEMApplication.uploadLog(filepath, username, email, details)
+            val error = GEMError.fromInt(resultCode)
+
+            if (error != GEMError.KNoError) {
+                Toast.makeText(context, "uploadAtIndex error=$error", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------------------
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.upload_view)
+
+        val inputFilepath = intent.getStringExtra(VIDEO_PATH) ?: ""
+
+        this.m_data = UploadViewData(this, inputFilepath)
+
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = m_data.getTitle()
+
+        upload_button?.let {
+            it.text = m_data.getUploadString()
+            it.setOnClickListener {
+                if (m_name != null && m_email != null && m_issueDescription != null) {
+                    m_data.didPushUploadButton(
+                        inputFilepath,
+                        m_name?.text.toString(),
+                        m_email?.text.toString(),
+                        m_issueDescription?.text.toString()
+                    )
+
+                    finish()
+                }
+            }
+        }
+
+        upload_info?.text = m_data.getUploadInfo()
+        upload_name_string?.text = m_data.getNameString()
+
+        m_name = upload_name
+        m_name?.let {
+            it.setText(m_data.getName())
+            it.hint = m_data.getNameHint()
+        }
+
+        upload_email_string?.text = m_data.getEmailString()
+
+        m_email = upload_email
+        m_email?.let {
+            it.setText(m_data.getEmail())
+            it.hint = m_data.getEmailHint()
+        }
+
+        upload_email_explanation?.text = m_data.getEmailExplanationString()
+
+        upload_issue_description_string?.text = m_data.getIssueDescriptionString()
+
+        m_issueDescription = upload_issue_description
+        m_issueDescription?.let {
+            it.hint = m_data.getIssueDescriptionHint()
+            it.setText(m_data.getIssueDescription())
+        }
+    }
+}
 
 class PickLogActivity : BaseActivity() {
     private lateinit var recyclerView: RecyclerView
@@ -48,31 +189,11 @@ class PickLogActivity : BaseActivity() {
     private var hasPermissions = false
     private var inputDirectories: ArrayList<String>? = null
 
-    private val uploadUsername = ""
-    private val uploadEmail = "mstoica@generalmagic.com"
     private val uploadListener = object : LogUploaderListener() {
         override fun onLogStatusChanged(sLogPath: String, nProgress: Int, nStatus: Int) {
-            GEMApplication.postOnMain {
-                if (nStatus < 0) {
-                    val error = GEMError.fromInt(nStatus)
 
-                    return@postOnMain
-                }
-
-                when (EnumHelp.fromInt<TLogUploaderState>(nStatus)) {
-                    TLogUploaderState.ELU_Progress -> {
-                        //
-                    }
-                    TLogUploaderState.ELU_Ready -> {
-                        Toast.makeText(
-                            this@PickLogActivity, "$nStatus - $sLogPath", Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
         }
     }
-    private var logUploader: LogUploader? = null
 
     // //////
 
@@ -89,10 +210,12 @@ class PickLogActivity : BaseActivity() {
 
         val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
         recyclerView.setPadding(lateralPadding, 0, lateralPadding, 0)
+        GEMApplication.addLogUploadListener(uploadListener)
+    }
 
-        logUploader = GEMSdkCall.execute {
-            LogUploader.produce(uploadListener)
-        }
+    override fun onDestroy() {
+        super.onDestroy()
+        GEMApplication.removeLogUploadListener(uploadListener)
     }
 
     override fun onResume() {
@@ -171,24 +294,10 @@ class PickLogActivity : BaseActivity() {
     }
 
     private fun upload(filepath: String) {
-        val logUploader = logUploader ?: return
-        val username = ""
-        val email = "mstoica@generalmagic.com"
-        val details = ""
+        val intent = Intent(this, UploadLogActivity::class.java)
+        intent.putExtra(UploadLogActivity.VIDEO_PATH, filepath)
 
-        val resultCode = GEMSdkCall.execute {
-            logUploader.upload(filepath, username, email, details)
-        } ?: GEMError.KGeneral.value
-
-        val error = GEMError.fromInt(resultCode)
-
-        if (error != GEMError.KNoError) {
-            Toast.makeText(
-                this@PickLogActivity,
-                "uploadAtIndex error=$error",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
+        startActivity(intent)
     }
 
     private fun export(filepath: String): File? {
@@ -268,11 +377,6 @@ class PickLogActivity : BaseActivity() {
         result.sortByDescending { it.lastModified() }
 
         return result
-    }
-
-    private fun getFileLastModifiedDate(pathStr: String): Date {
-        val file = File(pathStr)
-        return Date(file.lastModified())
     }
 
     //

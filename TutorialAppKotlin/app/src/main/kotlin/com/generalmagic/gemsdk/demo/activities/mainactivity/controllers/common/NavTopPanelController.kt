@@ -25,6 +25,7 @@ import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.demo.util.Util.Companion.setPanelBackground
 import com.generalmagic.gemsdk.demo.util.UtilUITexts
+import com.generalmagic.gemsdk.demo.util.Utils
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getDistText
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getTimeText
 import com.generalmagic.gemsdk.demo.util.Utils.Companion.getUIString
@@ -57,6 +58,16 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         getTrafficEndOfSectionIcon(navigationImageSize, navigationImageSize)
 
     private val trafficPanelBackgroundColor = Color.rgb(255, 175, 63)
+
+    class TSameImage(var value: Boolean = false)
+
+    private var mLastTurnImageId = Long.MAX_VALUE
+    private var mLastAlarmImageId = Long.MAX_VALUE
+    private var mLastTrafficImageId = Long.MAX_VALUE
+
+    private var bSameTurnImage = false
+    private var bSameAlarmImage = false
+    private var bSameTrafficImage = false
 
     fun update(navInstr: NavigationInstruction?, route: Route?, alarmService: AlarmService?) {
         reset()
@@ -154,7 +165,16 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         // actual data update
         distanceToNextTurn = distanceToNextTurnTexts.first
         distanceToNextTurnUnit = distanceToNextTurnTexts.second
-        turnImage = getNextTurnImage(navInstr, turnImageSize, turnImageSize)
+
+        val sameImage = TSameImage()
+        val newTurnImage = getNextTurnImage(navInstr, turnImageSize, turnImageSize, sameImage)
+        if (!sameImage.value) {
+            turnImage = newTurnImage
+            bSameTurnImage = false
+        } else {
+            bSameTurnImage = true
+        }
+
         signPostImage = getSignpostImage(
             navInstr, availableWidthForMiddlePanel, signPostImageSize
         ).second
@@ -200,7 +220,15 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
             true
         )
 
-        turnImage = getTurnImage(event, turnImageSize, turnImageSize)
+        val sameImage = TSameImage()
+        val newTurnImage = getTurnImage(event, turnImageSize, turnImageSize, sameImage)
+        if (!sameImage.value) {
+            turnImage = newTurnImage
+            bSameTurnImage = false
+        } else {
+            bSameTurnImage = true
+        }
+
         turnInstruction = event?.getTurnInstruction() ?: ""
         distanceToNextTurn = distanceToNextTurnTexts.first
         distanceToNextTurnUnit = distanceToNextTurnTexts.second
@@ -266,7 +294,15 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
             }
         }
 
-        trafficImage = getTrafficImage(trafficEvent, navigationImageSize, navigationImageSize)
+        val sameImage = TSameImage()
+        val newTrafficImage =
+            getTrafficImage(trafficEvent, navigationImageSize, navigationImageSize, sameImage)
+        if (!sameImage.value) {
+            trafficImage = newTrafficImage
+            bSameTrafficImage = false
+        } else {
+            bSameTrafficImage = true
+        }
     }
 
     private fun pickTrafficEvent(
@@ -330,6 +366,10 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
     private fun updateNavigationTopPanel() {
         this.visibility = View.VISIBLE
+        GEMApplication.setAppBarVisible(false)
+        GEMApplication.setSystemBarsVisible(false)
+        GEMApplication.setScreenAlwaysOn(true)
+
         var bDisplayRoadCode = true
         var bDisplayRouteInstruction = true
         var bDisplayedRoadCode = false
@@ -339,7 +379,10 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
             status_text.text = it
         } ?: run { status_text.visibility = View.GONE }
 
-        turn_image.setImageBitmap(turnImage)
+        if (!bSameTurnImage) {
+            turn_image.setImageBitmap(turnImage)
+        }
+
         turn_distance.text = distanceToNextTurn
         turn_distance_unit.text = distanceToNextTurnUnit
 
@@ -421,7 +464,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
             trafficPanelBackgroundColor
         )
 
-        if (trafficImage != null) {
+        if (trafficImage != null && !bSameTrafficImage) {
             traffic_image.setImageBitmap(trafficImage)
         }
 
@@ -483,11 +526,18 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
             ContextCompat.getDrawable(context, R.drawable.bottom_rounded_white_button)
         setPanelBackground(alarm_panel.background, Color.WHITE)
 
+        val sameImage = TSameImage()
         val safetyCameraAlarmImage =
-            getSafetyCameraAlarmImage(currentAlarmedMarker, navigationImageSize).second
+            getSafetyCameraAlarmImage(currentAlarmedMarker, navigationImageSize, sameImage).second
+        if (sameImage.value) {
+            bSameAlarmImage = true
+        }
 
-        alarm_icon.setImageBitmap(safetyCameraAlarmImage)
         safetyCameraAlarmImage?.let { itSafetyCameraAlarmImage ->
+            if (!bSameAlarmImage) {
+                alarm_icon.setImageBitmap(itSafetyCameraAlarmImage)
+            }
+
             if (itSafetyCameraAlarmImage.height > 0) {
                 val ratio =
                     itSafetyCameraAlarmImage.width.toFloat() / itSafetyCameraAlarmImage.height
@@ -599,14 +649,25 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         } ?: Pair(0, null)
     }
 
-    fun getSafetyCameraAlarmImage(from: Marker?, height: Int): Pair<Int, Bitmap?> {
+    fun getSafetyCameraAlarmImage(
+        from: Marker?,
+        height: Int,
+        bSameImage: TSameImage
+    ): Pair<Int, Bitmap?> {
         return GEMSdkCall.execute {
             val marker = from ?: return@execute Pair(0, null)
+            if (marker.getImage()?.getUid() ?: 0 == mLastAlarmImageId) {
+                bSameImage.value = true
+                return@execute Pair(0, null)
+            }
 
             val aspectRatio = Util.getImageAspectRatio(marker)
             val actualWidth = (aspectRatio * height).toInt()
 
             val image = marker.getImage()
+            if (image != null) {
+                mLastAlarmImageId = image.getUid()
+            }
 
             return@execute Pair(actualWidth, Util.createBitmap(image, actualWidth, height))
         } ?: Pair(0, null)
@@ -620,12 +681,26 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    fun getNextTurnImage(from: NavigationInstruction?, width: Int, height: Int): Bitmap? {
+    fun getNextTurnImage(
+        from: NavigationInstruction?,
+        width: Int,
+        height: Int,
+        bSameImage: TSameImage
+    ): Bitmap? {
         return GEMSdkCall.execute {
             val navInstr = from ?: return@execute null
             if (!navInstr.hasNextTurnInfo()) return@execute null
+            if (navInstr.getNextTurnDetails()?.getAbstractGeometryImage()
+                    ?.getUid() ?: 0 == mLastTurnImageId
+            ) {
+                bSameImage.value = true
+                return@execute null
+            }
 
             val image = navInstr.getNextTurnDetails()?.getAbstractGeometryImage()
+            if (image != null) {
+                mLastTurnImageId = image.getUid()
+            }
 
             val aInner = TRgba(255, 255, 255, 255)
             val aOuter = TRgba(0, 0, 0, 255)
@@ -636,12 +711,26 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    fun getTurnImage(from: RouteInstruction?, width: Int, height: Int): Bitmap? {
+    fun getTurnImage(
+        from: RouteInstruction?,
+        width: Int,
+        height: Int,
+        bSameImage: TSameImage
+    ): Bitmap? {
         return GEMSdkCall.execute {
             val navInstr = from ?: return@execute null
             if (!navInstr.hasTurnInfo()) return@execute null
+            if (navInstr.getTurnDetails()?.getAbstractGeometryImage()
+                    ?.getUid() ?: 0 == mLastTurnImageId
+            ) {
+                bSameImage.value = true
+                return@execute null
+            }
 
             val image = navInstr.getTurnDetails()?.getAbstractGeometryImage()
+            if (image != null) {
+                mLastTurnImageId = navInstr.getTurnDetails()?.getAbstractGeometryImage()?.getUid()!!
+            }
 
             val aInner = TRgba(255, 255, 255, 255)
             val aOuter = TRgba(0, 0, 0, 255)
@@ -673,7 +762,24 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         } ?: Pair(0, null)
     }
 
-    fun getTrafficImage(from: RouteTrafficEvent?, width: Int, height: Int): Bitmap? {
-        return GEMSdkCall.execute { Util.createBitmap(from?.getImage(), width, height) }
+    fun getTrafficImage(
+        from: RouteTrafficEvent?,
+        width: Int,
+        height: Int,
+        sameImage: TSameImage
+    ): Bitmap? {
+        return GEMSdkCall.execute {
+            if (from?.getImage()?.getUid() ?: 0 == mLastTrafficImageId) {
+                sameImage.value = true
+                return@execute null
+            }
+
+            val image = from?.getImage()
+            if (image != null) {
+                mLastTrafficImageId = image.getUid()
+            }
+
+            Util.createBitmap(image, width, height)
+        }
     }
 }

@@ -20,6 +20,8 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
+import com.generalmagic.gemsdk.TProxyDetails
+import com.generalmagic.gemsdk.TProxyType
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import java.net.Proxy
 
@@ -37,11 +39,8 @@ class NetworkManager(val context: Context) {
     private lateinit var connectivityManagerCallback: ConnectivityManager.NetworkCallback
 
     var onConnectionTypeChangedCallback: (
-        type: TConnectionType,
-        proxyType: Proxy.Type,
-        proxyHost: String,
-        proxyPort: Int
-    ) -> Unit = { _, _, _, _ -> }
+        type: TConnectionType, https: TProxyDetails, http: TProxyDetails
+    ) -> Unit = { _, _, _ -> }
 
     fun finalize() {
         release()
@@ -141,36 +140,43 @@ class NetworkManager(val context: Context) {
     private fun updateConnection() {
         val actualConnectionType = getConnectionType()
         if (actualConnectionType != mConnectionType) {
+            
             mConnectionType = actualConnectionType
+
+            var httpsProxyConfig: ProxyConfiguration? = null
+            var httpProxyConfig: ProxyConfiguration? = null
 
             var config: ProxyConfiguration? = null
             if (mConnectionType != TConnectionType.TYPE_NOT_CONNECTED) {
-                config =
-                    ProxyUtils.getProxyConfiguration(mConnectionType == TConnectionType.TYPE_WIFI)
+                httpsProxyConfig = ProxyUtils.getProxyConfiguration(true)
+                httpProxyConfig = ProxyUtils.getProxyConfiguration(false)
             }
 
             var connectionType = mConnectionType
             if (mConnectionType == TConnectionType.TYPE_ETHERNET) {
-                connectionType =
-                    TConnectionType.TYPE_WIFI
+                connectionType = TConnectionType.TYPE_WIFI
             }
+            
+            val https = TProxyDetails()
+            https.setProxyType(when(httpsProxyConfig?.proxyType ?: Proxy.Type.DIRECT){
+                Proxy.Type.DIRECT -> TProxyType.EDirect
+                Proxy.Type.HTTP -> TProxyType.EHttp
+                Proxy.Type.SOCKS -> TProxyType.ESocks
+            })
+            https.setProxyName(httpsProxyConfig?.proxyHost?: "")
+            https.setProxyPort(httpsProxyConfig?.proxyPort ?: -1)
+
+            val http = TProxyDetails()
+            https.setProxyType(when(httpProxyConfig?.proxyType ?: Proxy.Type.DIRECT){
+                Proxy.Type.DIRECT -> TProxyType.EDirect
+                Proxy.Type.HTTP -> TProxyType.EHttp
+                Proxy.Type.SOCKS -> TProxyType.ESocks
+            })
+            https.setProxyName(httpProxyConfig?.proxyHost?: "")
+            https.setProxyPort(httpProxyConfig?.proxyPort ?: -1)
 
             GEMSdkCall.execute {
-                if (config != null) {
-                    onConnectionTypeChangedCallback(
-                        connectionType,
-                        config.proxyType,
-                        config.proxyHost,
-                        config.proxyPort
-                    )
-                } else {
-                    onConnectionTypeChangedCallback(
-                        connectionType,
-                        Proxy.Type.DIRECT,
-                        "",
-                        -1
-                    )
-                }
+                onConnectionTypeChangedCallback(connectionType, https, http)
             }
         }
     }

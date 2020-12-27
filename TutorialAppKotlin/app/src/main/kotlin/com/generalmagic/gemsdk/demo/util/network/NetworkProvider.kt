@@ -10,10 +10,7 @@
 
 package com.generalmagic.gemsdk.demo.util.network
 
-import com.generalmagic.gemsdk.NetworkListener
-import com.generalmagic.gemsdk.NetworkProvider
-import com.generalmagic.gemsdk.TNetworkType
-import com.generalmagic.gemsdk.TProxyType
+import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.util.GEMError
 import java.net.Proxy
 
@@ -50,9 +47,8 @@ class NetworkProviderImpl : NetworkProvider() {
 
     fun onNetworkConnectionTypeChanged(
         type: NetworkManager.TConnectionType,
-        proxyType: Proxy.Type,
-        proxyHost: String = "",
-        proxyPort: Int = -1
+        https: TProxyDetails,
+        http: TProxyDetails
     ) {
         val connectResult = if (type.value < 0) {
             GEMError.KNoConnection
@@ -66,19 +62,12 @@ class NetworkProviderImpl : NetworkProvider() {
             gemNetworkType = TNetworkType.EExtraCharged
         }
 
-        val gemProxyType = when (proxyType) {
-            Proxy.Type.DIRECT -> TProxyType.EDirect
-            Proxy.Type.HTTP -> TProxyType.EHttp
-            Proxy.Type.SOCKS -> TProxyType.ESocks
-        }
-
         for (listener in listeners) {
             listener.onConnectFinished(
                 connectResult.value,
                 gemNetworkType,
-                gemProxyType,
-                proxyHost,
-                proxyPort
+                https,
+                http
             )
         }
     }

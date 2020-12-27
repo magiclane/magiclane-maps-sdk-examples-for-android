@@ -55,7 +55,7 @@ class CountriesSearchActivity : SearchListActivity() {
                 refresh()
 
                 if (gemError != GEMError.KNoError) {
-                    GEMApplication.showErrorMessage(this@CountriesSearchActivity, gemError)
+                    GEMApplication.showErrorMessage(gemError)
                 }
             }
         }

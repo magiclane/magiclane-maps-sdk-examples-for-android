@@ -38,8 +38,8 @@ import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
 import com.generalmagic.gemsdk.util.SDKPathsHelper
 import java.io.File
-import java.net.Proxy
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.system.exitProcess
 
 object GEMApplication {
@@ -127,10 +127,8 @@ object GEMApplication {
 
         networkManager = NetworkManager(context)
         networkManager.onConnectionTypeChangedCallback =
-            { type: NetworkManager.TConnectionType, proxyType: Proxy.Type, proxyHost: String, proxyPort: Int ->
-                networkProvider.onNetworkConnectionTypeChanged(
-                    type, proxyType, proxyHost, proxyPort
-                )
+            { type: NetworkManager.TConnectionType, https: TProxyDetails, http: TProxyDetails ->
+                networkProvider.onNetworkConnectionTypeChanged(type, https, http)
             }
 
         CommonSettings().setNetworkProvider(networkProvider)
@@ -178,8 +176,8 @@ object GEMApplication {
 
     /** absolute path to internal records */
     fun getInternalRecordsPath() = iRecordsPath
-    
-    fun getPublicRecordsDir() : File? {
+
+    fun getPublicRecordsDir(): File? {
         return appContext?.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
     }
 
@@ -255,6 +253,50 @@ object GEMApplication {
             animation.setMethod(TAnimation.EAnimationFly)
             getMainMapView()?.centerOnRouteTrafficEvent(value, -1, TRect(), animation)
         }
+    }
+
+    private var logUploader: LogUploader? = null
+    private val logUploaderListeners = ArrayList<LogUploaderListener>()
+    fun addLogUploadListener(value: LogUploaderListener) = logUploaderListeners.add(value)
+    fun removeLogUploadListener(value: LogUploaderListener) = logUploaderListeners.remove(value)
+
+    fun uploadLog(filepath: String, username: String, email: String, details: String): Int {
+        if (logUploader == null) {
+            logUploader = GEMSdkCall.execute {
+                val proxyListener = object : LogUploaderListener() {
+                    override fun onLogStatusChanged(
+                        sLogPath: String, nProgress: Int, nStatus: Int
+                    ) {
+                        for (listener in logUploaderListeners) {
+                            listener.onLogStatusChanged(sLogPath, nProgress, nStatus)
+                        }
+
+                        if (nStatus < 0) { // internally aborted
+                            return
+                        }
+
+                        val chunks = sLogPath.split("/")
+                        val name = chunks.last()
+
+                        when (EnumHelp.fromInt<TLogUploaderState>(nStatus)) {
+                            TLogUploaderState.ELU_Progress -> {
+                                //
+                            }
+                            TLogUploaderState.ELU_Ready -> {
+                                showToast("Uploaded: $name")
+                            }
+                        }
+                    }
+                }
+                return@execute LogUploader.produce(proxyListener)
+            }
+        }
+
+        val logUploader = logUploader ?: return GEMError.KNotSupported.value
+
+        return GEMSdkCall.execute {
+            logUploader.upload(filepath, username, email, details, arrayListOf(filepath))
+        } ?: GEMError.KGeneral.value
     }
 
     /** //////////////////////////////////////////////////////////// */
@@ -399,17 +441,27 @@ object GEMApplication {
 
     private var mLastDisplayedError: GEMError = GEMError.KNoError
 
-    fun showErrorMessage(activity: BaseActivity, error: GEMError) {
+    fun showErrorMessage(error: GEMError, length: Int = Toast.LENGTH_SHORT) {
         if (mLastDisplayedError == error) {
             return
         }
 
         mLastDisplayedError = error
-        showErrorMessage(activity, Utils.getErrorMessage(error))
+        showErrorMessage(Utils.getErrorMessage(error), length)
     }
 
-    fun showErrorMessage(activity: BaseActivity, error: String) {
-        Toast.makeText(activity, "Error: $error", Toast.LENGTH_SHORT).show()
+    fun showErrorMessage(error: String, length: Int = Toast.LENGTH_SHORT) {
+        showToast("Error: $error", length)
+    }
+    
+    fun showToast(message: String, length: Int = Toast.LENGTH_SHORT){
+//        if(Looper.myLooper() == Looper.getMainLooper()) {
+//            // Current Thread is Main Thread.
+//        }
+
+        postOnMain {
+            Toast.makeText(applicationContext(), message, length).show()
+        }
     }
 
     fun hideBusyIndicator() {

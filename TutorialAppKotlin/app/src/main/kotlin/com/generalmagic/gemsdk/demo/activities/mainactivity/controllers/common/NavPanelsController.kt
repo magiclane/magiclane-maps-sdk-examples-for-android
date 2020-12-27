@@ -86,10 +86,9 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
     }
 
     fun routeUpdated(value: Route?) {
-        GEMSdkCall.checkCurrentThread()
         route = value
         
-        navDataProvider.updateNavigationInfo(navInstr, value)
+        GEMSdkCall.execute { navDataProvider.updateNavigationInfo(navInstr, value) }
     }
 
     fun updatePosition(value: PositionData) {

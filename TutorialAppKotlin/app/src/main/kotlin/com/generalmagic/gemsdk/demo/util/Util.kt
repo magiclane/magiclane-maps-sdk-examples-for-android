@@ -37,9 +37,21 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.IntBuffer
 import java.nio.channels.FileChannel
+import java.util.*
+import kotlin.math.pow
 
 class Util {
     companion object {
+        fun getFileLastModifiedDate(pathStr: String): Date {
+            val file = File(pathStr)
+            return Date(file.lastModified())
+        }
+        
+        fun getFileSize(pathStr: String): Long {
+            val file = File(pathStr)
+            return file.length()
+        }
+
         fun isInternalLog(filepath: String): Boolean {
             val internalDir = GEMApplication.getInternalRecordsPath()
 
@@ -460,11 +472,16 @@ class Util {
                                 val styleListener = object : ProgressListener() {
                                     override fun notifyComplete(reason: Int, hint: String) {}
                                 }
-                                contentStoreStyles[1].asyncDownload(
-                                    styleListener,
-                                    GEMSdk.TDataSavePolicy.EUseDefault,
-                                    true
-                                )
+                                
+                                contentStoreStyles.forEach { 
+                                    if (it.getName() != null && it.getName()!!.contains("Satellite")){
+                                        it.asyncDownload(
+                                            styleListener,
+                                            GEMSdk.TDataSavePolicy.EUseDefault,
+                                            true
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

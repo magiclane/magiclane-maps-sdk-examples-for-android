@@ -17,36 +17,24 @@ import java.net.ProxySelector
 import java.net.URI
 
 object ProxyUtils {
+    // ---------------------------------------------------------------------------------------------
 
     private val sdkInt = Build.VERSION.SDK_INT
 
-    fun getProxyConfiguration(bWiFi: Boolean): ProxyConfiguration? {
-        if (bWiFi) {
-            return getWifiProxyConfiguration()
-        }
+    // ---------------------------------------------------------------------------------------------
 
-        return getMobileDataProxyConfiguration(URI.create("https://www.generalmagic.com"))
+    fun getProxyConfiguration(bHttpsProxyConfiguration: Boolean): ProxyConfiguration? {
+        return if (bHttpsProxyConfiguration) {
+            getProxyConfiguration(URI.create("https://www.generalmagic.com"))
+        } else {
+            getProxyConfiguration(URI.create("http://www.generalmagic.com"))
+        }
     }
 
-    private fun getWifiProxyConfiguration(): ProxyConfiguration? {
-        var proxyAddress = ""
-        var proxyPort = -1
-
-        if (sdkInt >= 14) {
-            try {
-                proxyAddress = System.getProperty("http.proxyHost") ?: ""
-                proxyPort = (System.getProperty("http.proxyPort") ?: "-1").toInt()
-            } catch (e: Exception) {
-            }
-        }
-
-        return if (proxyAddress.isNotEmpty() || proxyPort != -1) {
-            ProxyConfiguration(proxyAddress, proxyPort, Proxy.Type.DIRECT)
-        } else null
-    }
+    // ---------------------------------------------------------------------------------------------
 
     @Throws(Exception::class)
-    fun getMobileDataProxyConfiguration(uri: URI?): ProxyConfiguration? {
+    fun getProxyConfiguration(uri: URI?): ProxyConfiguration? {
         if (sdkInt >= 12) {
             return getProxySelectorConfiguration(uri) as ProxyConfiguration
         }
@@ -54,12 +42,15 @@ object ProxyUtils {
         return null
     }
 
+    // ---------------------------------------------------------------------------------------------
+
     private fun getProxySelectorConfiguration(uri: URI?): ProxyConfiguration? {
         val defaultProxySelector = ProxySelector.getDefault()
+        val proxy: Proxy?
         val proxyList = defaultProxySelector.select(uri)
 
-        val proxy = if (proxyList.size > 0) {
-            proxyList[0]
+        if (proxyList.size > 0) {
+            proxy = proxyList[0]
         } else {
             return null
         }

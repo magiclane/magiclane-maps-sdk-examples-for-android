@@ -18,7 +18,6 @@ import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.View
 import android.widget.Toast
-import com.generalmagic.apihelper.EImagePixelFormat
 import com.generalmagic.apihelper.EnumHelp
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.R
@@ -247,7 +246,7 @@ class SensorsListActivity : BasicSensorsActivity() {
             currentDataSource ?: return@execute
 
             for (type in desiredTypes) {
-                val errorCode = currentDataSource.addListener(listener, type, null, false)
+                val errorCode = currentDataSource.addListener(listener, type, false)
 
                 val gemError = GEMError.fromInt(errorCode)
                 if (gemError != GEMError.KNoError) {
@@ -335,7 +334,7 @@ class DirectCamActivity : BaseActivity() {
 
             val type = EDataType.Camera
 
-            val errorCode = currentDataSource.addListener(listener, type, null, false)
+            val errorCode = currentDataSource.addListener(listener, type, false)
             val gemError = GEMError.fromInt(errorCode)
 
             if (gemError != GEMError.KNoError) {
@@ -605,7 +604,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
                 TRecorderConfiguration.INFINITE_RECORDING
             } else chunkSizeSetting.second.toLong()
 
-            val recordAudio = recordAudioSetting.second
+            val enableAudio = recordAudioSetting.second
 
             val keepRecentMin = if (keepRecentSetting.second == 181) {
                 TRecorderConfiguration.KEEP_ALL_RECORDINGS
@@ -622,7 +621,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
 
             val config = TRecorderConfiguration(logsDir, availableTypes)
             config.setVideoQuality(quality)
-            config.setRecordingAudio(recordAudio)
+            config.setEnableAudio(enableAudio)
             config.setContinuousRecording(continuousRecording)
             config.setChunkDurationSeconds(chunkLengthInMin * 60L)
             config.setMinimumBatteryPercent(minimumBatteryPercent)
@@ -631,6 +630,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
 
             recorder = Recorder.produce(config, currentDataSource)
             recorder?.addListener(recorderListener)
+            recorder?.stopAudioRecording() // muted for the moment.. // unmute later if needed
 
             Executors.newSingleThreadExecutor().submit {
                 GEMSdkCall.execute {
@@ -642,12 +642,6 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
 
                         drawer = FrameDrawController(context, currentDataSource)
                         drawer?.doStart()
-
-                        //actual starting of providing images
-                        currentDataSource.startNotifyCameraBuffers(
-                            quality.width, quality.height,
-                            EImagePixelFormat.YUV_420_888
-                        )
                     } else {
                         postOnMain {
                             val text = "Start error = ${startError.name}"
@@ -667,7 +661,6 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
                 recorder?.stopRecording()
 
                 currentDataSource?.removeListener(orientationListener)
-                currentDataSource?.stopNotifyCameraBuffers()
 
                 drawer?.doStop()
                 drawer = null
