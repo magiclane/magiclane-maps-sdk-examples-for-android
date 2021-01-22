@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2020, General Magic B.V.
+ * Copyright (C) 2019-2021, General Magic B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of General Magic
@@ -12,36 +12,23 @@ package com.generalmagic.gemsdk.demo.activities.searchaddress
 
 import android.content.Intent
 import android.graphics.Bitmap
+import android.widget.EditText
 import com.generalmagic.apihelper.EnumHelp
 import com.generalmagic.gemsdk.GuidedAddressSearchService
 import com.generalmagic.gemsdk.MapDetails
 import com.generalmagic.gemsdk.ProgressListener
 import com.generalmagic.gemsdk.TAddressDetailLevel
 import com.generalmagic.gemsdk.demo.app.GEMApplication
+import com.generalmagic.gemsdk.demo.app.Tutorials
 import com.generalmagic.gemsdk.demo.util.Utils
 import com.generalmagic.gemsdk.extensions.StringIds
-import com.generalmagic.gemsdk.models.ImageDatabase
 import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.models.TAddressField
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMList
 import com.generalmagic.gemsdk.util.GEMSdkCall
-import com.generalmagic.gemsdk.util.GemIcons
 
 object GEMAddressSearchView {
-
-// 	enum class TAddressField(val value: Int) {
-// 		EAFCountry(0),
-// 		EAFState(1),
-// 		EAFCity(2),
-// 		EAFStreet(3),
-// 		EAFStreetNumber(4),
-// 		EAFIntersection(5);
-//
-// 		companion object {
-// 			fun fromInt(value: Int) = values().first { it.value == value }
-// 		}
-// 	}
 
     private val addressSearchActivitiesMap: HashMap<Long, SearchAddressActivity> = HashMap()
     var shouldChangeText = true
@@ -57,34 +44,16 @@ object GEMAddressSearchView {
 
     fun registerActivity(viewId: Long, searchAddressActivity: SearchAddressActivity) {
         addressSearchActivitiesMap[viewId] = searchAddressActivity
-// 		GEMSdkCall.execute { didCreateView(viewId) }
+        search(m_country)
     }
 
     private fun unregisterActivity(viewId: Long) {
         addressSearchActivitiesMap.remove(viewId)
     }
 
-    private fun open(viewId: Long) {
-        GEMApplication.postOnMain {
-            val intent =
-                Intent(GEMApplication.applicationContext(), SearchAddressActivity::class.java)
-            intent.putExtra("viewId", viewId)
-            GEMApplication.topActivity()?.startActivity(intent)
-        }
-    }
-
-    private fun close(viewId: Long) {
-        GEMApplication.postOnMain {
-            addressSearchActivitiesMap[viewId]?.finish()
-        }
-    }
-
     fun onViewClosed(viewId: Long) {
         unregisterActivity(viewId)
-
-// 		GEMSdkCall.execute {
-// 			didCloseView(viewId)
-// 		}
+        reset()
     }
 
     private fun showBusyIndicator(viewId: Long) {
@@ -132,29 +101,53 @@ object GEMAddressSearchView {
         fieldEnabledMap[field] = value
     }
 
-// 	external fun didCreateView(viewId: Long)
+    fun indexIsValid(index: Int): Boolean {
+        return ((index >= 0) && (index < mItems.size))
+    }
 
-// 	external fun didCloseView(viewId: Long)
+    fun didTapItem(viewId: Long, index: Int) {
+        if (indexIsValid(index)) {
+            if ((mDetailLevel == TAddressDetailLevel.EAD_Crossing) ||
+                (mDetailLevel == TAddressDetailLevel.EAD_HouseNumber)
+            ) {
+                val landmark = mItems[index].mLandmark
+                landmark?.let {
+                    showOnMap(viewId, it)
+                }
 
-    external fun didTapItem(viewId: Long, index: Int)
+            } else {
+                when (mDetailLevel) {
+                    TAddressDetailLevel.EAD_State -> m_state = mItems[index].mLandmark
+                    TAddressDetailLevel.EAD_City -> m_city = mItems[index].mLandmark
+                    TAddressDetailLevel.EAD_Street -> m_street = mItems[index].mLandmark
 
-    fun didTapCountryFlag() {
-        // TODO:
+                    else -> {
+                    }
+                }
+            }
+        }
+    }
+
+    fun didTapCountryFlag(viewId: Long) {
+        val activity = addressSearchActivitiesMap[viewId] ?: return
+
+        val intent = Intent(activity, CountriesSearchActivity::class.java)
+        activity.startActivity(intent)
     }
 
     fun didChangeFilter(iField: Int, filter: String) {
         filter.trim()
         val field = EnumHelp.fromInt<TAddressField>(iField)
 
-        if ((m_filter != filter) || (m_field != field)) {
-            if (m_field != field) {
-                m_lastSuccessfulFilter = ""
+        if ((mFilter != filter) || (mField != field)) {
+            if (mField != field) {
+                mLastSuccessfulFilter = ""
             }
 
-            m_filter = filter
-            m_field = field
+            mFilter = filter
+            mField = field
 
-            m_listener?.let {
+            mListener?.let {
                 GEMSdkCall.execute { GuidedAddressSearchService().cancelRequest(it) }
             }
 
@@ -162,7 +155,7 @@ object GEMAddressSearchView {
         }
     }
 
-    fun getParentLandmark(field: TAddressField): Landmark? {
+    private fun getParentLandmark(field: TAddressField): Landmark? {
         when (field) {
             TAddressField.EState -> {
                 return m_country
@@ -185,7 +178,7 @@ object GEMAddressSearchView {
         }
     }
 
-    fun getDetailLevel(field: TAddressField): TAddressDetailLevel {
+    private fun getDetailLevel(field: TAddressField): TAddressDetailLevel {
         when (field) {
             TAddressField.ECountry -> {
                 return TAddressDetailLevel.EAD_Country
@@ -211,9 +204,9 @@ object GEMAddressSearchView {
         }
     }
 
-    fun didTapSearchButton() {
+    fun didTapSearchButton(viewId: Long) {
         var landmark: Landmark? = null
-        when (m_field) {
+        when (mField) {
             TAddressField.ECountry,
             TAddressField.EState -> {
                 return
@@ -230,32 +223,25 @@ object GEMAddressSearchView {
 
         GEMSdkCall.execute {
             if (landmark != null) {
-                highlightLandmarkOnMap(landmark)
-            } else if (m_items.size > 0) {
-                highlightLandmarkOnMap(m_items[0].m_landmark)
+                showOnMap(viewId, landmark)
+            } else if (mItems.size > 0) {
+                showOnMap(viewId, mItems[0].mLandmark)
             }
         }
     }
 
-    private fun highlightLandmarkOnMap(landmark: Landmark?) {
-        GEMSdkCall.checkCurrentThread()
+    private fun showOnMap(viewId: Long, landmark: Landmark?) {
+        if (landmark == null) return
 
-        landmark ?: return
-        val mainMapView = GEMApplication.getMainMapView() ?: return
+        var name = landmark.getName() ?: ""
+        name = name.replace("<", "").replace(">", "")
+        landmark.setName(name)
 
-        ImageDatabase().getImageById(GemIcons.Other_UI.Search_Results_Pin.value)?.let {
-            landmark.setImage(it)
+        GEMApplication.postOnMain {
+            Tutorials.openWikiTutorial(landmark)
+            hideKeyboard(0)
+            addressSearchActivitiesMap[viewId]?.finish()
         }
-
-//        val value = if (landmark.getContourGeograficArea() == null) {
-//            THighlightOptions.EHO_ShowLandmark
-//        } else {
-//            val kHighlightContour = TRgba(255, 98, 0, 255).value()
-//            (THighlightOptions.EHO_ShowLandmark.value or THighlightOptions.EHO_ShowContour.value)) or THighlightOptions.EHO_Overlap, kHighlightContour, kHighlightContour
-//        }
-
-        mainMapView.activateHighlightLandmarks(arrayListOf(landmark))
-//        finish()
     }
 
     fun getTitle(): String {
@@ -263,42 +249,42 @@ object GEMAddressSearchView {
     }
 
     data class AddressSearchModelItem(
-        var m_landmark: Landmark?,
-        var m_addressDetailLevel: TAddressDetailLevel,
+        var mLandmark: Landmark?,
+        var mAddressDetailLevel: TAddressDetailLevel,
         var anywhere: Boolean
     )
 
-    var m_detailLevel = TAddressDetailLevel.EAD_NoDetail
-    var m_field = TAddressField.ECountry
+    private var mDetailLevel = TAddressDetailLevel.EAD_NoDetail
+    private var mField = TAddressField.ECountry
 
-    var m_landmarks = ArrayList<Landmark>()
-    var m_filter = ""
-    var m_lastSuccessfulFilter = ""
-    var m_items = ArrayList<AddressSearchModelItem>()
-    var m_listener: ProgressListener? = null
+    private var mLandmarks = ArrayList<Landmark>()
+    private var mFilter = ""
+    private var mLastSuccessfulFilter = ""
+    private var mItems = ArrayList<AddressSearchModelItem>()
+    private var mListener: ProgressListener? = null
 
-    fun search(
+    private fun search(
         landmark: Landmark?,
         filter: String = "",
         detailLevel: TAddressDetailLevel = TAddressDetailLevel.EAD_NoDetail
     ) {
         landmark ?: return
-        m_filter = filter
+        mFilter = filter
 
         if (detailLevel != TAddressDetailLevel.EAD_NoDetail) {
-            m_detailLevel = detailLevel
+            mDetailLevel = detailLevel
         } else {
             GEMSdkCall.execute {
                 GuidedAddressSearchService().getNextAddressDetailLevel(landmark)?.let {
                     val nextDetailLevel = it
                     if (nextDetailLevel.size > 0) {
-                        m_detailLevel = EnumHelp.fromInt(nextDetailLevel[0])
+                        mDetailLevel = EnumHelp.fromInt(nextDetailLevel[0])
                     }
                 }
             }
         }
 
-        if (m_detailLevel != TAddressDetailLevel.EAD_NoDetail) {
+        if (mDetailLevel != TAddressDetailLevel.EAD_NoDetail) {
             GEMSdkCall.execute {
                 val results = GEMList(Landmark::class)
 
@@ -309,44 +295,46 @@ object GEMAddressSearchView {
                             gemReason == GEMError.KNoError || gemReason == GEMError.KReducedResult
 
                         if (bNoError) {
-                            m_landmarks = results.asArrayList()
-                            if (m_landmarks.size > 0 || m_detailLevel == TAddressDetailLevel.EAD_Crossing) {
-                                m_lastSuccessfulFilter = m_filter
-                                m_items.clear()
+                            mLandmarks = results.asArrayList()
+                            if (mLandmarks.size > 0 || mDetailLevel == TAddressDetailLevel.EAD_Crossing) {
+                                mLastSuccessfulFilter = mFilter
+                                mItems.clear()
 
-                                if (m_detailLevel == TAddressDetailLevel.EAD_Crossing) {
-                                    m_items.add(
+                                if (mDetailLevel == TAddressDetailLevel.EAD_Crossing) {
+                                    mItems.add(
                                         AddressSearchModelItem(
                                             m_street,
-                                            m_detailLevel,
+                                            mDetailLevel,
                                             true
                                         )
                                     )
                                 }
 
-                                for (item in m_landmarks) {
-                                    m_items.add(AddressSearchModelItem(item, m_detailLevel, false))
+                                for (item in mLandmarks) {
+                                    mItems.add(AddressSearchModelItem(item, mDetailLevel, false))
                                 }
-                            } else if (m_lastSuccessfulFilter.isNotEmpty()) {
-                                setFilter(0, m_field.value, m_lastSuccessfulFilter)
+
+                            } else if (mField == TAddressField.EStreetNumber) {
+                                selectIntersectionField(0)
+                            } else {
+                                setFilter(0, mField.value, mLastSuccessfulFilter)
                                 hideBusyIndicator(0)
-                            } else if (m_field == TAddressField.EStreetNumber) {
-// 							selectIntersectionsField()
                             }
+                            refreshSearchResultsList(0)
                         } else if (gemReason != GEMError.KCancel) {
-                            m_items.clear()
+                            mItems.clear()
                         }
 
                         hideBusyIndicator(0)
                     }
                 }
-                m_listener = listener
+                mListener = listener
 
                 GuidedAddressSearchService().search(
                     results,
                     landmark,
-                    m_filter,
-                    m_detailLevel,
+                    mFilter,
+                    mDetailLevel,
                     listener
                 )
             }
@@ -357,16 +345,23 @@ object GEMAddressSearchView {
 
     var m_state: Landmark? = null
     var m_country: Landmark? = null
-    var m_street: Landmark? = null
     var m_city: Landmark? = null
+    var m_street: Landmark? = null
 
-    init {
-        GEMSdkCall.execute {
-            m_state = Landmark()
-            m_country = Landmark()
-            m_street = Landmark()
-            m_city = Landmark()
-        }
+    fun init() {
+        GEMSdkCall.checkCurrentThread()
+
+        m_state = Landmark()
+        m_city = Landmark()
+        m_street = Landmark()
+    }
+
+    private fun reset() {
+        GEMSdkCall.checkCurrentThread()
+
+        m_state = null
+        m_city = null
+        m_street = null
     }
 
     fun onCountrySelected(country: Landmark) {
@@ -377,14 +372,16 @@ object GEMAddressSearchView {
 
         if (isoCodeOld != isoCodeNew) {
             m_country = country
+            reset()
             search(m_country)
+            refresh(0)
         }
     }
 
     fun hasState(): Boolean {
-        val m_country = this.m_country ?: return false
+        val country = this.m_country ?: return false
         val list = GEMSdkCall.execute {
-            return@execute GuidedAddressSearchService().getNextAddressDetailLevel(m_country)
+            return@execute GuidedAddressSearchService().getNextAddressDetailLevel(country)
         } ?: return false
         return list.isNotEmpty() && list[0] == TAddressDetailLevel.EAD_State.value
     }
@@ -424,67 +421,79 @@ object GEMAddressSearchView {
     }
 
     fun getItemsCount(): Int {
-        return m_items.size
+        return mItems.size
     }
 
     fun getItemText(index: Int): String {
-        if (index > m_items.size || index < 0) return ""
-        val item = m_items[index]
-        val landmark = item.m_landmark
-        val detailLevel = item.m_addressDetailLevel
+        if (index > mItems.size || index < 0) return ""
+        val item = mItems[index]
+        val landmark = item.mLandmark
+        val detailLevel = item.mAddressDetailLevel
 
-        var m_text: String?
+        var text: String?
 
         if (detailLevel == TAddressDetailLevel.EAD_State) {
-            m_text =
-                GEMSdkCall.execute { landmark?.getAddress() }?.getField(TAddressField.EStateCode)
+            text =
+                landmark?.getAddress()?.getField(TAddressField.EStateCode)
         } else if (detailLevel == TAddressDetailLevel.EAD_HouseNumber) {
-            m_text = GEMSdkCall.execute { landmark?.getName() } ?: ""
+            text = GEMSdkCall.execute { landmark?.getName() } ?: ""
 
-            var pos: Int = m_text.indexOf(">")
+            var pos: Int = text.indexOf(">")
             if (pos > 0) {
-                m_text = m_text.substring(0, pos)
+                text = text.substring(0, pos)
             }
 
-            pos = m_text.indexOf("<")
+            pos = text.indexOf("<")
             if (pos >= 0) {
-                m_text = m_text.substring(pos + 1, m_text.length - pos - 1)
+                text = text.substring(pos + 1, text.length)
             }
         } else if (detailLevel == TAddressDetailLevel.EAD_Crossing && item.anywhere) {
-            m_text = Utils.getUIString(StringIds.eStrTempAnywhere)
+            text = Utils.getUIString(StringIds.eStrTempAnywhere)
         } else {
-            m_text = GEMSdkCall.execute { landmark?.getName() }
+            text = GEMSdkCall.execute { landmark?.getName() }
         }
 
-        return m_text ?: ""
+        return text ?: ""
     }
 
     fun getItemDescription(index: Int): String {
-        if (index > m_items.size || index < 0) return ""
-        val item = m_items[index]
-        val landmark = item.m_landmark
-        val detailLevel = item.m_addressDetailLevel
+        if (index > mItems.size || index < 0) return ""
+        val item = mItems[index]
+        val landmark = item.mLandmark
+        val detailLevel = item.mAddressDetailLevel
 
-        var m_description: String? = null
+        var description: String? = null
 
         if (detailLevel == TAddressDetailLevel.EAD_State) {
-            m_description = GEMSdkCall.execute { landmark?.getName() }
+            description = GEMSdkCall.execute { landmark?.getName() }
         }
 
-        return m_description ?: ""
+        return description ?: ""
     }
 
     fun getItemImage(index: Int, width: Int, height: Int): Bitmap? {
-        if (index > m_items.size || index < 0) return null
+        if (index > mItems.size || index < 0) return null
 
-        val item = m_items[index]
-        val landmark = item.m_landmark
-        if (item.m_addressDetailLevel == TAddressDetailLevel.EAD_City) {
+        val item = mItems[index]
+        val landmark = item.mLandmark
+        if (item.mAddressDetailLevel == TAddressDetailLevel.EAD_City) {
             return GEMSdkCall.execute {
                 return@execute Utils.getImageAsBitmap(landmark?.getImage(), width, height)
             }
         }
 
         return null
+    }
+
+    fun hideKeyboard(viewId: Long) {
+        GEMApplication.postOnMain {
+            addressSearchActivitiesMap[viewId]?.hideKeyboard()
+        }
+    }
+
+    fun showKeyboard(viewId: Long, fieldView: EditText) {
+        GEMApplication.postOnMain {
+            addressSearchActivitiesMap[viewId]?.showKeyboard(fieldView)
+        }
     }
 }

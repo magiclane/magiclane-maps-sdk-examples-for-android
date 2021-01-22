@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2020, General Magic B.V.
+ * Copyright (C) 2019-2021, General Magic B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of General Magic
@@ -20,10 +20,12 @@ import com.generalmagic.gemsdk.demo.app.MapLayoutController
 import com.generalmagic.gemsdk.demo.app.elements.ButtonsDecorator
 import com.generalmagic.gemsdk.demo.util.IntentHelper
 import com.generalmagic.gemsdk.models.Coordinates
+import com.generalmagic.gemsdk.models.ImageDatabase
 import com.generalmagic.gemsdk.models.Landmark
 import com.generalmagic.gemsdk.models.SearchPreferences
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMSdkCall
+import com.generalmagic.gemsdk.util.GemIcons
 import kotlinx.android.synthetic.main.location_details_panel.view.*
 
 class WikiController(context: Context, attrs: AttributeSet?) :
@@ -62,7 +64,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
         hideAllButtons()
     }
 
-    override fun onMapFollowStatusChanged(following: Boolean) { }
+    override fun onMapFollowStatusChanged(following: Boolean) {}
 
     override fun doStart() {
         val inLandmark = IntentHelper.getObjectForKey(EXTRA_LANDMARK) as Landmark?
@@ -96,17 +98,22 @@ class WikiController(context: Context, attrs: AttributeSet?) :
             animation.setMethod(TAnimation.EAnimationFly)
             val coords = landmark.getCoordinates() ?: return@execute
 
-            val area = GEMSdkCall.execute { landmark.getContourGeograficArea() }
-            val settings = HighlightRenderSettings()
-            settings.setOptions(
-                if (area == null) {
-                    THighlightOptions.EHO_ShowLandmark.value
-                } else {
-                    THighlightOptions.EHO_ShowContour.value
-                }
-            )
+            val areaIsEmpty = landmark.getContourGeograficArea()?.isEmpty() ?: true
 
-            mainMap?.activateHighlightLandmarks(arrayListOf(landmark), settings)
+            if (areaIsEmpty) {
+                val simplePinLandmark = GEMSdkCall.execute { Landmark("", coords) }
+                simplePinLandmark?.run {
+                    ImageDatabase().getImageById(GemIcons.Other_UI.Search_Results_Pin.value)?.let {
+                        setImage(it)
+                    }
+                    mainMap?.activateHighlightLandmarks(arrayListOf(simplePinLandmark))
+                }
+            } else {
+                val settings = HighlightRenderSettings()
+                settings.setOptions(THighlightOptions.EHO_ShowContour.value)
+                mainMap?.activateHighlightLandmarks(arrayListOf(landmark), settings)
+            }
+
             mainMap?.centerOnCoordinates(coords, -1, TXy(), animation)
         }
 

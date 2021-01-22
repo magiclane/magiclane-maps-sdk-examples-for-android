@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2020, General Magic B.V.
+ * Copyright (C) 2019-2021, General Magic B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of General Magic
@@ -529,9 +529,30 @@ open class SLIViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) {
     open fun updateViews(it: SearchListItem) {
         icon.setImageBitmap(it.getIcon(iconSize, iconSize))
         text.text = it.getText()
-        description.text = it.getDescription()
-        status.text = it.getStatus()
-        statusDescription.text = it.getStatusDescription()
+
+        val descriptionText = it.getDescription()
+        if (descriptionText.isEmpty()) {
+            description.visibility = View.GONE
+        }
+        else {
+            description.text = descriptionText
+        }
+
+        val statusText = it.getStatus()
+        if (statusText.isEmpty()) {
+            status.visibility = View.GONE
+        }
+        else {
+            status.text = statusText
+        }
+
+        val statusDescriptionText = it.getStatusDescription()
+        if (statusDescriptionText.isEmpty()) {
+            statusDescription.visibility = View.GONE
+        }
+        else {
+            statusDescription.text = statusDescriptionText
+        }
 
         parent.setOnClickListener { _ ->
             it.mOnClick(this)

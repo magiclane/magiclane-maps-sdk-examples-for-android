@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2020, General Magic B.V.
+ * Copyright (C) 2019-2021, General Magic B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of General Magic
@@ -277,7 +277,6 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
                     images.add(ImageViewModel())
                 }
                 updateWikiContents()
-                show() // actual show
             }
 
         }
@@ -331,10 +330,6 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         hide()
         val imgSizes = context.resources.getDimension(R.dimen.navigationImageSize).toInt()
 
-        if (!wiki.hasWiki(value)) {
-            return false
-        }
-
         GEMSdkCall.execute {
             locationDetails.text = value.getName()
             locationDetails.description = UtilUITexts.formatLandmarkDetails(value)
@@ -354,13 +349,13 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         text.text = locationDetails.text
         description.text = locationDetails.description
         icon.setImageBitmap(locationDetails.image)
-
+        
+        show() // actual show
         return true
     }
 
     fun hide() {
         this.visibility = View.GONE
-        notifyVisibilityChanged()
     }
 
     fun stopRequesting() {

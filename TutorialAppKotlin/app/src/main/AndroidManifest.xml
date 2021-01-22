@@ -71,6 +71,10 @@
 			android:name=".activities.searchaddress.SearchAddressActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
+        <activity
+            android:name=".activities.searchaddress.CountriesSearchActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
 		<!--/////////////////////////////////////////////////////////////////////////////////////-->
 
 		<activity

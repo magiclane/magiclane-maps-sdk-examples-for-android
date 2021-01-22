@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2020, General Magic B.V.
+ * Copyright (C) 2019-2021, General Magic B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of General Magic
@@ -17,6 +17,7 @@ import android.util.Log
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.View
+import android.widget.SeekBar
 import android.widget.Toast
 import com.generalmagic.apihelper.EnumHelp
 import com.generalmagic.gemsdk.*
@@ -31,6 +32,7 @@ import com.generalmagic.gemsdk.demo.app.BaseActivity
 import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.app.GEMApplication.postOnMain
 import com.generalmagic.gemsdk.demo.app.MapLayoutController
+import com.generalmagic.gemsdk.demo.app.elements.ButtonsDecorator
 import com.generalmagic.gemsdk.demo.util.IntentHelper
 import com.generalmagic.gemsdk.extensions.*
 import com.generalmagic.gemsdk.models.Canvas
@@ -42,6 +44,7 @@ import kotlinx.android.synthetic.main.activity_camera.*
 import kotlinx.android.synthetic.main.activity_list_view.*
 import kotlinx.android.synthetic.main.activity_list_view.root_view
 import kotlinx.android.synthetic.main.activity_list_view.toolbar
+import kotlinx.android.synthetic.main.tutorial_logplayer.view.*
 import java.util.concurrent.Executors
 
 open class BasicSensorsActivity : GenericListActivity() {
@@ -151,8 +154,8 @@ open class BasicSensorsActivity : GenericListActivity() {
                 EDataType.Orientation -> {
                     val data = OrientationData(SenseData)
 
-                    val x = data.getDeviceOrientation()
-                    val y = data.getUIOrientation()
+                    val x = data.getFaceType()
+                    val y = data.getDeviceOrientation()
 
                     String.format("$x, $y")
                 }
@@ -554,31 +557,34 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
     }
 
     private val orientationListener = object : DataSourceListener() {
-        var mOrientation = OrientationData.EType.Unknown
+        var mOrientation = OrientationData.EOrientationType.Unknown
 
         override fun onNewData(data: SenseData?) {
             data ?: return
 
-            GEMSdkCall.execute {
-                when (data.getType()) {
-                    EDataType.Orientation -> {
-                        val orientationData = OrientationData(data)
-                        val orientation = orientationData.getUIOrientation()
+            Executors.newSingleThreadExecutor().submit{
+                GEMSdkCall.execute {
+                    when (data.getType()) {
+                        EDataType.Orientation -> {
+                            val orientationData = OrientationData(data)
+                            val orientation = orientationData.getDeviceOrientation()
 
-                        if (mOrientation != orientation) {
-                            val wasUnknown = mOrientation == OrientationData.EType.Unknown
-                            mOrientation = orientation
+                            if (mOrientation != orientation) {
+                                val wasUnknown =
+                                    mOrientation == OrientationData.EOrientationType.Unknown
+                                mOrientation = orientation
 
-                            if (!wasUnknown) {
-                                postOnMain {
-                                    doStop()
-                                    doStart()
+                                if (!wasUnknown) {
+                                    postOnMain {
+                                        doStop()
+                                        doStart()
+                                    }
                                 }
                             }
                         }
-                    }
-                    else -> {
-                        /*NOT INTERESTED*/
+                        else -> {
+                            /*NOT INTERESTED*/
+                        }
                     }
                 }
             }
@@ -701,20 +707,30 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
             }
         }
 
-//        override fun onNewData(data: SenseData?) {
-//            data ?: return
-//
-//            GEMSdkCall.execute {
-//                when (data.getType()) {
-//                    EDataType.Position -> {
-//                        val posData = PositionData(data)
-//                        
-//                        Log.d("gemsdk", "here, ${posData.getLatitude()}")
-//                    }
-//                    else ->{}
-//                }
-//            }
-//        }
+        override fun onProgressChanged(progressMs: Long) {
+            postOnMain {
+                seekBar.progress = progressMs.toInt()
+            }
+        }
+    }
+
+    private val seekBarListener = object : SeekBar.OnSeekBarChangeListener {
+        override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+            if (fromUser) {
+                GEMSdkCall.execute {
+                    val currentDataSource = currentDataSource ?: return@execute
+                    val playback = currentDataSource.getPlayback() ?: return@execute
+
+                    playback.setCurrentPosition(progress.toLong())
+                }
+            }
+        }
+
+        override fun onStartTrackingTouch(seekBar: SeekBar?) {
+        }
+
+        override fun onStopTrackingTouch(seekBar: SeekBar?) {
+        }
     }
 
     /** doStart/doResume */
@@ -725,9 +741,15 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
             constructedNow = true
         }
 
-        GEMSdkCall.execute {
-            val currentDataSource = this.currentDataSource ?: return@execute
+        val currentDataSource = currentDataSource ?: return
 
+        seekBar.progress = 0
+        seekBar.max = GEMSdkCall.execute {
+            currentDataSource.getPlayback()?.getDuration()?.toInt()
+        } ?: 0
+        seekBar.setOnSeekBarChangeListener(seekBarListener)
+
+        GEMSdkCall.execute {
             if (constructedNow) {
                 onPlaying()
                 currentDataSource.addListener(playingStatusListener, EDataType.Position)
@@ -786,13 +808,40 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
         }
     }
 
+    private fun setSeekbarVisibility(visible: Boolean) {
+        val item = seekBar
+        if (visible) {
+            item.visibility = View.VISIBLE
+        } else {
+            item.visibility = View.GONE
+        }
+    }
+
+    private fun setPlayStopButtonVisible(visible: Boolean) {
+        val item = playBotLeftButton
+        if (visible) {
+            ButtonsDecorator.buttonAsStop(context, item) {
+                doStop()
+            }
+
+            item.visibility = View.VISIBLE
+        } else {
+            item.visibility = View.GONE
+        }
+    }
+
     private fun doResumeButtons() {
         hideAllButtons()
         setStartButtonVisible(true)
+
+        setPlayStopButtonVisible(false)
+        setSeekbarVisibility(false)
     }
 
     private fun doPauseButtons() {
         hideAllButtons()
-        setStopButtonVisible(true)
+
+        setPlayStopButtonVisible(true)
+        setSeekbarVisibility(true)
     }
 }

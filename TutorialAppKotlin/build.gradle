@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020, General Magic B.V.
+// Copyright (C) 2019-2021, General Magic B.V.
 // All rights reserved.
 //
 // This software is confidential and proprietary information of General Magic
@@ -16,7 +16,7 @@ buildscript {
 		jcenter()
 	}
 	dependencies {
-		classpath 'com.android.tools.build:gradle:4.1.1'
+		classpath 'com.android.tools.build:gradle:4.1.2'
 		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
 		// NOTE: Do not place your application dependencies here; they belong
