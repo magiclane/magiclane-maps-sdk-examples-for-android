@@ -18,6 +18,7 @@ import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.app.MapLayoutController
 import com.generalmagic.gemsdk.demo.app.Tutorials
+import com.generalmagic.gemsdk.demo.app.TutorialsOpener
 import com.generalmagic.gemsdk.demo.app.elements.ButtonsDecorator
 import com.generalmagic.gemsdk.models.Coordinates
 import com.generalmagic.gemsdk.models.Landmark
@@ -243,7 +244,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
             val to = Landmark("Bulevardul Grivitei", Coordinates(45.65272, 25.60674))
 
             val preferences = RoutePreferences()
-            preferences.setTransportMode(TTransportMode.ETM_Car)
+            preferences.setTransportMode(TRouteTransportMode.ETM_Car)
             preferences.setRouteType(TRouteType.ERT_Fastest)
             preferences.setAvoidTraffic(true)
 
@@ -340,7 +341,7 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
             val to = Landmark("Maidstone", Coordinates(51.27483, 0.52316))
 
             val preferences = RoutePreferences()
-            preferences.setTransportMode(TTransportMode.ETM_Car)
+            preferences.setTransportMode(TRouteTransportMode.ETM_Car)
             preferences.setRouteType(TRouteType.ERT_Fastest)
             preferences.setAvoidTraffic(true)
 
@@ -356,6 +357,53 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
         GEMApplication.setAppBarVisible(true)
         GEMApplication.setSystemBarsVisible(true)
         hideProgress()
+        return true
+    }
+}
+
+class FlyToLine(context: Context, attrs: AttributeSet?) : FlyController(context, attrs) {
+    override fun onCreated() {
+        TutorialsOpener.onTutorialCreated(this)
+        hideAllButtons()
+        setStopButtonVisible(true) 
+    }
+    
+    override fun doStart() {
+        val mainMap = GEMApplication.getMainMapView() ?: return
+        
+        GEMSdkCall.execute {
+            val vector = VectorDataSource(TVectorDataType.EVDT_Polyline.value, "My polylines data source")
+            val vectorItem = VectorItem()
+            
+            vectorItem.add(Coordinates(52.360234, 4.886782))
+            vectorItem.add(Coordinates(52.360495, 4.886266))
+            vectorItem.add(Coordinates(52.360854, 4.885539))
+            vectorItem.add(Coordinates(52.361184, 4.884849))
+            vectorItem.add(Coordinates(52.361439, 4.884344))
+            vectorItem.add(Coordinates(52.361593, 4.883986))
+            
+            vector.add(vectorItem)
+            val area = vector.getArea()
+            
+            mainMap.preferences()?.vectors()?.add(vector)
+            val animation = Animation()
+            animation.setMethod(TAnimation.EAnimationFly)
+
+            if (area != null) {
+                mainMap.centerOnArea(area, -1, TXy(), animation)
+            }
+        }
+    }
+
+    override fun doStop() {
+        doBackPressed()
+    }
+
+    override fun doBackPressed(): Boolean {
+        val mainMap = GEMApplication.getMainMapView() ?: return false
+        GEMSdkCall.execute { mainMap.preferences()?.vectors()?.clear() }
+        setFollowGpsButtonVisible(true)
+        setStopButtonVisible(false)
         return true
     }
 }

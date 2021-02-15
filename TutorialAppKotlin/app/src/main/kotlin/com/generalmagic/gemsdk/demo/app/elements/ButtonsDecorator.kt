@@ -169,4 +169,20 @@ object ButtonsDecorator {
         button.setImageDrawable(drawable)
         button.backgroundTintList = backgroundTintList
     }
+
+    fun buttonAsRouteProfile(
+        context: Context, button: FloatingActionButton?, action: () -> Unit
+    ) {
+        button ?: return
+
+        val tag = "route_profile"
+        val backgroundTintList =
+            AppCompatResources.getColorStateList(context, R.color.colorLightBlue)
+        val drawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_photo_24)
+
+        button.tag = tag
+        button.setOnClickListener { action() }
+        button.setImageDrawable(drawable)
+        button.backgroundTintList = backgroundTintList
+    }
 }

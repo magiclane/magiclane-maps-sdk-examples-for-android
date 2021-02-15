@@ -190,6 +190,7 @@ object Tutorials {
         FlyTo_Instr,
         FlyTo_Area,
         FlyTo_Coords,
+        FlyTo_Line,
         LogRecorder,
         CanvasDrawerCam,
         DirectCam,
@@ -251,5 +252,6 @@ object Tutorials {
     fun openFlyToNavInstrTutorial() = TutorialsOpener.openTutorial(Id.FlyTo_Instr)
     fun openFlyToRouteTutorial() = TutorialsOpener.openTutorial(Id.FlyTo_Route)
     fun openFlyToTrafficTutorial() = TutorialsOpener.openTutorial(Id.FlyTo_Traffic)
+    fun openFlyToLineTutorial() = TutorialsOpener.openTutorial(Id.FlyTo_Line)
     fun openOnlineMapsTutorial() = TutorialsOpener.openTutorial(Id.OnlineMaps)
 }

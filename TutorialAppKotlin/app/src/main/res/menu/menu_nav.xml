@@ -202,6 +202,11 @@
 					android:id="@+id/tutorial_flyto_traffic"
 					android:title="Traffic"
 					app:showAsAction="never" />
+
+                <item
+                    android:id="@+id/tutorial_flyto_line"
+                    android:title="Line"
+                    app:showAsAction="never" />
 			</group>
 		</menu>
 	</item>

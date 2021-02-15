@@ -44,6 +44,11 @@ class SearchAddressActivity : BaseActivity() {
     var viewId: Long = 0
     var hasState = false
 
+    lateinit var cityTextChangedListener: CustomTextWatcher
+    lateinit var streetTextChangedListener: CustomTextWatcher
+    lateinit var streetNumberTextChangedListener: CustomTextWatcher
+    lateinit var intersectionTextChangedListener: CustomTextWatcher
+
     companion object {
         var updateItems: Runnable? = null
     }
@@ -422,18 +427,28 @@ class SearchAddressActivity : BaseActivity() {
             false
         }
 
-        city?.addTextChangedListener(
-            CustomTextWatcher(TAddressField.ECity.value)
-        )
-        street?.addTextChangedListener(
-            CustomTextWatcher(TAddressField.EStreetName.value)
-        )
-        street_number?.addTextChangedListener(
-            CustomTextWatcher(TAddressField.EStreetNumber.value)
-        )
-        intersection?.addTextChangedListener(
-            CustomTextWatcher(TAddressField.ECrossing1.value)
-        )
+//        city?.addTextChangedListener(
+//            CustomTextWatcher(TAddressField.ECity.value)
+//        )
+//        street?.addTextChangedListener(
+//            CustomTextWatcher(TAddressField.EStreetName.value)
+//        )
+//        street_number?.addTextChangedListener(
+//            CustomTextWatcher(TAddressField.EStreetNumber.value)
+//        )
+//        intersection?.addTextChangedListener(
+//            CustomTextWatcher(TAddressField.ECrossing1.value)
+//        )
+
+        cityTextChangedListener = CustomTextWatcher(TAddressField.ECity.value)
+        streetTextChangedListener = CustomTextWatcher(TAddressField.EStreetName.value)
+        streetNumberTextChangedListener = CustomTextWatcher(TAddressField.EStreetNumber.value)
+        intersectionTextChangedListener = CustomTextWatcher(TAddressField.ECrossing1.value)
+
+        city.addTextChangedListener(cityTextChangedListener)
+        street.addTextChangedListener(streetNumberTextChangedListener)
+        street_number.addTextChangedListener(streetNumberTextChangedListener)
+        intersection.addTextChangedListener(intersectionTextChangedListener)
 
         setAddressFieldImeAction(city)
         setAddressFieldImeAction(street)
@@ -853,6 +868,11 @@ class SearchAddressActivity : BaseActivity() {
     }
 
     override fun refresh() {
+        city.removeTextChangedListener(cityTextChangedListener)
+        street.removeTextChangedListener(streetNumberTextChangedListener)
+        street_number.removeTextChangedListener(streetNumberTextChangedListener)
+        intersection.removeTextChangedListener(intersectionTextChangedListener)
+
         street.text?.clear()
         setAddressFieldEnabledState(street, TAddressField.EStreetName, false)
 

@@ -20,6 +20,7 @@ import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
 import com.generalmagic.apihelper.EnumHelp
+import com.generalmagic.datatypes.EDirectBufferType
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.activities.ChapterLISIAdapter
@@ -81,6 +82,9 @@ open class BasicSensorsActivity : GenericListActivity() {
     companion object {
         fun toString(SenseData: SenseData): String {
             return when (SenseData.getType()) {
+                EDataType.MountInformation ->{
+                    ""
+                }
                 EDataType.Acceleration -> {
                     val data = AccelerationData(SenseData)
                     val x = data.getX()
@@ -125,7 +129,7 @@ open class BasicSensorsActivity : GenericListActivity() {
                     val config = data.getCameraConfiguration() ?: return ""
 // 				val bmp = Util.createBitmapFromNV21(data.getBuffer(), 1280, 720)
 
-                    val x = data.getAcquisitionTimestamp()
+                    val x = 0//data.getAcquisitionTimestamp()
                     val y = config.frameWidth()
                     val z = config.frameHeight()
 
@@ -170,7 +174,7 @@ open class BasicSensorsActivity : GenericListActivity() {
                     String.format("$x, $y")
                 }
 
-                EDataType.RotationRate -> {
+                EDataType.Gyroscope, EDataType.RotationRate -> {
                     val data = RotationRateData(SenseData)
 
                     val x = data.getX()
@@ -200,12 +204,8 @@ open class BasicSensorsActivity : GenericListActivity() {
 
 class SensorsListActivity : BasicSensorsActivity() {
     var listener = object : DataSourceListener() {
-        override fun onDataInterruption(type: EDataType, reason: EDataInterruptionReason) {
-            Log.d("GEMSDK", "onDataInterruption: $type, $reason")
-        }
-
-        override fun onDataInterruptionEnded(type: EDataType) {
-            Log.d("GEMSDK", "onDataInterruptionEnded: $type")
+        override fun onDataInterruptionEvent(type: EDataType, reason: EDataInterruptionReason, ended: Boolean) {
+            Log.d("GEMSDK", "onDataInterruption: $type, $reason, $ended")
         }
 
         override fun onNewData(data: SenseData?) {
@@ -386,6 +386,7 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
                     EDataType.Camera -> {
                         val camData = CameraData(data)
                         val buffer = camData.getDirectBuffer() ?: return@execute
+                        val bufferType = EDirectBufferType.EByteBuffer
                         val configs = camData.getCameraConfiguration() ?: return@execute
 
                         val width = configs.frameWidth()
@@ -393,7 +394,7 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
                         val rotation = configs.rotationAngle().toInt()
                         val format = configs.pixelFormat()
 
-                        drawer?.uploadFrame(buffer, width, height, format, rotation)
+                        drawer?.uploadFrame(bufferType, buffer, width, height, format, rotation)
                         GEMApplication.getGlContext()?.needsRender()
                     }
                     else -> {

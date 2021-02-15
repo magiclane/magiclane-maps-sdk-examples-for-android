@@ -89,6 +89,15 @@
 
 	</androidx.constraintlayout.widget.ConstraintLayout>
 
+    <include android:id="@+id/route_profile"
+        layout="@layout/route_profile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constrainedHeight="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:visibility="gone"/>
+
 	<ProgressBar
 		android:id="@+id/progressBar"
 		style="?android:attr/progressBarStyle"

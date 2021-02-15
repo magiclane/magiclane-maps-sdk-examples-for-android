@@ -357,7 +357,9 @@ object GEMApplication {
             return
         }
 
-        if (activity == topActivity() && activityStack.size == 1) {
+        val hasRoutes =
+            (getMainMapView()?.preferences()?.routes()?.size() ?: 0) != 0
+        if (activity == topActivity() && activityStack.size == 1 && !hasRoutes) {
             activity.displayCloseAppDialog()
         }
     }
@@ -453,12 +455,8 @@ object GEMApplication {
     fun showErrorMessage(error: String, length: Int = Toast.LENGTH_SHORT) {
         showToast("Error: $error", length)
     }
-    
-    fun showToast(message: String, length: Int = Toast.LENGTH_SHORT){
-//        if(Looper.myLooper() == Looper.getMainLooper()) {
-//            // Current Thread is Main Thread.
-//        }
 
+    fun showToast(message: String, length: Int = Toast.LENGTH_SHORT) {
         postOnMain {
             Toast.makeText(applicationContext(), message, length).show()
         }

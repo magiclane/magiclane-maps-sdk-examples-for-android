@@ -240,7 +240,7 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
             val availableOverlays = MarkerOverlaysService().getAvailableOverlays(null)?.first
             if (availableOverlays != null) {
                 for (item in availableOverlays) {
-                    if (item.getUid() == TCommonOverlayId.EOID_Safety.value.toShort()) {
+                    if (item.getUid() == TCommonOverlayId.EOID_Safety.value) {
                         alarmService?.markers()?.add(item)
                     }
                 }
@@ -362,7 +362,7 @@ open class BaseSimulationController(context: Context, attrs: AttributeSet?) :
             }
 
             val preferences = SettingsProvider.loadRoutePreferences()
-            preferences.setTransportMode(TTransportMode.ETM_Car)
+            preferences.setTransportMode(TRouteTransportMode.ETM_Car)
             preferences.setAvoidTraffic(true)
 
             navigationService.startSimulation(
@@ -391,7 +391,7 @@ open class BaseSimulationController(context: Context, attrs: AttributeSet?) :
             }
 
             val preferences = SettingsProvider.loadRoutePreferences()
-            preferences.setTransportMode(TTransportMode.ETM_Car)
+            preferences.setTransportMode(TRouteTransportMode.ETM_Car)
             preferences.setAvoidTraffic(true)
 
             navigationService.startSimulationWithRoute(
@@ -413,7 +413,7 @@ open class BaseNavigationController(context: Context, attrs: AttributeSet?) :
 
         GEMSdkCall.execute {
             val preferences = SettingsProvider.loadRoutePreferences()
-            preferences.setTransportMode(TTransportMode.ETM_Car)
+            preferences.setTransportMode(TRouteTransportMode.ETM_Car)
             preferences.setAvoidTraffic(true)
 
             navigationService.startNavigation(

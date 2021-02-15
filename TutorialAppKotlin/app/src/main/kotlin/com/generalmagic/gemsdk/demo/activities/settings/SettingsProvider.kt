@@ -378,7 +378,7 @@ object SettingsProvider {
         val avoidUnpavedSetting = getBooleanValue(TBoolSettings.EAvoidUnpavedRoadsCar.value)
 
         val preferences = RoutePreferences()
-        preferences.setTransportMode(TTransportMode.ETM_Car)
+        preferences.setTransportMode(TRouteTransportMode.ETM_Car)
         preferences.setRouteType(EnumHelp.fromInt(routeTypeSetting.second))
         preferences.setAvoidTollRoads(avoidTollSetting.second)
         preferences.setAvoidMotorways(avoidMotorwaysSetting.second)

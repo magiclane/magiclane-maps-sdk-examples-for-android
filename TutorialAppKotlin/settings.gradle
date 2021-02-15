@@ -1,2 +1,5 @@
 rootProject.name = 'TutorialAppKotlin'
-include ':app'
+include ':app', ':UILibCharts', ':UILibSortableTable'
+
+project(':UILibCharts').projectDir = new File(rootDir, 'app/src/thirdParty/MPChartLib')
+project(':UILibSortableTable').projectDir = new File(rootDir, 'app/src/thirdParty/SortableTableView')

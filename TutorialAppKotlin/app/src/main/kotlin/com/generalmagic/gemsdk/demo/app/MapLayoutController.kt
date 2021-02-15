@@ -14,6 +14,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
+import com.generalmagic.gemsdk.demo.activities.routeprofile.RouteProfileView
 import com.generalmagic.gemsdk.demo.app.elements.ButtonsDecorator
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
@@ -21,6 +22,7 @@ interface IMapControllerActivity {
     fun getBottomLeftButton(): FloatingActionButton?
     fun getBottomCenterButton(): FloatingActionButton?
     fun getBottomRightButton(): FloatingActionButton?
+    fun getRouteProfileView(): View?
     fun setFixedOrientation(orientation: Int)
     fun setProgressVisible(visible: Boolean)
     fun setSystemBarsVisible(visible: Boolean)
@@ -98,6 +100,12 @@ open class MapLayoutController(context: Context, attrs: AttributeSet?) :
         getBottomRightButton()?.visibility = View.GONE
     }
 
+    fun showAllButtons() {
+        getBottomLeftButton()?.visibility = View.VISIBLE
+        getBottomCenterButton()?.visibility = View.VISIBLE
+        getBottomRightButton()?.visibility = View.VISIBLE
+    }
+
     fun setStopButtonVisible(visible: Boolean) {
         val button = getBottomLeftButton() ?: return
 
@@ -139,4 +147,10 @@ open class MapLayoutController(context: Context, attrs: AttributeSet?) :
             button.visibility = View.GONE
         }
     }
+
+    // ----------------------------------------------------------------------------------------------
+    //                              ROUTE PROFILE
+    // ----------------------------------------------------------------------------------------------
+
+    fun getRouteProfileView(): View? = mapActivity.getRouteProfileView()
 }

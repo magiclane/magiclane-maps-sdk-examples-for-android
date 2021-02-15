@@ -33,6 +33,7 @@ import com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.LogDataS
 import com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SimLandmarksController.Companion.EXTRA_WAYPOINTS
 import com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SimRouteController.Companion.EXTRA_ROUTE
 import com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.WikiController
+import com.generalmagic.gemsdk.demo.activities.routeprofile.RouteProfileView
 import com.generalmagic.gemsdk.demo.app.*
 import com.generalmagic.gemsdk.demo.util.IntentHelper
 import com.generalmagic.gemsdk.mapview.GEMMapSurface
@@ -51,6 +52,7 @@ import kotlinx.android.synthetic.main.tutorial_custom_url.view.*
 import kotlinx.android.synthetic.main.tutorial_flyto_area.view.*
 import kotlinx.android.synthetic.main.tutorial_flyto_coords.view.*
 import kotlinx.android.synthetic.main.tutorial_flyto_instr.view.*
+import kotlinx.android.synthetic.main.tutorial_flyto_line.view.*
 import kotlinx.android.synthetic.main.tutorial_flyto_route.view.*
 import kotlinx.android.synthetic.main.tutorial_flyto_traffic.view.*
 import kotlinx.android.synthetic.main.tutorial_hello.view.*
@@ -104,6 +106,7 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
             R.id.tutorial_flyto_instr -> Tutorials.openFlyToNavInstrTutorial()
             R.id.tutorial_flyto_route -> Tutorials.openFlyToRouteTutorial()
             R.id.tutorial_flyto_traffic -> Tutorials.openFlyToTrafficTutorial()
+            R.id.tutorial_flyto_line -> Tutorials.openFlyToLineTutorial()
             R.id.tutorial_online_maps -> Tutorials.openOnlineMapsTutorial()
             R.id.tutorial_wiki -> Tutorials.openPredefWikiTutorial()
             R.id.tutorial_custom_url -> Tutorials.openCustomUrlTutorial()
@@ -287,6 +290,8 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
     override fun getBottomLeftButton(): FloatingActionButton? = bottomButtons.bottomLeftButton
     override fun getBottomCenterButton(): FloatingActionButton? = bottomButtons.bottomCenterButton
     override fun getBottomRightButton(): FloatingActionButton? = bottomButtons.bottomRightButton
+
+    override fun getRouteProfileView(): View = route_profile
 
     override fun setFixedOrientation(orientation: Int) {
         requestedOrientation = orientation
@@ -505,6 +510,13 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
                         R.layout.tutorial_flyto_traffic,
                         contentMain
                     ).flyToTrafficController
+                }
+
+                Tutorials.Id.FlyTo_Line -> {
+                    layoutInflater.inflate(
+                        R.layout.tutorial_flyto_line,
+                        contentMain
+                    ).flyToLineController
                 }
 
                 Tutorials.Id.CustomUrl -> {

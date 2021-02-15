@@ -358,7 +358,8 @@ class UtilUITexts {
                     formattedDescription.removeRange(0, 2)
                 }
 
-                if (formattedDescription.indexOf(", ") == formattedDescription.length - 2) {
+                val commaPos = formattedDescription.indexOf(", ")
+                if ((commaPos > 0) && (commaPos == formattedDescription.length - 2)) {
                     formattedDescription.removeRange(
                         formattedDescription.length - 2,
                         formattedDescription.length

@@ -11,12 +11,15 @@
 package com.generalmagic.gemsdk.demo.activities.mainactivity.controllers
 
 import android.content.Context
+import android.content.res.Configuration
 import android.util.AttributeSet
 import android.view.View
 import android.widget.Toast
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.activities.RouteDescriptionActivity.Companion.showRouteDescription
 import com.generalmagic.gemsdk.demo.activities.publictransport.PublicTransportRouteDescriptionActivity.Companion.showPTRouteDescription
+import com.generalmagic.gemsdk.demo.activities.routeprofile.GEMRouteProfileView
+import com.generalmagic.gemsdk.demo.activities.routeprofile.RouteProfileView
 import com.generalmagic.gemsdk.demo.activities.settings.SettingsProvider
 import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.app.MapLayoutController
@@ -24,7 +27,6 @@ import com.generalmagic.gemsdk.demo.app.Tutorials
 import com.generalmagic.gemsdk.demo.app.elements.ButtonsDecorator
 import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.demo.util.UtilUITexts
-import com.generalmagic.gemsdk.demo.util.Utils
 import com.generalmagic.gemsdk.models.Coordinates
 import com.generalmagic.gemsdk.models.Image
 import com.generalmagic.gemsdk.models.ImageDatabase
@@ -53,7 +55,7 @@ abstract class RouteServiceWrapper {
     }
 
     fun cancelCalculation() = GEMSdkCall.execute { service.cancelRoute(progressListener) }
-    
+
     fun calculate(waypoints: ArrayList<Landmark>, preferences: RoutePreferences) {
         GEMSdkCall.execute {
             resultRoutes.assignArrayList(ArrayList())
@@ -67,8 +69,9 @@ abstract class RouteServiceWrapper {
 
 abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
-    
-    private var calculatedRoutes = ArrayList<Route>()
+
+    protected var calculatedRoutes = ArrayList<Route>()
+    private var mRouteProfileView: RouteProfileView? = null
 
     private val routing = object : RouteServiceWrapper() {
         override fun onStartCalculating() {
@@ -116,7 +119,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
                     ImageDatabase().getImageById(Util.getTrafficIconId(route))?.let {
                         imageList.add(it)
                     }
-                    
+
                     if (route.hasTollRoads()) {
                         ImageDatabase().getImageById(Util.getTollIconId())?.let {
                             imageList.add(it)
@@ -136,6 +139,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
             }
 
             setInfoButtonVisible(true)
+            setRouteProfileButtonVisible(true)
         }
     }
 
@@ -143,16 +147,24 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
         const val MAIN_ROUTE_INDEX = 0
     }
 
-    protected var mode = TTransportMode.ETM_Car
+    protected var mode = TRouteTransportMode.ETM_Car
     private var lastWaypoints = ArrayList<Landmark>()
 
     override fun doBackPressed(): Boolean {
-        setInfoButtonVisible(false)
-        return GEMApplication.clearMapVisibleRoutes()
+        if (mRouteProfileView == null) {
+            setInfoButtonVisible(false)
+            return GEMApplication.clearMapVisibleRoutes()
+        }
+        else {
+            GEMSdkCall.execute { 
+                GEMRouteProfileView.close()
+            }
+            return false
+        }
     }
 
     fun doStart(waypoints: ArrayList<Landmark>) {
-        if(calculatedRoutes.size > 0){
+        if (calculatedRoutes.size > 0) {
             Tutorials.openRouteSimulationTutorial(calculatedRoutes[0])
             return
         }
@@ -164,6 +176,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
             val preferences = SettingsProvider.loadRoutePreferences()
             preferences.setTransportMode(mode)
             preferences.setAvoidTraffic(true)
+            preferences.setBuildTerrainProfile(true)
 
             routing.calculate(waypoints, preferences)
         }
@@ -189,7 +202,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
             } else null
         } ?: return
 
-        if (mode == TTransportMode.ETM_Public) {
+        if (mode == TRouteTransportMode.ETM_Public) {
             showPTRouteDescription(context, mainRoute)
         } else {
             showRouteDescription(context, mainRoute)
@@ -208,6 +221,35 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
         } else {
             button.visibility = View.GONE
         }
+    }
+
+    fun setRouteProfileButtonVisible(visible: Boolean) {
+        
+        getBottomCenterButton()?.let { button ->
+            if (visible) {
+                ButtonsDecorator.buttonAsRouteProfile(context, button) {
+                    mRouteProfileView = RouteProfileView(mapActivity)
+                    GEMApplication.getMainMapView()?.let { mapView ->
+                        GEMSdkCall.execute { GEMRouteProfileView.open(mRouteProfileView, mapView) }
+                    }
+                }
+
+                button.visibility = View.VISIBLE
+            } else {
+                button.visibility = View.GONE
+            }
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration?) {
+        mRouteProfileView?.run {
+            val orientation = newConfig?.orientation ?: Configuration.ORIENTATION_PORTRAIT
+            adjustViewForOrientation(orientation)
+        }
+    }
+    
+    fun onRouteProfileViewIsClosed() {
+        mRouteProfileView = null
     }
 }
 
@@ -238,7 +280,7 @@ open class RouteCustom(context: Context, attrs: AttributeSet?) :
     BaseUiRouteController(context, attrs) {
     private val landmarks = ArrayList<Landmark>()
 
-    override fun onMapFollowStatusChanged(following: Boolean) { }
+    override fun onMapFollowStatusChanged(following: Boolean) {}
 
     override fun onCreated() {
         super.onCreated()
@@ -262,18 +304,22 @@ open class RouteCustom(context: Context, attrs: AttributeSet?) :
                 pickLocation.visibility = View.GONE
                 landmarks.add(landmark)
 
-                GEMSdkCall.execute { doStart(landmarks) }
+                doStart(landmarks)
             }
         }
     }
 
     override fun doStart() {
-        landmarks.clear()
+        if (calculatedRoutes.size == 0) {
+            landmarks.clear()
 
-        GEMApplication.clearMapVisibleRoutes()
+            GEMApplication.clearMapVisibleRoutes()
 
-        pickLocation.mapActivity = mapActivity
-        pickLocation?.pickStart()
+            pickLocation.mapActivity = mapActivity
+            pickLocation?.pickStart()
+        } else {
+            doStart(landmarks)
+        }
     }
 }
 
@@ -281,7 +327,7 @@ class PredefPTNavController(context: Context, attrs: AttributeSet?) :
     BaseUiRouteController(context, attrs) {
 
     init {
-        mode = TTransportMode.ETM_Public
+        mode = TRouteTransportMode.ETM_Public
     }
 
     override fun doStart() {
@@ -296,6 +342,6 @@ class PredefPTNavController(context: Context, attrs: AttributeSet?) :
 
 class CustomPTNavController(context: Context, attrs: AttributeSet?) : RouteCustom(context, attrs) {
     init {
-        mode = TTransportMode.ETM_Public
+        mode = TRouteTransportMode.ETM_Public
     }
 }
