@@ -122,7 +122,7 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
 
     override fun doStop() {
         GEMSdkCall.execute {
-            search.service.cancelRequest(search.listener)
+            search.service.cancelSearch(search.listener)
         }
     }
 

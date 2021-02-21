@@ -82,9 +82,10 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
             R.id.tutorial_searchnearby -> Tutorials.openSearchNearbyTutorial()
             R.id.tutorial_searchpoi -> Tutorials.openSearchPoiTutorial()
             R.id.tutorial_addresssearch -> Tutorials.openAddressSearchTutorial()
+            R.id.tutorial_history -> Tutorials.openSearchHistoryTutorial()
             R.id.tutorial_route_ab -> Tutorials.openRouteAbTutorial()
             R.id.tutorial_route_abc -> Tutorials.openRouteAbcTutorial()
-            R.id.tutorial_route_custom -> Tutorials.openCustomRouteTutorial()
+            R.id.tutorial_route_custom -> Tutorials.openCustomRouteTutorial(arrayListOf())
             R.id.tutorial_predef_sim -> {
                 val waypoints = ArrayList<Landmark>()
                 waypoints.add(Landmark("San Francisco", Coordinates(37.77903, -122.41991)))
@@ -389,6 +390,17 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
                 }
 
                 Tutorials.Id.Route_Custom -> {
+                    val waypoints = ArrayList<Landmark>()
+                    if (args.isNotEmpty()) {
+                        val genericArrayList = args[0] as ArrayList<*>
+                        for (item in genericArrayList) {
+                            val castedItem = item as Landmark
+                            waypoints.add(castedItem)
+                        }
+                    }
+
+                    IntentHelper.addObjectForKey(waypoints, EXTRA_WAYPOINTS)
+                    
                     layoutInflater.inflate(
                         R.layout.tutorial_route_custom,
                         contentMain

@@ -148,7 +148,7 @@ object GEMAddressSearchView {
             mField = field
 
             mListener?.let {
-                GEMSdkCall.execute { GuidedAddressSearchService().cancelRequest(it) }
+                GEMSdkCall.execute { GuidedAddressSearchService().cancelSearch(it) }
             }
 
             search(getParentLandmark(field), filter, getDetailLevel(field))

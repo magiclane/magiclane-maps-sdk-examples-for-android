@@ -4,9 +4,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2021-02-19
+### Added
+- History view.
+
+### Issues
+- Tap on Public Transport route item from History does not open a PT route on map.
+- No Route Profile for routes after tapping an item from History.
+
+## [3.2.0] - 2021-02-15
+### Added
+- Address Search option.
+- Route Profile View for every route.
+- Fly To Line option (fly to a drawn line on the map).
+
+### Fixed
+- "Play" button does not start navigation on custom routes.
+
 ## [3.1.0] - 2021-01-18
 ### Added
-- SeekBar to LogPlayerController
+- SeekBar to LogPlayerController.
 
 ## [3.0.0] - 2020-12-23
 ### Added

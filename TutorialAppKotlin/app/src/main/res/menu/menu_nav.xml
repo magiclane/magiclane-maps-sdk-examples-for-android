@@ -100,6 +100,11 @@
 					android:id="@+id/tutorial_addresssearch"
 					android:title="Address Search"
 					app:showAsAction="never"/>
+
+                <item
+                    android:id="@+id/tutorial_history"
+                    android:title="History"
+                    app:showAsAction="never"/>
 			</group>
 		</menu>
 	</item>

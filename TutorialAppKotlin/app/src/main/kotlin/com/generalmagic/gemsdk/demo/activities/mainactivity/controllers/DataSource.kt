@@ -82,9 +82,9 @@ open class BasicSensorsActivity : GenericListActivity() {
     companion object {
         fun toString(SenseData: SenseData): String {
             return when (SenseData.getType()) {
-                EDataType.MountInformation ->{
-                    ""
-                }
+//                EDataType.MountInformation ->{
+//                    ""
+//                }
                 EDataType.Acceleration -> {
                     val data = AccelerationData(SenseData)
                     val x = data.getX()
@@ -174,7 +174,7 @@ open class BasicSensorsActivity : GenericListActivity() {
                     String.format("$x, $y")
                 }
 
-                EDataType.Gyroscope, EDataType.RotationRate -> {
+                EDataType.RotationRate -> {
                     val data = RotationRateData(SenseData)
 
                     val x = data.getX()
@@ -197,6 +197,8 @@ open class BasicSensorsActivity : GenericListActivity() {
                 EDataType.Unknown -> {
                     ""
                 }
+                
+                else -> {""}
             }
         }
     }
@@ -204,9 +206,9 @@ open class BasicSensorsActivity : GenericListActivity() {
 
 class SensorsListActivity : BasicSensorsActivity() {
     var listener = object : DataSourceListener() {
-        override fun onDataInterruptionEvent(type: EDataType, reason: EDataInterruptionReason, ended: Boolean) {
-            Log.d("GEMSDK", "onDataInterruption: $type, $reason, $ended")
-        }
+//        override fun onDataInterruptionEvent(type: EDataType, reason: EDataInterruptionReason, ended: Boolean) {
+//            Log.d("GEMSDK", "onDataInterruption: $type, $reason, $ended")
+//        }
 
         override fun onNewData(data: SenseData?) {
             data ?: return
@@ -394,7 +396,7 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
                         val rotation = configs.rotationAngle().toInt()
                         val format = configs.pixelFormat()
 
-                        drawer?.uploadFrame(bufferType, buffer, width, height, format, rotation)
+//                        drawer?.uploadFrame(bufferType, buffer, width, height, format, rotation)
                         GEMApplication.getGlContext()?.needsRender()
                     }
                     else -> {

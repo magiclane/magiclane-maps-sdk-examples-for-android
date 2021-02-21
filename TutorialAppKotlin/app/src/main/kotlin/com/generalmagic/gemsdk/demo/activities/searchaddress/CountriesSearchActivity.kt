@@ -99,7 +99,7 @@ class CountriesSearchActivity : SearchListActivity() {
     }
 
     fun cancel() {
-        GEMSdkCall.execute { GuidedAddressSearchService().cancelRequest(listener) }
+        GEMSdkCall.execute { GuidedAddressSearchService().cancelSearch(listener) }
     }
 
     fun didTapItem(item: CountryModelItem) {

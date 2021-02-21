@@ -446,7 +446,7 @@ class SearchAddressActivity : BaseActivity() {
         intersectionTextChangedListener = CustomTextWatcher(TAddressField.ECrossing1.value)
 
         city.addTextChangedListener(cityTextChangedListener)
-        street.addTextChangedListener(streetNumberTextChangedListener)
+        street.addTextChangedListener(streetTextChangedListener)
         street_number.addTextChangedListener(streetNumberTextChangedListener)
         intersection.addTextChangedListener(intersectionTextChangedListener)
 

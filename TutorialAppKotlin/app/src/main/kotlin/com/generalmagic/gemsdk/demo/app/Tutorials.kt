@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2019-2021, General Magic B.V.
+ * All rights reserved.
+ *
+ * This software is confidential and proprietary information of General Magic
+ * ("Confidential Information"). You shall not disclose such Confidential
+ * Information and shall use it only in accordance with the terms of the
+ * license agreement you entered into with General Magic.
+ */
+
 package com.generalmagic.gemsdk.demo.app
 
 import android.content.Intent
@@ -132,6 +142,12 @@ object TutorialsOpener {
                     return true
                 }
 
+                Tutorials.Id.SearchHistory -> {
+                    val intent = Intent(activity, SearchHistoryActivity::class.java)
+                    activity.startActivity(intent)
+                    return true
+                }
+
                 Tutorials.Id.SensorsList -> {
                     val intent = Intent(activity, SensorsListActivity::class.java)
                     activity.startActivity(intent)
@@ -209,6 +225,7 @@ object Tutorials {
         SearchPoi,
         SearchNearby,
         SearchText,
+        SearchHistory,
         Settings,
         MultipleViews,
         TwoTiledViews,
@@ -230,9 +247,10 @@ object Tutorials {
     fun openSearchNearbyTutorial() = TutorialsOpener.openTutorial(Id.SearchNearby)
     fun openSearchPoiTutorial() = TutorialsOpener.openTutorial(Id.SearchPoi)
     fun openAddressSearchTutorial() = TutorialsOpener.openTutorial(Id.AddressSearch)
+    fun openSearchHistoryTutorial() = TutorialsOpener.openTutorial(Id.SearchHistory)
     fun openRouteAbTutorial() = TutorialsOpener.openTutorial(Id.Route_AB)
     fun openRouteAbcTutorial() = TutorialsOpener.openTutorial(Id.Route_ABC)
-    fun openCustomRouteTutorial() = TutorialsOpener.openTutorial(Id.Route_Custom)
+    fun openCustomRouteTutorial(landmarks: ArrayList<Landmark>) = TutorialsOpener.openTutorial(Id.Route_Custom, landmarks)
     fun openLandmarksSimulationTutorial(landmarks: ArrayList<Landmark>) = TutorialsOpener.openTutorial(Id.Simulation_Landmarks, landmarks)
     fun openRouteSimulationTutorial(route: Route) = TutorialsOpener.openTutorial(Id.Simulation_Route, route)
     fun openPredefNavigationTutorial() = TutorialsOpener.openTutorial(Id.Navigation_Predef)

@@ -14,10 +14,7 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
-import android.widget.ImageView
-import android.widget.ProgressBar
-import android.widget.SearchView
-import android.widget.TextView
+import android.widget.*
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.GridLayoutManager
@@ -25,8 +22,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.gemsdk.MapDetails
 import com.generalmagic.gemsdk.TRgba
+import com.generalmagic.gemsdk.TRouteTransportMode
 import com.generalmagic.gemsdk.TUnitSystem
 import com.generalmagic.gemsdk.demo.R
+import com.generalmagic.gemsdk.demo.activities.history.Trip
+import com.generalmagic.gemsdk.demo.activities.history.TripsHistory
 import com.generalmagic.gemsdk.demo.app.BaseActivity
 import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.util.Util
@@ -45,6 +45,7 @@ import kotlinx.android.synthetic.main.filter_view.*
 abstract class BaseListItem
 
 open class SearchListItem : BaseListItem() {
+    var mOnLongClick: (holder: SLIViewHolder) -> Boolean = { false }
     var mOnClick: (holder: SLIViewHolder) -> Unit = {}
 
     open fun getIcon(width: Int, height: Int): Bitmap? {
@@ -65,6 +66,18 @@ open class SearchListItem : BaseListItem() {
 
     open fun getDescription(): String {
         return ""
+    }
+
+    open fun getId(): Long {
+        return 0L
+    }
+
+    open fun deleteContent(): Boolean {
+        return true
+    }
+
+    open fun canDeleteContent(): Boolean {
+        return false
     }
 }
 
@@ -189,6 +202,28 @@ open class MapsListActivity : GenericListActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        filterView.visibility = View.VISIBLE
+
+        // set search field hint
+        searchInput.queryHint = "Search"
+
+        // set focus on search bar and open keyboard
+        searchInput.requestFocus()
+
+        searchInput.setOnQueryTextListener(
+            object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    searchInput.clearFocus()
+                    return true
+                }
+
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    applyFilter(newText ?: "")
+                    return true
+                }
+            }
+        )
+        
         list_view.setBackgroundColor(ContextCompat.getColor(this, R.color.maps_view_bgnd_color))
     }
 
@@ -306,7 +341,7 @@ open class LISIViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) {
         parent.setOnLongClickListener { _ ->
             it.mOnLongClick(this)
         }
-        
+
         parent.setOnClickListener { _ ->
             it.mOnClick(this)
         }
@@ -419,8 +454,7 @@ open class StylesViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) 
 
     open fun updateViews(it: StylesListItem) {
         val previewBitmap = it.getImagePreview()
-        if (previewBitmap != null)
-        {
+        if (previewBitmap != null) {
             val emptyBitmap =
                 Bitmap.createBitmap(previewBitmap.width, previewBitmap.height, previewBitmap.config)
             if (!previewBitmap.sameAs(emptyBitmap)) {
@@ -513,7 +547,20 @@ class SLIAdapter(data: ArrayList<SearchListItem>) : SectionedRecyclerViewAdapter
     }
 }
 
-open class SLIViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) {
+/** HistoryListItem */
+class HLIAdapter(data: ArrayList<SearchListItem>) : SectionedRecyclerViewAdapter() {
+    init {
+        val provideHolder = provideHolder@{ view: View ->
+            return@provideHolder SLIViewHolder(view, true)
+        }
+
+        addSection(SLIViewHolder.Chapter(data, provideHolder))
+
+        notifyDataSetChanged()
+    }
+}
+
+open class SLIViewHolder(val parent: View, private val isHistory: Boolean = false) : RecyclerView.ViewHolder(parent) {
     companion object {
         const val resId = R.layout.search_list_item
     }
@@ -533,29 +580,42 @@ open class SLIViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) {
         val descriptionText = it.getDescription()
         if (descriptionText.isEmpty()) {
             description.visibility = View.GONE
-        }
-        else {
+        } else {
             description.text = descriptionText
         }
 
         val statusText = it.getStatus()
-        if (statusText.isEmpty()) {
+        if (statusText.isEmpty() || isHistory) {
             status.visibility = View.GONE
-        }
-        else {
+        } else {
             status.text = statusText
         }
 
         val statusDescriptionText = it.getStatusDescription()
-        if (statusDescriptionText.isEmpty()) {
+        if (statusDescriptionText.isEmpty() || isHistory) {
             statusDescription.visibility = View.GONE
-        }
-        else {
+        } else {
             statusDescription.text = statusDescriptionText
         }
 
         parent.setOnClickListener { _ ->
             it.mOnClick(this)
+        }
+
+        if (it.canDeleteContent()) {
+            parent.setOnLongClickListener { _ ->
+                val menu = PopupMenu(GEMApplication.applicationContext(), itemView)
+                menu.menu.add("Delete")
+                menu.show()
+
+                menu.setOnMenuItemClickListener { _ ->
+                    it.mOnLongClick(this)
+
+                    true
+                }
+
+                true
+            }
         }
     }
 
@@ -716,6 +776,71 @@ open class LandmarkViewModel(val it: Landmark?, reference: Coordinates?) : Searc
         return@execute UtilUITexts.pairFormatLandmarkDetails(it).second
     } ?: ""
 
+    override fun getId(): Long = GEMSdkCall.execute {
+        return@execute it?.getTimestamp()?.asInt()
+    } ?: 0
+
+    override fun deleteContent(): Boolean {
+        if (it != null) {
+            return GEMApplication.removeLandmarkFromHistory(it)
+        }
+        return false
+    }
+
+    override fun canDeleteContent(): Boolean {
+        return true
+    }
+}
+
+open class TripViewModel(val it: Trip, val tripIndex: Int) : SearchListItem() {
+    override fun getIcon(width: Int, height: Int): Bitmap? {
+        it.mPreferences?.getTransportMode()?.let { transportMode ->
+            return when (transportMode) {
+                TRouteTransportMode.ETM_Car -> {
+                    Utils.getImageAsBitmap(GemIcons.Other_UI.DriveTo_v2.value, width, height)
+                }
+
+                TRouteTransportMode.ETM_Pedestrian -> {
+                    Utils.getImageAsBitmap(GemIcons.Other_UI.WalkTo.value, width, height)
+                }
+
+                TRouteTransportMode.ETM_Bicycle -> {
+                    Utils.getImageAsBitmap(GemIcons.Other_UI.BikeTo.value, width, height)
+                }
+
+                TRouteTransportMode.ETM_Public -> {
+                    Utils.getImageAsBitmap(GemIcons.Other_UI.PublicTransportTo.value, width, height)
+                }
+
+                else -> {
+                    null
+                }
+            }
+        }
+
+        return null
+    }
+
+    override fun getId(): Long {
+        return it.mTimeStamp
+    }
+
+    override fun getText(): String {
+        val waypoints = it.mWaypoints
+        if (waypoints != null) {
+            return TripsHistory.getDefaultTripName(waypoints, it.mIsFromAToB, false).second
+        }
+
+        return ""
+    }
+
+    override fun deleteContent(): Boolean {
+        return GEMApplication.mTripsHistory?.removeTrip(tripIndex) ?: false
+    }
+
+    override fun canDeleteContent(): Boolean {
+        return true
+    }
 }
 
 open class StyleItemViewModel(item: ContentStoreItem) : StylesContentStoreItemViewModel(item) {

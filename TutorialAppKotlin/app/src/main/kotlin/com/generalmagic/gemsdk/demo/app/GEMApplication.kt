@@ -23,6 +23,8 @@ import com.generalmagic.apihelper.EnumHelp
 import com.generalmagic.gemsdk.*
 import com.generalmagic.gemsdk.demo.R
 import com.generalmagic.gemsdk.demo.activities.WebActivity
+import com.generalmagic.gemsdk.demo.activities.history.Trip
+import com.generalmagic.gemsdk.demo.activities.history.TripsHistory
 import com.generalmagic.gemsdk.demo.activities.pickvideo.PickLogActivity
 import com.generalmagic.gemsdk.demo.activities.settings.SettingsProvider
 import com.generalmagic.gemsdk.demo.app.TutorialsOpener.getCurrentTutorial
@@ -40,6 +42,7 @@ import com.generalmagic.gemsdk.util.SDKPathsHelper
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.math.abs
 import kotlin.system.exitProcess
 
 object GEMApplication {
@@ -56,8 +59,11 @@ object GEMApplication {
     private var mapUpdater: ContentUpdater? = null
 
     private var mapSurface: GEMMapSurface? = null
-    private var mainMapView: View? = null
-    private val mainMapViewListener = object : ViewListener() {}
+    private var mainMapView: MapView? = null
+    private val mainMapViewListener = object : MapViewListener() {}
+
+    var mHistoryLandmarkStore: LandmarkStore? = null
+    var mTripsHistory: TripsHistory? = null
 
     private val offboardListener = object : OffboardListener() {
         override fun onOnlineWorldMapSupportStatus(state: TStatus) {
@@ -162,10 +168,15 @@ object GEMApplication {
             }
         }
 
+        // history
+
+        mTripsHistory = TripsHistory()
+        mHistoryLandmarkStore = LandmarkStoreService().createLandmarkStore("History")?.first
+
         // main map view
 
         val mainViewRect = TRectF(0.0f, 0.0f, 1.0f, 1.0f)
-        val mainMapView = View.produce(screen, mainViewRect, mainMapViewListener)
+        val mainMapView = MapView.produce(screen, mainViewRect, mainMapViewListener)
 
         mainMapView?.let { notifyMapFollowStatusChanged(it.isFollowingPosition()) }
         this.mainMapView = mainMapView
@@ -502,5 +513,64 @@ object GEMApplication {
     fun terminateApp() {
         topActivity()?.finish()
         exitProcess(0)
+    }
+
+    fun getHistoryLandmarkStore(): LandmarkStore? {
+        return mHistoryLandmarkStore
+    }
+
+    fun getTripsHistory(): TripsHistory? {
+        return mTripsHistory
+    }
+
+    fun addLandmarkToHistory(landmark: Landmark) {
+        mHistoryLandmarkStore?.let { landmarkStore ->
+            val id = getLandmarkStoreLandmarkId(landmarkStore, landmark)
+            val time = Time()
+            time.setLocalTime()
+            landmark.setTimeStamp(time)
+            if (id > 0) {
+                landmarkStore.updateLandmark(landmark)
+            } else {
+                landmarkStore.addLandmark(landmark)
+            }
+        }
+    }
+
+    fun removeLandmarkFromHistory(landmark: Landmark): Boolean {
+        mHistoryLandmarkStore?.let { landmarkStore ->
+            val id = getLandmarkStoreLandmarkId(landmarkStore, landmark)
+            mHistoryLandmarkStore?.removeLandmark(id)
+            return true
+        }
+        return false
+    }
+
+    private fun getLandmarkStoreLandmarkId(landmarkStore: LandmarkStore, landmark: Landmark): Int {
+        val treshold = 0.00001
+        val landmarks = landmarkStore.getLandmarks() ?: arrayListOf()
+        val name = landmark.getName() ?: ""
+        val lat = landmark.getCoordinates()?.getLatitude() ?: 0.0
+        val lon = landmark.getCoordinates()?.getLongitude() ?: 0.0
+
+        for (item in landmarks) {
+            val itemLatitude = item.getCoordinates()?.getLatitude() ?: 0.0
+            val itemLongitude = item.getCoordinates()?.getLongitude() ?: 0.0
+            if ((item.getName() == name) &&
+                (abs(itemLatitude - lat) < treshold) &&
+                (abs(itemLongitude - lon) < treshold)
+            ) {
+                return item.getLandmarkId()
+            }
+        }
+
+        return 0
+    }
+
+    fun addRouteToHistory(route: Route, isFromAToB: Boolean = true) {
+        val trip = Trip()
+        trip.set(route, isFromAToB)
+
+        mTripsHistory?.saveTrip(trip)
     }
 }

@@ -95,6 +95,10 @@
 			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SearchNearbyActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
+        <activity
+            android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SearchHistoryActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
 		<activity
 			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SearchPoiActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />

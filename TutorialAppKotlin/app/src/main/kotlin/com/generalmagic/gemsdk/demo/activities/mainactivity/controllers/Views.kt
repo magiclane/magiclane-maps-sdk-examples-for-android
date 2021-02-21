@@ -15,7 +15,7 @@ import android.util.AttributeSet
 import android.widget.Toast
 import com.generalmagic.gemsdk.ContentStore
 import com.generalmagic.gemsdk.TRectF
-import com.generalmagic.gemsdk.View
+import com.generalmagic.gemsdk.MapView
 import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.app.MapLayoutController
 import com.generalmagic.gemsdk.demo.app.elements.ButtonsDecorator
@@ -32,7 +32,7 @@ class HelloViewController(context: Context, attrs: AttributeSet?) :
 open class ManyMapsController(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
     protected val contentStore = ContentStore()
-    protected val mapViews = ArrayList<View>()
+    protected val mapViews = ArrayList<MapView>()
     protected var mapStyles: ArrayList<ContentStoreItem> = ArrayList()
     protected var defaultStyle: ContentStoreItem? = null
 
@@ -59,7 +59,7 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
 
             val screen = GEMApplication.gemMapScreen() ?: return@execute false
 
-            val subview = View.produce(screen, rect, null) ?: return@execute false
+            val subview = MapView.produce(screen, rect, null) ?: return@execute false
             GEMApplication.getMainMapView()?.getCamera()?.let {
                 subview.setCamera(it)
             }

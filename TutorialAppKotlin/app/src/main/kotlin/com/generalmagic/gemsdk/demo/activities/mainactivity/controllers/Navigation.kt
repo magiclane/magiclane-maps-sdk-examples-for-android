@@ -54,7 +54,7 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
             GEMApplication.postOnMain {
                 hideProgress()
             }
-            
+
             if (gemError == GEMError.KNoError) {
                 navLayout?.routeUpdated(route)
             } else {
@@ -279,7 +279,9 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
             mainMap.preferences()?.enableCursor(false)
 
             val route = getRoute()
-            if (route != null) mainMap.preferences()?.routes()?.add(route, true)
+            if (route != null) {
+                mainMap.preferences()?.routes()?.add(route, true)
+            }
 
             PositionService().addListener(positionListener, EDataType.Position)
             GEMApplication.doMapFollow()
@@ -552,11 +554,11 @@ class CustomSimController(context: Context, attrs: AttributeSet?) :
 
                 Tutorials.openHelloWorldTutorial()
             }
-            
+
             it.onStartPicked = { landmark ->
                 landmarks.add(0, landmark)
             }
-            
+
             it.onIntermediatePicked = { landmark ->
                 landmarks.add(landmark)
                 GEMSdkCall.execute { landmark.setName("Intermediate") }

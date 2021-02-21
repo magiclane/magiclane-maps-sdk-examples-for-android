@@ -83,7 +83,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
         wikiView?.stopRequesting()
 
         GEMSdkCall.execute {
-            search.service.cancelRequest(search.listener)
+            search.service.cancelSearch(search.listener)
         }
     }
 
@@ -113,6 +113,8 @@ class WikiController(context: Context, attrs: AttributeSet?) :
                 settings.setOptions(THighlightOptions.EHO_ShowContour.value)
                 mainMap?.activateHighlightLandmarks(arrayListOf(landmark), settings)
             }
+            
+            GEMApplication.addLandmarkToHistory(landmark)
 
             mainMap?.centerOnCoordinates(coords, -1, TXy(), animation)
         }

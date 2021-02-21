@@ -25,7 +25,7 @@ object GEMRouteProfileView {
     private var mAltitudeFactor = 0.0
     private lateinit var mRoute: Route
     private var mCrtUnitType = TUnitType.EMeter
-    private lateinit var mMapView: View
+    private lateinit var mMapView: MapView
     private var mHighlightedLmkList = arrayListOf<Landmark>()
     private var mPrevTouchXMeters = -1
     private lateinit var mTimeOutOperation: ScheduledFuture<*>
@@ -224,7 +224,7 @@ object GEMRouteProfileView {
         }
     }
 
-    fun init(routeProfileView: RouteProfileView, mapView: View) {
+    fun init(routeProfileView: RouteProfileView, mapView: MapView) {
         mView = routeProfileView
         mMapView = mapView
         mAltitudeFactor = 1.0
@@ -241,7 +241,7 @@ object GEMRouteProfileView {
         refresh()
     }
 
-    fun open(routeProfileView: RouteProfileView?, mapView: View) {
+    fun open(routeProfileView: RouteProfileView?, mapView: MapView) {
         routeProfileView?.let {
             init(it, mapView)
             GEMApplication.postOnMain {

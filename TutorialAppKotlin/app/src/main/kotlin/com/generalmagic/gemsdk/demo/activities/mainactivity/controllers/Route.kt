@@ -25,12 +25,10 @@ import com.generalmagic.gemsdk.demo.app.GEMApplication
 import com.generalmagic.gemsdk.demo.app.MapLayoutController
 import com.generalmagic.gemsdk.demo.app.Tutorials
 import com.generalmagic.gemsdk.demo.app.elements.ButtonsDecorator
+import com.generalmagic.gemsdk.demo.util.IntentHelper
 import com.generalmagic.gemsdk.demo.util.Util
 import com.generalmagic.gemsdk.demo.util.UtilUITexts
-import com.generalmagic.gemsdk.models.Coordinates
-import com.generalmagic.gemsdk.models.Image
-import com.generalmagic.gemsdk.models.ImageDatabase
-import com.generalmagic.gemsdk.models.Landmark
+import com.generalmagic.gemsdk.models.*
 import com.generalmagic.gemsdk.util.GEMError
 import com.generalmagic.gemsdk.util.GEMList
 import com.generalmagic.gemsdk.util.GEMSdkCall
@@ -108,6 +106,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
 
                 if (mainRoute != null) {
                     mainMap.centerOnRoute(mainRoute)
+                    GEMApplication.addRouteToHistory(mainRoute)
                 }
 
                 for (routeIndex in 0 until routes.size) {
@@ -133,7 +132,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
                     }
 
                     mainMap.preferences()?.routes()?.add(
-                        routes[routeIndex], routeIndex == MAIN_ROUTE_INDEX, routeName, imageList
+                        route, routeIndex == MAIN_ROUTE_INDEX, routeName, imageList
                     )
                 }
             }
@@ -154,9 +153,8 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
         if (mRouteProfileView == null) {
             setInfoButtonVisible(false)
             return GEMApplication.clearMapVisibleRoutes()
-        }
-        else {
-            GEMSdkCall.execute { 
+        } else {
+            GEMSdkCall.execute {
                 GEMRouteProfileView.close()
             }
             return false
@@ -177,6 +175,9 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
             preferences.setTransportMode(mode)
             preferences.setAvoidTraffic(true)
             preferences.setBuildTerrainProfile(true)
+            val time = Time()
+            time.setLocalTime()
+            preferences.setTimestamp(time)
 
             routing.calculate(waypoints, preferences)
         }
@@ -224,7 +225,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
     }
 
     fun setRouteProfileButtonVisible(visible: Boolean) {
-        
+
         getBottomCenterButton()?.let { button ->
             if (visible) {
                 ButtonsDecorator.buttonAsRouteProfile(context, button) {
@@ -247,7 +248,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
             adjustViewForOrientation(orientation)
         }
     }
-    
+
     fun onRouteProfileViewIsClosed() {
         mRouteProfileView = null
     }
@@ -315,11 +316,21 @@ open class RouteCustom(context: Context, attrs: AttributeSet?) :
 
             GEMApplication.clearMapVisibleRoutes()
 
-            pickLocation.mapActivity = mapActivity
-            pickLocation?.pickStart()
+            val waypoints = IntentHelper.getObjectForKey(EXTRA_WAYPOINTS) as ArrayList<Landmark>?
+
+            if (waypoints != null && waypoints.isNotEmpty()) {
+                doStart(waypoints)
+            } else {
+                pickLocation.mapActivity = mapActivity
+                pickLocation?.pickStart()
+            }
         } else {
             doStart(landmarks)
         }
+    }
+
+    companion object {
+        const val EXTRA_WAYPOINTS = "waypoints"
     }
 }
 
