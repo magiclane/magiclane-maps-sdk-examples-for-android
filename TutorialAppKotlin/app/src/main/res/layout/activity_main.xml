@@ -9,7 +9,7 @@
 	android:layout_height="match_parent"
 	tools:openDrawer="start">
 
-	<com.generalmagic.gemsdk.mapview.GEMMapSurface
+	<com.generalmagic.sdk.GemMapSurface
 		android:id="@+id/gem_surface"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent" />

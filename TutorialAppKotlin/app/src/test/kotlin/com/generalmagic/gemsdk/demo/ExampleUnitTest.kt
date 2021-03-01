@@ -8,7 +8,7 @@
  * license agreement you entered into with General Magic.
  */
 
-package com.generalmagic.gemsdk.demo
+package com.generalmagic.sdk.demo
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

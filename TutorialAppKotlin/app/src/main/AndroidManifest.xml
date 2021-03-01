@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="com.generalmagic.gemsdk.demo">
+	package="com.generalmagic.sdk.demo">
 
-	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
 	<application
 		android:allowBackup="true"
@@ -26,11 +27,11 @@
 		<!--/////////////////////////////////////////////////////////////////////////////////////-->
 
 		<activity
-			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SensorsListActivity"
+			android:name="com.generalmagic.sdk.demo.activities.mainactivity.controllers.SensorsListActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 		<activity
-			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.DirectCamActivity"
+			android:name="com.generalmagic.sdk.demo.activities.mainactivity.controllers.DirectCamActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 		<!--/////////////////////////////////////////////////////////////////////////////////////-->
@@ -78,29 +79,33 @@
 		<!--/////////////////////////////////////////////////////////////////////////////////////-->
 
 		<activity
-			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.StylesActivity"
+			android:name="com.generalmagic.sdk.demo.activities.mainactivity.controllers.StylesActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 		<!--/////////////////////////////////////////////////////////////////////////////////////-->
 
 		<activity
-			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.OnlineMapsActivity"
+			android:name="com.generalmagic.sdk.demo.activities.mainactivity.controllers.OnlineMapsActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 		<activity
-			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SearchTextActivity"
+			android:name="com.generalmagic.sdk.demo.activities.mainactivity.controllers.SearchTextActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 		<activity
-			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SearchNearbyActivity"
+			android:name="com.generalmagic.sdk.demo.activities.mainactivity.controllers.SearchNearbyActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
         <activity
-            android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SearchHistoryActivity"
+            android:name="com.generalmagic.sdk.demo.activities.mainactivity.controllers.SearchHistoryActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+
+        <activity
+            android:name="com.generalmagic.sdk.demo.activities.mainactivity.controllers.SearchFavouritesActivity"
             android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 		<activity
-			android:name="com.generalmagic.gemsdk.demo.activities.mainactivity.controllers.SearchPoiActivity"
+			android:name="com.generalmagic.sdk.demo.activities.mainactivity.controllers.SearchPoiActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
         <!--/////////////////////////////////////////////////////////////////////////////////////-->

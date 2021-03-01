@@ -105,6 +105,11 @@
                     android:id="@+id/tutorial_history"
                     android:title="History"
                     app:showAsAction="never"/>
+
+                <item
+                    android:id="@+id/tutorial_favourites"
+                    android:title="Favourites"
+                    app:showAsAction="never"/>
 			</group>
 		</menu>
 	</item>
