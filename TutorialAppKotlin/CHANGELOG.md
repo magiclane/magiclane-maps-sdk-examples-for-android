@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2021-02-26
+### Added
+- Favourites view.
+- Possibility to add places or remove places from favourites directly from the location details view.
+
+### Fixed
+- Tap on Public Transport route item from History does not open a PT route on map.
+- No Route Profile for routes after tapping an item from History.
+
 ## [3.3.0] - 2021-02-19
 ### Added
 - History view.

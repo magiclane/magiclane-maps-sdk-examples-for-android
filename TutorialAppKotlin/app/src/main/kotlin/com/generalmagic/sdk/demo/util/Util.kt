@@ -455,46 +455,43 @@ class Util {
             return result
         }
 
-        private const val DELAY_BEFORE_DOWNLOADING_STYLE = 5000L // 5 seconds
-
         fun downloadSecondStyle() {
-            GEMApplication.postOnMainDelayed({
-                // download another style
-                GEMSdkCall.execute {
-                    val listener = object : ProgressListener() {
-                        override fun notifyComplete(reason: Int, hint: String) {
-                            // select the downloaded style
-                            val result =
-                                ContentStore().getStoreContentList(EContentType.ECT_ViewStyleHighRes.value)
-                            result ?: return
+            // download another style
+            GEMSdkCall.execute {
+                val listener = object : ProgressListener() {
+                    override fun notifyComplete(reason: Int, hint: String) {
+                        // select the downloaded style
+                        val result =
+                            ContentStore().getStoreContentList(EContentType.ECT_ViewStyleHighRes.value)
+                        result ?: return
 
-                            val contentStoreStyles = result.first
-                            if (contentStoreStyles.isNotEmpty() && contentStoreStyles.size > 1) {
-                                val styleListener = object : ProgressListener() {
-                                    override fun notifyComplete(reason: Int, hint: String) {}
-                                }
+                        val contentStoreStyles = result.first
+                        if (contentStoreStyles.isNotEmpty() && contentStoreStyles.size > 1) {
+                            val styleListener = object : ProgressListener() {
+                                override fun notifyComplete(reason: Int, hint: String) {}
+                            }
 
-                                contentStoreStyles.forEach {
-                                    if (it.getName() != null && it.getName()!!
-                                            .contains("Satellite")
-                                    ) {
-                                        it.asyncDownload(
-                                            styleListener,
-                                            GemSdk.EDataSavePolicy.EUseDefault,
-                                            true
-                                        )
-                                    }
+                            for (style in contentStoreStyles) {
+                                if (style.getName() != null && style.getName()!!
+                                        .contains("Satellite")
+                                ) {
+                                    style.asyncDownload(
+                                        styleListener,
+                                        GemSdk.EDataSavePolicy.EUseDefault,
+                                        true
+                                    )
+                                    break
                                 }
                             }
                         }
                     }
-
-                    ContentStore().asyncGetStoreContentList(
-                        EContentType.ECT_ViewStyleHighRes.value,
-                        listener
-                    )
                 }
-            }, DELAY_BEFORE_DOWNLOADING_STYLE)
+
+                ContentStore().asyncGetStoreContentList(
+                    EContentType.ECT_ViewStyleHighRes.value,
+                    listener
+                )
+            }
         }
     }
 }

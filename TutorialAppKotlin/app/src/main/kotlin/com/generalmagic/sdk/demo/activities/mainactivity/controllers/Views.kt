@@ -15,6 +15,7 @@ import android.util.AttributeSet
 import android.widget.Toast
 import com.generalmagic.sdk.content.ContentStore
 import com.generalmagic.sdk.content.ContentStoreItem
+import com.generalmagic.sdk.content.EContentStoreItemStatus
 import com.generalmagic.sdk.content.EContentType
 import com.generalmagic.sdk.core.RectF
 import com.generalmagic.sdk.d3scene.MapView
@@ -105,6 +106,9 @@ class TwoTiledViewsController(context: Context, attrs: AttributeSet?) :
 
             var style = defaultStyle
             for (value in mapStyles) {
+                if(value.getStatus() != EContentStoreItemStatus.ECIS_Completed){
+                    continue
+                }
                 if (value.getId() != mainViewStyle) {
                     style = value
                     break
@@ -166,12 +170,18 @@ class MultipleViewsController(context: Context, attrs: AttributeSet?) :
 
             val rectf = mapCoords[mapViews.size]
 
-            val style = if (mapStyles.size > mapViews.size) mapStyles[mapViews.size]
+            var style : ContentStoreItem? = if (mapStyles.size > mapViews.size) mapStyles[mapViews.size]
             else {
                 defaultStyle ?: return@execute false
             }
 
-            return@execute addMapView(rectf, style.getId())
+            if(style?.getStatus() != EContentStoreItemStatus.ECIS_Completed){
+                style = defaultStyle
+            }
+            
+            style?.let { return@execute addMapView(rectf, it.getId()) }
+
+            return@execute false
         } ?: false
     }
 

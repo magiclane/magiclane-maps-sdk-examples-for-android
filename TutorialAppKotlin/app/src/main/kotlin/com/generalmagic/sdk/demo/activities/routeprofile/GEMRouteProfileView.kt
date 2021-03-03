@@ -884,7 +884,7 @@ object GEMRouteProfileView {
     ): Bitmap? {
         val routeTerrainProfile = mRoute.getTerrainProfile()
 
-        routeTerrainProfile.let {
+        routeTerrainProfile?.let {
             return when (buttonType) {
 
                 TElevationProfileButtonType.EElevationAtDeparture.ordinal -> {

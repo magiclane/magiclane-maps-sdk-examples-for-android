@@ -68,6 +68,24 @@ object GEMApplication {
     var mFavouritesLandmarkStore: LandmarkStore? = null
 
     private val offboardListener = object : OffboardListener() {
+        override fun onApiTokenRejected() {
+            postOnMain {
+                Toast.makeText(appContext, "Token Rejected", Toast.LENGTH_SHORT).show()
+            }
+        }
+        
+        override fun onConnectionStatusUpdated(connected: Boolean) {
+            if(connected){
+                val styles =
+                    ContentStore().getLocalContentList(EContentType.ECT_ViewStyleHighRes.value)
+                styles?.let {
+                    if (styles.size < 2) {
+                        Util.downloadSecondStyle()
+                    }
+                }
+            }
+        }
+        
         override fun onOnlineWorldMapSupportStatus(state: EStatus) {
             val listener = object : ProgressListener() {
                 override fun notifyStatusChanged(status: Int) {
@@ -101,6 +119,7 @@ object GEMApplication {
     fun appResources(): Resources = applicationContext().resources
 
     fun init(context: Context, mapSurface: GemMapSurface, onFinish: () -> Unit = {}) {
+        SdkCall.checkCurrentThread()
         this.mapSurface = mapSurface
 
         appContext = context.applicationContext
@@ -168,14 +187,6 @@ object GEMApplication {
 
         postOnMain(onFinish)
 
-        val styles =
-            ContentStore().getLocalContentList(EContentType.ECT_ViewStyleHighRes.value)
-        styles?.let {
-            if (styles.size < 2) {
-                Util.downloadSecondStyle()
-            }
-        }
-
         // default tutorial loaded
         postOnMain { Tutorials.openHelloWorldTutorial() }
     }
@@ -189,8 +200,13 @@ object GEMApplication {
             networkProvider.onNetworkConnectionTypeChanged(type, https, http)
         }
 
+        val app = context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+        val bundle = app.metaData
+        val token = bundle.getString("com.generalmagic.sdk.token")?: "invalid"
+
         CommonSettings().setNetworkProvider(networkProvider)
         CommonSettings().setAllowConnection(true, offboardListener)
+        CommonSettings().setAppAuthorization(token)
     }
 
     /** absolute path to internal records */

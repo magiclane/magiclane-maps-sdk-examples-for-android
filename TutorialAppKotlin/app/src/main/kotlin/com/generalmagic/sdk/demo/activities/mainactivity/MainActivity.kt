@@ -173,8 +173,11 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
 
         mapTutorialsOpener.init(this)
         TutorialsOpener.setMapTutorialsOpener(mapTutorialsOpener)
-        GEMApplication.init(this, gem_surface) {
-            requestPermissions()
+
+        SdkCall.execute {
+            GEMApplication.init(this, gem_surface) {
+                requestPermissions()
+            }
         }
     }
 
