@@ -30,7 +30,7 @@ import com.generalmagic.sdk.demo.app.elements.ButtonsDecorator
 import com.generalmagic.sdk.demo.util.IntentHelper
 import com.generalmagic.sdk.routingandnavigation.*
 import com.generalmagic.sdk.searching.SearchPreferences
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import kotlinx.android.synthetic.main.nav_layout.view.*
 import kotlinx.android.synthetic.main.pick_location.view.*
@@ -134,24 +134,24 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
     }
 
     fun isTripActive(): Boolean {
-        return GEMSdkCall.execute { navigationService.isTripActive(navigationListener) } ?: false
+        return SdkCall.execute { navigationService.isTripActive(navigationListener) } ?: false
     }
 
     fun isDemo(): Boolean {
-        return GEMSdkCall.execute { navigationService.isSimulationActive(navigationListener) }
+        return SdkCall.execute { navigationService.isSimulationActive(navigationListener) }
             ?: false
     }
 
     fun getRoute(): Route? {
-        return GEMSdkCall.execute { navigationService.getNavigationRoute(navigationListener) }
+        return SdkCall.execute { navigationService.getNavigationRoute(navigationListener) }
     }
 
     fun getNavigationInstruction(): NavigationInstruction? {
-        return GEMSdkCall.execute { navigationService.getNavigationInstruction(navigationListener) }
+        return SdkCall.execute { navigationService.getNavigationInstruction(navigationListener) }
     }
 
     override fun doStop() {
-        GEMSdkCall.execute { navigationService.cancelNavigation(navigationListener) }
+        SdkCall.execute { navigationService.cancelNavigation(navigationListener) }
     }
 
     protected open fun onNavigationStarted() {}
@@ -187,7 +187,7 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
 
         if (visible) {
             ButtonsDecorator.buttonAsStop(context, navBottomLeftButton) {
-                GEMSdkCall.execute { doStop() }
+                SdkCall.execute { doStop() }
             }
 
             button.visibility = View.VISIBLE
@@ -210,14 +210,10 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
     private val nAlarmDistanceMeters = 500.0
     private var alarmListener: AlarmListener = object : AlarmListener() {
         override fun onBoundaryCrossed() {}
-
-        override fun onHighSpeed(speed: Double) {}
-
+ 
         override fun onLandmarkAlarmsPassedOver() {}
 
         override fun onLandmarkAlarmsUpdated() {}
-
-        override fun onLowSpeed(speed: Double) {}
 
         override fun onMarkerAlarmsPassedOver() {}
 
@@ -227,18 +223,13 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
 
         override fun onMonitoringStateChanged(isMonitoringActive: Boolean) {}
 
-        override fun onNormalSpeed() {}
-
-        override fun onSpeedLimit(speed: Double, limit: Double) {
-        }
-
         override fun onTunnelEntered() {}
 
         override fun onTunnelLeft() {}
     }
 
     init {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             alarmService = AlarmService.produce(alarmListener)
             alarmService?.setLandmarkAlarmDistance(nAlarmDistanceMeters)
 
@@ -280,7 +271,7 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
 
         val mainMap = GEMApplication.getMainMapView() ?: return
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             mainMap.preferences()?.enableCursor(false)
 
             val route = getRoute()
@@ -303,7 +294,7 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
 
         val mainMap = GEMApplication.getMainMapView() ?: return
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             PositionService().removeListener(positionListener)
             mainMap.preferences()?.routes()?.clear()
 // 			MainMapStatusFollowingProvider.getInstance().doUnFollow()
@@ -361,7 +352,7 @@ open class BaseSimulationController(context: Context, attrs: AttributeSet?) :
 
         doStop() // stop any sim in progress
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             var speedMultiplier = 1
             SettingsProvider.getIntValue(TIntSettings.EDemoSpeed.value).let {
                 if (it.second > 0)
@@ -390,7 +381,7 @@ open class BaseSimulationController(context: Context, attrs: AttributeSet?) :
 
         navLayout?.routeUpdated(route)
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             var speedMultiplier = 1
             SettingsProvider.getIntValue(TIntSettings.EDemoSpeed.value).let {
                 if (it.second > 0)
@@ -418,7 +409,7 @@ open class BaseNavigationController(context: Context, attrs: AttributeSet?) :
 
         doStop() // stop any sim in progress
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val preferences = SettingsProvider.loadRoutePreferences()
             preferences.setTransportMode(ERouteTransportMode.ETM_Car)
             preferences.setAvoidTraffic(true)
@@ -493,10 +484,10 @@ open class PredefNavController(context: Context, attrs: AttributeSet?) :
     }
 
     override fun doStart() {
-        GEMSdkCall.execute { doSearch() }
+        SdkCall.execute { doSearch() }
     }
 
-    private fun getGasCategory(): LandmarkCategory? = GEMSdkCall.execute {
+    private fun getGasCategory(): LandmarkCategory? = SdkCall.execute {
         val categoriesList = GenericCategories().getCategories() ?: return@execute null
 
         var category: LandmarkCategory? = null
@@ -507,7 +498,7 @@ open class PredefNavController(context: Context, attrs: AttributeSet?) :
     }
 
     private fun doSearch() {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         val liveDataSource = DataSourceFactory.produceLive()
         liveDataSource ?: return
@@ -566,13 +557,13 @@ class CustomSimController(context: Context, attrs: AttributeSet?) :
 
             it.onIntermediatePicked = { landmark ->
                 landmarks.add(landmark)
-                GEMSdkCall.execute { landmark.setName("Intermediate") }
+                SdkCall.execute { landmark.setName("Intermediate") }
             }
 
             it.onDestinationPicked = { landmark ->
                 pickLocation.visibility = View.GONE
                 landmarks.add(landmark)
-                GEMSdkCall.execute { doStart(landmarks) }
+                SdkCall.execute { doStart(landmarks) }
                 picking = false
                 TutorialsOpener.onTutorialDestroyed(it)
             }
@@ -615,7 +606,7 @@ class CustomNavController(context: Context, attrs: AttributeSet?) :
             }
             it.onIntermediatePicked = { landmark ->
                 landmarks.add(landmark)
-                GEMSdkCall.execute { landmark.setName("Intermediate") }
+                SdkCall.execute { landmark.setName("Intermediate") }
             }
 
             it.onDestinationPicked = { landmark ->

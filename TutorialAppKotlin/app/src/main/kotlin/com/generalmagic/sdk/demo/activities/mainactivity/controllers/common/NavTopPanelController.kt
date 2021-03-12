@@ -33,7 +33,7 @@ import com.generalmagic.sdk.demo.util.Utils.Companion.getDistText
 import com.generalmagic.sdk.demo.util.Utils.Companion.getTimeText
 import com.generalmagic.sdk.demo.util.Utils.Companion.getUIString
 import com.generalmagic.sdk.routingandnavigation.*
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
@@ -74,7 +74,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     fun update(navInstr: NavigationInstruction?, route: Route?, alarmService: AlarmService?) {
         reset()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             this.navInstr = navInstr
             this.route = route
             this.alarmService = alarmService
@@ -93,7 +93,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     fun update(instruction: RouteInstruction?) {
         reset()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             updateNavigationInfo(instruction)
         }
 
@@ -103,7 +103,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     fun update(event: RouteTrafficEvent, routeLength: Int) {
         reset()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             this.trafficEvent = event
             updateNavigationInfo(trafficEvent, routeLength)
         }
@@ -112,7 +112,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     }
 
     private fun updateNavigationInfo(navInstr: NavigationInstruction?) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         if (navInstr == null) return
 
@@ -189,7 +189,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     }
 
     private fun updateNavigationInfo(event: RouteTrafficEvent?, routeLength: Int) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         updateTrafficEvent(event)
 
@@ -214,7 +214,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     }
 
     private fun updateNavigationInfo(event: RouteInstruction?) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         val distanceToNextTurnTexts = getDistText(
             event?.getTraveledTimeDistance()?.getTotalDistance() ?: 0,
@@ -237,7 +237,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     }
 
     private fun updateTrafficEvent(trafficEvent: RouteTrafficEvent?) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         if (trafficEvent == null) return
 
@@ -311,7 +311,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         navInstr: NavigationInstruction?,
         route: Route?
     ): RouteTrafficEvent? {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         if (navInstr == null || route == null) return null
 
@@ -347,7 +347,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     }
 
     private fun updateAlarmsInfo(alarmService: AlarmService?) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
         alarmService ?: return
 
         val maxDistanceToAlarm = alarmService.getLandmarkAlarmDistance()
@@ -631,7 +631,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
     fun getRoadCodeImage(from: NavigationInstruction?, width: Int, height: Int):
         Pair<Int, Bitmap?> {
-        return GEMSdkCall.execute {
+        return SdkCall.execute {
             val navInstr = from ?: return@execute Pair(0, null)
             val roadsInfo = navInstr.getNextRoadInformation() ?: return@execute Pair(0, null)
             if (roadsInfo.isEmpty()) return@execute Pair(0, null)
@@ -641,7 +641,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
                 resultWidth = (2.5 * height).toInt()
             }
 
-            val image = GEMSdkCall.execute { navInstr.getRoadInfoImage(roadsInfo) }
+            val image = SdkCall.execute { navInstr.getRoadInfoImage(roadsInfo) }
 
             val resultPair =
                 Util.createBitmap(image, resultWidth, height)
@@ -656,7 +656,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         height: Int,
         bSameImage: TSameImage
     ): Pair<Int, Bitmap?> {
-        return GEMSdkCall.execute {
+        return SdkCall.execute {
             val marker = from ?: return@execute Pair(0, null)
             if (marker.getImage()?.getUid() ?: 0 == mLastAlarmImageId) {
                 bSameImage.value = true
@@ -676,7 +676,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     }
 
     fun getTrafficEndOfSectionIcon(width: Int, height: Int): Bitmap? {
-        return GEMSdkCall.execute {
+        return SdkCall.execute {
             return@execute Util.getImageIdAsBitmap(
                 SdkIcons.Other_UI.Traffic_EndOfSection_Square.value, width, height
             )
@@ -689,7 +689,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         height: Int,
         bSameImage: TSameImage
     ): Bitmap? {
-        return GEMSdkCall.execute {
+        return SdkCall.execute {
             val navInstr = from ?: return@execute null
             if (!navInstr.hasNextTurnInfo()) return@execute null
             if (navInstr.getNextTurnDetails()?.getAbstractGeometryImage()
@@ -719,7 +719,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         height: Int,
         bSameImage: TSameImage
     ): Bitmap? {
-        return GEMSdkCall.execute {
+        return SdkCall.execute {
             val navInstr = from ?: return@execute null
             if (!navInstr.hasTurnInfo()) return@execute null
             if (navInstr.getTurnDetails()?.getAbstractGeometryImage()
@@ -747,7 +747,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     fun getSignpostImage(
         from: NavigationInstruction?, width: Int, height: Int
     ): Pair<Int, Bitmap?> {
-        return GEMSdkCall.execute {
+        return SdkCall.execute {
             val navInstr = from ?: return@execute Pair(0, null)
             if (!navInstr.hasSignpostInfo()) return@execute Pair(0, null)
 
@@ -771,7 +771,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         height: Int,
         sameImage: TSameImage
     ): Bitmap? {
-        return GEMSdkCall.execute {
+        return SdkCall.execute {
             if (from?.getImage()?.getUid() ?: 0 == mLastTrafficImageId) {
                 sameImage.value = true
                 return@execute null

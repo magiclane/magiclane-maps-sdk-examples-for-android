@@ -15,7 +15,7 @@ import com.generalmagic.sdk.core.EUnitSystem
 import com.generalmagic.sdk.demo.app.GEMApplication
 import com.generalmagic.sdk.demo.util.Utils
 import com.generalmagic.sdk.routingandnavigation.ERouteType
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.StringIds
 
 enum class TSettingItemType(val value: Int) {
@@ -54,12 +54,12 @@ abstract class CSettingItem(protected var m_setting: Int) {
 open class CBoolItem(val m_text: String, setting: Int) : CSettingItem(setting) {
     override fun getType() = TSettingItemType.EBoolean
     override fun getText(): String = m_text
-    override fun getBoolValue(): Boolean = GEMSdkCall.execute {
+    override fun getBoolValue(): Boolean = SdkCall.execute {
         SettingsProvider.getBooleanValue(m_setting).second
     } ?: false
 
     override fun didChooseNewBoolValue(value: Boolean) {
-        GEMSdkCall.execute { SettingsProvider.setBooleanValue(m_setting, value) }
+        SdkCall.execute { SettingsProvider.setBooleanValue(m_setting, value) }
     }
 }
 
@@ -67,7 +67,7 @@ open class CIntItem(val m_text: String, setting: Int, val m_min: Int, val m_max:
     CSettingItem(setting) {
     override fun getType() = TSettingItemType.EInt
     override fun getText(): String = m_text
-    override fun getIntValue() = GEMSdkCall.execute {
+    override fun getIntValue() = SdkCall.execute {
         SettingsProvider.getIntValue(m_setting).second
     } ?: 0
 
@@ -77,7 +77,7 @@ open class CIntItem(val m_text: String, setting: Int, val m_min: Int, val m_max:
     override fun getIntMaxValue() = m_max
     override fun getIntMaxTextValue() = String.format("%d", m_max)
     override fun didChooseNewIntValue(value: Int) {
-        GEMSdkCall.execute { SettingsProvider.setIntValue(m_setting, value) }
+        SdkCall.execute { SettingsProvider.setIntValue(m_setting, value) }
     }
 }
 
@@ -104,7 +104,7 @@ open class COptionsListItem(val m_text: String, setting: Int) : CSettingItem(set
     override fun getOptionsListCount() = m_options.size
     override fun getOptionsListText(index: Int) = m_options[index].first
     override fun getOptionsListSelectedItemIndex(): Int {
-        val setting = GEMSdkCall.execute { SettingsProvider.getIntValue(m_setting) }
+        val setting = SdkCall.execute { SettingsProvider.getIntValue(m_setting) }
         for (i in 0 until m_options.size) {
             if (m_options[i].second == setting?.second)
                 return i
@@ -113,7 +113,7 @@ open class COptionsListItem(val m_text: String, setting: Int) : CSettingItem(set
     }
 
     override fun didTapOptionsListItem(index: Int) {
-        GEMSdkCall.execute { SettingsProvider.setIntValue(m_setting, m_options[index].second) }
+        SdkCall.execute { SettingsProvider.setIntValue(m_setting, m_options[index].second) }
     }
 }
 
@@ -198,7 +198,7 @@ object GEMSettingsView {
     fun onViewClosed(viewId: Long) {
         unregisterActivity(viewId)
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             didCloseView(viewId)
         }
     }
@@ -374,7 +374,7 @@ object GEMSettingsView {
     fun isItemEnabled(viewId: Long, chapter: Int, index: Int): Boolean {
         if ((chapter == m_nMobileDataChapterIndex) && (index > 0)) // mobile data chapter
         {
-            val bUseMobileData = GEMSdkCall.execute {
+            val bUseMobileData = SdkCall.execute {
                 return@execute SettingsProvider.getBooleanValue(TBoolSettings.EUseMobileData.value).second
             } ?: false
 
@@ -383,7 +383,7 @@ object GEMSettingsView {
             } else {
                 if (index == m_nTerrainAndSatelliteItemIndex) // Terrain + Satellite option
                 {
-                    return GEMSdkCall.execute {
+                    return SdkCall.execute {
                         return@execute SettingsProvider.getBooleanValue(TBoolSettings.EUseMobileDataForMapAndWikipedia.value).second
                     } ?: false
                 }
@@ -410,7 +410,7 @@ object GEMSettingsView {
                 if (index == m_nUseMobileDataItemIndex) {
                     for (i in 1 until m_chapters[chapter].second.size) {
                         if (i == m_nTerrainAndSatelliteItemIndex && value) {
-                            val bUseMobileDataForMapAndWikipedia = GEMSdkCall.execute {
+                            val bUseMobileDataForMapAndWikipedia = SdkCall.execute {
                                 return@execute SettingsProvider.getBooleanValue(TBoolSettings.EUseMobileDataForMapAndWikipedia.value).second
                             } ?: false
 

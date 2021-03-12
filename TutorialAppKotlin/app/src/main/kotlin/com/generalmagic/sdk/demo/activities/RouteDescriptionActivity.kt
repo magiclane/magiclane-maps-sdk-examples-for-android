@@ -38,7 +38,7 @@ import com.generalmagic.sdk.demo.util.Utils.Companion.getUIString
 import com.generalmagic.sdk.routingandnavigation.Route
 import com.generalmagic.sdk.routingandnavigation.RouteInstruction
 import com.generalmagic.sdk.routingandnavigation.RouteTrafficEvent
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
 import kotlinx.android.synthetic.main.activity_route_description.*
@@ -60,7 +60,7 @@ class RouteDescriptionActivity : AppCompatActivity() {
         }
         route = inRoute
 
-        GEMSdkCall.execute { toViewModels(route) }?.let {
+        SdkCall.execute { toViewModels(route) }?.let {
             routeDescriptionList.adapter = RouteAdapter(this, it)
         }
     }
@@ -82,7 +82,7 @@ class RouteDescriptionActivity : AppCompatActivity() {
         }
 
         private fun toViewModels(route: Route?): ArrayList<ListViewItem> {
-            GEMSdkCall.checkCurrentThread()
+            SdkCall.checkCurrentThread()
             if (route == null) return ArrayList()
 
             val result = ArrayList<ListViewItem>()
@@ -235,7 +235,7 @@ class RouteAdapter(context: Context, items: ArrayList<ListViewItem>) :
 
 class RouteTitleItem(route: Route, sortKey: Int) : ListViewItem() {
     init {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         val timeDistance = route.getTimeDistance()
         val distanceInMeters = timeDistance?.getTotalDistance() ?: 0
@@ -275,7 +275,7 @@ class RouteTitleItem(route: Route, sortKey: Int) : ListViewItem() {
         }
     }
 
-    override fun getBitmap(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
+    override fun getBitmap(width: Int, height: Int): Bitmap? = SdkCall.execute {
         return@execute Util.getImageIdAsBitmap(SdkIcons.Other_UI.RouteOverview.value, width, height)
     }
 }
@@ -287,7 +287,7 @@ class RouteWarningItem(val route: Route, private val type: TRouteWarningType, so
     }
 
     init {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         val warningText = when (type) {
             TRouteWarningType.ERIRequireToll -> {
@@ -320,7 +320,7 @@ class RouteWarningItem(val route: Route, private val type: TRouteWarningType, so
         mSortKey = sortKey + 1
     }
 
-    override fun getBitmap(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
+    override fun getBitmap(width: Int, height: Int): Bitmap? = SdkCall.execute {
         val iconId = when (type) {
             TRouteWarningType.ERIRequireToll -> {
                 SdkIcons.Other_UI.LocationDetails_TollStation.value
@@ -342,7 +342,7 @@ class RouteInstructionItem(val instruction: RouteInstruction, distOffset: Double
     private var mCrossesRestrictedArea: Boolean = false
 
     init {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         if (instruction.hasTurnInfo()) {
             text = instruction.getTurnInstruction() ?: ""
@@ -382,7 +382,7 @@ class RouteInstructionItem(val instruction: RouteInstruction, distOffset: Double
         }
     }
 
-    override fun getBitmap(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
+    override fun getBitmap(width: Int, height: Int): Bitmap? = SdkCall.execute {
         val aInner = Rgba(0, 0, 0, 255)
         val aOuter = Rgba(255, 255, 255, 255)
         val iInner = Rgba(128, 128, 128, 255)
@@ -397,7 +397,7 @@ class TrafficEventItem(val event: RouteTrafficEvent, totalRouteLength: Int) :
     ListViewItem() {
 
     init {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         text = UtilUITexts.formatTrafficDelayAndLength(
             event.getLength(),
@@ -419,9 +419,9 @@ class TrafficEventItem(val event: RouteTrafficEvent, totalRouteLength: Int) :
         if (from != null && to != null) {
             if (from.second && to.second) {
                 val strFrom: String =
-                    GEMSdkCall.execute { UtilUITexts.formatLandmarkDetails(from.first) } ?: ""
+                    SdkCall.execute { UtilUITexts.formatLandmarkDetails(from.first) } ?: ""
                 val strTo: String =
-                    GEMSdkCall.execute { UtilUITexts.formatLandmarkDetails(to.first) } ?: ""
+                    SdkCall.execute { UtilUITexts.formatLandmarkDetails(to.first) } ?: ""
 
                 description = if (strFrom.compareTo(strTo, true) == 0) {
                     String.format(getUIString(StringIds.eStrOnRoadName), strFrom)
@@ -447,7 +447,7 @@ class TrafficEventItem(val event: RouteTrafficEvent, totalRouteLength: Int) :
         }
     }
 
-    override fun getBitmap(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
+    override fun getBitmap(width: Int, height: Int): Bitmap? = SdkCall.execute {
         return@execute Util.createBitmap(event.getImage(), width, height)
     }
 }

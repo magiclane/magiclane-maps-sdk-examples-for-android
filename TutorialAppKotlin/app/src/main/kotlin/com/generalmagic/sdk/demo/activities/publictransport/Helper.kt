@@ -19,7 +19,7 @@ import com.generalmagic.sdk.demo.activities.RouteInstructionItem
 import com.generalmagic.sdk.demo.util.Utils
 import com.generalmagic.sdk.demo.util.Utils.Companion.getDistText
 import com.generalmagic.sdk.routingandnavigation.*
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
 
@@ -56,8 +56,8 @@ class TRouteSegmentItem {
     var m_type: ETransitType = ETransitType.ETTUnknown
     var m_iconId = 0
     var m_realTimeStatus = ERealtimeStatus.ERSNotAvailable
-    var m_backgroundColor = GEMSdkCall.execute { Rgba(255, 255, 255, 255) }?.value() ?: 0
-    var m_foregroundColor = GEMSdkCall.execute { Rgba(0, 0, 0, 255) }?.value() ?: 0
+    var m_backgroundColor = SdkCall.execute { Rgba(255, 255, 255, 255) }?.value() ?: 0
+    var m_foregroundColor = SdkCall.execute { Rgba(0, 0, 0, 255) }?.value() ?: 0
     var m_name = ""
     var m_travelTimeValue = ""
     var m_travelTimeUnit = ""
@@ -81,8 +81,8 @@ class TRouteItem {
     var m_frequency = ""
     var m_fare = ""
     var m_warning = ""
-    var m_departureTime = GEMSdkCall.execute { Time() }
-    var m_arrivalTime = GEMSdkCall.execute { Time() }
+    var m_departureTime = SdkCall.execute { Time() }
+    var m_arrivalTime = SdkCall.execute { Time() }
     var m_departureTimeStr = ""
     var m_arrivalTimeStr = ""
 }
@@ -101,7 +101,7 @@ class Helper {
             header: TRouteItem,
             routeDescriptionItems: ArrayList<TRouteDescriptionItem>
         ) {
-            GEMSdkCall.checkCurrentThread()
+            SdkCall.checkCurrentThread()
 
             val routeSegmentsList = route.getSegments() ?: return
             val nSegmentsCount = routeSegmentsList.size
@@ -438,7 +438,7 @@ class Helper {
             routeSegment: RouteSegment,
             routeInstructionsList: ArrayList<RouteInstructionItem>
         ) {
-            GEMSdkCall.checkCurrentThread()
+            SdkCall.checkCurrentThread()
 
             routeInstructionsList.clear()
 

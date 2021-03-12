@@ -22,7 +22,7 @@ import com.generalmagic.sdk.d3scene.MapView
 import com.generalmagic.sdk.demo.app.GEMApplication
 import com.generalmagic.sdk.demo.app.MapLayoutController
 import com.generalmagic.sdk.demo.app.elements.ButtonsDecorator
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 
 class HelloViewController(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
@@ -40,7 +40,7 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
     override fun onCreated() {
         super.onCreated()
 
-        mapStyles = GEMSdkCall.execute {
+        mapStyles = SdkCall.execute {
             contentStore.getLocalContentList(EContentType.ECT_ViewStyleHighRes.value)
         } ?: ArrayList()
 
@@ -50,13 +50,13 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
     }
 
     override fun doStop() {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             removeAllMapViews()
         }
     }
 
     protected fun addMapView(rect: RectF, styleId: Long): Boolean {
-        return GEMSdkCall.execute {
+        return SdkCall.execute {
 
             val screen = GEMApplication.gemMapScreen() ?: return@execute false
 
@@ -71,7 +71,7 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
     }
 
     protected fun removeLastMapView(): Boolean {
-        return GEMSdkCall.execute {
+        return SdkCall.execute {
             if (mapViews.size <= 0) return@execute false
 
             val mapView = mapViews.last()
@@ -82,7 +82,7 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
     }
 
     protected fun removeAllMapViews() {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             for (view in mapViews) {
                 view.release()
             }
@@ -99,14 +99,14 @@ class TwoTiledViewsController(context: Context, attrs: AttributeSet?) :
     override fun onCreated() {
         super.onCreated()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val mainView = GEMApplication.getMainMapView() ?: return@execute
             val mainViewStyle = mainView.preferences()?.getMapStyleId()
             mainView.resize(mainViewCoords)
 
             var style = defaultStyle
             for (value in mapStyles) {
-                if(value.getStatus() != EContentStoreItemStatus.ECIS_Completed){
+                if(value.getStatus() != EContentStoreItemStatus.Completed){
                     continue
                 }
                 if (value.getId() != mainViewStyle) {
@@ -122,7 +122,7 @@ class TwoTiledViewsController(context: Context, attrs: AttributeSet?) :
     }
 
     override fun doStop() {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val mainView = GEMApplication.getMainMapView()
             mainView?.resize(RectF(0.0f, 0.0f, 1.0f, 1.0f))
             removeAllMapViews()
@@ -160,7 +160,7 @@ class MultipleViewsController(context: Context, attrs: AttributeSet?) :
     override fun onMapFollowStatusChanged(following: Boolean) {}
 
     private fun doAddView(): Boolean {
-        return GEMSdkCall.execute { // sync mapViews.size across UI and Engine threads
+        return SdkCall.execute { // sync mapViews.size across UI and Engine threads
             if (mapViews.size >= MAX_SUBMAPS_ON_SCREEN) {
                 GEMApplication.postOnMain {
                     Toast.makeText(context, "This demo has max 9 views!", Toast.LENGTH_SHORT).show()
@@ -175,7 +175,7 @@ class MultipleViewsController(context: Context, attrs: AttributeSet?) :
                 defaultStyle ?: return@execute false
             }
 
-            if(style?.getStatus() != EContentStoreItemStatus.ECIS_Completed){
+            if(style?.getStatus() != EContentStoreItemStatus.Completed){
                 style = defaultStyle
             }
             

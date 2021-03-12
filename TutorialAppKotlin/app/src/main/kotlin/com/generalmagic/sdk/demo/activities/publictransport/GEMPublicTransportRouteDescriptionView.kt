@@ -21,7 +21,7 @@ import com.generalmagic.sdk.routingandnavigation.ERealtimeStatus
 import com.generalmagic.sdk.routingandnavigation.ERouteSegmentType
 import com.generalmagic.sdk.routingandnavigation.ETransitType
 import com.generalmagic.sdk.routingandnavigation.Route
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
 import java.util.*
@@ -95,7 +95,7 @@ object GEMPublicTransportRouteDescriptionView {
     }
 
     private fun setHeader(m_route: Route) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         val routeSegmentsList = m_route.getSegments() ?: ArrayList()
         val nSegmentsCount = routeSegmentsList.size
@@ -283,7 +283,7 @@ object GEMPublicTransportRouteDescriptionView {
     }
 
     private fun internalLoadItems(route: Route) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         setHeader(route)
         setItems(route)
@@ -326,7 +326,7 @@ object GEMPublicTransportRouteDescriptionView {
     }
 
     fun loadItems(route: Route) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         internalLoadItems(route)
 

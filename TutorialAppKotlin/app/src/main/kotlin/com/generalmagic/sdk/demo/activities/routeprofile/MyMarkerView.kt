@@ -7,7 +7,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.generalmagic.sdk.demo.R
 import com.generalmagic.sdk.demo.app.GEMApplication
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.github.mikephil.charting.components.MarkerView
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.highlight.Highlight
@@ -32,7 +32,7 @@ class MyMarkerView(
         }
 
         var markerBmp: Bitmap? = null
-        GEMSdkCall.execute {
+        SdkCall.execute {
             markerBmp = GEMRouteProfileView.getElevationChartPinImage(iconSize, iconSize)
         }
 
@@ -46,7 +46,7 @@ class MyMarkerView(
             y = point?.y ?: e?.y!!
 
             var verticalAxisUnit = ""
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 verticalAxisUnit = GEMRouteProfileView.getElevationChartVerticalAxisUnit()
             }
 

@@ -19,7 +19,7 @@ import com.generalmagic.sdk.demo.activities.pickvideo.PickLogActivity
 import com.generalmagic.sdk.demo.activities.searchaddress.SearchAddressActivity
 import com.generalmagic.sdk.demo.activities.settings.SettingsActivity
 import com.generalmagic.sdk.routingandnavigation.Route
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import java.util.*
 
 
@@ -38,7 +38,7 @@ object TutorialsOpener {
         if (activitiesTutorialOpener.openTutorial(id, args))
             return true
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             GEMApplication.clearMapVisibleRoutes()
             GEMApplication.getMainMapView()?.deactivateHighlight()
         }

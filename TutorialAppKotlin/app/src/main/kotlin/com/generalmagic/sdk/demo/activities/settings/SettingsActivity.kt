@@ -27,7 +27,7 @@ import com.generalmagic.sdk.demo.adapters.sectionedlist.GenericSectionedAdapter
 import com.generalmagic.sdk.demo.app.BaseActivity
 import com.generalmagic.sdk.demo.app.GEMApplication
 import com.generalmagic.sdk.demo.app.Tutorials
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import kotlinx.android.synthetic.main.settings_activity.*
 
 class SettingsActivity : BaseActivity(), ISettingsView {
@@ -146,7 +146,7 @@ class SettingsActivity : BaseActivity(), ISettingsView {
                                         data.optionsList.toTypedArray(),
                                         data.optionsListSelectedItemIndex
                                     ) { dialog, which ->
-                                        GEMSdkCall.execute {
+                                        SdkCall.execute {
                                             GEMSettingsView.didTapOptionsListItem(
                                                 viewId,
                                                 data.chapterIndex,
@@ -199,7 +199,7 @@ class SettingsActivity : BaseActivity(), ISettingsView {
                         }
 
                         switch.setOnCheckedChangeListener { _, isChecked ->
-                            GEMSdkCall.execute {
+                            SdkCall.execute {
                                 GEMSettingsView.didChooseNewBoolValue(
                                     viewId,
                                     data.chapterIndex,
@@ -287,7 +287,7 @@ class SettingsActivity : BaseActivity(), ISettingsView {
                                 fromUser: Boolean
                             ) {
                                 var text = ""
-                                GEMSdkCall.execute {
+                                SdkCall.execute {
                                     when (data.itemType) {
                                         TSettingItemType.EInt.ordinal -> {
                                             val progressValue =
@@ -405,7 +405,7 @@ class SettingsActivity : BaseActivity(), ISettingsView {
         }
 
         private fun load() {
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 val chaptersCount = GEMSettingsView.getChaptersCount(viewId)
                 if (chaptersCount > 0) {
                     listItems = MutableList(chaptersCount) { SettingsListChapter() }

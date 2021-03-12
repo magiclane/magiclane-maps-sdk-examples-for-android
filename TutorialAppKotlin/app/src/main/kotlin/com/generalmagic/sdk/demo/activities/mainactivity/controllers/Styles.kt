@@ -24,7 +24,7 @@ import com.generalmagic.sdk.demo.R
 import com.generalmagic.sdk.demo.activities.*
 import com.generalmagic.sdk.demo.app.GEMApplication
 import com.generalmagic.sdk.demo.app.Tutorials
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import kotlinx.android.synthetic.main.activity_list_view.*
 
@@ -58,7 +58,7 @@ class StylesActivity : StylesListActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val localItems =
                 contentStore.getLocalContentList(EContentType.ECT_ViewStyleHighRes.value)
                     ?: ArrayList()
@@ -80,14 +80,14 @@ class StylesActivity : StylesListActivity() {
     }
 
     private fun wrapList(list: ArrayList<ContentStoreItem>): ArrayList<StylesListItem> {
-        val styleId = GEMSdkCall.execute {
+        val styleId = SdkCall.execute {
             GEMApplication.getMainMapView()?.preferences()?.getMapStyleId()
         }
 
         val result = ArrayList<StylesListItem>()
         for (item in list) {
             val wrapped = StyleItemViewModel(item)
-            wrapped.m_checked = GEMSdkCall.execute { item.getId() } == styleId
+            wrapped.m_checked = SdkCall.execute { item.getId() } == styleId
             wrapped.mOnClick = { onItemTapped(wrapped, it) }
             result.add(wrapped)
         }
@@ -107,18 +107,18 @@ class StylesActivity : StylesListActivity() {
         val item = (itUncasted as StyleItemViewModel).it
 
         val selectStyle = {
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 GEMApplication.getMainMapView()?.preferences()?.setMapStyleById(item.getId())
             }
             GEMApplication.postOnMain { refreshChecked() }
         }
 
-        when (GEMSdkCall.execute { item.getStatus() }) {
-            EContentStoreItemStatus.ECIS_Completed -> {
+        when (SdkCall.execute { item.getStatus() }) {
+            EContentStoreItemStatus.Completed -> {
                 selectStyle()
                 finish()
             }
-            EContentStoreItemStatus.ECIS_Paused, EContentStoreItemStatus.ECIS_Unavailable -> {
+            EContentStoreItemStatus.Paused, EContentStoreItemStatus.Unavailable -> {
                 val taskRefresh = {
                     GEMApplication.postOnMain {
                         holder.updateViews(itUncasted)
@@ -150,14 +150,14 @@ class StylesActivity : StylesListActivity() {
                     }
                 }
 
-                GEMSdkCall.execute {
+                SdkCall.execute {
                     item.asyncDownload(listener, GemSdk.EDataSavePolicy.EUseDefault, true)
                 }
             }
-            EContentStoreItemStatus.ECIS_DownloadRunning -> {
-                GEMSdkCall.execute { item.pauseDownload() }
+            EContentStoreItemStatus.DownloadRunning -> {
+                SdkCall.execute { item.pauseDownload() }
             }
-            EContentStoreItemStatus.ECIS_DownloadWaitingFreeNetwork -> {
+            EContentStoreItemStatus.DownloadWaitingFreeNetwork -> {
                 // ask for user permission to download map over mobile network
             }
             else -> { /* NOTHING */
@@ -173,7 +173,7 @@ class StylesActivity : StylesListActivity() {
             .setCancelable(true)
             .setPositiveButton(getText(R.string.yes)) { dialog, _ ->
                 dialog.dismiss()
-                GEMSdkCall.execute { item.deleteContent() }
+                SdkCall.execute { item.deleteContent() }
                 holder.updateViews(itUncasted as StylesListItem)
             }
             .setNegativeButton(R.string.no) { dialog, _ ->
@@ -189,7 +189,7 @@ class StylesActivity : StylesListActivity() {
 
     private fun refreshChecked() {
         val adapter = list_view.adapter as ChapterStylesAdapter? ?: return
-        val styleId = GEMSdkCall.execute {
+        val styleId = SdkCall.execute {
             GEMApplication.getMainMapView()?.preferences()?.getMapStyleId()
         } ?: return
 
@@ -200,7 +200,7 @@ class StylesActivity : StylesListActivity() {
             for (item in section.nItems) {
                 val casted = item as StyleItemViewModel? ?: continue
                 val oldChecked = casted.m_checked
-                casted.m_checked = GEMSdkCall.execute { casted.it.getId() } == styleId
+                casted.m_checked = SdkCall.execute { casted.it.getId() } == styleId
 
                 if (oldChecked != casted.m_checked) {
                     changed = true

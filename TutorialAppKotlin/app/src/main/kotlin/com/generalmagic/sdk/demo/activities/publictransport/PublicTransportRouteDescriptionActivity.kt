@@ -31,7 +31,7 @@ import com.generalmagic.sdk.demo.app.GEMApplication
 import com.generalmagic.sdk.demo.util.AppUtils
 import com.generalmagic.sdk.demo.util.IntentHelper
 import com.generalmagic.sdk.routingandnavigation.Route
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import kotlinx.android.synthetic.main.pt_route_description_activity.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -98,7 +98,7 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
         }
         route = inRoute
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             GEMPublicTransportRouteDescriptionView.loadItems(route)
         }
 

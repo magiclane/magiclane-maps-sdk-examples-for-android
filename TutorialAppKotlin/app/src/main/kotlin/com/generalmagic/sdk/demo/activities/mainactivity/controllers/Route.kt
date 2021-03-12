@@ -34,7 +34,7 @@ import com.generalmagic.sdk.routingandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.routingandnavigation.Route
 import com.generalmagic.sdk.routingandnavigation.RoutePreferences
 import com.generalmagic.sdk.routingandnavigation.RoutingService
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import com.generalmagic.sdk.util.SdkList
 import kotlinx.android.synthetic.main.pick_location.view.*
@@ -54,13 +54,13 @@ abstract class RouteServiceWrapper {
     }
 
     fun getResults(): ArrayList<Route> {
-        return GEMSdkCall.execute { resultRoutes.asArrayList() } ?: ArrayList()
+        return SdkCall.execute { resultRoutes.asArrayList() } ?: ArrayList()
     }
 
-    fun cancelCalculation() = GEMSdkCall.execute { service.cancelRoute(progressListener) }
+    fun cancelCalculation() = SdkCall.execute { service.cancelRoute(progressListener) }
 
     fun calculate(waypoints: ArrayList<Landmark>, preferences: RoutePreferences) {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             resultRoutes.assignArrayList(ArrayList())
             service.calculateRoute(resultRoutes, waypoints, preferences, progressListener)
         }
@@ -97,7 +97,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
                 return
             }
 
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 val routes = getResults()
                 calculatedRoutes = routes
 
@@ -159,7 +159,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
             setInfoButtonVisible(false)
             return GEMApplication.clearMapVisibleRoutes()
         } else {
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 GEMRouteProfileView.close()
             }
             return false
@@ -175,7 +175,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
 
         GEMApplication.clearMapVisibleRoutes()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val preferences = SettingsProvider.loadRoutePreferences()
             preferences.setTransportMode(mode)
             preferences.setAvoidTraffic(true)
@@ -189,7 +189,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
     }
 
     override fun doStop() {
-        GEMSdkCall.execute { routing.cancelCalculation() }
+        SdkCall.execute { routing.cancelCalculation() }
     }
 
     protected fun updateStartStopBtn(started: Boolean) {
@@ -201,7 +201,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
     }
 
     fun doDisplayInfo() {
-        val mainRoute = GEMSdkCall.execute {
+        val mainRoute = SdkCall.execute {
             val routes = routing.getResults()
             return@execute if (routes.size > MAIN_ROUTE_INDEX) {
                 routes[MAIN_ROUTE_INDEX]
@@ -236,7 +236,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
                 ButtonsDecorator.buttonAsRouteProfile(context, button) {
                     mRouteProfileView = RouteProfileView(mapActivity)
                     GEMApplication.getMainMapView()?.let { mapView ->
-                        GEMSdkCall.execute { GEMRouteProfileView.open(mRouteProfileView, mapView) }
+                        SdkCall.execute { GEMRouteProfileView.open(mRouteProfileView, mapView) }
                     }
                 }
 

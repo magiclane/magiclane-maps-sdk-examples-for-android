@@ -11,7 +11,7 @@ import com.generalmagic.sdk.demo.util.Utils
 import com.generalmagic.sdk.routingandnavigation.ERoadType
 import com.generalmagic.sdk.routingandnavigation.ESurfaceType
 import com.generalmagic.sdk.routingandnavigation.Route
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
 import java.util.concurrent.Executors
@@ -275,7 +275,7 @@ object GEMRouteProfileView {
             if (currentController is BaseUiRouteController) {
                 currentController.showAllButtons()
 
-                GEMSdkCall.execute {
+                SdkCall.execute {
                     removeHighlightedSteepnessPathsFromMap()
                     removeHighlightedSurfacePathsFromMap()
                     removeHighlightedWayPathsFromMap()

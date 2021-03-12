@@ -21,7 +21,7 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.demo.activities.*
 import com.generalmagic.sdk.demo.app.GEMApplication
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import kotlinx.android.synthetic.main.activity_list_view.*
 import java.util.*
 import kotlin.collections.ArrayList
@@ -52,7 +52,7 @@ class OnlineMapsActivity : MapsListActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             contentStore.asyncGetStoreContentList(EContentType.ECT_RoadMap.value, progressListener)
         }
     }
@@ -64,7 +64,7 @@ class OnlineMapsActivity : MapsListActivity() {
         var lastName = ""
         var sameInRow = false
         for (i in 0 until storeItems.size) {
-            val crtName = GEMSdkCall.execute { storeItems[i].getChapterName() } ?: ""
+            val crtName = SdkCall.execute { storeItems[i].getChapterName() } ?: ""
 
             if (crtName == lastName) {
                 if (!sameInRow) {
@@ -103,15 +103,15 @@ class OnlineMapsActivity : MapsListActivity() {
                         holder.updateViews(wrapped)
                     }
                 }
-                when (GEMSdkCall.execute { item.getStatus() }) {
-                    EContentStoreItemStatus.ECIS_Paused,
-                    EContentStoreItemStatus.ECIS_Completed -> {
+                when (SdkCall.execute { item.getStatus() }) {
+                    EContentStoreItemStatus.Paused,
+                    EContentStoreItemStatus.Completed -> {
                         val menu = PopupMenu(parent.context, parent)
                         menu.menu.add("Delete")
                         menu.show()
 
                         menu.setOnMenuItemClickListener { _ ->
-                            GEMSdkCall.execute {
+                            SdkCall.execute {
                                 item.deleteContent()
                                 taskRefresh()
                             }
@@ -119,7 +119,7 @@ class OnlineMapsActivity : MapsListActivity() {
                         }
                     }
 
-                    EContentStoreItemStatus.ECIS_Unavailable -> {
+                    EContentStoreItemStatus.Unavailable -> {
                     }
 
                     else -> {
@@ -128,7 +128,7 @@ class OnlineMapsActivity : MapsListActivity() {
                         menu.show()
 
                         menu.setOnMenuItemClickListener { _ ->
-                            GEMSdkCall.execute {
+                            SdkCall.execute {
                                 item.cancelDownload()
                                 taskRefresh()
                             }
@@ -151,7 +151,7 @@ class OnlineMapsActivity : MapsListActivity() {
 
             ArrayList(
                 models.filter {
-                    val arg = GEMSdkCall.execute { it.getName() }
+                    val arg = SdkCall.execute { it.getName() }
                     val lowerArg = arg?.toLowerCase(Locale.getDefault()) ?: ""
                     val argTokens = lowerArg.split(' ', '-')
 
@@ -201,8 +201,8 @@ class OnlineMapsActivity : MapsListActivity() {
 // 			
 // 		}
 // 		else{
-        when (GEMSdkCall.execute { item.getStatus() }) {
-            EContentStoreItemStatus.ECIS_Paused, EContentStoreItemStatus.ECIS_Unavailable -> {
+        when (SdkCall.execute { item.getStatus() }) {
+            EContentStoreItemStatus.Paused, EContentStoreItemStatus.Unavailable -> {
                 val taskRefresh = {
                     GEMApplication.postOnMain {
                         holder.updateViews(itUncasted)
@@ -233,14 +233,14 @@ class OnlineMapsActivity : MapsListActivity() {
                     }
                 }
 
-                GEMSdkCall.execute {
+                SdkCall.execute {
                     item.asyncDownload(listener, GemSdk.EDataSavePolicy.EUseDefault, true)
                 }
             }
-            EContentStoreItemStatus.ECIS_DownloadRunning -> {
-                GEMSdkCall.execute { item.pauseDownload() }
+            EContentStoreItemStatus.DownloadRunning -> {
+                SdkCall.execute { item.pauseDownload() }
             }
-            EContentStoreItemStatus.ECIS_DownloadWaitingFreeNetwork -> {
+            EContentStoreItemStatus.DownloadWaitingFreeNetwork -> {
                 // ask for user permission to download map over mobile network
             }
             else -> { /* NOTHING */

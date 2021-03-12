@@ -36,7 +36,7 @@ import com.generalmagic.sdk.demo.util.UtilUITexts
 import com.generalmagic.sdk.demo.util.Utils.Companion.getDistText
 import com.generalmagic.sdk.routingandnavigation.NavigationInstruction
 import com.generalmagic.sdk.routingandnavigation.Route
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import kotlinx.android.synthetic.main.nav_bottom_panel.view.*
 import kotlinx.android.synthetic.main.nav_lane_panel.view.*
@@ -94,11 +94,11 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
     fun routeUpdated(value: Route?) {
         route = value
 
-        GEMSdkCall.execute { navDataProvider.updateNavigationInfo(navInstr, value) }
+        SdkCall.execute { navDataProvider.updateNavigationInfo(navInstr, value) }
     }
 
     fun updatePosition(value: PositionData) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
         position = value
 
         navDataProvider.updatePositionInfo(value, navInstr)
@@ -110,7 +110,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
         val screen = GEMApplication.gemMapScreen()
         var surfaceWidth = 0
         var surfaceHeight = 0
-        GEMSdkCall.execute {
+        SdkCall.execute {
             surfaceWidth = screen?.getViewPort()?.width() ?: 0
             surfaceHeight = screen?.getViewPort()?.height() ?: 0
         }
@@ -127,7 +127,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
             surfaceWidth - panelWidth - 2 * navigationPanelPadding
         }
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             navDataProvider.updateNavigationInfo(value, route)
 
             laneInfoImage = UINavDataProvider.getLaneInfoImage(
@@ -538,7 +538,7 @@ class UINavDataProvider {
         fun getLaneInfoImage(
             from: NavigationInstruction?, width: Int, height: Int
         ): Pair<Int, Bitmap?> {
-            return GEMSdkCall.execute {
+            return SdkCall.execute {
 
                 val navInstr = from ?: return@execute Pair(0, null)
 
@@ -574,7 +574,7 @@ class UINavDataProvider {
         navInstr: NavigationInstruction?,
         willReset: Boolean = true
     ) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
         if (willReset) resetPositionInfo()
 
         if (!value.hasSpeed()) return
@@ -608,7 +608,7 @@ class UINavDataProvider {
         route: Route?,
         willReset: Boolean = true
     ) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         if (willReset) resetNavigationInfo()
 

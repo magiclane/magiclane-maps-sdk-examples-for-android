@@ -18,7 +18,7 @@ import com.generalmagic.sdk.core.SettingsService
 import com.generalmagic.sdk.routingandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.routingandnavigation.ERouteType
 import com.generalmagic.sdk.routingandnavigation.RoutePreferences
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 
 enum class TBoolSettings(val value: Int) {
     EBooleanSettingsBase(0),
@@ -82,7 +82,7 @@ object SettingsProvider {
         Array<((Double) -> Unit)?>(TDoubleSettings.EDoubleSettingsCount.value) { null }
 
     init {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             m_service = SettingsService.produce("Settings.ini")
             setNames()
             setDefaultValues()
@@ -92,7 +92,7 @@ object SettingsProvider {
 
     /* <Success, Value> */
     fun getBooleanValue(setting: Int): Pair<Boolean, Boolean> {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         val service = this.m_service
 
@@ -110,7 +110,7 @@ object SettingsProvider {
     }
 
     fun setBooleanValue(setting: Int, value: Boolean) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         val service = this.m_service
 
@@ -127,7 +127,7 @@ object SettingsProvider {
     }
 
     fun setIntValue(setting: Int, value: Int) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         val service = this.m_service
 
@@ -144,7 +144,7 @@ object SettingsProvider {
     }
 
     fun getIntValue(setting: Int): Pair<Boolean, Int> {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         val service = this.m_service
 
@@ -162,7 +162,7 @@ object SettingsProvider {
     }
 
     fun getDoubleValue(setting: Int): Pair<Boolean, Double> {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         val service = this.m_service
 
@@ -180,7 +180,7 @@ object SettingsProvider {
     }
 
     fun setDoubleValue(setting: Int, value: Double) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         val service = this.m_service
 
@@ -281,7 +281,7 @@ object SettingsProvider {
     }
 
     private fun setCallbacks() {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
         // bool settings
 
         val useMobileData = { value: Boolean ->
@@ -377,7 +377,7 @@ object SettingsProvider {
 
 
     fun loadRoutePreferences(): RoutePreferences {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         val routeTypeSetting = getIntValue(TIntSettings.ETravelModeCar.value)
         val avoidMotorwaysSetting = getBooleanValue(TBoolSettings.EAvoidMotorwaysCar.value)

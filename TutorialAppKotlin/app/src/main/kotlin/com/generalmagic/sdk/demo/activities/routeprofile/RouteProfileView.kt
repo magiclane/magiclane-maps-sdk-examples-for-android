@@ -10,7 +10,7 @@ import com.generalmagic.sdk.demo.R
 import com.generalmagic.sdk.demo.app.GEMApplication
 import com.generalmagic.sdk.demo.app.IMapControllerActivity
 import com.generalmagic.sdk.demo.util.AppUtils
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import kotlinx.android.synthetic.main.app_bar_layout.*
 import kotlinx.android.synthetic.main.route_profile.view.*
 
@@ -34,7 +34,7 @@ class RouteProfileView(val parent: IMapControllerActivity) {
                     AppUtils.getSizeInPixelsFromMM(40)
                 )
 
-                val title = GEMSdkCall.execute { GEMRouteProfileView.getTitle() }
+                val title = SdkCall.execute { GEMRouteProfileView.getTitle() }
                 route_profile.header_title_fragment.text = title
 
                 adjustViewForOrientation(GEMApplication.appResources().configuration.orientation)
@@ -45,7 +45,7 @@ class RouteProfileView(val parent: IMapControllerActivity) {
     fun hideRouteProfile() {
         parent.run {
             GEMApplication.getMainMapView().let { mapView ->
-                GEMSdkCall.execute {
+                SdkCall.execute {
                     mapView?.resize(fullMapViewCoords)
                     GEMRouteProfileView.flyToRoute(mapView?.preferences()?.routes()?.getMainRoute())
                 }
@@ -103,7 +103,7 @@ class RouteProfileView(val parent: IMapControllerActivity) {
 
                         GEMApplication.postOnMainDelayed({
                             GEMApplication.getMainMapView().let { mapView ->
-                                GEMSdkCall.execute {
+                                SdkCall.execute {
                                     mapView?.resize(rightMapViewCoords)
                                     GEMRouteProfileView.flyToRoute(
                                         GEMApplication.getMainMapView()?.preferences()?.routes()
@@ -122,7 +122,7 @@ class RouteProfileView(val parent: IMapControllerActivity) {
 
                         GEMApplication.postOnMainDelayed({
                             GEMApplication.getMainMapView().let { mapView ->
-                                GEMSdkCall.execute {
+                                SdkCall.execute {
                                     mapView?.resize(topUpMapViewCoords)
                                     GEMRouteProfileView.flyToRoute(
                                         GEMApplication.getMainMapView()?.preferences()?.routes()

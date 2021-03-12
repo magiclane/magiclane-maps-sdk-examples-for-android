@@ -19,7 +19,7 @@ import com.generalmagic.sdk.demo.R
 import com.generalmagic.sdk.demo.app.GEMApplication
 import com.generalmagic.sdk.demo.app.MapLayoutController
 import com.generalmagic.sdk.demo.app.elements.ButtonsDecorator
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import kotlinx.android.synthetic.main.pick_location.view.*
 
 class PickLocationController(context: Context, attrs: AttributeSet?) :
@@ -111,7 +111,7 @@ class PickLocationController(context: Context, attrs: AttributeSet?) :
     }
 
     private fun getLandmark(): Landmark? {
-        return GEMSdkCall.execute {
+        return SdkCall.execute {
             val myPosition =
                 GEMApplication.getMainMapView()?.getCursorWgsPosition() ?: return@execute null
             Landmark("", myPosition)

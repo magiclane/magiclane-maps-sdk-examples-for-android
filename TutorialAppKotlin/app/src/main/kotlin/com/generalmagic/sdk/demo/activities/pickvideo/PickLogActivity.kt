@@ -21,7 +21,7 @@ import com.generalmagic.sdk.demo.util.Util
 import com.generalmagic.sdk.demo.util.Util.Companion.getFileLastModifiedDate
 import com.generalmagic.sdk.demo.util.Util.Companion.getFileSize
 import com.generalmagic.sdk.demo.util.UtilUITexts.Companion.formatSizeAsText
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import kotlinx.android.synthetic.main.upload_view.*
 import java.io.File
@@ -58,7 +58,7 @@ class UploadLogActivity : BaseActivity() {
         private var m_issueDescription: String? = null
 
         init {
-            GEMSdkCall.execute { m_service = SettingsService.produce("Settings.ini") }
+            SdkCall.execute { m_service = SettingsService.produce("Settings.ini") }
 
             m_email = m_service?.getStringValue(UPLOAD_SAVED_EMAIL, "")
 
@@ -272,7 +272,7 @@ class PickLogActivity : BaseActivity() {
     private fun isProtectedLog(filepath: String): Boolean {
         val recordsPath = GEMApplication.getInternalRecordsPath()
 
-        return GEMSdkCall.execute {
+        return SdkCall.execute {
             val bookmarks = RecorderBookmarks.produce(recordsPath) ?: return@execute false
 
             val fileMeta = bookmarks.getMetadata(filepath) ?: return@execute false
@@ -283,7 +283,7 @@ class PickLogActivity : BaseActivity() {
     private fun protect(filepath: String, protect: Boolean) {
         val recordsPath = GEMApplication.getInternalRecordsPath()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val bookmarks = RecorderBookmarks.produce(recordsPath) ?: return@execute
 
             if (protect) {

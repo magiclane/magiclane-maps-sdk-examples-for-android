@@ -17,7 +17,7 @@ import com.generalmagic.sdk.demo.util.Utils.Companion.getTimeText
 import com.generalmagic.sdk.demo.util.Utils.Companion.getUIString
 import com.generalmagic.sdk.routingandnavigation.Route
 import com.generalmagic.sdk.routingandnavigation.RouteTrafficEvent
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
 import java.util.*
@@ -143,7 +143,7 @@ class UtilUITexts {
         }
 
         fun fillLandmarkAddressInfo(landmark: Landmark, bFillAllFields: Boolean = false) {
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 val landmarkAddress = landmark.getAddress() ?: AddressInfo()
 
                 val street = landmarkAddress.getField(EAddressField.EStreetName) ?: ""
@@ -206,7 +206,7 @@ class UtilUITexts {
         }
 
         fun formatLandmarkDetails(landmark: Landmark, excludeCountry: Boolean = false): String {
-            return GEMSdkCall.execute {
+            return SdkCall.execute {
                 val formatted = pairFormatLandmarkDetails(landmark, excludeCountry)
 
                 return@execute if (formatted.second.isNotEmpty()) {
@@ -218,7 +218,7 @@ class UtilUITexts {
         }
 
         fun formatName(landmark: Landmark): String {
-            return GEMSdkCall.execute {
+            return SdkCall.execute {
                 var name = "" // result
 
                 var str = landmark.getName() ?: ""
@@ -288,7 +288,7 @@ class UtilUITexts {
         fun pairFormatLandmarkDetails(
             landmark: Landmark?, excludeCountry: Boolean = false
         ): Pair<String, String> {
-            return GEMSdkCall.execute {
+            return SdkCall.execute {
                 landmark ?: return@execute Pair("", "")
 
                 var formattedDescription: String

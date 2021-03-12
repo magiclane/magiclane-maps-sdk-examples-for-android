@@ -31,7 +31,7 @@ import com.generalmagic.sdk.demo.app.GEMApplication
 import com.generalmagic.sdk.demo.util.Util
 import com.generalmagic.sdk.demo.util.UtilUITexts
 import com.generalmagic.sdk.demo.util.Utils
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import com.generalmagic.sdk.util.SdkIcons
 import kotlinx.android.synthetic.main.location_details_panel.view.*
@@ -61,29 +61,29 @@ open class WikiServiceController {
     }
 
     fun hasWiki(value: Landmark): Boolean {
-        return GEMSdkCall.execute { infoService.hasWikiInfo(value) } ?: false
+        return SdkCall.execute { infoService.hasWikiInfo(value) } ?: false
     }
 
     fun requestWiki(value: Landmark) {
         wikiFetched = false
-        GEMSdkCall.execute { infoService.requestWikiInfo(value, listener) }
+        SdkCall.execute { infoService.requestWikiInfo(value, listener) }
     }
 
     fun stopRequesting() {
         wikiFetched = false
-        GEMSdkCall.execute { infoService.cancelWikiInfo() }
+        SdkCall.execute { infoService.cancelWikiInfo() }
     }
 
     fun getWikiPageDescription(): String {
-        return GEMSdkCall.execute { infoService.getWikiPageDescription() } ?: ""
+        return SdkCall.execute { infoService.getWikiPageDescription() } ?: ""
     }
 
     fun getWikiPageURL(): String {
-        return GEMSdkCall.execute { infoService.getWikiPageURL() } ?: ""
+        return SdkCall.execute { infoService.getWikiPageURL() } ?: ""
     }
 
     fun getWikiImagesCount(): Int {
-        return GEMSdkCall.execute { infoService.getWikiImagesCount() } ?: 0
+        return SdkCall.execute { infoService.getWikiImagesCount() } ?: 0
     }
 
     fun startFetchingImages(): Boolean {
@@ -103,7 +103,7 @@ open class WikiServiceController {
 
     fun getDescriptionAt(index: Int): String {
         val gemString = holders[index].description
-        return GEMSdkCall.execute { gemString?.asKotlinString() } ?: ""
+        return SdkCall.execute { gemString?.asKotlinString() } ?: ""
     }
 
     fun getImageLoadState(index: Int): TLoadState {
@@ -121,10 +121,10 @@ open class WikiServiceController {
     }
 
     private data class LoadingImg(
-        var image: Image? = GEMSdkCall.execute { Image() },
+        var image: Image? = SdkCall.execute { Image() },
         var imageLoadState: TLoadState = TLoadState.ENotRequested,
 
-        var description: GemString? = GEMSdkCall.execute { GemString() },
+        var description: GemString? = SdkCall.execute { GemString() },
         var descriptionLoadState: TLoadState = TLoadState.ENotRequested
     )
 
@@ -206,7 +206,7 @@ open class WikiServiceController {
     }
 
     private fun fetchImageAtIndex(index: Int) {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             if (index < 0 || index >= holders.size) return@execute
             progress.retryCount = 3
             progress.index = index
@@ -219,7 +219,7 @@ open class WikiServiceController {
     }
 
     private fun fetchDescriptionAtIndex(index: Int) {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             if (index < 0 || index >= holders.size) return@execute
             progressDescription.retryCount = 3
             progressDescription.index = index
@@ -248,7 +248,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
 
     private val wiki = object : WikiServiceController() {
         override fun onWikiFetchComplete(reason: Int, hint: String) {
-//            GEMSdkCall.checkCurrentThread() //TODO: WTFFF, uncomment... ??
+//            SdkCall.checkCurrentThread() //TODO: WTFFF, uncomment... ??
 
             locationDetails.wikipediaDescription = getWikiPageDescription()
             locationDetails.wikipediaUrl = getWikiPageURL()
@@ -326,7 +326,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         hide()
         val imgSizes = context.resources.getDimension(R.dimen.navigationImageSize).toInt()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             locationDetails.text = value.getName()
             locationDetails.description = UtilUITexts.formatLandmarkDetails(value)
 
@@ -356,7 +356,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         }
 
         iconContainer.setOnClickListener {
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 if (GEMApplication.isFavourite(value)) {
                     GEMApplication.removeFavourite(value)
                 } else {
@@ -579,12 +579,12 @@ class WikiImagesListAdapter(
     fun didLoadImage(index: Int, image: Image) {
         if (index < 0 || index >= models.size) return
 
-        val size = GEMSdkCall.execute { image.getSize() } ?: return
+        val size = SdkCall.execute { image.getSize() } ?: return
 
         val widthImage = ((size.width().toFloat() / size.height()) * standardHeight).toInt()
 
         imagesExecutor.submit {
-            val bitmap = GEMSdkCall.execute {
+            val bitmap = SdkCall.execute {
                 Util.createBitmap(image, widthImage, standardHeight)
             } ?: return@submit
 

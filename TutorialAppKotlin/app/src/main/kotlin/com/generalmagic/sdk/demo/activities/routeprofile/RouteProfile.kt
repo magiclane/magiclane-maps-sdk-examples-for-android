@@ -18,7 +18,7 @@ import com.generalmagic.sdk.demo.R
 import com.generalmagic.sdk.demo.activities.routeprofile.GEMRouteProfileView.TElevationProfileButtonType
 import com.generalmagic.sdk.demo.app.GEMApplication
 import com.generalmagic.sdk.demo.util.AppUtils
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.github.mikephil.charting.charts.CombinedChart
 import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.components.XAxis
@@ -115,7 +115,7 @@ class ElevationProfile(
         mScrollView?.fullScroll(ScrollView.FOCUS_UP)
 
         mExitButton?.setOnClickListener {
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 GEMRouteProfileView.close()
             }
         }
@@ -130,7 +130,7 @@ class ElevationProfile(
     // ---------------------------------------------------------------------------------------------
 
     private fun loadData() {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             mElevationChartMinValueX = GEMRouteProfileView.getElevationChartMinValueX()
             mElevationChartMaxValueX = GEMRouteProfileView.getElevationChartMaxValueX()
             mChartMinValueY = GEMRouteProfileView.getElevationChartMinValueY()
@@ -196,7 +196,7 @@ class ElevationProfile(
 
         var chartVerticalBandsCount = 0
         var climbDetailsRowsCount = 0
-        GEMSdkCall.execute {
+        SdkCall.execute {
             chartVerticalBandsCount =
                 GEMRouteProfileView.getElevationChartVerticalBandsCount()
             climbDetailsRowsCount = GEMRouteProfileView.getClimbDetailsRowsCount()
@@ -260,7 +260,7 @@ class ElevationProfile(
             var horizontalAxisUnit = ""
             var verticalAxisUnit = ""
             var zoomTresholdDistX = 0f
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 chartMinValueX =
                     GEMRouteProfileView.getElevationChartMinValueX().toFloat()
                 chartMaxValueX =
@@ -381,7 +381,7 @@ class ElevationProfile(
                         var minElevationText = ""
                         var maxElevationImage: Bitmap? = null
                         var maxElevationText = ""
-                        GEMSdkCall.execute {
+                        SdkCall.execute {
                             startElevationImage =
                                 GEMRouteProfileView.getElevationProfileButtonImage(
                                     TElevationProfileButtonType.EElevationAtDeparture.ordinal,
@@ -554,7 +554,7 @@ class ElevationProfile(
             axisLeft.textSize = textSize.toFloat()
 
             var chartVerticalBandsCount = 0
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 chartVerticalBandsCount =
                     GEMRouteProfileView.getElevationChartVerticalBandsCount()
             }
@@ -580,7 +580,7 @@ class ElevationProfile(
             if (type != null) {
                 highlightValue(null)
                 fitScreen()
-                GEMSdkCall.execute {
+                SdkCall.execute {
                     GEMRouteProfileView.onElevationChartIntervalUpdate(
 
                         mElevationChartMinValueX,
@@ -594,7 +594,7 @@ class ElevationProfile(
                     mElevationChartMaxValueX.toFloat()
                 )
 
-                GEMSdkCall.execute {
+                SdkCall.execute {
                     GEMRouteProfileView.onPushButton(type.ordinal)
                 }
             }
@@ -605,7 +605,7 @@ class ElevationProfile(
 
     private fun setElevationChartPlottedValuesCount() {
         var chartVerticalBandsCount = 0
-        GEMSdkCall.execute {
+        SdkCall.execute {
             chartVerticalBandsCount =
                 GEMRouteProfileView.getElevationChartVerticalBandsCount()
         }
@@ -674,7 +674,7 @@ class ElevationProfile(
 
         var climbDetailsRowsCount = 0
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             climbDetailsRowsCount = GEMRouteProfileView.getClimbDetailsRowsCount()
         }
 
@@ -684,7 +684,7 @@ class ElevationProfile(
             var length = ""
             var startEndElevation = ""
             var avgGrade = ""
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 rating = GEMRouteProfileView.getClimbDetailsItemText(
                     rowCount,
                     GEMRouteProfileView.TClimbDetailsInfoType.ERating.ordinal
@@ -722,7 +722,7 @@ class ElevationProfile(
         }
 
         var verticalBandText = ""
-        GEMSdkCall.execute {
+        SdkCall.execute {
             verticalBandText =
                 GEMRouteProfileView.getElevationChartVerticalBandText(count)
         }
@@ -792,7 +792,7 @@ class ElevationProfile(
         var lengthText = ""
         var startEndElevationText = ""
         var avgGradeText = ""
-        GEMSdkCall.execute {
+        SdkCall.execute {
             chartVerticalBandsCount =
                 GEMRouteProfileView.getElevationChartVerticalBandsCount()
 
@@ -885,7 +885,7 @@ class ElevationProfile(
 
     private fun updateHighlightedSurfaceLabel(percent: Double) {
         var surfaceTypesCount = 0
-        GEMSdkCall.execute {
+        SdkCall.execute {
             surfaceTypesCount = GEMRouteProfileView.getSurfacesCount()
         }
 
@@ -894,7 +894,7 @@ class ElevationProfile(
 
         for (i in 0 until surfaceTypesCount) {
             var surfacePercentWidth = 0.0
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 surfacePercentWidth = GEMRouteProfileView.getSurfacePercent(i)
             }
 
@@ -908,7 +908,7 @@ class ElevationProfile(
 
         if (mHighlightedSurface != null && index >= 0 && index < surfaceTypesCount) {
             var surfaceTypeName = ""
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 surfaceTypeName = GEMRouteProfileView.getSurfaceText(index)
             }
 
@@ -922,7 +922,7 @@ class ElevationProfile(
 
     private fun updateHighlightedRoadLabel(percent: Double) {
         var roadTypesCount = 0
-        GEMSdkCall.execute {
+        SdkCall.execute {
             roadTypesCount = GEMRouteProfileView.getWaysCount()
         }
 
@@ -931,7 +931,7 @@ class ElevationProfile(
 
         for (i in 0 until roadTypesCount) {
             var roadTypePercentWidth = 0.0
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 roadTypePercentWidth = GEMRouteProfileView.getWayPercent(i)
             }
 
@@ -944,7 +944,7 @@ class ElevationProfile(
 
         if (mHighlightedRoad != null && index >= 0 && index < roadTypesCount) {
             var roadTypeName = ""
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 roadTypeName = GEMRouteProfileView.getWayText(index)
             }
 
@@ -958,7 +958,7 @@ class ElevationProfile(
 
     private fun updateHighlightedSteepnessLabel(percent: Double) {
         var steepnessTypesCount = 0
-        GEMSdkCall.execute {
+        SdkCall.execute {
             steepnessTypesCount = GEMRouteProfileView.getSteepnessesCount()
         }
 
@@ -967,7 +967,7 @@ class ElevationProfile(
 
         for (i in 0 until steepnessTypesCount) {
             var steepnessTypePercentWidth = 0.0
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 steepnessTypePercentWidth = GEMRouteProfileView.getSteepnessPercent(i)
             }
 
@@ -981,7 +981,7 @@ class ElevationProfile(
         if (mHighlightedSteepnessText != null && index >= 0 && index < steepnessTypesCount) {
             var steepnessTypeName = ""
             var steepnessBmp: Bitmap? = null
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 steepnessTypeName = GEMRouteProfileView.getSteepnessText(index)
 
                 steepnessBmp =
@@ -1013,7 +1013,7 @@ class ElevationProfile(
 
                     val percent = e.x / maxX!!
 
-                    GEMSdkCall.execute {
+                    SdkCall.execute {
                         GEMRouteProfileView.onTouchSurfacesChart(0, percent)
                     }
 
@@ -1045,7 +1045,7 @@ class ElevationProfile(
 
                     val percent = e.x / maxX!!
 
-                    GEMSdkCall.execute {
+                    SdkCall.execute {
                         GEMRouteProfileView.onTouchWaysChart(0, percent)
                     }
 
@@ -1077,7 +1077,7 @@ class ElevationProfile(
 
                     val percent = e.x / maxX!!
 
-                    GEMSdkCall.execute {
+                    SdkCall.execute {
                         GEMRouteProfileView.onTouchSteepnessesChart(0, percent)
                     }
 
@@ -1140,7 +1140,7 @@ class ElevationProfile(
     private fun addSurfacesViews() {
         var surfaceTypesCount = 0
         var title = ""
-        GEMSdkCall.execute {
+        SdkCall.execute {
             surfaceTypesCount = GEMRouteProfileView.getSurfacesCount()
             title = GEMRouteProfileView.getSectionTitle(
                 GEMRouteProfileView.TRouteProfileSectionType.ESurfaces.ordinal
@@ -1194,7 +1194,7 @@ class ElevationProfile(
     private fun addRoadsViews() {
         var roadTypesCount = 0
         var title = ""
-        GEMSdkCall.execute {
+        SdkCall.execute {
             roadTypesCount = GEMRouteProfileView.getWaysCount()
             title = GEMRouteProfileView.getSectionTitle(
                 GEMRouteProfileView.TRouteProfileSectionType.EWays.ordinal
@@ -1248,7 +1248,7 @@ class ElevationProfile(
     private fun addSteepnessViews() {
         var steepnessTypesCount = 0
         var title = ""
-        GEMSdkCall.execute {
+        SdkCall.execute {
             steepnessTypesCount = GEMRouteProfileView.getSteepnessesCount()
             title = GEMRouteProfileView.getSectionTitle(
                 GEMRouteProfileView.TRouteProfileSectionType.ESteepnesses.ordinal
@@ -1385,7 +1385,7 @@ class ElevationProfile(
         }
 
         var surfaceTypesCount = 0
-        GEMSdkCall.execute {
+        SdkCall.execute {
             surfaceTypesCount = GEMRouteProfileView.getSurfacesCount()
         }
 
@@ -1401,7 +1401,7 @@ class ElevationProfile(
             var surfacePercentWidth = 0.0
             var surfaceTypeName = ""
             var surfaceTypeColor = 0
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 surfacePercentWidth = GEMRouteProfileView.getSurfacePercent(i)
                 surfaceTypeName = GEMRouteProfileView.getSurfaceText(i)
 
@@ -1440,7 +1440,7 @@ class ElevationProfile(
         }
 
         var roadTypesCount = 0
-        GEMSdkCall.execute {
+        SdkCall.execute {
             roadTypesCount = GEMRouteProfileView.getWaysCount()
         }
 
@@ -1456,7 +1456,7 @@ class ElevationProfile(
             var roadTypePercentWidth = 0.0
             var roadTypeName = ""
             var roadTypeColor = 0
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 roadTypePercentWidth = GEMRouteProfileView.getWayPercent(i)
                 roadTypeName = GEMRouteProfileView.getWayText(i)
 
@@ -1495,7 +1495,7 @@ class ElevationProfile(
         }
 
         var steepnessTypesCount = 0
-        GEMSdkCall.execute {
+        SdkCall.execute {
             steepnessTypesCount = GEMRouteProfileView.getSteepnessesCount()
         }
 
@@ -1511,7 +1511,7 @@ class ElevationProfile(
             var steepnessTypePercentWidth = 0.0
             var steepnessTypeName = ""
             var steepnessTypeColor = 0
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 steepnessTypePercentWidth = GEMRouteProfileView.getSteepnessPercent(i)
                 steepnessTypeName = GEMRouteProfileView.getSteepnessText(i)
 
@@ -1553,7 +1553,7 @@ class ElevationProfile(
 
         var yValues: IntArray? = null
         var verticalBandsCount = 0
-        GEMSdkCall.execute {
+        SdkCall.execute {
             yValues = GEMRouteProfileView.getElevationChartYValues(
                 mElevationChartPlottedValuesCount
             )
@@ -1578,7 +1578,7 @@ class ElevationProfile(
 
                 var verticalBandMinX = 0.0
                 var verticalBandMaxX = 0.0
-                GEMSdkCall.execute {
+                SdkCall.execute {
                     verticalBandMinX =
                         GEMRouteProfileView.getElevationChartVerticalBandMinX(i)
                     verticalBandMaxX =
@@ -1714,7 +1714,7 @@ class ElevationProfile(
             distance >= mElevationChart!!.lowestVisibleX && distance <= mElevationChart!!.highestVisibleX
 
         var chartYValue = 0
-        GEMSdkCall.execute {
+        SdkCall.execute {
             chartYValue = GEMRouteProfileView.getElevationChartYValue(distance)
         }
 
@@ -1740,7 +1740,7 @@ class ElevationProfile(
             updateElevationChart(leftSide.toFloat(), rightSide.toFloat())
             mElevationChart?.moveViewToX(leftSide.toFloat())
 
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 GEMRouteProfileView.onElevationChartIntervalUpdate(
                     leftSide,
                     rightSide,
@@ -1802,14 +1802,14 @@ class ElevationProfile(
                     val endPointDouble = endPointString.toDouble() - 0.01
 
                     mElevationChart?.highlightValue(null)
-                    GEMSdkCall.execute {
+                    SdkCall.execute {
                         GEMRouteProfileView.onTouchElevationChart(
 
                             0,
                             mElevationChartMinValueX
                         )
                     }
-                    GEMSdkCall.execute {
+                    SdkCall.execute {
                         GEMRouteProfileView.onElevationChartIntervalUpdate(
 
                             startPointDouble,
@@ -1891,7 +1891,7 @@ class ElevationProfile(
             maxX = mElevationChart?.highestVisibleX
         }
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             if (minX != null && maxX != null) {
                 GEMRouteProfileView.onElevationChartIntervalUpdate(
 
@@ -1919,7 +1919,7 @@ class ElevationProfile(
             maxX = mElevationChart?.highestVisibleX
         }
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             if (minX != null && maxX != null) {
                 GEMRouteProfileView.onElevationChartIntervalUpdate(
 
@@ -1955,7 +1955,7 @@ class ElevationProfile(
             }
             mElevationChart?.highlightValue(h)
 
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 GEMRouteProfileView.onTouchElevationChart(0, e.x.toDouble())
             }
 

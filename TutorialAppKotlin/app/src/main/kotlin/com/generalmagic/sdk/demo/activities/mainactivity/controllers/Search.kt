@@ -25,7 +25,7 @@ import com.generalmagic.sdk.demo.util.KeyboardUtil
 import com.generalmagic.sdk.routingandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.searching.SearchPreferences
 import com.generalmagic.sdk.searching.SearchService
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import com.generalmagic.sdk.util.SdkList
 import kotlinx.android.synthetic.main.activity_list_view.*
@@ -71,8 +71,8 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
                 return
             }
 
-            val list = GEMSdkCall.execute { results.asArrayList() } ?: ArrayList()
-            val reference = GEMSdkCall.execute { preferences.getReferencePoint() }
+            val list = SdkCall.execute { results.asArrayList() } ?: ArrayList()
+            val reference = SdkCall.execute { preferences.getReferencePoint() }
 
             val wrapped = wrapLandmarkList(list, reference)
             val adapter = SLIAdapter(wrapped)
@@ -91,7 +91,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
     override fun doStop() {
         hideProgress()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             search.service.cancelSearch(search.listener)
         }
     }
@@ -199,7 +199,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
         }
     }
 
-    protected fun getCurrentCoords(): Coordinates? = GEMSdkCall.execute {
+    protected fun getCurrentCoords(): Coordinates? = SdkCall.execute {
         GEMApplication.getMainMapView()?.getCursorWgsPosition() ?: return@execute null
     }
 }
@@ -236,7 +236,7 @@ class SearchTextActivity : BaseSearchTutorialActivity() {
 
         lastFilter = text
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val coords = getCurrentCoords() ?: return@execute
 
             preferences.setReferencePoint(coords)
@@ -258,7 +258,7 @@ class SearchNearbyActivity : BaseSearchTutorialActivity() {
     override fun doStart() {
         doStop()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val coords = getCurrentCoords() ?: return@execute
 
             preferences.setReferencePoint(coords)
@@ -300,7 +300,7 @@ class SearchHistoryActivity : BaseSearchTutorialActivity() {
     override fun doStart() {
         doStop()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val coords = getCurrentCoords() ?: return@execute
 
             preferences.setReferencePoint(coords)
@@ -308,7 +308,7 @@ class SearchHistoryActivity : BaseSearchTutorialActivity() {
 
             listToDisplay = arrayListOf()
             GEMApplication.getHistoryLandmarkStore()?.getLandmarks()?.let { list ->
-                val reference = GEMSdkCall.execute { preferences.getReferencePoint() }
+                val reference = SdkCall.execute { preferences.getReferencePoint() }
                 val wrapped = wrapHistoryLandmarkList(list, reference)
                 listToDisplay.addAll(wrapped)
             }
@@ -341,7 +341,7 @@ class SearchHistoryActivity : BaseSearchTutorialActivity() {
 
             ArrayList(
                 listToDisplay.filter {
-                    val arg = GEMSdkCall.execute { it.getText() }
+                    val arg = SdkCall.execute { it.getText() }
                     val lowerArg = arg?.toLowerCase(Locale.getDefault()) ?: ""
                     val argTokens = lowerArg.split(' ', '-')
 
@@ -404,7 +404,7 @@ class SearchFavouritesActivity : BaseSearchTutorialActivity() {
     override fun doStart() {
         doStop()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val coords = getCurrentCoords() ?: return@execute
 
             preferences.setReferencePoint(coords)
@@ -412,7 +412,7 @@ class SearchFavouritesActivity : BaseSearchTutorialActivity() {
 
             listToDisplay = arrayListOf()
             GEMApplication.getFavouritesLandmarkStore()?.getLandmarks()?.let { list ->
-                val reference = GEMSdkCall.execute { preferences.getReferencePoint() }
+                val reference = SdkCall.execute { preferences.getReferencePoint() }
                 val wrapped = wrapFavouritesLandmarkList(list, reference)
                 listToDisplay.addAll(wrapped)
             }
@@ -432,7 +432,7 @@ class SearchFavouritesActivity : BaseSearchTutorialActivity() {
 
             ArrayList(
                 listToDisplay.filter {
-                    val arg = GEMSdkCall.execute { it.getText() }
+                    val arg = SdkCall.execute { it.getText() }
                     val lowerArg = arg?.toLowerCase(Locale.getDefault()) ?: ""
                     val argTokens = lowerArg.split(' ', '-')
 
@@ -472,7 +472,7 @@ class SearchPoiActivity : BaseSearchTutorialActivity() {
         filterView.visibility = View.GONE
     }
 
-    private fun getGasCategory(): LandmarkCategory? = GEMSdkCall.execute {
+    private fun getGasCategory(): LandmarkCategory? = SdkCall.execute {
         val categoriesList = GenericCategories().getCategories() ?: return@execute null
 
         var category: LandmarkCategory? = null
@@ -486,7 +486,7 @@ class SearchPoiActivity : BaseSearchTutorialActivity() {
     override fun doStart() {
         doStop()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val coords = getCurrentCoords() ?: return@execute
             val category = getGasCategory()
 

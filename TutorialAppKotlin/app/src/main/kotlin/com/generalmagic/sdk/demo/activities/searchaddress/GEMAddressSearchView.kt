@@ -23,7 +23,7 @@ import com.generalmagic.sdk.demo.app.Tutorials
 import com.generalmagic.sdk.demo.util.Utils
 import com.generalmagic.sdk.searching.EAddressDetailLevel
 import com.generalmagic.sdk.searching.GuidedAddressSearchService
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import com.generalmagic.sdk.util.SdkList
 import com.generalmagic.sdk.util.StringIds
@@ -148,7 +148,7 @@ object GEMAddressSearchView {
             mField = field
 
             mListener?.let {
-                GEMSdkCall.execute { GuidedAddressSearchService().cancelSearch(it) }
+                SdkCall.execute { GuidedAddressSearchService().cancelSearch(it) }
             }
 
             search(getParentLandmark(field), filter, getDetailLevel(field))
@@ -221,7 +221,7 @@ object GEMAddressSearchView {
             }
         }
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             if (landmark != null) {
                 showOnMap(viewId, landmark)
             } else if (mItems.size > 0) {
@@ -274,7 +274,7 @@ object GEMAddressSearchView {
         if (detailLevel != EAddressDetailLevel.EAD_NoDetail) {
             mDetailLevel = detailLevel
         } else {
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 GuidedAddressSearchService().getNextAddressDetailLevel(landmark)?.let {
                     val nextDetailLevel = it
                     if (nextDetailLevel.size > 0) {
@@ -285,7 +285,7 @@ object GEMAddressSearchView {
         }
 
         if (mDetailLevel != EAddressDetailLevel.EAD_NoDetail) {
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 val results = SdkList(Landmark::class)
 
                 val listener = object : ProgressListener() {
@@ -349,7 +349,7 @@ object GEMAddressSearchView {
     var m_street: Landmark? = null
 
     fun init() {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         m_state = Landmark()
         m_city = Landmark()
@@ -357,7 +357,7 @@ object GEMAddressSearchView {
     }
 
     private fun reset() {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         m_state = null
         m_city = null
@@ -365,7 +365,7 @@ object GEMAddressSearchView {
     }
 
     fun onCountrySelected(country: Landmark) {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
 
         val isoCodeOld = m_country?.getAddress()?.getField(EAddressField.ECountryCode)
         val isoCodeNew = country.getAddress()?.getField(EAddressField.ECountryCode)
@@ -380,14 +380,14 @@ object GEMAddressSearchView {
 
     fun hasState(): Boolean {
         val country = this.m_country ?: return false
-        val list = GEMSdkCall.execute {
+        val list = SdkCall.execute {
             return@execute GuidedAddressSearchService().getNextAddressDetailLevel(country)
         } ?: return false
         return list.isNotEmpty() && list[0] == EAddressDetailLevel.EAD_State.value
     }
 
     fun getCountryFlag(width: Int, height: Int): Bitmap? {
-        GEMSdkCall.checkCurrentThread()
+        SdkCall.checkCurrentThread()
         val isoCode = m_country?.getAddress()?.getField(EAddressField.ECountryCode)
         if (isoCode?.isNotEmpty() == true) {
             val image = MapDetails().getCountryFlag(isoCode)
@@ -436,7 +436,7 @@ object GEMAddressSearchView {
             text =
                 landmark?.getAddress()?.getField(EAddressField.EStateCode)
         } else if (detailLevel == EAddressDetailLevel.EAD_HouseNumber) {
-            text = GEMSdkCall.execute { landmark?.getName() } ?: ""
+            text = SdkCall.execute { landmark?.getName() } ?: ""
 
             var pos: Int = text.indexOf(">")
             if (pos > 0) {
@@ -450,7 +450,7 @@ object GEMAddressSearchView {
         } else if (detailLevel == EAddressDetailLevel.EAD_Crossing && item.anywhere) {
             text = Utils.getUIString(StringIds.eStrTempAnywhere)
         } else {
-            text = GEMSdkCall.execute { landmark?.getName() }
+            text = SdkCall.execute { landmark?.getName() }
         }
 
         return text ?: ""
@@ -465,7 +465,7 @@ object GEMAddressSearchView {
         var description: String? = null
 
         if (detailLevel == EAddressDetailLevel.EAD_State) {
-            description = GEMSdkCall.execute { landmark?.getName() }
+            description = SdkCall.execute { landmark?.getName() }
         }
 
         return description ?: ""
@@ -477,7 +477,7 @@ object GEMAddressSearchView {
         val item = mItems[index]
         val landmark = item.mLandmark
         if (item.mAddressDetailLevel == EAddressDetailLevel.EAD_City) {
-            return GEMSdkCall.execute {
+            return SdkCall.execute {
                 return@execute Utils.getImageAsBitmap(landmark?.getImage(), width, height)
             }
         }

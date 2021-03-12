@@ -22,7 +22,7 @@ import android.net.NetworkRequest
 import android.os.Build
 import com.generalmagic.sdk.core.EProxyType
 import com.generalmagic.sdk.core.ProxyDetails
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import java.net.Proxy
 
 class NetworkManager(val context: Context) {
@@ -179,7 +179,7 @@ class NetworkManager(val context: Context) {
             https.setProxyName(httpProxyConfig?.proxyHost ?: "")
             https.setProxyPort(httpProxyConfig?.proxyPort ?: -1)
 
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 onConnectionTypeChangedCallback(connectionType, https, http)
             }
         }

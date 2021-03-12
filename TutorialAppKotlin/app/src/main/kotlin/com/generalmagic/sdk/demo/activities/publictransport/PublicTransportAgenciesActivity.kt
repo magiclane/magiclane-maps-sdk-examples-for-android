@@ -24,7 +24,7 @@ import com.generalmagic.sdk.demo.activities.WebActivity
 import com.generalmagic.sdk.demo.app.BaseActivity
 import com.generalmagic.sdk.demo.app.GEMApplication
 import com.generalmagic.sdk.demo.util.Util
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import io.github.luizgrp.sectionedrecyclerviewadapter.Section
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionParameters
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionedRecyclerViewAdapter
@@ -150,7 +150,7 @@ class PublicTransportAgenciesActivity : BaseActivity() {
         }
 
         private fun load() {
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 var data = GEMPublicTransportRouteDescriptionView.getAgencyURLImage()
                 urlBmp = Util.createBitmap(data, iconSize, iconSize)
 
@@ -213,7 +213,7 @@ class PublicTransportAgenciesActivity : BaseActivity() {
             GEMApplication.appResources().getDimension(R.dimen.bigPadding).toInt()
         mapsList.setPadding(lateralPadding, 0, lateralPadding, 0)
 
-        val title = GEMSdkCall.execute { GEMPublicTransportRouteDescriptionView.getAgencyText() }
+        val title = SdkCall.execute { GEMPublicTransportRouteDescriptionView.getAgencyText() }
 
         supportActionBar?.title = title
     }

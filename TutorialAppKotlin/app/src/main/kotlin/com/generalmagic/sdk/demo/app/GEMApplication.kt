@@ -219,7 +219,7 @@ object GEMApplication {
     /** absolute path where records will be externally saved. */
     fun getExternalRecordsPath() = eRecordsPath
 
-    fun getMainMapView() = GEMSdkCall.execute { mainMapView }
+    fun getMainMapView() = SdkCall.execute { mainMapView }
     fun gemMapScreen() = mapSurface?.getScreen()
     fun getGlContext() = mapSurface?.getGlContext()
 
@@ -234,11 +234,11 @@ object GEMApplication {
     }
 
     fun isFollowingGps(): Boolean {
-        return GEMSdkCall.execute { getMainMapView()?.isFollowingPosition() } ?: false
+        return SdkCall.execute { getMainMapView()?.isFollowingPosition() } ?: false
     }
 
     fun doMapFollow(following: Boolean = true) {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val mainMapView = this.getMainMapView() ?: return@execute
 
             if (!following) {
@@ -250,8 +250,8 @@ object GEMApplication {
                 return@execute // already following...
 
             val animation = Animation()
-            animation.setMethod(EAnimation.EAnimationFly)
-            animation.setFly(EFlyModes.EFM_Linear)
+            animation.setType(EAnimation.EAnimationFly)
+            animation.setFlyType(EFlyModes.EFM_Linear)
             animation.setDuration(900)
 
             mainMapView.startFollowingPosition(animation)
@@ -260,7 +260,7 @@ object GEMApplication {
     }
 
     fun clearMapVisibleRoutes(): Boolean {
-        return GEMSdkCall.execute {
+        return SdkCall.execute {
             val routes = getMainMapView()?.preferences()?.routes() ?: return@execute false
             if (routes.size() == 0) {
                 return@execute false
@@ -271,21 +271,21 @@ object GEMApplication {
     }
 
     fun deactivateMapHighlight() {
-        GEMSdkCall.execute { getMainMapView()?.deactivateHighlight() }
+        SdkCall.execute { getMainMapView()?.deactivateHighlight() }
     }
 
     fun focusOnRouteInstructionItem(value: RouteInstruction) {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val animation = Animation()
-            animation.setMethod(EAnimation.EAnimationFly)
+            animation.setType(EAnimation.EAnimationFly)
             getMainMapView()?.centerOnRouteInstruction(value, -1, Xy(), animation)
         }
     }
 
     fun focusOnRouteTrafficItem(value: RouteTrafficEvent) {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val animation = Animation()
-            animation.setMethod(EAnimation.EAnimationFly)
+            animation.setType(EAnimation.EAnimationFly)
             getMainMapView()?.centerOnRouteTrafficEvent(value, -1, Rect(), animation)
         }
     }
@@ -297,7 +297,7 @@ object GEMApplication {
 
     fun uploadLog(filepath: String, username: String, email: String, details: String): Int {
         if (logUploader == null) {
-            logUploader = GEMSdkCall.execute {
+            logUploader = SdkCall.execute {
                 val proxyListener = object : LogUploaderListener() {
                     override fun onLogStatusChanged(
                         sLogPath: String, nProgress: Int, nStatus: Int
@@ -329,7 +329,7 @@ object GEMApplication {
 
         val logUploader = logUploader ?: return SdkError.KNotSupported.value
 
-        return GEMSdkCall.execute {
+        return SdkCall.execute {
             logUploader.upload(filepath, username, email, details, arrayListOf(filepath))
         } ?: SdkError.KGeneral.value
     }
@@ -464,7 +464,7 @@ object GEMApplication {
         val result = grantResults[0]
         when (requestCode) {
             REQUEST_PERMISSIONS -> {
-                GEMSdkCall.execute {
+                SdkCall.execute {
                     PermissionsHelper.produce()?.notifyOnPermissionsStatusChanged()
                 }
                 activity.onRequestPermissionsFinish(result == PackageManager.PERMISSION_GRANTED)

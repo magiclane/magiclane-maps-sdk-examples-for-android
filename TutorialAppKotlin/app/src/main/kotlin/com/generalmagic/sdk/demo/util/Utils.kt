@@ -20,7 +20,7 @@ import android.util.TypedValue
 import android.view.WindowInsets
 import com.generalmagic.sdk.core.*
 import com.generalmagic.sdk.demo.app.GEMApplication
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
@@ -34,11 +34,11 @@ import java.util.*
 class Utils {
     companion object {
         fun getUIString(strId: StringIds): String {
-            return GEMSdkCall.execute { LocalizationManager().getString(strId) } ?: ""
+            return SdkCall.execute { LocalizationManager().getString(strId) } ?: ""
         }
 
         fun getImageAspectRatio(nImageId: Int): Float {
-            return GEMSdkCall.execute {
+            return SdkCall.execute {
                 var fAspectRatio = 1.0f
                 val icon = ImageDatabase().getImageById(nImageId)
                 if (icon != null) {
@@ -58,7 +58,7 @@ class Utils {
             bForceHours: Boolean = false,
             bCapitalizeResult: Boolean = false
         ): Pair<String, String> {
-            return GEMSdkCall.execute {
+            return SdkCall.execute {
                 val time: String
                 val unit: String
                 if (timeInSeconds == 0) {
@@ -214,7 +214,7 @@ class Utils {
                 unit.toUpperCase(Locale.getDefault())
             }
 
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 val decimalSeparator = CommonSettings().getDecimalSeparator()
                 val groupingSeparator = CommonSettings().getDigitGroupSeparator()
 
@@ -249,7 +249,7 @@ class Utils {
             landmark: Landmark,
             bFillAddressInfo: Boolean = false
         ): String {
-            return GEMSdkCall.execute {
+            return SdkCall.execute {
                 if (bFillAddressInfo) {
                     UtilUITexts.fillLandmarkAddressInfo(landmark)
                 }
@@ -407,7 +407,7 @@ class Utils {
             width: Int,
             height: Int
         ): Bitmap? {
-            return GEMSdkCall.execute { Util.getImageIdAsBitmap(iconId, width, height) }
+            return SdkCall.execute { Util.getImageIdAsBitmap(iconId, width, height) }
         }
 
         fun getImageAsBitmap(
@@ -415,7 +415,7 @@ class Utils {
             width: Int,
             height: Int
         ): Bitmap? {
-            return GEMSdkCall.execute { Util.createBitmap(icon, width, height) }
+            return SdkCall.execute { Util.createBitmap(icon, width, height) }
         }
 
         fun getImageIdAsBitmap(
@@ -423,7 +423,7 @@ class Utils {
             width: Int,
             height: Int
         ): Bitmap? {
-            return GEMSdkCall.execute { Util.getImageIdAsBitmap(iconId, width, height) }
+            return SdkCall.execute { Util.getImageIdAsBitmap(iconId, width, height) }
         }
 
         fun getErrorMessage(nError: SdkError): String {

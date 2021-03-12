@@ -41,7 +41,7 @@ import com.generalmagic.sdk.demo.app.GEMApplication.postOnMain
 import com.generalmagic.sdk.demo.app.MapLayoutController
 import com.generalmagic.sdk.demo.app.elements.ButtonsDecorator
 import com.generalmagic.sdk.demo.util.IntentHelper
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import com.generalmagic.sensors.EResolution
 import kotlinx.android.synthetic.main.activity_camera.*
@@ -78,7 +78,7 @@ open class BasicSensorsActivity : GenericListActivity() {
 
         override fun getDescription(): String {
             val data = lastData[type] ?: return ""
-            return GEMSdkCall.execute { toString(data) } ?: ""
+            return SdkCall.execute { toString(data) } ?: ""
         }
     }
 
@@ -233,7 +233,7 @@ class SensorsListActivity : BasicSensorsActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        GEMSdkCall.execute { doStart() }
+        SdkCall.execute { doStart() }
     }
 
     override fun doStart() {
@@ -251,7 +251,7 @@ class SensorsListActivity : BasicSensorsActivity() {
             EDataType.Temperature
         )
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val currentDataSource = DataSourceFactory.produceLive()
             currentDataSource ?: return@execute
 
@@ -322,14 +322,14 @@ class DirectCamActivity : BaseActivity() {
 
                 override fun surfaceCreated(p0: SurfaceHolder) {
                     surface = p0.surface
-                    GEMSdkCall.execute { doStart() }
+                    SdkCall.execute { doStart() }
                 }
             }
         )
     }
 
     override fun doBackPressed(): Boolean {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             currentDataSource?.removeCameraSurface(surfaceId)
             currentDataSource?.removeListener(listener)
         }
@@ -338,7 +338,7 @@ class DirectCamActivity : BaseActivity() {
     }
 
     override fun doStart() {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val currentDataSource = DataSourceFactory.produceLive()
             currentDataSource ?: return@execute
 
@@ -388,7 +388,7 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
         override fun onNewData(data: SenseData?) {
             data ?: return
 
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 when (data.getType()) {
                     EDataType.Camera -> {
                         val camData = CameraData(data)
@@ -415,11 +415,11 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
     private var canvas: Canvas? = null
     private val canvasListener = object : CanvasListener() {
         override fun onRender() {
-            GEMSdkCall.execute { drawer?.renderFrame() }
+            SdkCall.execute { drawer?.renderFrame() }
         }
     }
 
-    fun doStart() = GEMSdkCall.execute {
+    fun doStart() = SdkCall.execute {
         if (!currentDataSource.getAvailableDataTypes().contains(EDataType.Camera)) {
             postOnMain {
                 Toast.makeText(context, "CAMERA FRAME IS NOT AVAILABLE !", Toast.LENGTH_SHORT)
@@ -457,7 +457,7 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
         }
     }
 
-    fun doStop() = GEMSdkCall.execute {
+    fun doStop() = SdkCall.execute {
         currentDataSource.removeListener(framesDrawerListener)
 
         canvas?.release()
@@ -476,7 +476,7 @@ open class LiveDataSourceController(context: Context, attrs: AttributeSet) :
     override fun doStart() {
         super.doStart()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             this.currentDataSource = DataSourceFactory.produceLive() ?: return@execute
         }
     }
@@ -495,7 +495,7 @@ open class LogDataSourceController(context: Context, attrs: AttributeSet) :
 
         val videoPath = videoPath
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val currentDataSource = DataSourceFactory.produceLog(videoPath) ?: return@execute
             this.currentDataSource = currentDataSource
         }
@@ -571,7 +571,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
             data ?: return
 
             Executors.newSingleThreadExecutor().submit {
-                GEMSdkCall.execute {
+                SdkCall.execute {
                     when (data.getType()) {
                         EDataType.Orientation -> {
                             val orientationData = OrientationData(data)
@@ -603,7 +603,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
         super.doStart()
         val logsDir = GEMApplication.getInternalRecordsPath()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val currentDataSource = this.currentDataSource ?: return@execute
 
             val availableTypes = currentDataSource.getAvailableDataTypes()
@@ -647,7 +647,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
             recorder?.stopAudioRecording() // muted for the moment.. // unmute later if needed
 
             Executors.newSingleThreadExecutor().submit {
-                GEMSdkCall.execute {
+                SdkCall.execute {
                     val startErrorInt = recorder?.startRecording() ?: SdkError.KInternalAbort.value
                     val startError = SdkError.fromInt(startErrorInt)
 
@@ -671,7 +671,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
         super.doStop()
 
         Executors.newSingleThreadExecutor().submit {
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 recorder?.stopRecording()
 
                 currentDataSource?.removeListener(orientationListener)
@@ -703,7 +703,7 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
             if (type != EDataType.Position) return
 
             Executors.newSingleThreadExecutor().submit {
-                GEMSdkCall.execute {
+                SdkCall.execute {
                     when (status) {
                         EPlayingStatus.Playing -> onPlaying()
                         EPlayingStatus.Paused -> onPaused()
@@ -725,7 +725,7 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
     private val seekBarListener = object : SeekBar.OnSeekBarChangeListener {
         override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
             if (fromUser) {
-                GEMSdkCall.execute {
+                SdkCall.execute {
                     val currentDataSource = currentDataSource ?: return@execute
                     val playback = currentDataSource.getPlayback() ?: return@execute
 
@@ -752,12 +752,12 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
         val currentDataSource = currentDataSource ?: return
 
         seekBar.progress = 0
-        seekBar.max = GEMSdkCall.execute {
+        seekBar.max = SdkCall.execute {
             currentDataSource.getPlayback()?.getDuration()?.toInt()
         } ?: 0
         seekBar.setOnSeekBarChangeListener(seekBarListener)
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             if (constructedNow) {
                 onPlaying()
                 currentDataSource.addListener(playingStatusListener, EDataType.Position)
@@ -788,7 +788,7 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
     }
 
     private fun onPlaying() {
-        GEMSdkCall.checkCurrentThread() // to be sure is called fro GEMSDK
+        SdkCall.checkCurrentThread() // to be sure is called fro GEMSDK
         postOnMain {
             doPauseButtons()
         }
@@ -803,7 +803,7 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
     private fun onStopped() {
         onPaused()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             drawer?.doStop()
             drawer = null
 

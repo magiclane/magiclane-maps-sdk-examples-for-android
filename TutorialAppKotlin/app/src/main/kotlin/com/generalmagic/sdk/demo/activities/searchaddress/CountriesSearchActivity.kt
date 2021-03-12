@@ -23,7 +23,7 @@ import com.generalmagic.sdk.demo.app.GEMApplication
 import com.generalmagic.sdk.demo.util.Utils
 import com.generalmagic.sdk.searching.EAddressDetailLevel
 import com.generalmagic.sdk.searching.GuidedAddressSearchService
-import com.generalmagic.sdk.util.GEMSdkCall
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import com.generalmagic.sdk.util.SdkList
 import com.generalmagic.sdk.util.StringIds
@@ -37,7 +37,7 @@ class CountriesSearchActivity : SearchListActivity() {
 
     val listener = object : ProgressListener() {
         override fun notifyComplete(reason: Int, hint: String) {
-            GEMSdkCall.checkCurrentThread()
+            SdkCall.checkCurrentThread()
             val gemError = SdkError.fromInt(reason)
             if (gemError != SdkError.KCancel) {
                 mItems.clear()
@@ -84,7 +84,7 @@ class CountriesSearchActivity : SearchListActivity() {
     fun search(filter: String = "") {
         mFilter = filter
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             results = SdkList(Landmark::class)
             GuidedAddressSearchService().search(
                 results,
@@ -99,11 +99,11 @@ class CountriesSearchActivity : SearchListActivity() {
     }
 
     fun cancel() {
-        GEMSdkCall.execute { GuidedAddressSearchService().cancelSearch(listener) }
+        SdkCall.execute { GuidedAddressSearchService().cancelSearch(listener) }
     }
 
     fun didTapItem(item: CountryModelItem) {
-        GEMSdkCall.execute { GEMAddressSearchView.onCountrySelected(item.m_landmark) }
+        SdkCall.execute { GEMAddressSearchView.onCountrySelected(item.m_landmark) }
         finish()
     }
 
@@ -124,9 +124,9 @@ class CountriesSearchActivity : SearchListActivity() {
 }
 
 class CountryModelItem(val m_landmark: Landmark) : SearchListItem() {
-    private val mText: String = GEMSdkCall.execute { m_landmark.getName() } ?: ""
+    private val mText: String = SdkCall.execute { m_landmark.getName() } ?: ""
 
-    override fun getIcon(width: Int, height: Int): Bitmap? = GEMSdkCall.execute {
+    override fun getIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
         val isoCode = m_landmark.getAddress()?.getField(EAddressField.ECountryCode)
         if (isoCode?.isNotEmpty() == true) {
             val image = MapDetails().getCountryFlag(isoCode)

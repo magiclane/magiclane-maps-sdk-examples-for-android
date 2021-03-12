@@ -30,7 +30,6 @@ import com.generalmagic.sdk.routingandnavigation.ERouteType
 import com.generalmagic.sdk.routingandnavigation.Route
 import com.generalmagic.sdk.routingandnavigation.RoutePreferences
 import com.generalmagic.sdk.searching.SearchPreferences
-import com.generalmagic.sdk.util.GEMSdkCall
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import kotlinx.android.synthetic.main.location_details_panel.view.*
@@ -45,11 +44,11 @@ class FlyToCoords(context: Context, attrs: AttributeSet?) : FlyController(contex
 
         Tutorials.openHelloWorldTutorial()
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val coordinates = Coordinates(45.651178, 25.604872)
 
             val animation = Animation()
-            animation.setMethod(EAnimation.EAnimationFly)
+            animation.setType(EAnimation.EAnimationFly)
 
             mainMap.centerOnCoordinates(coordinates, -3, Xy(), animation)
         }
@@ -99,9 +98,9 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
                 hideProgress()
             }
 
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 val animation = Animation()
-                animation.setMethod(EAnimation.EAnimationFly)
+                animation.setType(EAnimation.EAnimationFly)
 
                 val settings = HighlightRenderSettings()
                 settings.setOptions(
@@ -119,7 +118,7 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
     }
 
     override fun doStart() {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val text = "Statue of Liberty New York"
             val coords = Coordinates(40.68925476, -74.04456329)
             doSearch(text, coords)
@@ -127,13 +126,13 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
     }
 
     override fun doStop() {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             search.service.cancelSearch(search.listener)
         }
     }
 
     private fun doSearch(text: String, coords: Coordinates) {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             preferences.setReferencePoint(coords)
             preferences.setSearchMapPOIs(true)
             search.service.searchByFilter(search.results, search.listener, text, preferences)
@@ -194,11 +193,11 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
                 return
             }
 
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 val mainMap = GEMApplication.getMainMapView() ?: return@execute
 
                 var selectedRoute: Route? = null
-                val segment = GEMSdkCall.execute segment@{
+                val segment = SdkCall.execute segment@{
                     val resultsList = getResults()
                     if (resultsList.size == 0) return@segment null
                     val mSelectedRoute = resultsList[0]
@@ -220,7 +219,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
 
                 if (isFlyToRoute) {
                     val animation = Animation()
-                    animation.setMethod(EAnimation.EAnimationFly)
+                    animation.setType(EAnimation.EAnimationFly)
 
                     mainMap.preferences()?.routes()?.add(route, true)
 
@@ -245,7 +244,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
     }
 
     override fun doStart() {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val from = Landmark("Gheorghe Lazar", Coordinates(45.65131, 25.60493))
             val to = Landmark("Bulevardul Grivitei", Coordinates(45.65272, 25.60674))
 
@@ -259,7 +258,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
     }
 
     override fun doStop() {
-        GEMSdkCall.execute { routing.cancelCalculation() }
+        SdkCall.execute { routing.cancelCalculation() }
     }
 
     override fun doBackPressed(): Boolean {
@@ -303,11 +302,11 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
                 return
             }
 
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 val mainMap = GEMApplication.getMainMapView() ?: return@execute
 
                 var selectedRoute: Route? = null
-                val trafficEvent = GEMSdkCall.execute trafficEvent@{
+                val trafficEvent = SdkCall.execute trafficEvent@{
                     val resultsList = getResults()
                     if (resultsList.size == 0) return@trafficEvent null
                     val mSelectedRoute = resultsList[0]
@@ -342,7 +341,7 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
     }
 
     override fun doStart() {
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val from = Landmark("London", Coordinates(51.50732, -0.12765))
             val to = Landmark("Maidstone", Coordinates(51.27483, 0.52316))
 
@@ -356,7 +355,7 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
     }
 
     override fun doStop() {
-        GEMSdkCall.execute { routing.cancelCalculation() }
+        SdkCall.execute { routing.cancelCalculation() }
     }
 
     override fun doBackPressed(): Boolean {
@@ -377,7 +376,7 @@ class FlyToLine(context: Context, attrs: AttributeSet?) : FlyController(context,
     override fun doStart() {
         val mainMap = GEMApplication.getMainMapView() ?: return
 
-        GEMSdkCall.execute {
+        SdkCall.execute {
             val vector =
                 VectorDataSource(EVectorDataType.EVDT_Polyline.value, "My polylines data source")
             val vectorItem = VectorItem()
@@ -394,7 +393,7 @@ class FlyToLine(context: Context, attrs: AttributeSet?) : FlyController(context,
 
             mainMap.preferences()?.vectors()?.add(vector)
             val animation = Animation()
-            animation.setMethod(EAnimation.EAnimationFly)
+            animation.setType(EAnimation.EAnimationFly)
 
             if (area != null) {
                 mainMap.centerOnArea(area, -1, Xy(), animation)
@@ -408,7 +407,7 @@ class FlyToLine(context: Context, attrs: AttributeSet?) : FlyController(context,
 
     override fun doBackPressed(): Boolean {
         val mainMap = GEMApplication.getMainMapView() ?: return false
-        GEMSdkCall.execute { mainMap.preferences()?.vectors()?.clear() }
+        SdkCall.execute { mainMap.preferences()?.vectors()?.clear() }
         setFollowGpsButtonVisible(true)
         setStopButtonVisible(false)
         return true

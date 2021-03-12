@@ -140,7 +140,7 @@ class Util {
         fun createBitmap(img: RoadInfoImage?, width: Int, height: Int): Pair<Int, Bitmap?> {
             img ?: return Pair(0, null)
 
-            return GEMSdkCall.execute {
+            return SdkCall.execute {
                 val resultPair = SdkHelper.imageToBitmap(img, width, height)
                 val bmp = createBitmap(resultPair?.second, resultPair?.first ?: 0, height)
 
@@ -170,7 +170,7 @@ class Util {
         fun createBitmap(img: SignpostImage?, width: Int, height: Int): Pair<Int, Bitmap?> {
             img ?: return Pair(0, null)
 
-            return GEMSdkCall.execute {
+            return SdkCall.execute {
                 val resultPair = SdkHelper.imageToBitmap(img, width, height)
                 val bmp = createBitmap(resultPair?.second, resultPair?.first ?: 0, height)
 
@@ -189,7 +189,7 @@ class Util {
         ): Bitmap? {
             img ?: return null
 
-            return GEMSdkCall.execute {
+            return SdkCall.execute {
                 val byteArray = SdkHelper.imageToBitmap(
                     img,
                     width,
@@ -205,7 +205,7 @@ class Util {
 
         fun createBitmap(img: Image?, width: Int, height: Int): Bitmap? {
             img ?: return null
-            return GEMSdkCall.execute {
+            return SdkCall.execute {
                 val byteArray = SdkHelper.imageToBitmap(img, width, height)
                 return@execute createBitmap(byteArray, width, height)
             }
@@ -250,11 +250,11 @@ class Util {
         }
 
         fun getImageIdAsImage(id: Int): Image? {
-            return GEMSdkCall.execute { ImageDatabase().getImageById(id) }
+            return SdkCall.execute { ImageDatabase().getImageById(id) }
         }
 
         fun getImageIdAsBitmap(id: Int, width: Int, height: Int): Bitmap? {
-            return GEMSdkCall.execute {
+            return SdkCall.execute {
                 val image = getImageIdAsImage(id)
                 return@execute createBitmap(image, width, height)
             }
@@ -308,25 +308,25 @@ class Util {
 
         fun getContentStoreStatusIconId(status: EContentStoreItemStatus): Int {
             return when (status) {
-                EContentStoreItemStatus.ECIS_Unavailable -> {
+                EContentStoreItemStatus.Unavailable -> {
                     SdkIcons.Other_UI.Button_DownloadOnServer_v2.value
                 }
 
-                EContentStoreItemStatus.ECIS_Completed -> {
+                EContentStoreItemStatus.Completed -> {
                     SdkIcons.Other_UI.Button_DownloadOnDevice_v2.value
                 }
 
-                EContentStoreItemStatus.ECIS_DownloadRunning -> {
+                EContentStoreItemStatus.DownloadRunning -> {
                     SdkIcons.Other_UI.Button_DownloadPause.value
                 }
 
-                EContentStoreItemStatus.ECIS_DownloadQueued,
-                EContentStoreItemStatus.ECIS_DownloadWaitingFreeNetwork -> {
+                EContentStoreItemStatus.DownloadQueued,
+                EContentStoreItemStatus.DownloadWaitingFreeNetwork -> {
                     SdkIcons.Other_UI.Button_DownloadQueue.value
                 }
 
-                EContentStoreItemStatus.ECIS_DownloadWaiting,
-                EContentStoreItemStatus.ECIS_Paused -> {
+                EContentStoreItemStatus.DownloadWaiting,
+                EContentStoreItemStatus.Paused -> {
                     SdkIcons.Other_UI.Button_DownloadRefresh_v2.value
                 }
 
@@ -457,7 +457,7 @@ class Util {
 
         fun downloadSecondStyle() {
             // download another style
-            GEMSdkCall.execute {
+            SdkCall.execute {
                 val listener = object : ProgressListener() {
                     override fun notifyComplete(reason: Int, hint: String) {
                         // select the downloaded style
