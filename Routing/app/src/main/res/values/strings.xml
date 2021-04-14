@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Routing</string>
+    <string name="route_name">Route name:</string>
+</resources>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.generalmagic.sdk.demo.activities.mainactivity.controllers.LogPlayerController xmlns:android="http://schemas.android.com/apk/res/android"
+<com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.LogPlayerController xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/logPlayerController"
     android:layout_width="match_parent"
@@ -50,4 +50,4 @@
         app:layout_constraintBottom_toTopOf="@id/navBottomButtons"
         app:layout_constraintEnd_toStartOf="@id/navBottomButtons" />
 
-</com.generalmagic.sdk.demo.activities.mainactivity.controllers.LogPlayerController>
+</com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.LogPlayerController>

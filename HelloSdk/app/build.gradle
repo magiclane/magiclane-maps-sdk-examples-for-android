@@ -16,7 +16,7 @@ android {
     buildToolsVersion "30.0.3"
 
     defaultConfig {
-        applicationId "com.generalmagic.example.myapplication"
+        applicationId "com.generalmagic.sdk.examples.hellosdk"
         minSdkVersion 21
         targetSdkVersion 30
         versionCode 1

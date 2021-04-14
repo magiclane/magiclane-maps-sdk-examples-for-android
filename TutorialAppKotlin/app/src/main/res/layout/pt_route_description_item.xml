@@ -63,7 +63,7 @@
 	</LinearLayout>
 
 
-	<com.generalmagic.sdk.demo.activities.publictransport.PublicTransportRouteDescriptionLineView
+	<com.generalmagic.sdk.examples.demo.activities.publictransport.PublicTransportRouteDescriptionLineView
 		android:id="@+id/segment_line_view"
 		android:layout_width="20dp"
 		android:layout_height="match_parent"

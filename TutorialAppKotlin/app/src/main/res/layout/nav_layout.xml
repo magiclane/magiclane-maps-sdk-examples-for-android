@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.generalmagic.sdk.demo.activities.mainactivity.controllers.common.NavPanelsController xmlns:android="http://schemas.android.com/apk/res/android"
+<com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.NavPanelsController xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	android:id="@+id/navLayout"
 	android:layout_width="match_parent"
@@ -119,4 +119,4 @@
 
 	</androidx.constraintlayout.widget.ConstraintLayout>
 
-</com.generalmagic.sdk.demo.activities.mainactivity.controllers.common.NavPanelsController>
+</com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.NavPanelsController>

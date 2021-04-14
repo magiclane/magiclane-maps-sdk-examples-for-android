@@ -1,3 +1,8 @@
+## Overview
+
+This example app present the followings:
+- Displaying a map on an Android Fragment.
+
 ## Build instructions
 
 Step 1. Download the SDK

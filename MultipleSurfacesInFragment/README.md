@@ -1,3 +1,8 @@
+## Overview
+
+This example app present the followings:
+- Displaying a variable list of maps on an Android Fragment.
+
 ## Build instructions
 
 Step 1. Download the SDK

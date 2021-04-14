@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.generalmagic.sdk.demo.activities.mainactivity.controllers.RouteAbc xmlns:android="http://schemas.android.com/apk/res/android"
+<com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.RouteAbc xmlns:android="http://schemas.android.com/apk/res/android"
 	android:id="@+id/routeAbcController"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
 	android:gravity="center_horizontal"
 	android:orientation="vertical">
 
-</com.generalmagic.sdk.demo.activities.mainactivity.controllers.RouteAbc>
+</com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.RouteAbc>

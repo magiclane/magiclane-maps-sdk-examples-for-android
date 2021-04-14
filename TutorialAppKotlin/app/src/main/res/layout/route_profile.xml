@@ -92,7 +92,7 @@
 				android:textSize="@dimen/mediumTextSize"
 				/>
 
-			<com.generalmagic.sdk.demo.activities.routeprofile.SortableClimbTableView
+			<com.generalmagic.sdk.examples.demo.activities.routeprofile.SortableClimbTableView
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:id="@+id/table_view" />

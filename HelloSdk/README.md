@@ -1,3 +1,8 @@
+## Overview
+
+This example app present the followings:
+- How the Maps SDK for Android can be integrated into your project.
+
 ## Build instructions
 
 Step 1. Download the SDK

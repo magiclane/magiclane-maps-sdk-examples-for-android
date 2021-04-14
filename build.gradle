@@ -1,0 +1,3 @@
+task assembleAll {
+    dependsOn gradle.includedBuilds*.task(':app:assemble')
+}

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.generalmagic.sdk.demo.activities.mainactivity.controllers.common.PickLocationController xmlns:android="http://schemas.android.com/apk/res/android"
+<com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.PickLocationController xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	android:id="@+id/pickLocation"
 	android:layout_width="match_parent"
@@ -42,4 +42,4 @@
         app:layout_constraintTop_toTopOf="parent" />
         
 
-</com.generalmagic.sdk.demo.activities.mainactivity.controllers.common.PickLocationController>
+</com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.PickLocationController>
