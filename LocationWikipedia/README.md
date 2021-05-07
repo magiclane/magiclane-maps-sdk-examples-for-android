@@ -1,8 +1,8 @@
 ## Overview
 
-This example app present the followings:
+This example app demonstrates the following features:
 - Search for a landmark.
-- Request Wikipedia info about first resulted landmark, if exists.
+- Request Wikipedia info about the first landmark in the resulting list, if it exists.
 
 ## Build instructions
 

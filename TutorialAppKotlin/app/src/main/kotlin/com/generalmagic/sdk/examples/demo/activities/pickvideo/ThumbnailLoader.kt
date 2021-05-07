@@ -118,12 +118,13 @@ class ThumbnailLoader {
         executorService.submit(PhotosLoader(p))
     }
 
+    @Suppress("DEPRECATION")
     private fun getBitmap(url: String): Bitmap? {
         return ThumbnailUtils.createVideoThumbnail(url, MediaStore.Video.Thumbnails.MINI_KIND)
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    private fun getBitmap(url: String, size: Size, signal: CancellationSignal? = null): Bitmap? {
+    private fun getBitmap(url: String, size: Size, signal: CancellationSignal? = null): Bitmap {
         return ThumbnailUtils.createVideoThumbnail(File(url), size, signal)
     }
 
@@ -139,7 +140,7 @@ class ThumbnailLoader {
             val size = Size(photoToLoad.imageView.width, photoToLoad.imageView.height)
 
             val bmp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                getBitmap(photoToLoad.url, size) ?: return
+                getBitmap(photoToLoad.url, size)
             } else {
                 getBitmap(photoToLoad.url)
             }
@@ -180,6 +181,7 @@ class ThumbnailLoader {
         }
     }
 
+    @Suppress("unused")
     fun clearCache() {
         memoryCache.clear()
     }

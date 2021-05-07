@@ -81,7 +81,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun flyTo(coordinates: Coordinates) {
         val animation = Animation()
-        animation.setType(EAnimation.Fly)
+        animation.setType(EAnimation.AnimationLinear)
 
         // Center the map on a specific set of coordinates using the provided animation.
         mainMapView?.centerOnCoordinates(coordinates, -1, Xy(), animation)

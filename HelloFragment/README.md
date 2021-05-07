@@ -1,6 +1,6 @@
 ## Overview
 
-This example app present the followings:
+This example app demonstrates the following features:
 - Displaying a map on an Android Fragment.
 
 ## Build instructions

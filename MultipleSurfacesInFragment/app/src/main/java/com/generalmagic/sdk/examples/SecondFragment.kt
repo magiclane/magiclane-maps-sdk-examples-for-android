@@ -21,11 +21,11 @@ import androidx.core.view.get
 import androidx.core.view.setMargins
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.generalmagic.sdk.examples.util.ButtonsDecorator
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.RectF
 import com.generalmagic.sdk.d3scene.MapView
 import com.generalmagic.sdk.d3scene.Screen
+import com.generalmagic.sdk.examples.util.ButtonsDecorator
 import com.generalmagic.sdk.util.SdkCall
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 

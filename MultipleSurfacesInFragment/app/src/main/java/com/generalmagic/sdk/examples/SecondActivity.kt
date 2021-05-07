@@ -34,7 +34,7 @@ class SecondActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        
+
         // Deinitialize the SDK.
         SdkInitHelper.deinit()
     }
@@ -44,6 +44,6 @@ class SecondActivity : AppCompatActivity() {
     override fun onBackPressed() {
         finish()
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
 }

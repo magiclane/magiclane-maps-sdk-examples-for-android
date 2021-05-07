@@ -16,7 +16,7 @@ import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.AppUtils
 import com.generalmagic.sdk.examples.demo.util.Utils
-import com.generalmagic.sdk.examples.demo.util.Utils.Companion.getUIString
+import com.generalmagic.sdk.examples.demo.util.Utils.getUIString
 import com.generalmagic.sdk.routesandnavigation.ERealtimeStatus
 import com.generalmagic.sdk.routesandnavigation.ERouteSegmentType
 import com.generalmagic.sdk.routesandnavigation.ETransitType
@@ -35,10 +35,10 @@ object GEMPublicTransportRouteDescriptionView {
     internal lateinit var agencyText: String
     internal var itemsCount = -1
 
-    var m_nItems = 0
-    var m_header = TRouteItem()
-    var m_agencies = ArrayList<TAgencyInfo>()
-    var m_routeDescriptionItems = ArrayList<TRouteDescriptionItem>()
+    private var mNItems = 0
+    private var mHeader = TRouteItem()
+    private var mAgencies = ArrayList<TAgencyInfo>()
+    var mRouteDescriptionItems = ArrayList<TRouteDescriptionItem>()
 
     internal class RouteInstructionItem {
         var icon: Bitmap? = null
@@ -90,14 +90,14 @@ object GEMPublicTransportRouteDescriptionView {
     private val iconSize =
         GEMApplication.appResources().getDimension(R.dimen.route_list_instr_icon_size).toInt()
 
-    private fun setItems(m_route: Route) {
-        Helper.fillRouteDescriptionItems(m_route, m_header, m_routeDescriptionItems)
+    private fun setItems(mRoute: Route) {
+        Helper.fillRouteDescriptionItems(mRoute, mHeader, mRouteDescriptionItems)
     }
 
-    private fun setHeader(m_route: Route) {
+    private fun setHeader(mRoute: Route) {
         SdkCall.checkCurrentThread()
 
-        val routeSegmentsList = m_route.getSegments() ?: ArrayList()
+        val routeSegmentsList = mRoute.getSegments() ?: ArrayList()
         val nSegmentsCount = routeSegmentsList.size
         var nWalkingTime = 0
         var nWalkingDistance = 0
@@ -106,14 +106,14 @@ object GEMPublicTransportRouteDescriptionView {
         var arrivalTime = Time()
         var bLookForPTSegment = true
 
-        m_header.m_tripSegments.clear()
+        mHeader.mTripSegments.clear()
 
-        if (m_route.toPTRoute()?.getPTFrequency() ?: 0 > 0) {
-            val timeText = Utils.getTimeText(m_route.toPTRoute()?.getPTFrequency() ?: 0)
+        if (mRoute.toPTRoute()?.getPTFrequency() ?: 0 > 0) {
+            val timeText = Utils.getTimeText(mRoute.toPTRoute()?.getPTFrequency() ?: 0)
             val tmp = String.format("%s %s", timeText.first, timeText.second)
-            m_header.m_frequency = String.format(getUIString(StringIds.eStrEveryXTime), tmp)
+            mHeader.mFrequency = String.format(getUIString(StringIds.eStrEveryXTime), tmp)
         }
-        m_header.m_fare = m_route.toPTRoute()?.getPTFare() ?: ""
+        mHeader.mFare = mRoute.toPTRoute()?.getPTFare() ?: ""
 
         for (nSegmentIndex in 0 until nSegmentsCount) {
             val routeSegment = routeSegmentsList[nSegmentIndex]
@@ -126,53 +126,53 @@ object GEMPublicTransportRouteDescriptionView {
                 val ptRouteSegment = routeSegment.toPTRouteSegment()
                 var bgColor = Rgba()
                 ptRouteSegment?.let {
-                    routeSegmentItem.m_type = it.getTransitType()
-                    routeSegmentItem.m_name = it.getShortName() ?: ""
+                    routeSegmentItem.mType = it.getTransitType()
+                    routeSegmentItem.mName = it.getShortName() ?: ""
 
-                    routeSegmentItem.m_visible = routeSegment.isSignificant()
+                    routeSegmentItem.mVisible = routeSegment.isSignificant()
 
                     val lineColor = it.getLineColor()
                     if (lineColor != null) {
                         bgColor = lineColor
                     }
-                    routeSegmentItem.m_backgroundColor = bgColor.value()
-                    routeSegmentItem.m_foregroundColor = it.getLineTextColor()?.value() ?: 0
+                    routeSegmentItem.mBackgroundColor = bgColor.value()
+                    routeSegmentItem.mForegroundColor = it.getLineTextColor()?.value() ?: 0
                 }
 
                 if ((bgColor.red() == 255) && (bgColor.green() == 255) && (bgColor.blue() == 255)) {
-                    routeSegmentItem.m_backgroundColor = Rgba(228, 228, 228, 255).value()
+                    routeSegmentItem.mBackgroundColor = Rgba(228, 228, 228, 255).value()
                 }
 
-                routeSegmentItem.m_realTimeStatus =
+                routeSegmentItem.mRealTimeStatus =
                     ptRouteSegment?.getRealtimeStatus() ?: ERealtimeStatus.NotAvailable
-                routeSegmentItem.m_hasWheelChairSupport =
+                routeSegmentItem.mHasWheelChairSupport =
                     ptRouteSegment?.getHasWheelchairSupport() ?: false
-                routeSegmentItem.m_hasBicycleSupport =
+                routeSegmentItem.mHasBicycleSupport =
                     ptRouteSegment?.getHasBicycleSupport() ?: false
-                routeSegmentItem.m_iconId = Helper.getIconId(routeSegmentItem.m_type)
+                routeSegmentItem.mIconId = Helper.getIconId(routeSegmentItem.mType)
 
                 if (bLookForPTSegment) {
                     bLookForPTSegment = false
 
-                    m_header.m_nLeftImageId = routeSegmentItem.m_iconId
+                    mHeader.mNLeftImageId = routeSegmentItem.mIconId
 
                     val from = ptRouteSegment?.getLineFrom() ?: ""
                     if (from.isNotEmpty()) {
-                        m_header.m_from = String.format("from %s", from)
+                        mHeader.mFrom = String.format("from %s", from)
                     }
                 }
             } else {
                 nWalkingTime += routeSegment.getTimeDistance()?.getTotalTime() ?: 0
                 nWalkingDistance += routeSegment.getTimeDistance()?.getTotalDistance() ?: 0
-                routeSegmentItem.m_type = ETransitType.Walk
-                routeSegmentItem.m_iconId = Helper.getIconId(routeSegmentItem.m_type)
+                routeSegmentItem.mType = ETransitType.Walk
+                routeSegmentItem.mIconId = Helper.getIconId(routeSegmentItem.mType)
 
-                routeSegmentItem.m_visible = routeSegment.isSignificant()
+                routeSegmentItem.mVisible = routeSegment.isSignificant()
 
                 val timeText =
                     Utils.getTimeText(routeSegment.getTimeDistance()?.getTotalTime() ?: 0)
-                routeSegmentItem.m_travelTimeValue = timeText.first
-                routeSegmentItem.m_travelTimeUnit = timeText.second
+                routeSegmentItem.mTravelTimeValue = timeText.first
+                routeSegmentItem.mTravelTimeUnit = timeText.second
             }
 
             if (nSegmentIndex == 0) {
@@ -182,10 +182,10 @@ object GEMPublicTransportRouteDescriptionView {
                 arrivalTime = routeSegment.toPTRouteSegment()?.getArrivalTime() ?: Time()
             }
 
-            m_header.m_tripSegments.add(routeSegmentItem)
+            mHeader.mTripSegments.add(routeSegmentItem)
         }
 
-        val travelTime = m_route.getTimeDistance()?.getTotalTime() ?: 0
+        val travelTime = mRoute.getTimeDistance()?.getTotalTime() ?: 0
 
         if (bLookForPTSegment) {
             nWalkingTime = travelTime
@@ -205,10 +205,10 @@ object GEMPublicTransportRouteDescriptionView {
             walkingDistance = String.format("%s %s", distText.first, distText.second)
         }
 
-        m_header.m_walkingTime = walkingTime
-        m_header.m_walkingDistance = walkingDistance
+        mHeader.mWalkingTime = walkingTime
+        mHeader.mWalkingDistance = walkingDistance
         val walkingInfo = "$walkingDistance ($walkingTime)"
-        m_header.m_walkingInfo =
+        mHeader.mWalkingInfo =
             String.format(getUIString(StringIds.eStrDistanceTimeWalking), walkingInfo)
 
         val bUse24HourNotation = true
@@ -252,33 +252,33 @@ object GEMPublicTransportRouteDescriptionView {
             arrivalTimeStr += arrivalTimeUnit
         }
 
-        m_header.m_tripTimeInterval =
+        mHeader.mTripTimeInterval =
             String.format("%s - %s", departureTimeStr, arrivalTimeStr)
 
-        m_header.m_departureTimeStr = departureTimeStr
-        m_header.m_arrivalTimeStr = arrivalTimeStr
+        mHeader.mDepartureTimeStr = departureTimeStr
+        mHeader.mArrivalTimeStr = arrivalTimeStr
 
-        val timeText = Utils.getTimeText(travelTime, false, false)
-        m_header.m_tripDuration = String.format("%s %s", timeText.first, timeText.second)
+        val timeText = Utils.getTimeText(travelTime, bForceHours = false, bCapitalizeResult = false)
+        mHeader.mTripDuration = String.format("%s %s", timeText.first, timeText.second)
 
-        m_header.m_departureTime = departureTime
-        m_header.m_arrivalTime = arrivalTime
+        mHeader.mDepartureTime = departureTime
+        mHeader.mArrivalTime = arrivalTime
 
         if (nNonWalkingSegmentsCount > 1) {
             --nNonWalkingSegmentsCount
             if (nNonWalkingSegmentsCount == 1) {
-                m_header.m_numberOfChanges =
+                mHeader.mNumberOfChanges =
                     String.format(getUIString(StringIds.eStrNoOfTransfer), nNonWalkingSegmentsCount)
             } else {
-                m_header.m_numberOfChanges = String.format(
+                mHeader.mNumberOfChanges = String.format(
                     getUIString(StringIds.eStrNoOfTransfers),
                     nNonWalkingSegmentsCount
                 )
             }
         }
 
-        if (m_route.toPTRoute()?.getPTRespectsAllConditions() == false) {
-            m_header.m_warning = getUIString(StringIds.eStrNotAllPreferencesMet)
+        if (mRoute.toPTRoute()?.getPTRespectsAllConditions() == false) {
+            mHeader.mWarning = getUIString(StringIds.eStrNotAllPreferencesMet)
         }
     }
 
@@ -288,39 +288,39 @@ object GEMPublicTransportRouteDescriptionView {
         setHeader(route)
         setItems(route)
 
-        m_nItems = 0
-        m_agencies.clear()
-        if (m_routeDescriptionItems.size > 0) {
-            m_nItems = m_routeDescriptionItems.size + 1 // header
-            for (i in m_routeDescriptionItems.indices) {
-                if (m_routeDescriptionItems[i].m_agencyName.isNotEmpty() &&
+        mNItems = 0
+        mAgencies.clear()
+        if (mRouteDescriptionItems.size > 0) {
+            mNItems = mRouteDescriptionItems.size + 1 // header
+            for (i in mRouteDescriptionItems.indices) {
+                if (mRouteDescriptionItems[i].mAgencyName.isNotEmpty() &&
                     (
-                        m_routeDescriptionItems[i].m_agencyURL.isNotEmpty() ||
-                            m_routeDescriptionItems[i].m_agencyFareURL.isNotEmpty() ||
-                            m_routeDescriptionItems[i].m_agencyPhone.isNotEmpty()
+                        mRouteDescriptionItems[i].mAgencyURL.isNotEmpty() ||
+                            mRouteDescriptionItems[i].mAgencyFareURL.isNotEmpty() ||
+                            mRouteDescriptionItems[i].mAgencyPhone.isNotEmpty()
                         )
                 ) {
                     var j = 0
-                    while (j < m_agencies.size) {
-                        if (m_agencies[j].m_name === m_routeDescriptionItems[i].m_agencyName) {
+                    while (j < mAgencies.size) {
+                        if (mAgencies[j].mName === mRouteDescriptionItems[i].mAgencyName) {
                             break
                         }
                         ++j
                     }
-                    if (j == m_agencies.size) {
-                        m_agencies.add(
+                    if (j == mAgencies.size) {
+                        mAgencies.add(
                             TAgencyInfo(
-                                m_routeDescriptionItems[i].m_agencyName,
-                                m_routeDescriptionItems[i].m_agencyURL,
-                                m_routeDescriptionItems[i].m_agencyFareURL,
-                                m_routeDescriptionItems[i].m_agencyPhone
+                                mRouteDescriptionItems[i].mAgencyName,
+                                mRouteDescriptionItems[i].mAgencyURL,
+                                mRouteDescriptionItems[i].mAgencyFareURL,
+                                mRouteDescriptionItems[i].mAgencyPhone
                             )
                         )
                     }
                 }
             }
-            if (m_agencies.size > 0) {
-                m_nItems += 1 // "AGENCY INFO" item
+            if (mAgencies.size > 0) {
+                mNItems += 1 // "AGENCY INFO" item
             }
         }
     }
@@ -431,43 +431,44 @@ object GEMPublicTransportRouteDescriptionView {
 
     class TImageWidth(var width: Int = 0)
 
-    fun getTitle(): String {
+    private fun getTitle(): String {
         return getUIString(StringIds.eStrRouteDetails)
     }
 
-    fun getItemsCount(): Int {
-        return m_nItems
+    private fun getItemsCount(): Int {
+        return mNItems
     }
 
-    fun getTripTimeInterval(): String {
-        return m_header.m_tripTimeInterval
+    private fun getTripTimeInterval(): String {
+        return mHeader.mTripTimeInterval
     }
 
-    fun getTripDuration(): String {
-        return m_header.m_tripDuration
+    private fun getTripDuration(): String {
+        return mHeader.mTripDuration
     }
 
-    fun getNumberOfChanges(): String {
-        return m_header.m_numberOfChanges
+    private fun getNumberOfChanges(): String {
+        return mHeader.mNumberOfChanges
     }
 
-    fun getRouteSegmentsCount(): Int {
-        return m_header.m_tripSegments.size
+    private fun getRouteSegmentsCount(): Int {
+        return mHeader.mTripSegments.size
     }
 
-    fun isRouteSegmentVisible(segmentIndex: Int): Boolean {
-        return if (segmentIndex >= 0 && segmentIndex < m_header.m_tripSegments.size) {
-            m_header.m_tripSegments[segmentIndex].m_visible
+    private fun isRouteSegmentVisible(segmentIndex: Int): Boolean {
+        return if (segmentIndex >= 0 && segmentIndex < mHeader.mTripSegments.size) {
+            mHeader.mTripSegments[segmentIndex].mVisible
         } else false
     }
 
-    fun getRouteSegmentImage(
+    @Suppress("SameParameterValue")
+    private fun getRouteSegmentImage(
         segmentIndex: Int,
         width: TImageWidth,
         height: Int
     ): Bitmap? {
-        if ((segmentIndex >= 0) && (segmentIndex < m_header.m_tripSegments.size)) {
-            val iconId = m_header.m_tripSegments[segmentIndex].m_iconId
+        if ((segmentIndex >= 0) && (segmentIndex < mHeader.mTripSegments.size)) {
+            val iconId = mHeader.mTripSegments[segmentIndex].mIconId
             width.width = (height * Utils.getImageAspectRatio(iconId)).toInt()
 
             return Utils.getImageAsBitmap(iconId, width.width, height)
@@ -476,42 +477,43 @@ object GEMPublicTransportRouteDescriptionView {
         return null
     }
 
-    fun getRouteSegmentName(segmentIndex: Int): String {
-        if ((segmentIndex >= 0) && (segmentIndex < m_header.m_tripSegments.size)) {
-            return m_header.m_tripSegments[segmentIndex].m_name
+    private fun getRouteSegmentName(segmentIndex: Int): String {
+        if ((segmentIndex >= 0) && (segmentIndex < mHeader.mTripSegments.size)) {
+            return mHeader.mTripSegments[segmentIndex].mName
         }
         return ""
     }
 
-    fun getRouteSegmentBackgroundColor(segmentIndex: Int): Int {
-        if ((segmentIndex >= 0) && (segmentIndex < m_header.m_tripSegments.size)) {
-            return m_header.m_tripSegments[segmentIndex].m_backgroundColor
+    private fun getRouteSegmentBackgroundColor(segmentIndex: Int): Int {
+        if ((segmentIndex >= 0) && (segmentIndex < mHeader.mTripSegments.size)) {
+            return mHeader.mTripSegments[segmentIndex].mBackgroundColor
         }
         return 0
     }
 
-    fun getRouteSegmentForegroundColor(segmentIndex: Int): Int {
-        if ((segmentIndex >= 0) && (segmentIndex < m_header.m_tripSegments.size)) {
-            return m_header.m_tripSegments[segmentIndex].m_foregroundColor
+    private fun getRouteSegmentForegroundColor(segmentIndex: Int): Int {
+        if ((segmentIndex >= 0) && (segmentIndex < mHeader.mTripSegments.size)) {
+            return mHeader.mTripSegments[segmentIndex].mForegroundColor
         }
         return 0
     }
 
-    fun getRouteSegmentTravelTimeValue(segmentIndex: Int): String {
-        if ((segmentIndex >= 0) && (segmentIndex < m_header.m_tripSegments.size)) {
-            return m_header.m_tripSegments[segmentIndex].m_travelTimeValue
+    private fun getRouteSegmentTravelTimeValue(segmentIndex: Int): String {
+        if ((segmentIndex >= 0) && (segmentIndex < mHeader.mTripSegments.size)) {
+            return mHeader.mTripSegments[segmentIndex].mTravelTimeValue
         }
         return ""
     }
 
-    fun getRouteSegmentTravelTimeUnit(segmentIndex: Int): String {
-        if ((segmentIndex >= 0) && (segmentIndex < m_header.m_tripSegments.size)) {
-            return m_header.m_tripSegments[segmentIndex].m_travelTimeUnit
+    private fun getRouteSegmentTravelTimeUnit(segmentIndex: Int): String {
+        if ((segmentIndex >= 0) && (segmentIndex < mHeader.mTripSegments.size)) {
+            return mHeader.mTripSegments[segmentIndex].mTravelTimeUnit
         }
         return ""
     }
 
-    fun getSeparatorImage(width: TImageWidth, height: Int): Bitmap? {
+    @Suppress("SameParameterValue")
+    private fun getSeparatorImage(width: TImageWidth, height: Int): Bitmap? {
         val iconId = SdkIcons.PublicTransport.PublicTransport_Arrow.value
         width.width = (height * Utils.getImageAspectRatio(iconId)).toInt()
 
@@ -522,225 +524,226 @@ object GEMPublicTransportRouteDescriptionView {
         )
     }
 
-    fun getWalkingInfo(): String {
-        return m_header.m_walkingInfo
+    private fun getWalkingInfo(): String {
+        return mHeader.mWalkingInfo
     }
 
-    fun getFrequency(): String {
-        return m_header.m_frequency
+    private fun getFrequency(): String {
+        return mHeader.mFrequency
     }
 
-    fun getFare(): String {
-        return m_header.m_fare
+    private fun getFare(): String {
+        return mHeader.mFare
     }
 
-    fun getWarning(): String {
-        return m_header.m_warning
+    private fun getWarning(): String {
+        return mHeader.mWarning
     }
 
-    fun getStartStationName(index: Int): String {
+    private fun getStartStationName(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            tmp = m_routeDescriptionItems[itemIndex].m_startStationName
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            tmp = mRouteDescriptionItems[itemIndex].mStartStationName
         }
         return tmp
     }
 
-    fun getStopStationName(index: Int): String {
+    private fun getStopStationName(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            tmp = m_routeDescriptionItems[itemIndex].m_stopStationName
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            tmp = mRouteDescriptionItems[itemIndex].mStopStationName
         }
         return tmp
     }
 
-    fun getStationTimeInfo(index: Int): String {
+    private fun getStationTimeInfo(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            tmp = if (m_routeDescriptionItems[itemIndex].m_stationEarlyTime.isNotEmpty()) {
-                m_routeDescriptionItems[itemIndex].m_stationEarlyTime
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            tmp = if (mRouteDescriptionItems[itemIndex].mStationEarlyTime.isNotEmpty()) {
+                mRouteDescriptionItems[itemIndex].mStationEarlyTime
             } else {
-                m_routeDescriptionItems[itemIndex].m_stationLaterTime
+                mRouteDescriptionItems[itemIndex].mStationLaterTime
             }
         }
         return tmp
     }
 
-    fun getStationTimeInfoColor(index: Int): Int {
+    private fun getStationTimeInfoColor(index: Int): Int {
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            if (m_routeDescriptionItems[itemIndex].m_stationEarlyTime.isNotEmpty()) {
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            if (mRouteDescriptionItems[itemIndex].mStationEarlyTime.isNotEmpty()) {
                 return Rgba(58, 145, 86, 255).value()
             }
-            if (m_routeDescriptionItems[itemIndex].m_stationLaterTime.isEmpty()) {
+            if (mRouteDescriptionItems[itemIndex].mStationLaterTime.isEmpty()) {
                 return Rgba(242, 46, 59, 255).value()
             }
         }
         return Rgba(0, 0, 0, 255).value()
     }
 
-    fun getStationPlatform(index: Int): String {
+    private fun getStationPlatform(index: Int): String {
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            return m_routeDescriptionItems[itemIndex].m_stationPlatform
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            return mRouteDescriptionItems[itemIndex].mStationPlatform
         }
         return ""
     }
 
-    fun getStationDepartureTime(index: Int): String {
+    private fun getStationDepartureTime(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            tmp = m_routeDescriptionItems[itemIndex].m_departureTime
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            tmp = mRouteDescriptionItems[itemIndex].mDepartureTime
         }
         return tmp
     }
 
-    fun getStationArrivalTime(index: Int): String {
+    private fun getStationArrivalTime(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            val crtItemIsWalk = m_routeDescriptionItems[itemIndex].m_isWalk
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            val crtItemIsWalk = mRouteDescriptionItems[itemIndex].mIsWalk
             val nextItemIsWalk =
-                (itemIndex < (m_routeDescriptionItems.size - 1)) && m_routeDescriptionItems[itemIndex + 1].m_isWalk
-            if ((!crtItemIsWalk && !nextItemIsWalk) || (itemIndex == (m_routeDescriptionItems.size - 1))) {
-                tmp = m_routeDescriptionItems[itemIndex].m_arrivalTime
+                (itemIndex < (mRouteDescriptionItems.size - 1)) && mRouteDescriptionItems[itemIndex + 1].mIsWalk
+            if ((!crtItemIsWalk && !nextItemIsWalk) || (itemIndex == (mRouteDescriptionItems.size - 1))) {
+                tmp = mRouteDescriptionItems[itemIndex].mArrivalTime
             }
         }
         return tmp
     }
 
-    fun getToBLineName(index: Int): String {
+    private fun getToBLineName(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            tmp = m_routeDescriptionItems[itemIndex].m_toBLineName
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            tmp = mRouteDescriptionItems[itemIndex].mToBLineName
         }
         return tmp
     }
 
-    fun getSupportLineInfo(index: Int): String {
+    private fun getSupportLineInfo(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            tmp = m_routeDescriptionItems[itemIndex].m_supportLineInfo
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            tmp = mRouteDescriptionItems[itemIndex].mSupportLineInfo
         }
         return tmp
     }
 
-    fun isWalking(index: Int): Boolean {
+    private fun isWalking(index: Int): Boolean {
         val itemIndex = index - 1
-        return if (itemIndex >= 0 && itemIndex < m_routeDescriptionItems.size) {
-            m_routeDescriptionItems[itemIndex].m_isWalk
+        return if (itemIndex >= 0 && itemIndex < mRouteDescriptionItems.size) {
+            mRouteDescriptionItems[itemIndex].mIsWalk
         } else false
     }
 
-    fun getNumberOfStops(index: Int): Int {
+    private fun getNumberOfStops(index: Int): Int {
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            return m_routeDescriptionItems[itemIndex].m_stopNames.size
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            return mRouteDescriptionItems[itemIndex].mStopNames.size
         }
         return 0
     }
 
-    fun getStopName(index: Int, stopIndex: Int): String {
+    private fun getStopName(index: Int, stopIndex: Int): String {
         var tmp = ""
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            tmp = m_routeDescriptionItems[itemIndex].m_stopNames[stopIndex]
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            tmp = mRouteDescriptionItems[itemIndex].mStopNames[stopIndex]
         }
         return tmp
     }
 
-    fun getTimeToNextStation(index: Int): String {
+    private fun getTimeToNextStation(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            tmp = m_routeDescriptionItems[itemIndex].m_timeToNextStation
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            tmp = mRouteDescriptionItems[itemIndex].mTimeToNextStation
         }
         return tmp
     }
 
-    fun getDistanceToNextStation(index: Int): String {
+    private fun getDistanceToNextStation(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            tmp = m_routeDescriptionItems[itemIndex].m_distanceToNextStation
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            tmp = mRouteDescriptionItems[itemIndex].mDistanceToNextStation
         }
         return tmp
     }
 
-    fun getStayOnSameVehicle(index: Int): String {
+    private fun getStayOnSameVehicle(index: Int): String {
         var tmp = ""
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            tmp = m_routeDescriptionItems[itemIndex].m_stayOnSameVehicle
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            tmp = mRouteDescriptionItems[itemIndex].mStayOnSameVehicle
         }
         return tmp
     }
 
-    fun getInstructionsListCount(index: Int): Int {
+    private fun getInstructionsListCount(index: Int): Int {
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            return m_routeDescriptionItems[itemIndex].m_instructionsList.size
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            return mRouteDescriptionItems[itemIndex].mInstructionsList.size
         }
         return 0
     }
 
-    fun getInstructionText(index: Int, routeInstructionIndex: Int): String {
+    private fun getInstructionText(index: Int, routeInstructionIndex: Int): String {
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            if ((routeInstructionIndex >= 0) && (routeInstructionIndex < m_routeDescriptionItems[itemIndex].m_instructionsList.size)) {
-                return m_routeDescriptionItems[itemIndex].m_instructionsList[routeInstructionIndex].text
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            if ((routeInstructionIndex >= 0) && (routeInstructionIndex < mRouteDescriptionItems[itemIndex].mInstructionsList.size)) {
+                return mRouteDescriptionItems[itemIndex].mInstructionsList[routeInstructionIndex].text
             }
         }
         return ""
     }
 
-    fun getInstructionDescription(index: Int, routeInstructionIndex: Int): String {
+    private fun getInstructionDescription(index: Int, routeInstructionIndex: Int): String {
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            if ((routeInstructionIndex >= 0) && (routeInstructionIndex < m_routeDescriptionItems[itemIndex].m_instructionsList.size)) {
-                return m_routeDescriptionItems[itemIndex].m_instructionsList[routeInstructionIndex].description
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            if ((routeInstructionIndex >= 0) && (routeInstructionIndex < mRouteDescriptionItems[itemIndex].mInstructionsList.size)) {
+                return mRouteDescriptionItems[itemIndex].mInstructionsList[routeInstructionIndex].description
             }
         }
         return ""
     }
 
-    fun getInstructionDistance(index: Int, routeInstructionIndex: Int): String {
+    private fun getInstructionDistance(index: Int, routeInstructionIndex: Int): String {
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            if ((routeInstructionIndex >= 0) && (routeInstructionIndex < m_routeDescriptionItems[itemIndex].m_instructionsList.size)) {
-                return m_routeDescriptionItems[itemIndex].m_instructionsList[routeInstructionIndex].statusText
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            if ((routeInstructionIndex >= 0) && (routeInstructionIndex < mRouteDescriptionItems[itemIndex].mInstructionsList.size)) {
+                return mRouteDescriptionItems[itemIndex].mInstructionsList[routeInstructionIndex].statusText
             }
         }
         return ""
     }
 
-    fun getInstructionDistanceUnit(index: Int, routeInstructionIndex: Int): String {
+    private fun getInstructionDistanceUnit(index: Int, routeInstructionIndex: Int): String {
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            if ((routeInstructionIndex >= 0) && (routeInstructionIndex < m_routeDescriptionItems[itemIndex].m_instructionsList.size)) {
-                return m_routeDescriptionItems[itemIndex].m_instructionsList[routeInstructionIndex].statusDescription
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            if ((routeInstructionIndex >= 0) && (routeInstructionIndex < mRouteDescriptionItems[itemIndex].mInstructionsList.size)) {
+                return mRouteDescriptionItems[itemIndex].mInstructionsList[routeInstructionIndex].statusDescription
             }
         }
         return ""
     }
 
-    fun getInstructionImage(
+    @Suppress("SameParameterValue")
+    private fun getInstructionImage(
         index: Int,
         routeInstructionIndex: Int,
         width: Int,
         height: Int
     ): Bitmap? {
         val itemIndex = index - 1
-        if ((itemIndex >= 0) && (itemIndex < m_routeDescriptionItems.size)) {
-            if ((routeInstructionIndex >= 0) && (routeInstructionIndex < m_routeDescriptionItems[itemIndex].m_instructionsList.size)) {
+        if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
+            if ((routeInstructionIndex >= 0) && (routeInstructionIndex < mRouteDescriptionItems[itemIndex].mInstructionsList.size)) {
                 val instr =
-                    m_routeDescriptionItems[itemIndex].m_instructionsList[routeInstructionIndex]
+                    mRouteDescriptionItems[itemIndex].mInstructionsList[routeInstructionIndex]
                 return instr.getBitmap(width, height)
             }
         }
@@ -748,12 +751,12 @@ object GEMPublicTransportRouteDescriptionView {
     }
 
     fun getAgenciesCount(): Int {
-        return m_agencies.size
+        return mAgencies.size
     }
 
     fun getAgencyText(): String {
         var tmp = ""
-        if (m_agencies.size > 0) {
+        if (mAgencies.size > 0) {
             tmp = getUIString(StringIds.eStrAgencyInfo)
             tmp.toUpperCase(Locale.getDefault())
         }
@@ -761,29 +764,29 @@ object GEMPublicTransportRouteDescriptionView {
     }
 
     fun getAgencyName(index: Int): String {
-        if (index >= 0 && index < m_agencies.size) {
-            return m_agencies[index].m_name
+        if (index >= 0 && index < mAgencies.size) {
+            return mAgencies[index].mName
         }
         return ""
     }
 
     fun getAgencyURL(index: Int): String {
-        if (index >= 0 && index < m_agencies.size) {
-            return m_agencies[index].m_url
+        if (index >= 0 && index < mAgencies.size) {
+            return mAgencies[index].mUrl
         }
         return ""
     }
 
     fun getAgencyFareURL(index: Int): String {
-        if (index >= 0 && index < m_agencies.size) {
-            return m_agencies[index].m_fare_url
+        if (index >= 0 && index < mAgencies.size) {
+            return mAgencies[index].mFare_url
         }
         return ""
     }
 
     fun getAgencyPhone(index: Int): String {
-        if (index >= 0 && index < m_agencies.size) {
-            return m_agencies[index].m_phone
+        if (index >= 0 && index < mAgencies.size) {
+            return mAgencies[index].mPhone
         }
         return ""
     }

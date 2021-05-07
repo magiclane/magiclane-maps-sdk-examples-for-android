@@ -428,6 +428,9 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
                         }
                     }
 
+                    val segmentArriveTimeView =
+                        view.findViewById<TextView>(R.id.segment_arrive_time)
+
                     if (view != null) {
                         if (itemIndex > nItems) {
                             val agencyInfo = view.findViewById<TextView>(R.id.agency_info)
@@ -461,8 +464,6 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
                                     GEMPublicTransportRouteDescriptionView.routeItem.tripSegments[itemIndex]?.stopStationName!!
                             }
 
-                            val segmentArriveTimeView =
-                                view.findViewById<TextView>(R.id.segment_arrive_time)
                             if (segmentArriveTimeView != null) {
                                 segmentArriveTimeView.text = stationArrivalTime
 
@@ -558,10 +559,8 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
                                         GEMPublicTransportRouteDescriptionView.routeItem.tripSegments[itemIndex]?.arrivalTime
                                     }
 
-                                val segmentArrivalTimeView =
-                                    view.findViewById<TextView>(R.id.segment_arrive_time)
-                                if (segmentArrivalTimeView != null) {
-                                    segmentArrivalTimeView.text = stationArrivalTime
+                                if (segmentArriveTimeView != null) {
+                                    segmentArriveTimeView.text = stationArrivalTime
                                 }
                             }
 
@@ -1337,11 +1336,11 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
 
     fun didTapItem(index: Int) {
         val itemIndex = index - 1
-        if (itemIndex >= 0 && itemIndex < GEMPublicTransportRouteDescriptionView.m_routeDescriptionItems.size) {
-            val item = GEMPublicTransportRouteDescriptionView.m_routeDescriptionItems[itemIndex]
-            val area = item.m_geographicArea
+        if (itemIndex >= 0 && itemIndex < GEMPublicTransportRouteDescriptionView.mRouteDescriptionItems.size) {
+            val item = GEMPublicTransportRouteDescriptionView.mRouteDescriptionItems[itemIndex]
+            val area = item.mGeographicArea
             if (area != null) {
-                GEMApplication.getMainMapView()?.centerOnRectArea(area)
+                SdkCall.execute { GEMApplication.getMainMapView()?.centerOnRectArea(area) }
             }
             finish()
         }

@@ -13,7 +13,6 @@ package com.generalmagic.sdk.examples.demo.activities.searchaddress
 import android.graphics.Bitmap
 import android.os.Bundle
 import com.generalmagic.sdk.core.MapDetails
-import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.examples.demo.activities.SLIAdapter
 import com.generalmagic.sdk.examples.demo.activities.SearchListActivity
 import com.generalmagic.sdk.examples.demo.activities.SearchListItem
@@ -29,11 +28,11 @@ import com.generalmagic.sdk.util.StringIds
 import kotlinx.android.synthetic.main.activity_list_view.*
 
 class CountriesSearchActivity : SearchListActivity() {
-    var mFilter = ""
+    private var mFilter = ""
 
-    val service = GuidedAddressSearchService()
+    private val service = GuidedAddressSearchService()
 
-    var mItems = ArrayList<CountryModelItem>()
+    private var mItems = ArrayList<CountryModelItem>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,13 +51,13 @@ class CountriesSearchActivity : SearchListActivity() {
         }
     }
 
-    fun search(filter: String = "") {
+    private fun search(filter: String = "") {
         mFilter = filter
 
         SdkCall.execute {
             service.search(
                 Landmark(), mFilter, EAddressDetailLevel.Country
-            ) { landmarks, reason, hint ->
+            ) { landmarks, reason, _ ->
                 val gemError = SdkError.fromInt(reason)
                 if (gemError != SdkError.Cancel) {
                     mItems.clear()
@@ -88,7 +87,7 @@ class CountriesSearchActivity : SearchListActivity() {
         SdkCall.execute { service.cancelSearch() }
     }
 
-    fun didTapItem(item: CountryModelItem) {
+    private fun didTapItem(item: CountryModelItem) {
         SdkCall.execute { GEMAddressSearchView.onCountrySelected(item.m_landmark) }
         finish()
     }
@@ -104,6 +103,7 @@ class CountriesSearchActivity : SearchListActivity() {
         list_view.adapter = adapter
     }
 
+    @Suppress("unused")
     fun getFilterHint(): String {
         return Utils.getUIString(StringIds.eStrSearch)
     }

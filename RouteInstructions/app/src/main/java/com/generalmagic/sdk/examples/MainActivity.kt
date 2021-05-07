@@ -34,18 +34,18 @@ import com.generalmagic.sdk.routesandnavigation.RouteInstruction
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
-import com.generalmagic.sdk.util.Util.Companion.postOnMain
+import com.generalmagic.sdk.util.Util.postOnMain
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 class MainActivity : AppCompatActivity() {
-    var listView: RecyclerView? = null
-    var progressBar: ProgressBar? = null
-    var mainRoute: Route? = null
+    private var listView: RecyclerView? = null
+    private var progressBar: ProgressBar? = null
+    private var mainRoute: Route? = null
 
     private val routingService = RoutingService()
 
-    fun displayRouteInstructions(route: Route) {
+    private fun displayRouteInstructions(route: Route) {
         val instructions = arrayListOf<RouteInstruction>()
         SdkCall.execute {
             // Get all the route segments.
@@ -101,7 +101,7 @@ class MainActivity : AppCompatActivity() {
             progressBar?.visibility = View.VISIBLE
         }
 
-        routingService.onCompleted = onCompleted@{ routes, reason, hint ->
+        routingService.onCompleted = onCompleted@{ routes, reason, _ ->
             when (val gemError = SdkError.fromInt(reason)) {
                 SdkError.NoError -> {
                     // No error encountered, we can handle the results.

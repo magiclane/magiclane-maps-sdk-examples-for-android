@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
             progressBar?.visibility = View.VISIBLE
         }
 
-        searchService.onCompleted = onCompleted@{ results, reason, hint ->
+        searchService.onCompleted = onCompleted@{ results, reason, _ ->
             progressBar?.visibility = View.GONE
 
             when (val gemError = SdkError.fromInt(reason)) {
@@ -96,16 +96,22 @@ class MainActivity : AppCompatActivity() {
                 mainMapView = mapView
             }
         }
-
-        SdkInitHelper.onNetworkConnected = {
-            // Defines an action that should be done after the network is connected.
+        
+        SdkInitHelper.onMapReady = {
+            // Defines an action that should be done after the world map is ready.
             SdkCall.execute {
+                if (!SdkInitHelper.isMapReady) return@execute
                 val text = "Statue of Liberty New York"
                 val coordinates = Coordinates(40.68925476, -74.04456329)
 
                 searchService.preferences.setSearchMapPOIs(true)
                 searchService.searchByFilter(text, coordinates)
             }
+        }
+
+        SdkInitHelper.onNetworkConnected = {
+            // Defines an action that should be done after the network is connected.
+            SdkInitHelper.onMapReady()
         }
 
         SdkInitHelper.onCancel = {
@@ -151,7 +157,7 @@ class MainActivity : AppCompatActivity() {
             )
 
             val animation = Animation()
-            animation.setType(EAnimation.Fly)
+            animation.setType(EAnimation.AnimationLinear)
 
             // Center the map on a specific area using the provided animation.
             mainMapView?.centerOnArea(area, -1, Xy(), animation)

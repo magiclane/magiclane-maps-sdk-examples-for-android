@@ -16,12 +16,12 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.generalmagic.sdk.examples.util.SdkInitHelper
-import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
 import com.generalmagic.sdk.core.*
 import com.generalmagic.sdk.d3scene.Animation
 import com.generalmagic.sdk.d3scene.EAnimation
 import com.generalmagic.sdk.d3scene.MapView
+import com.generalmagic.sdk.examples.util.SdkInitHelper
+import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
@@ -29,13 +29,13 @@ import com.generalmagic.sdk.routesandnavigation.RouteTrafficEvent
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
-import com.generalmagic.sdk.util.Util.Companion.postOnMain
+import com.generalmagic.sdk.util.Util.postOnMain
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 class MainActivity : AppCompatActivity() {
     private var mainMapView: MapView? = null
-    lateinit var progressBar: ProgressBar
+    private lateinit var progressBar: ProgressBar
 
     private val routingService = RoutingService()
 
@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun flyToTraffic(trafficEvent: RouteTrafficEvent) {
         val animation = Animation()
-        animation.setType(EAnimation.Fly)
+        animation.setType(EAnimation.AnimationLinear)
 
         // Center the map on a specific traffic event using the provided animation.
         mainMapView?.centerOnRouteTrafficEvent(trafficEvent, -1, Rect(), animation)
@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         }
 
-        routingService.onCompleted = onCompleted@{ routes, reason, hint ->
+        routingService.onCompleted = onCompleted@{ routes, reason, _ ->
             progressBar.visibility = View.GONE
 
             when (val gemError = SdkError.fromInt(reason)) {
@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val calcDefaultRoute = calcDefaultRoute@{
+        val calculateRoute = calcDefaultRoute@{
             if (!SdkInitHelper.isMapReady) return@calcDefaultRoute
 
             SdkCall.execute {
@@ -132,13 +132,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         SdkInitHelper.onMapReady = {
-            // Defines an action that should be done after the world map is updated.
-            calcDefaultRoute()
+            // Defines an action that should be done after the world map is ready.
+            calculateRoute()
         }
 
         SdkInitHelper.onNetworkConnected = {
             // Defines an action that should be done after the network is connected.
-            calcDefaultRoute()
+            SdkInitHelper.onMapReady()
         }
 
         SdkInitHelper.onCancel = {

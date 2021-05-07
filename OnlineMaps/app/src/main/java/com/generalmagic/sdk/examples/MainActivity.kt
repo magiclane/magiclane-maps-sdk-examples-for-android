@@ -24,7 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.examples.util.SdkInitHelper
 import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
-import com.generalmagic.sdk.examples.util.Util
+import com.generalmagic.sdk.examples.util.Utils
 import com.generalmagic.sdk.content.ContentStore
 import com.generalmagic.sdk.content.ContentStoreItem
 import com.generalmagic.sdk.content.EContentType
@@ -32,10 +32,10 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
-import com.generalmagic.sdk.util.Util.Companion.postOnMain
+import com.generalmagic.sdk.util.Util.postOnMain
 
 class MainActivity : AppCompatActivity() {
-    var listView: RecyclerView? = null
+    private var listView: RecyclerView? = null
     private val contentStore = ContentStore()
     var progressBar: ProgressBar? = null
 
@@ -144,10 +144,16 @@ class MainActivity : AppCompatActivity() {
         listView?.setPadding(lateralPadding, 0, lateralPadding, 0)
 
         /// GENERAL MAGIC
+        SdkInitHelper.onMapReady = {
+            SdkCall.execute {
+                // Defines an action that should be done after the network is connected.
+                // Call to the content store to asynchronously retrieve the list of maps.
+                contentStore.asyncGetStoreContentList(EContentType.RoadMap.value, progressListener)
+            }
+        }
+        
         SdkInitHelper.onNetworkConnected = {
-            // Defines an action that should be done after the network is connected.
-            // Call to the content store to asynchronously retrieve the list of maps.
-            contentStore.asyncGetStoreContentList(EContentType.RoadMap.value, progressListener)
+            SdkInitHelper.onMapReady()
         }
 
         val app = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
@@ -203,7 +209,7 @@ class CustomAdapter(private val dataSet: ArrayList<ContentStoreItem>) :
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         viewHolder.text.text =
-            SdkCall.execute { dataSet[position].getName() + " (" + Util.formatSizeAsText(dataSet[position].getTotalSize()) + ")" }
+            SdkCall.execute { dataSet[position].getName() + " (" + Utils.formatSizeAsText(dataSet[position].getTotalSize()) + ")" }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

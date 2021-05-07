@@ -1,8 +1,8 @@
 ## Overview
 
-This example app present the followings:
+This example app demonstrates the following features:
 - Calculate the routes between 2 given landmarks.
-- Display a list with all route instructions, if exists.
+- Display a list with all route instructions for the first route, if it exists.
 
 ## Build instructions
 

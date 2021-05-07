@@ -66,6 +66,7 @@ class RouteProfileView(val parent: IMapControllerActivity) {
         }
     }
 
+    @Suppress("unused")
     fun refreshRouteProfile() {
         routeProfile.refresh()
     }
@@ -78,7 +79,7 @@ class RouteProfileView(val parent: IMapControllerActivity) {
         routeProfile.updateElevationChartInterval(minX, maxX)
     }
 
-    fun getRouteProfilePanelFactor(): Double {
+    private fun getRouteProfilePanelFactor(): Double {
         return if (GEMApplication.appResources().configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
             routeProfilePanelFactor
         } else {

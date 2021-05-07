@@ -87,7 +87,7 @@ class StylesActivity : StylesListActivity() {
         val result = ArrayList<StylesListItem>()
         for (item in list) {
             val wrapped = StyleItemViewModel(item)
-            wrapped.m_checked = SdkCall.execute { item.getId() } == styleId
+            wrapped.mChecked = SdkCall.execute { item.getId() } == styleId
             wrapped.mOnClick = { onItemTapped(wrapped, it) }
             result.add(wrapped)
         }
@@ -199,10 +199,10 @@ class StylesActivity : StylesListActivity() {
 
             for (item in section.nItems) {
                 val casted = item as StyleItemViewModel? ?: continue
-                val oldChecked = casted.m_checked
-                casted.m_checked = SdkCall.execute { casted.it.getId() } == styleId
+                val oldChecked = casted.mChecked
+                casted.mChecked = SdkCall.execute { casted.it.getId() } == styleId
 
-                if (oldChecked != casted.m_checked) {
+                if (oldChecked != casted.mChecked) {
                     changed = true
                 }
             }

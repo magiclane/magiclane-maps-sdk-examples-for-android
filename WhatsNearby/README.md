@@ -1,8 +1,8 @@
 ## Overview
 
-This example app present the followings:
-- Searches all landmarks near current position.
-- Display a list with landmarks found.
+This example app demonstrates the following features:
+- Searches all landmarks near the current position.
+- Display a list of found landmarks.
 
 ## Build instructions
 

@@ -26,19 +26,19 @@ import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
-import com.generalmagic.sdk.util.Util.Companion.postOnMain
+import com.generalmagic.sdk.util.Util.postOnMain
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 class MainActivity : AppCompatActivity() {
-    var mainRoute: Route? = null
-    lateinit var progressBar: ProgressBar
+    private var mainRoute: Route? = null
+    private lateinit var progressBar: ProgressBar
 
     private val routingService = RoutingService()
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    fun displayRouteInfo(routeName: String) {
+    private fun displayRouteInfo(routeName: String) {
         findViewById<TextView>(R.id.text).text = routeName
     }
 
@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-        routingService.onCompleted = onCompleted@{ routes, reason, hint ->
+        routingService.onCompleted = onCompleted@{ routes, reason, _ ->
             progressBar.visibility = View.GONE
 
             when (val gemError = SdkError.fromInt(reason)) {

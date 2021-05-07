@@ -211,7 +211,7 @@ open class BasicSensorsActivity : GenericListActivity() {
 }
 
 class SensorsListActivity : BasicSensorsActivity() {
-    var listener = object : DataSourceListener() {
+    private var listener = object : DataSourceListener() {
 //        override fun onDataInterruptionEvent(type: EDataType, reason: EDataInterruptionReason, ended: Boolean) {
 //            Log.d("GEMSDK", "onDataInterruption: $type, $reason, $ended")
 //        }
@@ -511,6 +511,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
     private var drawer: FrameDrawController? = null
     private var recorder: Recorder? = null
     private val recorderListener = object : ProgressListener() {
+        @Suppress("unused")
         private fun export(filepath: String): Boolean {
             val videoFile = File(filepath)
             if (!videoFile.exists())

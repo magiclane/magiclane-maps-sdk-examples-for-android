@@ -10,6 +10,7 @@
 
 package com.generalmagic.sdk.examples.demo.activities.publictransport
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -21,6 +22,7 @@ import android.view.View
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.util.AppUtils
 import kotlin.math.abs
+import kotlin.math.max
 
 class PublicTransportRouteDescriptionLineView : View {
 
@@ -95,15 +97,15 @@ class PublicTransportRouteDescriptionLineView : View {
             if (mDrawDownDashed) {
                 val d = y - mRadius - mStrokeWidth / 2
                 val y0 = y + mRadius + mStrokeWidth / 2
-                val available_space = h - y0
+                val availableSpace = h - y0
                 val diameter = mStrokeWidth + mStrokeWidth / 2
                 val radius = diameter / 2
-                val max_d = Math.max(diameter, d)
+                val maxD = max(diameter, d)
 
-                var n = (available_space / max_d).toInt()
+                var n = (availableSpace / maxD).toInt()
 
                 if (n % 2 == 1) {
-                    val diff = (available_space - n * max_d) / max_d
+                    val diff = (availableSpace - n * maxD) / maxD
 
                     if (diff >= 0.5f) {
                         ++n
@@ -113,8 +115,8 @@ class PublicTransportRouteDescriptionLineView : View {
                 }
 
                 val nDots = n / 2
-                val extra_space = available_space - nDots * diameter
-                val space_between_dots = (extra_space - d) / (nDots - 1)
+                val extraSpace = availableSpace - nDots * diameter
+                val spaceBetweenDots = (extraSpace - d) / (nDots - 1)
 
                 mFillPaint.color = mLineDownColor
                 mOvalBounds.set(x - radius, y0, x + radius, y0 + diameter)
@@ -125,8 +127,8 @@ class PublicTransportRouteDescriptionLineView : View {
                             mOvalBounds.top += d
                             mOvalBounds.bottom += d
                         } else {
-                            mOvalBounds.top += space_between_dots
-                            mOvalBounds.bottom += space_between_dots
+                            mOvalBounds.top += spaceBetweenDots
+                            mOvalBounds.bottom += spaceBetweenDots
                         }
                     } else {
                         canvas.drawOval(mOvalBounds, mFillPaint)
@@ -194,6 +196,7 @@ class PublicTransportRouteDescriptionLineView : View {
         invalidate()
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         return true
     }

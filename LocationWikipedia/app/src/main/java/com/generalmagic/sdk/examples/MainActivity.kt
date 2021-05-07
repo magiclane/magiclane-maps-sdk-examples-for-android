@@ -28,9 +28,9 @@ import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 
 class MainActivity : AppCompatActivity() {
-    var locationName: TextView? = null
-    var locationWiki: TextView? = null
-    var progressBar: ProgressBar? = null
+    private var locationName: TextView? = null
+    private var locationWiki: TextView? = null
+    private var progressBar: ProgressBar? = null
 
     private val externalInfoService = ExternalInfo()
 
@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {
             onStarted = {
                 progressBar?.visibility = View.VISIBLE
             },
-            onCompleted = { reason, hint ->
+            onCompleted = { _, _ ->
                 val wikiDescription = SdkCall.execute {
                     "(" + getWikiPageURL() + ")\n" + getWikiPageDescription()
                 }
@@ -67,7 +67,7 @@ class MainActivity : AppCompatActivity() {
             progressBar?.visibility = View.VISIBLE
         }
 
-        searchService.onCompleted = onCompleted@{ results, reason, hint ->
+        searchService.onCompleted = onCompleted@{ results, reason, _ ->
             val gemError = SdkError.fromInt(reason)
             if (gemError == SdkError.Cancel) return@onCompleted
 

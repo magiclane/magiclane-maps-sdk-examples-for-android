@@ -16,13 +16,13 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.generalmagic.sdk.examples.util.SdkInitHelper
-import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
-import com.generalmagic.sdk.examples.util.Util
 import com.generalmagic.sdk.core.*
 import com.generalmagic.sdk.d3scene.Animation
 import com.generalmagic.sdk.d3scene.EAnimation
 import com.generalmagic.sdk.d3scene.MapView
+import com.generalmagic.sdk.examples.util.SdkInitHelper
+import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
+import com.generalmagic.sdk.examples.util.Util
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
@@ -34,7 +34,7 @@ import com.generalmagic.sdk.util.SdkError
 
 class MainActivity : AppCompatActivity() {
     private var mainMapView: MapView? = null
-    lateinit var progressBar: ProgressBar
+    private lateinit var progressBar: ProgressBar
 
     private val routingService = RoutingService()
 
@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun flyToRoute(route: Route) {
         val animation = Animation()
-        animation.setType(EAnimation.Fly)
+        animation.setType(EAnimation.AnimationLinear)
 
         // Center the map on a specific route using the provided animation.
         mainMapView?.centerOnRoute(route, Rect(), animation)
@@ -124,7 +124,7 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         }
 
-        routingService.onCompleted = onCompleted@{ routes, reason, hint ->
+        routingService.onCompleted = onCompleted@{ routes, reason, _ ->
             progressBar.visibility = View.GONE
 
             when (val gemError = SdkError.fromInt(reason)) {
@@ -165,6 +165,7 @@ class MainActivity : AppCompatActivity() {
         SdkInitHelper.onMapReady = {
             // Defines an action that should be done when the world map is ready (Updated/ loaded).
             SdkCall.execute {
+                if (!SdkInitHelper.isMapReady) return@execute
                 calculateRoute()
             }
         }

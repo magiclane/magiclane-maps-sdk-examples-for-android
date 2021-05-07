@@ -349,7 +349,7 @@ open class LISIViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) {
     }
 
     open class Chapter<T : ListItemStatusImage>(
-        val nItems: ArrayList<T>,
+        private val nItems: ArrayList<T>,
         val holderProvider: (View) -> RecyclerView.ViewHolder,
         params: SectionParameters
     ) : Section(params) {
@@ -396,6 +396,7 @@ class ChapterStylesAdapter : SectionedRecyclerViewAdapter {
         init(wrap, false)
     }
 
+    @Suppress("unused")
     constructor(
         dataChapters: ArrayList<ArrayList<StylesListItem>>,
         addHeaderRes: Boolean = true
@@ -445,7 +446,7 @@ open class StylesViewHolder(val parent: View) : RecyclerView.ViewHolder(parent) 
         const val headerResId = R.layout.list_chapter_header
     }
 
-    val previewImage: ImageView = parent.findViewById(R.id.preview_image)
+    private val previewImage: ImageView = parent.findViewById(R.id.preview_image)
     val text: TextView = parent.findViewById(R.id.text)
     val statusIcon: ImageView = parent.findViewById(R.id.status_icon)
     val statusProgress: ProgressBar = parent.findViewById(R.id.item_progress_bar)
@@ -570,8 +571,8 @@ open class SLIViewHolder(val parent: View, private val isHistory: Boolean = fals
     val icon: ImageView = parent.findViewById(R.id.icon)
     val text: TextView = parent.findViewById(R.id.text)
     val description: TextView = parent.findViewById(R.id.description)
-    val status: TextView = parent.findViewById(R.id.status_text)
-    val statusDescription: TextView = parent.findViewById(R.id.status_description)
+    private val status: TextView = parent.findViewById(R.id.status_text)
+    private val statusDescription: TextView = parent.findViewById(R.id.status_description)
 
     private var iconSize: Int = parent.resources.getDimension(R.dimen.listIconSize).toInt()
 
@@ -815,9 +816,9 @@ class FavouritesLandmarkViewModel(it: Landmark?, reference: Coordinates?) :
     }
 }
 
-open class TripViewModel(val it: Trip, val tripIndex: Int) : SearchListItem() {
-    override fun getIcon(width: Int, height: Int): Bitmap? {
-        return it.mPreferences?.getTransportMode().let { transportMode ->
+open class TripViewModel(val it: Trip, private val tripIndex: Int) : SearchListItem() {
+    override fun getIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
+        return@execute it.mPreferences?.getTransportMode().let { transportMode ->
             return@let when (transportMode) {
                 ERouteTransportMode.Car -> {
                     Utils.getImageAsBitmap(SdkIcons.Other_UI.DriveTo_v2.value, width, height)
@@ -865,26 +866,26 @@ open class TripViewModel(val it: Trip, val tripIndex: Int) : SearchListItem() {
 }
 
 open class StyleItemViewModel(item: ContentStoreItem) : StylesContentStoreItemViewModel(item) {
-    var m_checked = false
+    var mChecked = false
 
     override fun getIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
-        val m_text = it.getName() ?: ""
+        val mText = it.getName() ?: ""
         var iconId = SdkIcons.Other_UI.ShowMapStandard
-        if ((m_text.indexOf("Cloud") >= 0) ||
-            (m_text.indexOf("Temperature") >= 0) ||
-            (m_text.indexOf("Wind") >= 0) ||
-            (m_text.indexOf("Radar") >= 0) ||
-            (m_text.indexOf("Humidity") >= 0) ||
-            (m_text.indexOf("Pressure") >= 0)
+        if ((mText.indexOf("Cloud") >= 0) ||
+            (mText.indexOf("Temperature") >= 0) ||
+            (mText.indexOf("Wind") >= 0) ||
+            (mText.indexOf("Radar") >= 0) ||
+            (mText.indexOf("Humidity") >= 0) ||
+            (mText.indexOf("Pressure") >= 0)
         ) {
             iconId = SdkIcons.Other_UI.ShowWeather
-        } else if (m_text.indexOf("Terrain") >= 0) {
-            iconId = if (m_text.indexOf("Satellite") >= 0) {
+        } else if (mText.indexOf("Terrain") >= 0) {
+            iconId = if (mText.indexOf("Satellite") >= 0) {
                 SdkIcons.Other_UI.ShowMapTerrainAndSatellite
             } else {
                 SdkIcons.Other_UI.ShowMapTerrain
             }
-        } else if (m_text.indexOf("Satellite") >= 0) {
+        } else if (mText.indexOf("Satellite") >= 0) {
             iconId = SdkIcons.Other_UI.ShowMapTerrainAndSatellite
         }
 
@@ -892,7 +893,7 @@ open class StyleItemViewModel(item: ContentStoreItem) : StylesContentStoreItemVi
     }
 
     override fun getStatusIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
-        return@execute if (m_checked) {
+        return@execute if (mChecked) {
             Util.getImageIdAsBitmap(
                 SdkIcons.Other_UI.Button_DownloadCheckmark.value, width, height
             )

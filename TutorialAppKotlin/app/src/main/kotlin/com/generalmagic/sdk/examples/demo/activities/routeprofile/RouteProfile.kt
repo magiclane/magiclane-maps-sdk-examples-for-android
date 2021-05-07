@@ -102,7 +102,10 @@ class ElevationProfile(
 
     init {
         val displayMetrics = DisplayMetrics()
+
+        @Suppress("DEPRECATION")
         mParentActivity.windowManager?.defaultDisplay?.getMetrics(displayMetrics)
+
         mTableViewRowHeight =
             displayMetrics.widthPixels.coerceAtMost(displayMetrics.heightPixels) * 3 / 20
 
@@ -1379,6 +1382,7 @@ class ElevationProfile(
 
     // ---------------------------------------------------------------------------------------------
 
+    @Suppress("SameParameterValue")
     private fun updateSurfacesChart(minX: Double, maxX: Double) {
         if (mSurfacesChart == null) {
             return
@@ -1434,6 +1438,7 @@ class ElevationProfile(
 
     // ---------------------------------------------------------------------------------------------
 
+    @Suppress("SameParameterValue")
     private fun updateRoadsChart(minX: Double, maxX: Double) {
         if (mRoadsChart == null) {
             return
@@ -1489,6 +1494,7 @@ class ElevationProfile(
 
     // ---------------------------------------------------------------------------------------------
 
+    @Suppress("SameParameterValue")
     private fun updateSteepnessChart(minX: Double, maxX: Double) {
         if (mSteepnessChart == null) {
             return

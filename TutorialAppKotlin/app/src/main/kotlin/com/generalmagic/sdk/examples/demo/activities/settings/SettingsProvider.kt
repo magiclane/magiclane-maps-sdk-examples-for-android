@@ -62,28 +62,32 @@ enum class TStringSettings(val value: Int) {
     EStringSettingsCount(EVoice.value + 1)
 }
 
-enum class TSettingsLimit(value: Int) {
+@Suppress("unused")
+enum class TSettingsLimit(val value: Int) {
     ESettingsCount(TStringSettings.EStringSettingsCount.value)
 }
 
 object SettingsProvider {
-    var m_service: SettingsService? = null
-    val m_names = Array(TStringSettings.EStringSettingsCount.value) { "" }
+    private var mService: SettingsService? = null
+    private val mNames = Array(TStringSettings.EStringSettingsCount.value) { "" }
 
-    val m_boolDefaultValues = BooleanArray(TBoolSettings.EBooleanSettingsCount.value) { false }
-    val m_intDefaultValues = IntArray(TIntSettings.EIntSettingsCount.value) { 0 }
-    val m_doubleDefaultValues = DoubleArray(TDoubleSettings.EDoubleSettingsCount.value) { 0.0 }
-    val m_stringDefaultValues = Array(TStringSettings.EStringSettingsCount.value) { "" }
+    private val mBoolDefaultValues =
+        BooleanArray(TBoolSettings.EBooleanSettingsCount.value) { false }
+    private val mIntDefaultValues = IntArray(TIntSettings.EIntSettingsCount.value) { 0 }
+    private val mDoubleDefaultValues =
+        DoubleArray(TDoubleSettings.EDoubleSettingsCount.value) { 0.0 }
+    private val mStringDefaultValues = Array(TStringSettings.EStringSettingsCount.value) { "" }
 
-    val m_boolCallbacks =
+    private val mBoolCallbacks =
         Array<((Boolean) -> Unit)?>(TBoolSettings.EBooleanSettingsCount.value) { null }
-    val m_intCallbacks = Array<((Int) -> Unit)?>(TIntSettings.EIntSettingsCount.value) { null }
-    val m_doubleCallbacks =
+    private val mIntCallbacks =
+        Array<((Int) -> Unit)?>(TIntSettings.EIntSettingsCount.value) { null }
+    private val mDoubleCallbacks =
         Array<((Double) -> Unit)?>(TDoubleSettings.EDoubleSettingsCount.value) { null }
 
     init {
         SdkCall.execute {
-            m_service = SettingsService.produce("Settings.ini")
+            mService = SettingsService.produce("Settings.ini")
             setNames()
             setDefaultValues()
             setCallbacks()
@@ -94,15 +98,15 @@ object SettingsProvider {
     fun getBooleanValue(setting: Int): Pair<Boolean, Boolean> {
         SdkCall.checkCurrentThread()
 
-        val service = this.m_service
+        val service = this.mService
 
-        var result = Pair(false, m_boolDefaultValues[setting])
+        var result = Pair(false, mBoolDefaultValues[setting])
         if ((setting > TBoolSettings.EBooleanSettingsBase.value) &&
             (setting < TBoolSettings.EBooleanSettingsCount.value) &&
             service != null
         ) {
             result = Pair(
-                true, service.getBooleanValue(m_names[setting], m_boolDefaultValues[setting])
+                true, service.getBooleanValue(mNames[setting], mBoolDefaultValues[setting])
             )
         }
 
@@ -112,14 +116,14 @@ object SettingsProvider {
     fun setBooleanValue(setting: Int, value: Boolean) {
         SdkCall.checkCurrentThread()
 
-        val service = this.m_service
+        val service = this.mService
 
         if ((setting > TBoolSettings.EBooleanSettingsBase.value) &&
             (setting < TBoolSettings.EBooleanSettingsCount.value) &&
             service != null
         ) {
-            service.setBooleanValue(m_names[setting], value)
-            val lambda = m_boolCallbacks[setting]
+            service.setBooleanValue(mNames[setting], value)
+            val lambda = mBoolCallbacks[setting]
             if (lambda != null) {
                 lambda(value)
             }
@@ -129,14 +133,14 @@ object SettingsProvider {
     fun setIntValue(setting: Int, value: Int) {
         SdkCall.checkCurrentThread()
 
-        val service = this.m_service
+        val service = this.mService
 
         if ((setting > TIntSettings.EIntSettingsBase.value) &&
             (setting < TIntSettings.EIntSettingsCount.value) &&
             service != null
         ) {
-            service.setIntValue(m_names[setting], value)
-            val lambda = m_intCallbacks[setting]
+            service.setIntValue(mNames[setting], value)
+            val lambda = mIntCallbacks[setting]
             if (lambda != null) {
                 lambda(value)
             }
@@ -146,7 +150,7 @@ object SettingsProvider {
     fun getIntValue(setting: Int): Pair<Boolean, Int> {
         SdkCall.checkCurrentThread()
 
-        val service = this.m_service
+        val service = this.mService
 
         var result = Pair(false, 0)
         if ((setting > TIntSettings.EIntSettingsBase.value) &&
@@ -154,17 +158,18 @@ object SettingsProvider {
             service != null
         ) {
             result = Pair(
-                true, service.getIntValue(m_names[setting], m_intDefaultValues[setting])
+                true, service.getIntValue(mNames[setting], mIntDefaultValues[setting])
             )
         }
 
         return result
     }
 
+    @Suppress("unused")
     fun getDoubleValue(setting: Int): Pair<Boolean, Double> {
         SdkCall.checkCurrentThread()
 
-        val service = this.m_service
+        val service = this.mService
 
         var result = Pair(false, 0.0)
         if ((setting > TDoubleSettings.EDoubleSettingsBase.value) &&
@@ -172,24 +177,25 @@ object SettingsProvider {
             service != null
         ) {
             result = Pair(
-                true, service.getDoubleValue(m_names[setting], m_doubleDefaultValues[setting])
+                true, service.getDoubleValue(mNames[setting], mDoubleDefaultValues[setting])
             )
         }
 
         return result
     }
 
+    @Suppress("unused")
     fun setDoubleValue(setting: Int, value: Double) {
         SdkCall.checkCurrentThread()
 
-        val service = this.m_service
+        val service = this.mService
 
         if ((setting > TDoubleSettings.EDoubleSettingsBase.value) &&
             (setting < TDoubleSettings.EDoubleSettingsCount.value) &&
             service != null
         ) {
-            service.setDoubleValue(m_names[setting], value)
-            val lambda = m_doubleCallbacks[setting]
+            service.setDoubleValue(mNames[setting], value)
+            val lambda = mDoubleCallbacks[setting]
             if (lambda != null) {
                 lambda(value)
             }
@@ -199,85 +205,85 @@ object SettingsProvider {
     private fun setNames() {
         // bool settings
 
-        m_names[TBoolSettings.EUseMobileData.value] = "use mobile data"
-        m_names[TBoolSettings.EUseMobileDataForTraffic.value] = "use mobile data for traffic"
-        m_names[TBoolSettings.EUseMobileDataForMapAndWikipedia.value] =
+        mNames[TBoolSettings.EUseMobileData.value] = "use mobile data"
+        mNames[TBoolSettings.EUseMobileDataForTraffic.value] = "use mobile data for traffic"
+        mNames[TBoolSettings.EUseMobileDataForMapAndWikipedia.value] =
             "use mobile data for map and wikipedia"
-        m_names[TBoolSettings.EUseMobileDataForTerrainAndSatellite.value] =
+        mNames[TBoolSettings.EUseMobileDataForTerrainAndSatellite.value] =
             "use mobile data for terrain and satellite"
-        m_names[TBoolSettings.EAvoidMotorwaysCar.value] = "avoid motorways car"
-        m_names[TBoolSettings.EAvoidTollRoadsCar.value] = "avoid toll roads car"
-        m_names[TBoolSettings.EAvoidFerriesCar.value] = "avoid ferries car"
-        m_names[TBoolSettings.EAvoidUnpavedRoadsCar.value] = "avoid unpaved roads car"
-        m_names[TBoolSettings.ERecordAudio.value] = "recording audio"
+        mNames[TBoolSettings.EAvoidMotorwaysCar.value] = "avoid motorways car"
+        mNames[TBoolSettings.EAvoidTollRoadsCar.value] = "avoid toll roads car"
+        mNames[TBoolSettings.EAvoidFerriesCar.value] = "avoid ferries car"
+        mNames[TBoolSettings.EAvoidUnpavedRoadsCar.value] = "avoid unpaved roads car"
+        mNames[TBoolSettings.ERecordAudio.value] = "recording audio"
 
         // int settings
 
-        m_names[TIntSettings.EMapViewAngle.value] = "map view angle"
-        m_names[TIntSettings.EZoomLevel.value] = "zoom level"
-        m_names[TIntSettings.ETravelModeCar.value] = "travel mode car"
-        m_names[TIntSettings.EDemoSpeed.value] = "demo speed"
-        m_names[TIntSettings.EUnitsSystem.value] = "units system"
-        m_names[TIntSettings.ERecordingChunk.value] = "recording chunk"
-        m_names[TIntSettings.EMinMinutes.value] = "min minutes to keep"
-        m_names[TIntSettings.EDiskLimit.value] = "recording disk limit"
+        mNames[TIntSettings.EMapViewAngle.value] = "map view angle"
+        mNames[TIntSettings.EZoomLevel.value] = "zoom level"
+        mNames[TIntSettings.ETravelModeCar.value] = "travel mode car"
+        mNames[TIntSettings.EDemoSpeed.value] = "demo speed"
+        mNames[TIntSettings.EUnitsSystem.value] = "units system"
+        mNames[TIntSettings.ERecordingChunk.value] = "recording chunk"
+        mNames[TIntSettings.EMinMinutes.value] = "min minutes to keep"
+        mNames[TIntSettings.EDiskLimit.value] = "recording disk limit"
 
         // double settings
 
-        m_names[TDoubleSettings.ELatitude.value] = "latitude"
-        m_names[TDoubleSettings.ELongitude.value] = "longitude"
-        m_names[TDoubleSettings.EMapStyle.value] = "map style"
+        mNames[TDoubleSettings.ELatitude.value] = "latitude"
+        mNames[TDoubleSettings.ELongitude.value] = "longitude"
+        mNames[TDoubleSettings.EMapStyle.value] = "map style"
 
         // string settings
 
-        m_names[TStringSettings.EVoice.value] = "voice"
+        mNames[TStringSettings.EVoice.value] = "voice"
     }
 
     private fun setDefaultValues() {
         // bool settings
 
-        m_boolDefaultValues[TBoolSettings.EUseMobileData.value] = true
-        m_boolDefaultValues[TBoolSettings.EUseMobileDataForTraffic.value] = true
-        m_boolDefaultValues[TBoolSettings.EUseMobileDataForMapAndWikipedia.value] = true
-        m_boolDefaultValues[TBoolSettings.EUseMobileDataForTerrainAndSatellite.value] = false
-        m_boolDefaultValues[TBoolSettings.EAvoidMotorwaysCar.value] = false
-        m_boolDefaultValues[TBoolSettings.EAvoidTollRoadsCar.value] = false
-        m_boolDefaultValues[TBoolSettings.EAvoidFerriesCar.value] = false
-        m_boolDefaultValues[TBoolSettings.EAvoidUnpavedRoadsCar.value] = true
+        mBoolDefaultValues[TBoolSettings.EUseMobileData.value] = true
+        mBoolDefaultValues[TBoolSettings.EUseMobileDataForTraffic.value] = true
+        mBoolDefaultValues[TBoolSettings.EUseMobileDataForMapAndWikipedia.value] = true
+        mBoolDefaultValues[TBoolSettings.EUseMobileDataForTerrainAndSatellite.value] = false
+        mBoolDefaultValues[TBoolSettings.EAvoidMotorwaysCar.value] = false
+        mBoolDefaultValues[TBoolSettings.EAvoidTollRoadsCar.value] = false
+        mBoolDefaultValues[TBoolSettings.EAvoidFerriesCar.value] = false
+        mBoolDefaultValues[TBoolSettings.EAvoidUnpavedRoadsCar.value] = true
 
         // int settings
 
-        m_intDefaultValues[TIntSettings.EMapViewAngle.value - TIntSettings.EIntSettingsBase.value] =
+        mIntDefaultValues[TIntSettings.EMapViewAngle.value - TIntSettings.EIntSettingsBase.value] =
             0
-        m_intDefaultValues[TIntSettings.EZoomLevel.value - TIntSettings.EIntSettingsBase.value] = 80
-        m_intDefaultValues[TIntSettings.ETravelModeCar.value - TIntSettings.EIntSettingsBase.value] =
+        mIntDefaultValues[TIntSettings.EZoomLevel.value - TIntSettings.EIntSettingsBase.value] = 80
+        mIntDefaultValues[TIntSettings.ETravelModeCar.value - TIntSettings.EIntSettingsBase.value] =
             ERouteType.Fastest.value
-        m_intDefaultValues[TIntSettings.EDemoSpeed.value - TIntSettings.EIntSettingsBase.value] = 1
-        m_intDefaultValues[TIntSettings.EUnitsSystem.value - TIntSettings.EIntSettingsBase.value] =
+        mIntDefaultValues[TIntSettings.EDemoSpeed.value - TIntSettings.EIntSettingsBase.value] = 1
+        mIntDefaultValues[TIntSettings.EUnitsSystem.value - TIntSettings.EIntSettingsBase.value] =
             EUnitSystem.Metric.value
 
         // double settings
 
-        m_doubleDefaultValues[TDoubleSettings.ELatitude.value - TDoubleSettings.EDoubleSettingsBase.value] =
+        mDoubleDefaultValues[TDoubleSettings.ELatitude.value - TDoubleSettings.EDoubleSettingsBase.value] =
             Double.MAX_VALUE
-        m_doubleDefaultValues[TDoubleSettings.ELongitude.value - TDoubleSettings.EDoubleSettingsBase.value] =
+        mDoubleDefaultValues[TDoubleSettings.ELongitude.value - TDoubleSettings.EDoubleSettingsBase.value] =
             Double.MAX_VALUE
-        m_doubleDefaultValues[TDoubleSettings.EMapStyle.value - TDoubleSettings.EDoubleSettingsBase.value] =
+        mDoubleDefaultValues[TDoubleSettings.EMapStyle.value - TDoubleSettings.EDoubleSettingsBase.value] =
             0.0
 
         // string settings
 
-        m_stringDefaultValues[TStringSettings.EVoice.value - TStringSettings.EStringSettingsBase.value] =
+        mStringDefaultValues[TStringSettings.EVoice.value - TStringSettings.EStringSettingsBase.value] =
             ""
-        m_stringDefaultValues[TStringSettings.EAddressSearchCountryISOCode.value - TStringSettings.EStringSettingsBase.value] =
+        mStringDefaultValues[TStringSettings.EAddressSearchCountryISOCode.value - TStringSettings.EStringSettingsBase.value] =
             ""
 
         // Recorder
 
-        m_intDefaultValues[TIntSettings.ERecordingChunk.value] = 5 //5 min
-        m_boolDefaultValues[TBoolSettings.ERecordAudio.value] = false
-        m_intDefaultValues[TIntSettings.EMinMinutes.value] = 30 //30 min
-        m_intDefaultValues[TIntSettings.EDiskLimit.value] = 1000 //1gb
+        mIntDefaultValues[TIntSettings.ERecordingChunk.value] = 5 //5 min
+        mBoolDefaultValues[TBoolSettings.ERecordAudio.value] = false
+        mIntDefaultValues[TIntSettings.EMinMinutes.value] = 30 //30 min
+        mIntDefaultValues[TIntSettings.EDiskLimit.value] = 1000 //1gb
     }
 
     private fun setCallbacks() {
@@ -285,7 +291,7 @@ object SettingsProvider {
         // bool settings
 
         val useMobileData = { value: Boolean ->
-            if (m_service != null) {
+            if (mService != null) {
                 if (value) {
                     val bUseMobileDataForTraffic =
                         getBooleanValue(TBoolSettings.EUseMobileDataForTraffic.value)
@@ -317,19 +323,19 @@ object SettingsProvider {
                 }
             }
         }
-        m_boolCallbacks[TBoolSettings.EUseMobileData.value] = useMobileData
+        mBoolCallbacks[TBoolSettings.EUseMobileData.value] = useMobileData
 
         val useMobileDataForTraffic = { value: Boolean ->
-            if (m_service != null) {
+            if (mService != null) {
                 CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                     EServiceGroupType.TrafficService, value
                 )
             }
         }
-        m_boolCallbacks[TBoolSettings.EUseMobileDataForTraffic.value] = useMobileDataForTraffic
+        mBoolCallbacks[TBoolSettings.EUseMobileDataForTraffic.value] = useMobileDataForTraffic
 
         val useMobileDataForMapAndWikipedia = { value: Boolean ->
-            if (m_service != null) {
+            if (mService != null) {
                 CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                     EServiceGroupType.MapDataService,
                     value
@@ -349,28 +355,28 @@ object SettingsProvider {
                 }
             }
         }
-        m_boolCallbacks[TBoolSettings.EUseMobileDataForMapAndWikipedia.value] =
+        mBoolCallbacks[TBoolSettings.EUseMobileDataForMapAndWikipedia.value] =
             useMobileDataForMapAndWikipedia
 
         val useMobileDataForTerrainAndSatellite = { value: Boolean ->
-            if (m_service != null) {
+            if (mService != null) {
                 CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                     EServiceGroupType.TerrainService,
                     value
                 )
             }
         }
-        m_boolCallbacks[TBoolSettings.EUseMobileDataForTerrainAndSatellite.value] =
+        mBoolCallbacks[TBoolSettings.EUseMobileDataForTerrainAndSatellite.value] =
             useMobileDataForTerrainAndSatellite
 
         // int settings
 
         val unitsSystem = { value: Int ->
-            if (m_service != null) {
+            if (mService != null) {
                 CommonSettings.setUnitSystem(EnumHelp.fromInt(value))
             }
         }
-        m_intCallbacks[TIntSettings.EUnitsSystem.value - TIntSettings.EIntSettingsBase.value] =
+        mIntCallbacks[TIntSettings.EUnitsSystem.value - TIntSettings.EIntSettingsBase.value] =
             unitsSystem
 
     }

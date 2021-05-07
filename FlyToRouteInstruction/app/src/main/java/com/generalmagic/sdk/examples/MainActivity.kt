@@ -30,13 +30,13 @@ import com.generalmagic.sdk.routesandnavigation.RouteInstruction
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
-import com.generalmagic.sdk.util.Util.Companion.postOnMain
+import com.generalmagic.sdk.util.Util.postOnMain
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 class MainActivity : AppCompatActivity() {
     private var mainMapView: MapView? = null
-    lateinit var progressBar: ProgressBar
+    private lateinit var progressBar: ProgressBar
 
     private val routingService = RoutingService()
 
@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun flyToInstruction(routeInstruction: RouteInstruction) {
         val animation = Animation()
-        animation.setType(EAnimation.Fly)
+        animation.setType(EAnimation.AnimationLinear)
 
         // Center the map on a specific route instruction using the provided animation.
         mainMapView?.centerOnRouteInstruction(routeInstruction, -1, Xy(), animation)
@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         }
 
-        routingService.onCompleted = onCompleted@{ routes, reason, hint ->
+        routingService.onCompleted = onCompleted@{ routes, reason, _ ->
             progressBar.visibility = View.GONE
 
             when (val gemError = SdkError.fromInt(reason)) {
@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val calcDefaultRoute = {
+        val calculateRoute = {
             SdkCall.execute {
                 if (!isMapReady) return@execute
                 val waypoints = arrayListOf(
@@ -143,15 +143,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        CommonSettings.onWorldMapVersionUpdated = {
-            // Defines an action that should be done after the world map is updated.
-            isMapReady = true
-            calcDefaultRoute()
+        SdkInitHelper.onMapReady = {
+            // Defines an action that should be done after the world map is ready.
+            calculateRoute()
         }
 
         SdkInitHelper.onNetworkConnected = {
             // Defines an action that should be done after the network is connected.
-            calcDefaultRoute()
+            SdkInitHelper.onMapReady()
         }
 
         SdkInitHelper.onCancel = {

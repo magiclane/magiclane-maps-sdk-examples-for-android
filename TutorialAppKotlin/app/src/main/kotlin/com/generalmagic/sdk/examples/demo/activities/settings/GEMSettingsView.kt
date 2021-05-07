@@ -8,6 +8,8 @@
  * license agreement you entered into with General Magic.
  */
 
+@file:Suppress("UNUSED_PARAMETER", "MemberVisibilityCanBePrivate", "unused")
+
 package com.generalmagic.sdk.examples.demo.activities.settings
 
 import android.content.Intent
@@ -97,32 +99,32 @@ class CInfinityIntSetting(
 }
 
 open class COptionsListItem(val m_text: String, setting: Int) : CSettingItem(setting) {
-    val m_options = ArrayList<Pair<String, Int>>()
+    val mOptions = ArrayList<Pair<String, Int>>()
 
     override fun getType() = TSettingItemType.EOptionsList
     override fun getText(): String = m_text
-    override fun getOptionsListCount() = m_options.size
-    override fun getOptionsListText(index: Int) = m_options[index].first
+    override fun getOptionsListCount() = mOptions.size
+    override fun getOptionsListText(index: Int) = mOptions[index].first
     override fun getOptionsListSelectedItemIndex(): Int {
         val setting = SdkCall.execute { SettingsProvider.getIntValue(m_setting) }
-        for (i in 0 until m_options.size) {
-            if (m_options[i].second == setting?.second)
+        for (i in 0 until mOptions.size) {
+            if (mOptions[i].second == setting?.second)
                 return i
         }
         return -1
     }
 
     override fun didTapOptionsListItem(index: Int) {
-        SdkCall.execute { SettingsProvider.setIntValue(m_setting, m_options[index].second) }
+        SdkCall.execute { SettingsProvider.setIntValue(m_setting, mOptions[index].second) }
     }
 }
 
 class TravelModeCarOptions(m_text: String, setting: Int) : COptionsListItem(m_text, setting) {
     init {
-        m_options.add(
+        mOptions.add(
             Pair(Utils.getUIString(StringIds.eStrFastest), ERouteType.Fastest.value)
         )
-        m_options.add(
+        mOptions.add(
             Pair(Utils.getUIString(StringIds.eStrShortest), ERouteType.Shortest.value)
         )
     }
@@ -130,16 +132,16 @@ class TravelModeCarOptions(m_text: String, setting: Int) : COptionsListItem(m_te
 
 class UnitsSystemOptions(m_text: String, setting: Int) : COptionsListItem(m_text, setting) {
     init {
-        m_options.add(
+        mOptions.add(
             Pair(Utils.getUIString(StringIds.eStrInKilometres), EUnitSystem.Metric.value)
         )
-        m_options.add(
+        mOptions.add(
             Pair(
                 Utils.getUIString(StringIds.eStrInMilesFeet),
                 EUnitSystem.ImperialUs.value
             )
         )
-        m_options.add(
+        mOptions.add(
             Pair(
                 Utils.getUIString(StringIds.eStrInMilesYards),
                 EUnitSystem.ImperialUk.value
@@ -154,18 +156,18 @@ interface ISettingsView {
 
 object GEMSettingsView {
     var m_chapters = ArrayList<Pair<String, ArrayList<CSettingItem>>>()
-    var m_view: ISettingsView? = null
+    var mView: ISettingsView? = null
 
-    val m_nMobileDataChapterIndex = 0
-    val m_nUseMobileDataItemIndex = 0
-    val m_nUseMobileDataForMapAndWikipedia = 2
-    val m_nTerrainAndSatelliteItemIndex = 3
+    const val mMobileDataChapterIndex = 0
+    const val mUseMobileDataItemIndex = 0
+    const val mUseMobileDataForMapAndWikipedia = 2
+    const val mTerrainAndSatelliteItemIndex = 3
 
     private val settingsActivitiesMap: HashMap<Long, SettingsActivity> = HashMap()
 
     fun registerActivity(viewId: Long, settingsActivity: SettingsActivity) {
         settingsActivitiesMap[viewId] = settingsActivity
-        m_view = settingsActivity
+        mView = settingsActivity
     }
 
     private fun unregisterActivity(viewId: Long) {
@@ -214,23 +216,23 @@ object GEMSettingsView {
         m_chapters.add(
             Pair(
                 Utils.getUIString(StringIds.eStrMapData), arrayListOf(
-                CBoolItem(
-                    Utils.getUIString(StringIds.eStrUseMobileDataConnection),
-                    TBoolSettings.EUseMobileData.value
-                ),
-                CBoolItem(
-                    Utils.getUIString(StringIds.eStrTraffic),
-                    TBoolSettings.EUseMobileDataForTraffic.value
-                ),
-                CBoolItem(
-                    mapDataAndWikipedia,
-                    TBoolSettings.EUseMobileDataForMapAndWikipedia.value
-                ),
-                CBoolItem(
-                    Utils.getUIString(StringIds.eStrTerrainAndSatellite),
-                    TBoolSettings.EUseMobileDataForTerrainAndSatellite.value
+                    CBoolItem(
+                        Utils.getUIString(StringIds.eStrUseMobileDataConnection),
+                        TBoolSettings.EUseMobileData.value
+                    ),
+                    CBoolItem(
+                        Utils.getUIString(StringIds.eStrTraffic),
+                        TBoolSettings.EUseMobileDataForTraffic.value
+                    ),
+                    CBoolItem(
+                        mapDataAndWikipedia,
+                        TBoolSettings.EUseMobileDataForMapAndWikipedia.value
+                    ),
+                    CBoolItem(
+                        Utils.getUIString(StringIds.eStrTerrainAndSatellite),
+                        TBoolSettings.EUseMobileDataForTerrainAndSatellite.value
+                    )
                 )
-            )
             )
         )
 
@@ -239,36 +241,36 @@ object GEMSettingsView {
         m_chapters.add(
             Pair(
                 Utils.getUIString(StringIds.eStrNavigation), arrayListOf(
-                CIntItem(
-                    Utils.getUIString(StringIds.eStrSimulationSpeed),
-                    TIntSettings.EDemoSpeed.value, 1, 10
-                ),
-                UnitsSystemOptions(
-                    Utils.getUIString(StringIds.eStrDistances),
-                    TIntSettings.EUnitsSystem.value
-                ),
-                TravelModeCarOptions(
-                    Utils.getUIString(StringIds.eStrTravelMode),
-                    TIntSettings.ETravelModeCar.value
-                ),
-                CBoolItem(
-                    Utils.getUIString(StringIds.eStrAvoidMotorways),
-                    TBoolSettings.EAvoidMotorwaysCar.value
-                ),
-                CBoolItem(
-                    Utils.getUIString(StringIds.eStrAvoidTollRoads),
-                    TBoolSettings.EAvoidTollRoadsCar.value
-                ),
-                CBoolItem(
-                    Utils.getUIString(StringIds.eStrAvoidFerries),
-                    TBoolSettings.EAvoidFerriesCar.value
-                ),
-                CBoolItem(
-                    Utils.getUIString(StringIds.eStrAvoidUnpavedRoads),
-                    TBoolSettings.EAvoidUnpavedRoadsCar.value
-                )
+                    CIntItem(
+                        Utils.getUIString(StringIds.eStrSimulationSpeed),
+                        TIntSettings.EDemoSpeed.value, 1, 10
+                    ),
+                    UnitsSystemOptions(
+                        Utils.getUIString(StringIds.eStrDistances),
+                        TIntSettings.EUnitsSystem.value
+                    ),
+                    TravelModeCarOptions(
+                        Utils.getUIString(StringIds.eStrTravelMode),
+                        TIntSettings.ETravelModeCar.value
+                    ),
+                    CBoolItem(
+                        Utils.getUIString(StringIds.eStrAvoidMotorways),
+                        TBoolSettings.EAvoidMotorwaysCar.value
+                    ),
+                    CBoolItem(
+                        Utils.getUIString(StringIds.eStrAvoidTollRoads),
+                        TBoolSettings.EAvoidTollRoadsCar.value
+                    ),
+                    CBoolItem(
+                        Utils.getUIString(StringIds.eStrAvoidFerries),
+                        TBoolSettings.EAvoidFerriesCar.value
+                    ),
+                    CBoolItem(
+                        Utils.getUIString(StringIds.eStrAvoidUnpavedRoads),
+                        TBoolSettings.EAvoidUnpavedRoadsCar.value
+                    )
 
-            )
+                )
             )
         )
 
@@ -277,26 +279,26 @@ object GEMSettingsView {
         m_chapters.add(
             Pair(
                 Utils.getUIString(StringIds.eStrRecording), arrayListOf(
-                CBoolItem(
-                    "Record audio",
-                    TBoolSettings.ERecordAudio.value
-                ),
+                    CBoolItem(
+                        "Record audio",
+                        TBoolSettings.ERecordAudio.value
+                    ),
 
-                CInfinityIntSetting(
-                    "Log length (min)",
-                    TIntSettings.ERecordingChunk.value, 1, 61, 61
-                ),
+                    CInfinityIntSetting(
+                        "Log length (min)",
+                        TIntSettings.ERecordingChunk.value, 1, 61, 61
+                    ),
 
-                CInfinityIntSetting(
-                    "Avoid auto delete recent logs (min)",
-                    TIntSettings.EMinMinutes.value, 1, 61, 61
-                ),
+                    CInfinityIntSetting(
+                        "Avoid auto delete recent logs (min)",
+                        TIntSettings.EMinMinutes.value, 1, 61, 61
+                    ),
 
-                CInfinityIntSetting(
-                    "Recording storage limit (MB)",
-                    TIntSettings.EDiskLimit.value, 300, 2001, 2001
+                    CInfinityIntSetting(
+                        "Recording storage limit (MB)",
+                        TIntSettings.EDiskLimit.value, 300, 2001, 2001
+                    )
                 )
-            )
             )
         )
     }
@@ -372,7 +374,7 @@ object GEMSettingsView {
         m_chapters[chapter].second[index].getOptionsListSelectedItemIndex()
 
     fun isItemEnabled(viewId: Long, chapter: Int, index: Int): Boolean {
-        if ((chapter == m_nMobileDataChapterIndex) && (index > 0)) // mobile data chapter
+        if ((chapter == mMobileDataChapterIndex) && (index > 0)) // mobile data chapter
         {
             val bUseMobileData = SdkCall.execute {
                 return@execute SettingsProvider.getBooleanValue(TBoolSettings.EUseMobileData.value).second
@@ -381,7 +383,7 @@ object GEMSettingsView {
             if (!bUseMobileData) {
                 return false
             } else {
-                if (index == m_nTerrainAndSatelliteItemIndex) // Terrain + Satellite option
+                if (index == mTerrainAndSatelliteItemIndex) // Terrain + Satellite option
                 {
                     return SdkCall.execute {
                         return@execute SettingsProvider.getBooleanValue(TBoolSettings.EUseMobileDataForMapAndWikipedia.value).second
@@ -405,26 +407,26 @@ object GEMSettingsView {
         if (chapterIndexIsValid(chapter, index)) {
             m_chapters[chapter].second[index].didChooseNewBoolValue(value)
 
-            val m_view = this.m_view
-            if ((chapter == m_nMobileDataChapterIndex) && m_view != null) {
-                if (index == m_nUseMobileDataItemIndex) {
+            val mView = this.mView
+            if ((chapter == mMobileDataChapterIndex) && mView != null) {
+                if (index == mUseMobileDataItemIndex) {
                     for (i in 1 until m_chapters[chapter].second.size) {
-                        if (i == m_nTerrainAndSatelliteItemIndex && value) {
+                        if (i == mTerrainAndSatelliteItemIndex && value) {
                             val bUseMobileDataForMapAndWikipedia = SdkCall.execute {
                                 return@execute SettingsProvider.getBooleanValue(TBoolSettings.EUseMobileDataForMapAndWikipedia.value).second
                             } ?: false
 
                             if (bUseMobileDataForMapAndWikipedia) {
-                                m_view.refreshItemState(chapter, i, true)
+                                mView.refreshItemState(chapter, i, true)
                             }
                         } else {
-                            m_view.refreshItemState(chapter, i, value)
+                            mView.refreshItemState(chapter, i, value)
                         }
                     }
-                } else if ((index == m_nUseMobileDataForMapAndWikipedia) &&
-                    (m_nTerrainAndSatelliteItemIndex < m_chapters[chapter].second.size)
+                } else if ((index == mUseMobileDataForMapAndWikipedia) &&
+                    (mTerrainAndSatelliteItemIndex < m_chapters[chapter].second.size)
                 ) {
-                    m_view.refreshItemState(chapter, m_nTerrainAndSatelliteItemIndex, value)
+                    mView.refreshItemState(chapter, mTerrainAndSatelliteItemIndex, value)
                 }
             }
         }

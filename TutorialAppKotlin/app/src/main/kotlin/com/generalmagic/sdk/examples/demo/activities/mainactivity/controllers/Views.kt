@@ -32,7 +32,7 @@ class HelloViewController(context: Context, attrs: AttributeSet?) :
 
 open class ManyMapsController(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
-    protected val contentStore = ContentStore()
+    private val contentStore = ContentStore()
     protected val mapViews = ArrayList<MapView>()
     protected var mapStyles: ArrayList<ContentStoreItem> = ArrayList()
     protected var defaultStyle: ContentStoreItem? = null
@@ -60,10 +60,10 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
 
             val screen = GEMApplication.gemMapScreen() ?: return@execute false
 
-            val subview = MapView.produce(screen, rect, null, null) ?: return@execute false
-            GEMApplication.getMainMapView()?.getCamera()?.let {
-                subview.setCamera(it)
-            }
+            val subview = GEMApplication.getMainMapView()?.getCamera()?.let {
+                MapView.produce(screen, rect, null, it)
+            } ?: return@execute false
+
             subview.preferences()?.setMapStyleById(styleId)
             mapViews.add(subview)
             return@execute true
@@ -93,8 +93,8 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
 
 class TwoTiledViewsController(context: Context, attrs: AttributeSet?) :
     ManyMapsController(context, attrs) {
-    private val mainViewCoords = RectF(0.0f, 0.5f, 1.0f, 1.0f)
-    private val subViewCoords = RectF(0.0f, 0.0f, 1.0f, 0.5f)
+    private val mainViewCoords = SdkCall.execute { RectF(0.0f, 0.5f, 1.0f, 1.0f) }
+    private val subViewCoords = SdkCall.execute { RectF(0.0f, 0.0f, 1.0f, 0.5f) }
 
     override fun onCreated() {
         super.onCreated()
@@ -102,11 +102,11 @@ class TwoTiledViewsController(context: Context, attrs: AttributeSet?) :
         SdkCall.execute {
             val mainView = GEMApplication.getMainMapView() ?: return@execute
             val mainViewStyle = mainView.preferences()?.getMapStyleId()
-            mainView.resize(mainViewCoords)
+            mainViewCoords?.let { mainView.resize(it) }
 
             var style = defaultStyle
             for (value in mapStyles) {
-                if(value.getStatus() != EContentStoreItemStatus.Completed){
+                if (value.getStatus() != EContentStoreItemStatus.Completed) {
                     continue
                 }
                 if (value.getId() != mainViewStyle) {
@@ -116,7 +116,7 @@ class TwoTiledViewsController(context: Context, attrs: AttributeSet?) :
             }
 
             if (style != null) {
-                addMapView(subViewCoords, style.getId())
+                subViewCoords?.let { addMapView(it, style.getId()) }
             }
         }
     }
@@ -136,19 +136,21 @@ class MultipleViewsController(context: Context, attrs: AttributeSet?) :
         const val MAX_SUBMAPS_ON_SCREEN = 9
     }
 
-    private val mapCoords = arrayOf(
-        RectF(0.0f, 0.0f, 0.33f, 0.33f),
-        RectF(0.33f, 0.0f, 0.66f, 0.33f),
-        RectF(0.66f, 0.0f, 1.0f, 0.33f),
+    private val mapCoords = SdkCall.execute {
+        arrayOf(
+            RectF(0.0f, 0.0f, 0.33f, 0.33f),
+            RectF(0.33f, 0.0f, 0.66f, 0.33f),
+            RectF(0.66f, 0.0f, 1.0f, 0.33f),
 
-        RectF(0.0f, 0.33f, 0.33f, 0.66f),
-        RectF(0.33f, 0.33f, 0.66f, 0.66f),
-        RectF(0.66f, 0.33f, 1.0f, 0.66f),
+            RectF(0.0f, 0.33f, 0.33f, 0.66f),
+            RectF(0.33f, 0.33f, 0.66f, 0.66f),
+            RectF(0.66f, 0.33f, 1.0f, 0.66f),
 
-        RectF(0.0f, 0.66f, 0.33f, 1.0f),
-        RectF(0.33f, 0.66f, 0.66f, 1.0f),
-        RectF(0.66f, 0.66f, 1.0f, 1.0f)
-    )
+            RectF(0.0f, 0.66f, 0.33f, 1.0f),
+            RectF(0.33f, 0.66f, 0.66f, 1.0f),
+            RectF(0.66f, 0.66f, 1.0f, 1.0f)
+        )
+    }
 
     override fun onCreated() {
         super.onCreated()
@@ -168,23 +170,25 @@ class MultipleViewsController(context: Context, attrs: AttributeSet?) :
                 return@execute false
             }
 
-            val rectf = mapCoords[mapViews.size]
+            val rectf = mapCoords?.get(mapViews.size)
 
-            var style : ContentStoreItem? = if (mapStyles.size > mapViews.size) mapStyles[mapViews.size]
-            else {
-                defaultStyle ?: return@execute false
-            }
+            var style: ContentStoreItem? =
+                if (mapStyles.size > mapViews.size) mapStyles[mapViews.size]
+                else {
+                    defaultStyle ?: return@execute false
+                }
 
-            if(style?.getStatus() != EContentStoreItemStatus.Completed){
+            if (style?.getStatus() != EContentStoreItemStatus.Completed) {
                 style = defaultStyle
             }
-            
-            style?.let { return@execute addMapView(rectf, it.getId()) }
+
+            style?.let { return@execute rectf?.let { it1 -> addMapView(it1, it.getId()) } }
 
             return@execute false
         } ?: false
     }
 
+    @Suppress("SameParameterValue")
     private fun setAddButtonVisible(visible: Boolean) {
         val button = getBottomLeftButton() ?: return
 
@@ -199,6 +203,7 @@ class MultipleViewsController(context: Context, attrs: AttributeSet?) :
         }
     }
 
+    @Suppress("SameParameterValue")
     private fun setRemoveButtonVisible(visible: Boolean) {
         val button = getBottomRightButton() ?: return
 

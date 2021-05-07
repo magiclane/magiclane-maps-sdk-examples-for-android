@@ -17,10 +17,11 @@ import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.BaseActivity
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.Util
-import com.generalmagic.sdk.examples.demo.util.Util.Companion.getFileLastModifiedDate
-import com.generalmagic.sdk.examples.demo.util.Util.Companion.getFileSize
-import com.generalmagic.sdk.examples.demo.util.UtilUITexts.Companion.formatSizeAsText
+import com.generalmagic.sdk.examples.demo.util.Util.getFileLastModifiedDate
+import com.generalmagic.sdk.examples.demo.util.Util.getFileSize
+import com.generalmagic.sdk.examples.demo.util.UtilUITexts.formatSizeAsText
 import com.generalmagic.sdk.sensordatasource.RecorderBookmarks
+import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import kotlinx.android.synthetic.main.upload_view.*
@@ -30,37 +31,37 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 class UploadLogActivity : BaseActivity() {
-    private lateinit var m_data: UploadViewData
-    var m_name: EditText? = null
-    var m_email: EditText? = null
-    var m_issueDescription: EditText? = null
+    private lateinit var mData: UploadViewData
+    private var mName: EditText? = null
+    private var mEmail: EditText? = null
+    private var mIssueDescription: EditText? = null
 
     companion object {
         const val VIDEO_PATH = "RESULT_VIDEO_PATH"
         const val UPLOAD_SAVED_EMAIL = "UPLOAD_SAVED_EMAIL"
     }
 
-    class UploadViewData(val context: Context, val inputFilepath: String) {
-        var m_service: SettingsService? = null
+    class UploadViewData(val context: Context, inputFilepath: String) {
+        private var mService: SettingsService? = null
 
-        private var m_uploadString: String? = null
-        private var m_title: String? = null
-        private var m_info: String? = null
-        private var m_nameString: String? = null
-        private var m_name: String? = null
-        private var m_nameHint: String? = null
-        private var m_emailString: String? = null
-        private var m_email: String? = null
-        private var m_emailHint: String? = null
-        private var m_emailExplanationString: String? = null
-        private var m_issueDescriptionString: String? = null
-        private var m_issueDescriptionHint: String? = null
-        private var m_issueDescription: String? = null
+        private var mUploadString: String? = null
+        private var mTitle: String? = null
+        private var mInfo: String? = null
+        private var mNameString: String? = null
+        private var mName: String? = null
+        private var mNameHint: String? = null
+        private var mEmailString: String? = null
+        private var mEmail: String? = null
+        private var mEmailHint: String? = null
+        private var mEmailExplanationString: String? = null
+        private var mIssueDescriptionString: String? = null
+        private var mIssueDescriptionHint: String? = null
+        private var mIssueDescription: String? = null
 
         init {
-            SdkCall.execute { m_service = SettingsService.produce("Settings.ini") }
+            SdkCall.execute { mService = SettingsService.produce("Settings.ini") }
 
-            m_email = m_service?.getStringValue(UPLOAD_SAVED_EMAIL, "")
+            mEmail = mService?.getStringValue(UPLOAD_SAVED_EMAIL, "")
 
             val theDate = getFileLastModifiedDate(inputFilepath)
 
@@ -74,32 +75,32 @@ class UploadLogActivity : BaseActivity() {
 
             val sizeText = formatSizeAsText(getFileSize(inputFilepath))
 
-            m_info = String.format("VideoLog : $dateText ($timeText) (Size: $sizeText)")
+            mInfo = String.format("VideoLog : $dateText ($timeText) (Size: $sizeText)")
         }
 
-        fun getUploadString(): String = m_uploadString ?: "Upload"
-        fun getTitle(): String = m_title ?: "Upload Video Log"
-        fun getUploadInfo(): String = m_info ?: "Video Log: 1970-01-01 (00:00:00) (Size: 0 B)"
-        fun getNameString(): String = m_nameString ?: "Name"
-        fun getName(): String = m_name ?: ""
-        fun getNameHint(): String = m_nameHint ?: "Enter your name (optional)"
-        fun getEmailString(): String = m_emailString ?: "Email"
-        fun getEmail(): String = m_email ?: ""
-        fun getEmailHint(): String = m_emailHint ?: "Enter your email (mandatory)"
-        fun getEmailExplanationString(): String = m_emailExplanationString
+        fun getUploadString(): String = mUploadString ?: "Upload"
+        fun getTitle(): String = mTitle ?: "Upload Video Log"
+        fun getUploadInfo(): String = mInfo ?: "Video Log: 1970-01-01 (00:00:00) (Size: 0 B)"
+        fun getNameString(): String = mNameString ?: "Name"
+        fun getName(): String = mName ?: ""
+        fun getNameHint(): String = mNameHint ?: "Enter your name (optional)"
+        fun getEmailString(): String = mEmailString ?: "Email"
+        fun getEmail(): String = mEmail ?: ""
+        fun getEmailHint(): String = mEmailHint ?: "Enter your email (mandatory)"
+        fun getEmailExplanationString(): String = mEmailExplanationString
             ?: "Your email is needed to contact you about the reported problem."
 
-        fun getIssueDescriptionString(): String = m_issueDescriptionString ?: ""
-        fun getIssueDescription(): String = m_issueDescription ?: ""
+        fun getIssueDescriptionString(): String = mIssueDescriptionString ?: ""
+        fun getIssueDescription(): String = mIssueDescription ?: ""
         fun getIssueDescriptionHint(): String =
-            m_issueDescriptionHint ?: "Enter a brief description of the problem(optional)"
+            mIssueDescriptionHint ?: "Enter a brief description of the problem(optional)"
 
         fun didPushUploadButton(
             filepath: String, username: String, email: String, details: String
         ) {
-            if (email != m_email) {
-                m_email = email
-                m_service?.setStringValue(UPLOAD_SAVED_EMAIL, email)
+            if (email != mEmail) {
+                mEmail = email
+                mService?.setStringValue(UPLOAD_SAVED_EMAIL, email)
             }
 
             val resultCode = GEMApplication.uploadLog(filepath, username, email, details)
@@ -118,21 +119,21 @@ class UploadLogActivity : BaseActivity() {
 
         val inputFilepath = intent.getStringExtra(VIDEO_PATH) ?: ""
 
-        this.m_data = UploadViewData(this, inputFilepath)
+        this.mData = UploadViewData(this, inputFilepath)
 
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = m_data.getTitle()
+        supportActionBar?.title = mData.getTitle()
 
         upload_button?.let {
-            it.text = m_data.getUploadString()
+            it.text = mData.getUploadString()
             it.setOnClickListener {
-                if (m_name != null && m_email != null && m_issueDescription != null) {
-                    m_data.didPushUploadButton(
+                if (mName != null && mEmail != null && mIssueDescription != null) {
+                    mData.didPushUploadButton(
                         inputFilepath,
-                        m_name?.text.toString(),
-                        m_email?.text.toString(),
-                        m_issueDescription?.text.toString()
+                        mName?.text.toString(),
+                        mEmail?.text.toString(),
+                        mIssueDescription?.text.toString()
                     )
 
                     finish()
@@ -140,31 +141,31 @@ class UploadLogActivity : BaseActivity() {
             }
         }
 
-        upload_info?.text = m_data.getUploadInfo()
-        upload_name_string?.text = m_data.getNameString()
+        upload_info?.text = mData.getUploadInfo()
+        upload_name_string?.text = mData.getNameString()
 
-        m_name = upload_name
-        m_name?.let {
-            it.setText(m_data.getName())
-            it.hint = m_data.getNameHint()
+        mName = upload_name
+        mName?.let {
+            it.setText(mData.getName())
+            it.hint = mData.getNameHint()
         }
 
-        upload_email_string?.text = m_data.getEmailString()
+        upload_email_string?.text = mData.getEmailString()
 
-        m_email = upload_email
-        m_email?.let {
-            it.setText(m_data.getEmail())
-            it.hint = m_data.getEmailHint()
+        mEmail = upload_email
+        mEmail?.let {
+            it.setText(mData.getEmail())
+            it.hint = mData.getEmailHint()
         }
 
-        upload_email_explanation?.text = m_data.getEmailExplanationString()
+        upload_email_explanation?.text = mData.getEmailExplanationString()
 
-        upload_issue_description_string?.text = m_data.getIssueDescriptionString()
+        upload_issue_description_string?.text = mData.getIssueDescriptionString()
 
-        m_issueDescription = upload_issue_description
-        m_issueDescription?.let {
-            it.hint = m_data.getIssueDescriptionHint()
-            it.setText(m_data.getIssueDescription())
+        mIssueDescription = upload_issue_description
+        mIssueDescription?.let {
+            it.hint = mData.getIssueDescriptionHint()
+            it.setText(mData.getIssueDescription())
         }
     }
 }
@@ -175,7 +176,8 @@ class PickLogActivity : BaseActivity() {
     private lateinit var viewManager: RecyclerView.LayoutManager
 
     companion object {
-        val CODE_RESULT_SELECT_VIDEO = 100
+        const val CODE_PERMISSIONS = 100
+        const val CODE_RESULT_SELECT_VIDEO = 100
         const val RESULT_VIDEO_PATH = "RESULT_VIDEO_PATH"
         const val INPUT_DIR = "INPUT_DIR"
     }
@@ -228,7 +230,7 @@ class PickLogActivity : BaseActivity() {
         hasPermissions = GEMApplication.hasPermissions(this, permissions)
 
         if (!hasPermissions) {
-            GEMApplication.requestPermissions(this, permissions)
+            PermissionsHelper.requestPermissions(CODE_PERMISSIONS, this, permissions)
         }
 
         if (hasPermissions) {
@@ -428,6 +430,7 @@ class PickLogActivity : BaseActivity() {
             return isProtectedLog(it.filepath)
         }
 
+        @Suppress("SameParameterValue")
         private fun setProtectAtIndex(index: Int, protect: Boolean) {
             val it = mDataset[index]
 
@@ -470,6 +473,7 @@ class PickLogActivity : BaseActivity() {
             notifyDataSetChanged()
         }
 
+        @Suppress("DEPRECATION")
         inner class ListItemViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val nameTextView: TextView = view.findViewById(R.id.name)
             val filepathTextView: TextView = view.findViewById(R.id.filepath)

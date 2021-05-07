@@ -1,6 +1,6 @@
 ## Overview
 
-This example app present the followings:
+This example app demonstrates the following feature:
 - How the Maps SDK for Android can be integrated into your project.
 
 ## Build instructions

@@ -22,7 +22,6 @@ import kotlin.math.abs
 import kotlin.math.round
 
 object GEMRouteProfileView {
-
     private var mCrtMinXInUnitType = 0.0
     private var mCrtMaxXInUnitType = 0.0
     private var mAltitudeFactor = 0.0
@@ -112,9 +111,7 @@ object GEMRouteProfileView {
         EUp
     }
 
-    private val routeProfileViewsMap: HashMap<Long, android.view.View> = HashMap()
-
-    fun refresh() {
+    private fun refresh() {
         mRouteLengthInMeters = 0
         mCrtMinXInUnitType = 0.0
         mCrtMaxXInUnitType = 0.0
@@ -441,7 +438,7 @@ object GEMRouteProfileView {
     }
 
 
-    fun getElevationChartYValues(nValues: Int): IntArray? {
+    fun getElevationChartYValues(nValues: Int): IntArray {
         val routeTerrainProfile = mRoute.getTerrainProfile()
         val yValuesArray = IntArray(nValues)
         routeTerrainProfile.let { terrainProfile ->
@@ -606,16 +603,16 @@ object GEMRouteProfileView {
                     }
                 mHighlightedLmkList.add(landmark)
 
-                val x_m = (x * getCurrentUnitToMetersDistanceFactor()).toInt().coerceIn(
+                val xM = (x * getCurrentUnitToMetersDistanceFactor()).toInt().coerceIn(
                     0,
                     mRoute.getTimeDistance(false)?.getTotalDistance()
                 )
 
-                mRoute.getCoordinateOnRoute(x_m)?.let {
+                mRoute.getCoordinateOnRoute(xM)?.let {
                     mHighlightedLmkList.first().setCoordinates(it)
                 }
 
-                if ((mPrevTouchXMeters == x_m) && (evt == TTouchChartEvent.EDown.ordinal)) {
+                if ((mPrevTouchXMeters == xM) && (evt == TTouchChartEvent.EDown.ordinal)) {
                     m_mapView.deactivateHighlight()
 
                     val settings = HighlightRenderSettings()
@@ -645,7 +642,7 @@ object GEMRouteProfileView {
                     m_mapView.activateHighlightLandmarks(mHighlightedLmkList, settings)
 
                     mPrevTouchXMeters = if (evt == TTouchChartEvent.EDown.ordinal) {
-                        x_m
+                        xM
                     } else {
                         -1
                     }
@@ -713,8 +710,8 @@ object GEMRouteProfileView {
         val unitsSystem = CommonSettings.getUnitSystem()
 
         var miles = 0.0
-        var yardsOrFeet = 0.0
-        var result = 0.0
+        val yardsOrFeet: Double
+        val result: Double
 
         if (unitsSystem != EUnitSystem.Metric) {
             miles = (meters * METERS_TO_MILES)
@@ -783,10 +780,12 @@ object GEMRouteProfileView {
         }
     }
 
+    @Suppress("unused")
     fun onZoomElevationChart(minX: Double, maxX: Double) {
         zoomRoute(minX, maxX)
     }
 
+    @Suppress("unused")
     fun onScrollElevationChart(minX: Double, maxX: Double) {
         zoomRoute(minX, maxX)
     }
@@ -849,7 +848,7 @@ object GEMRouteProfileView {
     }
 
     private fun getElevationString(elevation: Float): String {
-        var tmp = ""
+        var tmp: String
         val routeTerrainProfile = mRoute.getTerrainProfile()
 
         routeTerrainProfile.let {
@@ -1015,11 +1014,7 @@ object GEMRouteProfileView {
 
     fun getClimbDetailsRowsCount(): Int {
         val routeTerrainProfile = mRoute.getTerrainProfile()
-        routeTerrainProfile.let { terrainProfile ->
-            return terrainProfile?.getClimbSections()?.size ?: 0
-        }
-
-        return 0
+        return routeTerrainProfile?.getClimbSections()?.size ?: 0
     }
 
 
@@ -1183,8 +1178,8 @@ object GEMRouteProfileView {
 
         mMapView.deactivateHighlight()
 
-        var percent = 0.0
-        var length = 0.0
+        var percent: Double
+        var length: Double
         var prevPercent = 0.0
 
         for (item in mSurfacesTypes) {
@@ -1429,8 +1424,8 @@ object GEMRouteProfileView {
 
         mMapView.deactivateHighlight()
 
-        var percent = 0.0
-        var length = 0.0
+        var percent: Double
+        var length: Double
         var prevPercent = 0.0
 
         for (item in mRoadsTypes) {
@@ -1704,8 +1699,8 @@ object GEMRouteProfileView {
         }
         mMapView.deactivateHighlight()
 
-        var percent = 0.0
-        var length = 0.0
+        var percent: Double
+        var length: Double
         var prevPercent = 0.0
 
         for (item in mSteepnessTypes) {

@@ -48,7 +48,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
             showProgress()
         }
 
-        searchService.onCompleted = onCompleted@{ results, reason, hint ->
+        searchService.onCompleted = onCompleted@{ results, reason, _ ->
             val gemError = SdkError.fromInt(reason)
             if (gemError == SdkError.Cancel) return@onCompleted
 
@@ -63,24 +63,26 @@ class WikiController(context: Context, attrs: AttributeSet?) :
 
             val value = results[0]
 
-            doStart(value)
+            SdkCall.execute { doStart(value) }
         }
     }
 
     override fun onMapFollowStatusChanged(following: Boolean) {}
 
     override fun doStart() {
-
         val inLandmark = IntentHelper.getObjectForKey(EXTRA_LANDMARK) as Landmark?
-        if (inLandmark == null) {
-            val text = "Tokyo"
-            val coords = Coordinates(35.682838439941406, 139.75946044921875)
-            doSearch(text, coords)
+        
+        SdkCall.execute {
+            if (inLandmark == null) {
+                val text = "Tokyo"
+                val coords = Coordinates(35.682838439941406, 139.75946044921875)
+                doSearch(text, coords)
 
-            return
+                return@execute
+            }
+
+            doStart(inLandmark)
         }
-
-        doStart(inLandmark)
     }
 
     override fun doStop() {
@@ -91,7 +93,8 @@ class WikiController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    fun doStart(landmark: Landmark) {
+    private fun doStart(landmark: Landmark) {
+        SdkCall.checkCurrentThread()
         this.landmark = landmark
 
         ignoreWikiErrorsCount = 3 // reset
@@ -99,7 +102,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
         val mainMap = GEMApplication.getMainMapView()
         SdkCall.execute {
             val animation = Animation()
-            animation.setType(EAnimation.Fly)
+            animation.setType(EAnimation.AnimationLinear)
             val coords = landmark.getCoordinates() ?: return@execute
 
             val areaIsEmpty = landmark.getContourGeograficArea()?.isEmpty() ?: true
@@ -145,6 +148,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
         showCloseButton()
     }
 
+    @Suppress("SameParameterValue")
     private fun doSearch(text: String, coords: Coordinates) {
         SdkCall.execute {
             searchService.preferences.setSearchMapPOIs(true)

@@ -1,7 +1,7 @@
 ## Overview
 
-This example app present the followings:
-- Start simulation between 2 given landmarks if any route can be calculated.
+This example app demonstrates the following features:
+- Start simulated navigation between 2 given landmarks if a route can be calculated.
 
 ## Build instructions
 

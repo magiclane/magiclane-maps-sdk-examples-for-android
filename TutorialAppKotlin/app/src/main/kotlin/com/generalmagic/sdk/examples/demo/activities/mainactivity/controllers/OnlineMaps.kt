@@ -110,7 +110,7 @@ class OnlineMapsActivity : MapsListActivity() {
                         menu.menu.add("Delete")
                         menu.show()
 
-                        menu.setOnMenuItemClickListener { _ ->
+                        menu.setOnMenuItemClickListener {
                             SdkCall.execute {
                                 item.deleteContent()
                                 taskRefresh()
@@ -127,7 +127,7 @@ class OnlineMapsActivity : MapsListActivity() {
                         menu.menu.add("Cancel")
                         menu.show()
 
-                        menu.setOnMenuItemClickListener { _ ->
+                        menu.setOnMenuItemClickListener {
                             SdkCall.execute {
                                 item.cancelDownload()
                                 taskRefresh()

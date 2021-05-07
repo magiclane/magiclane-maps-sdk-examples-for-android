@@ -39,15 +39,13 @@ class ClimbTableDataAdapter(context: Context?, data: List<Climb?>?, tableView: T
 
     override fun getDefaultCellView(rowIndex: Int, columnIndex: Int, parentView: ViewGroup): View {
         val climb = getRowData(rowIndex)
-        val renderedView: View?
-        renderedView = when (columnIndex) {
+        return when (columnIndex) {
             0 -> renderClimbRating(climb, parentView)
             1 -> renderStartEndPointsElevation(climb, parentView)
             2 -> renderClimbLength(climb)
             3 -> renderAvgGrade(climb)
             else -> renderClimbRating(climb, parentView)
         }
-        return renderedView
     }
 
     // ---------------------------------------------------------------------------------------------

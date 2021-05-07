@@ -36,18 +36,17 @@ import com.generalmagic.sdk.util.SdkCall
 import kotlinx.android.synthetic.main.search_address_view.*
 
 class SearchAddressActivity : BaseActivity() {
-
     private var searchAddressAdapter: SearchAddressAdapter? = null
     private var streetTopPadding: Int = 0
     private val iconSize =
         GEMApplication.appResources().getDimension(R.dimen.listIconSize).toInt()
-    var viewId: Long = 0
-    var hasState = false
+    private var viewId: Long = 0
+    private var hasState = false
 
-    lateinit var cityTextChangedListener: CustomTextWatcher
-    lateinit var streetTextChangedListener: CustomTextWatcher
-    lateinit var streetNumberTextChangedListener: CustomTextWatcher
-    lateinit var intersectionTextChangedListener: CustomTextWatcher
+    private lateinit var cityTextChangedListener: CustomTextWatcher
+    private lateinit var streetTextChangedListener: CustomTextWatcher
+    private lateinit var streetNumberTextChangedListener: CustomTextWatcher
+    private lateinit var intersectionTextChangedListener: CustomTextWatcher
 
     companion object {
         var updateItems: Runnable? = null
@@ -137,7 +136,7 @@ class SearchAddressActivity : BaseActivity() {
 
             val countryLevelItem = GuidedAddressSearchService().getCountryLevelItem(countryISOCode)
             countryLevelItem.let {
-                GEMAddressSearchView.m_country = it
+                GEMAddressSearchView.mCountry = it
             }
         }
 

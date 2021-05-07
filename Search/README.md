@@ -1,6 +1,6 @@
 ## Overview
 
-This example app present the followings:
+This example app demonstrates the following features:
 - Searches for landmarks based on user input.
 - Display a list with landmarks found.
 

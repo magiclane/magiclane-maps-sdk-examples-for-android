@@ -1,5 +1,6 @@
 package com.generalmagic.sdk.examples.demo.activities.routeprofile
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.widget.ImageView
@@ -14,14 +15,15 @@ import com.github.mikephil.charting.highlight.Highlight
 import com.github.mikephil.charting.utils.MPPointF
 import kotlin.math.roundToInt
 
+@SuppressLint("ViewConstructor")
 class MyMarkerView(
-    context: Context,
-    layoutResource: Int,
-    private val elevationProfile: ElevationProfile
+    context: Context, layoutResource: Int, private val elevationProfile: ElevationProfile
 ) : MarkerView(context, layoutResource) {
+    
     private val markerText: TextView? = findViewById(R.id.marker_text)
     private val markerImage: ImageView? = findViewById(R.id.marker_image)
-    val iconSize = GEMApplication.appResources().getDimension(R.dimen.statusIconSize).toInt()
+    private val iconSize =
+        GEMApplication.appResources().getDimension(R.dimen.statusIconSize).toInt()
 
     init {
         if (markerText != null) {
@@ -61,6 +63,7 @@ class MyMarkerView(
         return MPPointF((-(width / 2)).toFloat(), (-height + height / 20).toFloat())
     }
 
+    @Suppress("unused")
     fun refreshTextColors() {
         if (markerText != null) {
             val backgroundColorId = android.R.color.white

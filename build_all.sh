@@ -8,6 +8,14 @@
 # Information and shall use it only in accordance with the terms of the
 # license agreement you entered into with General Magic.
 
+function on_err()
+{
+	echo "Error on line $1"
+	
+	exit 1
+}
+trap 'on_err $LINENO' ERR
+
 function on_exit()
 {
 	if [ -n "$MY_DIR" ]; then

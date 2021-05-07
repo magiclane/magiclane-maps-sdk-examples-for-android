@@ -41,8 +41,6 @@ class Trip {
             preferences.let {
                 mPreferences = preferences
             }
-        } ?: run {
-            mWaypoints?.clear()
         }
     }
 
@@ -55,8 +53,7 @@ class Trip {
 }
 
 class TripsHistory {
-    private val ROUTE_NAME = "Route"
-    var mRouteBookmarks = RouteBookmarks.produce("Trips")
+    private var mRouteBookmarks = RouteBookmarks.produce("Trips")
 
     fun getTripsCount(): Int {
         return mRouteBookmarks?.size() ?: 0
@@ -65,7 +62,7 @@ class TripsHistory {
     fun saveTrip(trip: Trip) {
         mRouteBookmarks.let { routeBookmarks ->
             val nTrips = routeBookmarks?.size() ?: 0
-            var tmpRoute: Trip? = Trip()
+            var tmpRoute: Trip?
             var filledIndexes = IntArray(nTrips) { Int.MAX_VALUE }
 
             var bRouteExists: Boolean
@@ -81,8 +78,7 @@ class TripsHistory {
                 val isTheSameRoute: Boolean = if (trip.mName.isEmpty()) {
                     isSameTrip(trip, tmpRoute)
                 } else {
-                    trip.mName.toLowerCase(Locale.getDefault()) ==
-                        tmpRoute.mName.toLowerCase(Locale.getDefault())
+                    trip.mName.equals(tmpRoute.mName, ignoreCase = true)
                 }
 
                 if (isTheSameRoute) {
@@ -160,8 +156,6 @@ class TripsHistory {
 
             return Pair(true, trip)
 
-        } ?: run {
-            return Pair(false, null)
         }
     }
 
@@ -224,7 +218,6 @@ class TripsHistory {
         bRouteExists: Boolean
     ): IntArray {
         var nTmp = 0
-        var result = nNames
         mRouteBookmarks.let { routeBookmarks ->
             val routeName = routeBookmarks?.getName(index)
 
@@ -240,18 +233,18 @@ class TripsHistory {
 
             if (nTmp > 0) {
                 for (j in 0 until nTrips) {
-                    if (nTmp <= result[j]) {
+                    if (nTmp <= nNames[j]) {
                         for (k in nTrips - 1 downTo j + 1) {
-                            result[k] = result[k - 1]
+                            nNames[k] = nNames[k - 1]
                         }
-                        result[j] = nTmp
+                        nNames[j] = nTmp
                         break
                     }
                 }
             }
         }
 
-        return result
+        return nNames
     }
 
     companion object {
@@ -260,10 +253,9 @@ class TripsHistory {
             isFromAToB: Boolean,
             isToCurrentLocation: Boolean
         ): Pair<Boolean, String> {
-            var defaultName = ""
+            val defaultName: String
             var departureName = ""
             var destinationName = ""
-            var intermediateWptsName = ""
 
             val tripWptsCount = waypoints.size
             if (tripWptsCount == 0) {
@@ -279,7 +271,7 @@ class TripsHistory {
             }
 
             //getIntermediateWaypointsName(waypoints, bIsFromAToB, intermediateWptsName);
-            intermediateWptsName = getIntermediateWaypointsName(waypoints, isFromAToB).second
+            val intermediateWptsName = getIntermediateWaypointsName(waypoints, isFromAToB).second
 
             if (isFromAToB) {
                 defaultName = if (tripWptsCount > 2) {
@@ -322,7 +314,7 @@ class TripsHistory {
             return Pair(true, defaultName)
         }
 
-        fun getIntermediateWaypointsName(
+        private fun getIntermediateWaypointsName(
             waypoints: ArrayList<Landmark>,
             isFromAToB: Boolean,
             pickShortNames: Boolean = false
@@ -340,7 +332,7 @@ class TripsHistory {
 
             var wptName = ""
             for (index in startIndex..endIndex) {
-                var tmpName = ""
+                var tmpName: String
                 val waypoint = waypoints[index]
                 tmpName = Utils.getFormattedWaypointName(waypoint)
 
@@ -361,5 +353,7 @@ class TripsHistory {
 
             return Pair(true, wptName)
         }
+
+        const val ROUTE_NAME = "Route"
     }
 }

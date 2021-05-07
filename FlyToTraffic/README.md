@@ -1,9 +1,9 @@
 ## Overview
 
-This example app present the followings:
+This example app demonstrates the following features:
 - Calculate the routes between 2 given landmarks.
-- Display the first route on a map, if exists.
-- Fly to first traffic event available on route, if exists.
+- Display the first route on a map, if it exists.
+- Fly to the first traffic event available on route, if it exists.
 
 ## Build instructions
 

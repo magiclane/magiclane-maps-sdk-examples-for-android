@@ -20,7 +20,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -66,6 +65,7 @@ open class WikiServiceController {
         ELoaded,
     }
 
+    @Suppress("unused")
     fun hasWiki(value: Landmark): Boolean {
         return SdkCall.execute { infoService.hasWikiInfo(value) } ?: false
     }
@@ -112,6 +112,7 @@ open class WikiServiceController {
         return SdkCall.execute { gemString?.asKotlinString() } ?: ""
     }
 
+    @Suppress("unused")
     fun getImageLoadState(index: Int): TLoadState {
         return holders[index].imageLoadState
     }
@@ -259,7 +260,6 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
     }
 
     private var mButtons = arrayListOf<Int>()
-    private var mCarRoutes = arrayListOf<Route>()
 
     private val service = RoutingService()
     private val resultRoutes = SdkList(Route::class)
@@ -272,7 +272,6 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
 
     private val wiki = object : WikiServiceController() {
         override fun onWikiFetchComplete(reason: Int, hint: String) {
-//            SdkCall.checkCurrentThread() //TODO: WTFFF, uncomment... ??
 
             locationDetails.wikipediaDescription = getWikiPageDescription()
             locationDetails.wikipediaUrl = getWikiPageURL()
@@ -473,7 +472,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         return true
     }
 
-    fun hide() {
+    private fun hide() {
         this.visibility = View.GONE
     }
 
@@ -485,13 +484,14 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         this.visibility = View.VISIBLE
     }
 
+    @Suppress("unused")
     private fun notifyVisibilityChanged() {
         GEMApplication.postOnMain {
             onVisibilityChanged()
         }
     }
 
-    fun getFavouritesIcon(landmark: Landmark): Bitmap? {
+    private fun getFavouritesIcon(landmark: Landmark): Bitmap? {
         val imgSizes = context.resources.getDimension(R.dimen.small_icon_size).toInt()
         return if (GEMApplication.isFavourite(landmark)) {
             Utils.getImageAsBitmap(
@@ -508,11 +508,11 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         }
     }
 
-    fun getButtonsCount(): Int {
+    private fun getButtonsCount(): Int {
         return mButtons.size
     }
 
-    fun getButtonImage(index: Int, width: Int, height: Int, landmark: Landmark): Bitmap? {
+    private fun getButtonImage(index: Int, width: Int, height: Int, landmark: Landmark): Bitmap? {
         if (isValidButtonIndex(index)) {
             return when (mButtons[index]) {
                 TLocationDetailsButtonType.EDriveTo.ordinal -> {
@@ -565,14 +565,14 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         return null
     }
 
-    fun getButtonType(index: Int): Int {
+    private fun getButtonType(index: Int): Int {
         if (isValidButtonIndex(index)) {
             return mButtons[index]
         }
         return TLocationDetailsButtonType.EUnknown.ordinal
     }
 
-    fun getButtonText(index: Int): String {
+    private fun getButtonText(index: Int): String {
         if (isValidButtonIndex(index)) {
             var route: Route? = null
 
@@ -644,9 +644,9 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         wiki_image_list.layoutManager =
             LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
 
-        val nMaxImageWidth = 3 * width.coerceAtMost(height)
+//        val nMaxImageWidth = 3 * width.coerceAtMost(height)
 
-        wikiListAdapter = WikiImagesListAdapter(context, nMaxImageWidth, images)
+        wikiListAdapter = WikiImagesListAdapter(context, images)
         wiki_image_list.adapter = wikiListAdapter
     }
 
@@ -660,8 +660,41 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         var buttonsImages: Array<Bitmap?> = arrayOf(),
         var buttonsTypes: Array<Int> = arrayOf(),
         var buttonsTexts: Array<String?> = arrayOf()
-    )
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
 
+            other as LocationDetails
+
+            if (text != other.text) return false
+            if (description != other.description) return false
+            if (image != other.image) return false
+            if (wikipediaText != other.wikipediaText) return false
+            if (wikipediaDescription != other.wikipediaDescription) return false
+            if (wikipediaUrl != other.wikipediaUrl) return false
+            if (!buttonsImages.contentEquals(other.buttonsImages)) return false
+            if (!buttonsTypes.contentEquals(other.buttonsTypes)) return false
+            if (!buttonsTexts.contentEquals(other.buttonsTexts)) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = text?.hashCode() ?: 0
+            result = 31 * result + (description?.hashCode() ?: 0)
+            result = 31 * result + (image?.hashCode() ?: 0)
+            result = 31 * result + (wikipediaText?.hashCode() ?: 0)
+            result = 31 * result + (wikipediaDescription?.hashCode() ?: 0)
+            result = 31 * result + (wikipediaUrl?.hashCode() ?: 0)
+            result = 31 * result + buttonsImages.contentHashCode()
+            result = 31 * result + buttonsTypes.contentHashCode()
+            result = 31 * result + buttonsTexts.contentHashCode()
+            return result
+        }
+    }
+
+    @Suppress("SameParameterValue")
     private fun calculateRoute(type: ERouteTransportMode, landmark: Landmark) {
         SdkCall.execute {
             val position = PositionService().getPosition()
@@ -678,7 +711,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
                 service.preferences.setRouteType(ERouteType.Fastest)
                 service.preferences.setResultDetails(ERouteResultDetails.TimeDistance)
 
-                service.onCompleted = { results, reason, hint ->
+                service.onCompleted = { _, reason, _ ->
                     onCompleteCalculating(reason, type)
                 }
 
@@ -711,8 +744,8 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         var route: Route? = null
         when (type) {
             ERouteTransportMode.Car -> {
-                val routes = resultRoutes.asArrayList()
-                if (routes.isNotEmpty()) {
+                val routes = SdkCall.execute { resultRoutes.asArrayList() }
+                if (routes?.isNotEmpty() == true) {
                     route = routes[0]
                 }
             }
@@ -725,6 +758,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         }
     }
 
+    @Suppress("SameParameterValue")
     private fun didUpdateButtonText(index: Int, text: String) {
         GEMApplication.postOnMain {
             if ((index == 0) && text.isNotEmpty()) {
@@ -763,7 +797,6 @@ data class ImageViewModel(
 
 class WikiImagesListAdapter(
     val context: Context,
-    private val nMaxImageWidth: Int,
     private val models: ArrayList<ImageViewModel>
 ) : RecyclerView.Adapter<WikiImagesListAdapter.ImageViewHolder>() {
 
@@ -775,7 +808,7 @@ class WikiImagesListAdapter(
     }
 
     inner class ImageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val container: ConstraintLayout = view.findViewById(R.id.wiki_image_list_item)
+        //        val container: ConstraintLayout = view.findViewById(R.id.wiki_image_list_item)
         val image: ImageView = view.findViewById(R.id.wiki_image)
         val progress: ProgressBar = view.findViewById(R.id.wiki_image_progress)
         val description: Button = view.findViewById(R.id.wiki_image_description)
@@ -834,6 +867,8 @@ class WikiImagesListAdapter(
                     holder.description.visibility = View.VISIBLE
                     holder.description.setOnClickListener {
                         val toast = Toast.makeText(context, description, Toast.LENGTH_LONG)
+
+                        @Suppress("DEPRECATION")
                         val view = toast.view
                         val text = view?.findViewById<TextView>(android.R.id.message)
                         val color = ContextCompat.getColor(context, R.color.colorPrimary)

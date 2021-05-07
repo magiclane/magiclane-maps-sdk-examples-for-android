@@ -426,6 +426,7 @@ open class BaseNavigationController(context: Context, attrs: AttributeSet?) :
 open class SimLandmarksController(context: Context, attrs: AttributeSet?) :
     BaseSimulationController(context, attrs) {
     override fun doStart() {
+        @Suppress("UNCHECKED_CAST") 
         val waypoints = IntentHelper.getObjectForKey(EXTRA_WAYPOINTS) as ArrayList<Landmark>?
         waypoints ?: return
 
@@ -479,7 +480,7 @@ open class PredefNavController(context: Context, attrs: AttributeSet?) :
             showProgress()
         }
 
-        searchService.onCompleted = onCompleted@{ results, reason, hint ->
+        searchService.onCompleted = onCompleted@{ results, reason, _ ->
             val gemError = SdkError.fromInt(reason)
             if (gemError == SdkError.Cancel) return@onCompleted
 

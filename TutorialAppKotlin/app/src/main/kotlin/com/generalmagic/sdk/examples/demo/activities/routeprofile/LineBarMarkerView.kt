@@ -1,5 +1,6 @@
 package com.generalmagic.sdk.examples.demo.activities.routeprofile
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.view.View
@@ -11,11 +12,9 @@ import com.github.mikephil.charting.highlight.Highlight
 import com.github.mikephil.charting.utils.MPPointF
 import com.github.mikephil.charting.utils.Utils
 
+@SuppressLint("ViewConstructor")
 class LineBarMarkerView(
-    context: Context,
-    layoutResource: Int,
-    color: Int,
-    private val mChart: CombinedChart?
+    context: Context, layoutResource: Int, color: Int, private val mChart: CombinedChart?
 ) : MarkerView(context, layoutResource) {
     private val markerView: View? = this.findViewById(R.id.marker_view)
     private var chartHeight: Float = 0.toFloat()

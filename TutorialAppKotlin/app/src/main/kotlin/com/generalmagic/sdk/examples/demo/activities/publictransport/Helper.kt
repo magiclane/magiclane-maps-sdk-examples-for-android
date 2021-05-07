@@ -8,6 +8,8 @@
  * license agreement you entered into with General Magic.
  */
 
+@file:Suppress("unused")
+
 package com.generalmagic.sdk.examples.demo.activities.publictransport
 
 import android.graphics.Bitmap
@@ -17,81 +19,81 @@ import com.generalmagic.sdk.core.Rgba
 import com.generalmagic.sdk.core.Time
 import com.generalmagic.sdk.examples.demo.activities.RouteInstructionItem
 import com.generalmagic.sdk.examples.demo.util.Utils
-import com.generalmagic.sdk.examples.demo.util.Utils.Companion.getDistText
+import com.generalmagic.sdk.examples.demo.util.Utils.getDistText
 import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
 
 class TRouteDescriptionItem {
-    var m_departureTime = ""
-    var m_arrivalTime = ""
-    var m_startStationName = ""
-    var m_stopStationName = ""
-    var m_stationEarlyTime = ""
-    var m_stationLaterTime = ""
-    var m_stationPlatform = ""
-    var m_startStationPlatformCode = ""
-    var m_endStationPlatformCode = ""
-    var m_AtoBLineName = ""
-    var m_toBLineName = ""
-    var m_timeToNextStation = ""
-    var m_distanceToNextStation = ""
-    var m_supportLineInfo = ""
-    var m_agencyName = ""
-    var m_agencyURL = ""
-    var m_agencyFareURL = ""
-    var m_agencyPhone = ""
-    var m_stayOnSameVehicle = ""
-    val m_stopNames = ArrayList<String>()
-    val m_instructionsList = ArrayList<RouteInstructionItem>()
-    var m_geographicArea: RectangleGeographicArea? = null
-    var m_canExpand = false
-    var m_isExpanded = false
-    var m_isWalk = false
-    var m_isStationWalk = false
+    var mDepartureTime = ""
+    var mArrivalTime = ""
+    var mStartStationName = ""
+    var mStopStationName = ""
+    var mStationEarlyTime = ""
+    var mStationLaterTime = ""
+    var mStationPlatform = ""
+    var mStartStationPlatformCode = ""
+    var mEndStationPlatformCode = ""
+    var mAtoBLineName = ""
+    var mToBLineName = ""
+    var mTimeToNextStation = ""
+    var mDistanceToNextStation = ""
+    var mSupportLineInfo = ""
+    var mAgencyName = ""
+    var mAgencyURL = ""
+    var mAgencyFareURL = ""
+    var mAgencyPhone = ""
+    var mStayOnSameVehicle = ""
+    val mStopNames = ArrayList<String>()
+    val mInstructionsList = ArrayList<RouteInstructionItem>()
+    var mGeographicArea: RectangleGeographicArea? = null
+    var mCanExpand = false
+    var mIsExpanded = false
+    var mIsWalk = false
+    var mIsStationWalk = false
 }
 
 class TRouteSegmentItem {
-    var m_type: ETransitType = ETransitType.Unknown
-    var m_iconId = 0
-    var m_realTimeStatus = ERealtimeStatus.NotAvailable
-    var m_backgroundColor = SdkCall.execute { Rgba(255, 255, 255, 255) }?.value() ?: 0
-    var m_foregroundColor = SdkCall.execute { Rgba(0, 0, 0, 255) }?.value() ?: 0
-    var m_name = ""
-    var m_travelTimeValue = ""
-    var m_travelTimeUnit = ""
-    var m_hasWheelChairSupport = false
-    var m_hasBicycleSupport = false
-    var m_visible = false
-    var m_icon: Bitmap? = null
+    var mType: ETransitType = ETransitType.Unknown
+    var mIconId = 0
+    var mRealTimeStatus = ERealtimeStatus.NotAvailable
+    var mBackgroundColor = SdkCall.execute { Rgba(255, 255, 255, 255) }?.value() ?: 0
+    var mForegroundColor = SdkCall.execute { Rgba(0, 0, 0, 255) }?.value() ?: 0
+    var mName = ""
+    var mTravelTimeValue = ""
+    var mTravelTimeUnit = ""
+    var mHasWheelChairSupport = false
+    var mHasBicycleSupport = false
+    var mVisible = false
+    var mIcon: Bitmap? = null
 }
 
 class TRouteItem {
-    var m_nLeftImageId = -1
-    var m_nRouteIndex = -1
-    var m_tripTimeInterval = ""
-    var m_tripDuration = ""
-    var m_numberOfChanges = ""
-    var m_tripSegments = ArrayList<TRouteSegmentItem>()
-    var m_from = ""
-    var m_walkingTime = ""
-    var m_walkingDistance = ""
-    var m_walkingInfo = ""
-    var m_frequency = ""
-    var m_fare = ""
-    var m_warning = ""
-    var m_departureTime = SdkCall.execute { Time() }
-    var m_arrivalTime = SdkCall.execute { Time() }
-    var m_departureTimeStr = ""
-    var m_arrivalTimeStr = ""
+    var mNLeftImageId = -1
+    var mNRouteIndex = -1
+    var mTripTimeInterval = ""
+    var mTripDuration = ""
+    var mNumberOfChanges = ""
+    var mTripSegments = ArrayList<TRouteSegmentItem>()
+    var mFrom = ""
+    var mWalkingTime = ""
+    var mWalkingDistance = ""
+    var mWalkingInfo = ""
+    var mFrequency = ""
+    var mFare = ""
+    var mWarning = ""
+    var mDepartureTime = SdkCall.execute { Time() }
+    var mArrivalTime = SdkCall.execute { Time() }
+    var mDepartureTimeStr = ""
+    var mArrivalTimeStr = ""
 }
 
 data class TAgencyInfo(
-    var m_name: String = "",
-    var m_url: String = "",
-    var m_fare_url: String = "",
-    var m_phone: String = ""
+    var mName: String = "",
+    var mUrl: String = "",
+    var mFare_url: String = "",
+    var mPhone: String = ""
 )
 
 class Helper {
@@ -118,7 +120,7 @@ class Helper {
                 val routeSegment = routeSegmentsList[nSegmentIndex]
                 val routeDescriptionItem = TRouteDescriptionItem()
 
-                routeDescriptionItem.m_geographicArea = routeSegment.getGeographicArea()
+                routeDescriptionItem.mGeographicArea = routeSegment.getGeographicArea()
 
                 val instructionList = routeSegment.getInstructions() ?: ArrayList()
                 val instructionsCount = instructionList.size
@@ -153,51 +155,51 @@ class Helper {
                         }
                     }
 
-                    routeDescriptionItem.m_departureTime = String.format(
+                    routeDescriptionItem.mDepartureTime = String.format(
                         "%d:%02d",
                         departureTimeHour,
                         departureTimeMinute
                     )
-                    routeDescriptionItem.m_arrivalTime = String.format(
+                    routeDescriptionItem.mArrivalTime = String.format(
                         "%d:%02d",
                         arrivalTimeHour,
                         arrivalTimeMinute
                     )
 
                     if (departureTimeUnit.isNotEmpty()) {
-                        routeDescriptionItem.m_departureTime += " "
-                        routeDescriptionItem.m_departureTime += departureTimeUnit
+                        routeDescriptionItem.mDepartureTime += " "
+                        routeDescriptionItem.mDepartureTime += departureTimeUnit
                     }
 
                     if (arrivalTimeUnit.isNotEmpty()) {
-                        routeDescriptionItem.m_arrivalTime += " "
-                        routeDescriptionItem.m_arrivalTime += arrivalTimeUnit
+                        routeDescriptionItem.mArrivalTime += " "
+                        routeDescriptionItem.mArrivalTime += arrivalTimeUnit
                     }
 
                     val from = routeSegment.toPTRouteSegment()?.getLineFrom() ?: ""
                     val to = routeSegment.toPTRouteSegment()?.getLineTowards() ?: ""
 
                     if (from.isNotEmpty() && to.isNotEmpty()) {
-                        routeDescriptionItem.m_AtoBLineName =
+                        routeDescriptionItem.mAtoBLineName =
                             String.format("%s towards %s", from, to)
                     } else {
-                        routeDescriptionItem.m_AtoBLineName =
+                        routeDescriptionItem.mAtoBLineName =
                             routeSegment.toPTRouteSegment()?.getName() ?: ""
                     }
 
                     if (to.isNotEmpty()) {
-                        routeDescriptionItem.m_toBLineName = String.format(
+                        routeDescriptionItem.mToBLineName = String.format(
                             Utils.getUIString(StringIds.eStrTowardsXLocation),
                             to
                         )
                     }
 
-                    routeDescriptionItem.m_isWalk = false
+                    routeDescriptionItem.mIsWalk = false
 
                     val nTravelTime = (arrivalTime.asInt() - departureTime.asInt()) / 1000
 
                     var timeText = Utils.getTimeText(nTravelTime.toInt())
-                    routeDescriptionItem.m_timeToNextStation = String.format(
+                    routeDescriptionItem.mTimeToNextStation = String.format(
                         "%s %s",
                         timeText.first,
                         timeText.second
@@ -212,27 +214,27 @@ class Helper {
                             tmp = String.format(
                                 Utils.getUIString(StringIds.eStrNoOfStopsAndTime),
                                 instructionsCount - 1,
-                                routeDescriptionItem.m_timeToNextStation
+                                routeDescriptionItem.mTimeToNextStation
                             )
                         } else {
                             tmp = String.format(
                                 Utils.getUIString(StringIds.eStrNoOfStopsAndTime),
                                 instructionsCount - 1,
-                                routeDescriptionItem.m_timeToNextStation
+                                routeDescriptionItem.mTimeToNextStation
                             )
 
-                            routeDescriptionItem.m_canExpand = true
+                            routeDescriptionItem.mCanExpand = true
                             for (instructionIndex in 1 until instructionsCount - 1) {
                                 val instrName =
                                     instructionList[instructionIndex].toPTRouteInstruction()
                                         ?.getName()
 
                                 if (instrName != null) {
-                                    routeDescriptionItem.m_stopNames.add(instrName)
+                                    routeDescriptionItem.mStopNames.add(instrName)
                                 }
                             }
                         }
-                        routeDescriptionItem.m_timeToNextStation = tmp
+                        routeDescriptionItem.mTimeToNextStation = tmp
 
                         bFirstStationHasWheelChairSupport =
                             instructionList[0].toPTRouteInstruction()?.getHasWheelchairSupport()
@@ -241,11 +243,11 @@ class Helper {
                         val startPlatformCode =
                             instructionList[0].toPTRouteInstruction()?.getPlatformCode() ?: ""
                         if (startPlatformCode.isNotEmpty()) {
-                            routeDescriptionItem.m_stationPlatform = String.format(
+                            routeDescriptionItem.mStationPlatform = String.format(
                                 Utils.getUIString(StringIds.eStrPlatformNo),
                                 startPlatformCode
                             )
-                            routeDescriptionItem.m_startStationPlatformCode = startPlatformCode
+                            routeDescriptionItem.mStartStationPlatformCode = startPlatformCode
                         }
 
                         bLastStationHasWheelChairSupport =
@@ -256,7 +258,7 @@ class Helper {
                             instructionList[instructionsCount - 1].toPTRouteInstruction()
                                 ?.getPlatformCode() ?: ""
                         if (endPlatformCode.isNotEmpty()) {
-                            routeDescriptionItem.m_endStationPlatformCode = endPlatformCode
+                            routeDescriptionItem.mEndStationPlatformCode = endPlatformCode
                         }
                     }
 
@@ -268,7 +270,7 @@ class Helper {
                             timeText = Utils.getTimeText(-departureDelayInSeconds)
                             val tmp = String.format("%s %s", timeText.first, timeText.second)
 
-                            routeDescriptionItem.m_stationEarlyTime = String.format(
+                            routeDescriptionItem.mStationEarlyTime = String.format(
                                 Utils.getUIString(StringIds.eStrXTimeEarly),
                                 tmp
                             )
@@ -276,7 +278,7 @@ class Helper {
                             timeText = Utils.getTimeText(departureDelayInSeconds)
                             val tmp = String.format("%s %s", timeText.first, timeText.second)
 
-                            routeDescriptionItem.m_stationLaterTime = String.format(
+                            routeDescriptionItem.mStationLaterTime = String.format(
                                 Utils.getUIString(StringIds.eStrXTimeLate),
                                 tmp
                             )
@@ -284,26 +286,26 @@ class Helper {
                     } else if (routeSegment.toPTRouteSegment()
                             ?.getRealtimeStatus() == ERealtimeStatus.OnTime
                     ) {
-                        routeDescriptionItem.m_stationEarlyTime =
+                        routeDescriptionItem.mStationEarlyTime =
                             Utils.getUIString(StringIds.eStrOnTime)
                     }
 
                     if (instructionsCount >= 2) {
-                        routeDescriptionItem.m_startStationName =
+                        routeDescriptionItem.mStartStationName =
                             instructionList[0].toPTRouteInstruction()?.getName() ?: ""
-                        routeDescriptionItem.m_stopStationName =
+                        routeDescriptionItem.mStopStationName =
                             instructionList[instructionsCount - 1].toPTRouteInstruction()?.getName()
                                 ?: ""
 
-                        if ((routeDescriptionItems.size > 0) && routeDescriptionItems.last().m_isWalk) {
-                            routeDescriptionItems.last().m_stopStationName =
-                                routeDescriptionItem.m_startStationName
+                        if ((routeDescriptionItems.size > 0) && routeDescriptionItems.last().mIsWalk) {
+                            routeDescriptionItems.last().mStopStationName =
+                                routeDescriptionItem.mStartStationName
                         }
                     }
 
-                    if ((routeDescriptionItems.size > 0) && routeDescriptionItems.last().m_isWalk) {
-                        routeDescriptionItems.last().m_arrivalTime =
-                            routeDescriptionItem.m_departureTime
+                    if ((routeDescriptionItems.size > 0) && routeDescriptionItems.last().mIsWalk) {
+                        routeDescriptionItems.last().mArrivalTime =
+                            routeDescriptionItem.mDepartureTime
                     }
 
                     if (bWheelChairSupportRequested || bBicycleSupportRequested) {
@@ -314,54 +316,54 @@ class Helper {
 
                         if (bWheelChairSupportRequested && bBicycleSupportRequested) {
                             if (bRouteSegmentHasWheelchairSupport && bRouteSegmentHasBicycleSupport) {
-                                routeDescriptionItem.m_supportLineInfo =
+                                routeDescriptionItem.mSupportLineInfo =
                                     Utils.getUIString(StringIds.eStrBicycleAndWheelchairSupport)
                             } else if (bRouteSegmentHasWheelchairSupport) {
-                                routeDescriptionItem.m_supportLineInfo =
+                                routeDescriptionItem.mSupportLineInfo =
                                     Utils.getUIString(StringIds.eStrWheelchairSupport)
                             } else if (bRouteSegmentHasBicycleSupport) {
-                                routeDescriptionItem.m_supportLineInfo =
+                                routeDescriptionItem.mSupportLineInfo =
                                     Utils.getUIString(StringIds.eStrBicycleSupport)
                             }
                         } else if (bWheelChairSupportRequested) {
                             if (bRouteSegmentHasWheelchairSupport) {
-                                routeDescriptionItem.m_supportLineInfo =
+                                routeDescriptionItem.mSupportLineInfo =
                                     Utils.getUIString(StringIds.eStrWheelchairSupport)
                             }
                         } else // if (bBicycleSupportRequested)
                         {
                             if (bRouteSegmentHasBicycleSupport) {
-                                routeDescriptionItem.m_supportLineInfo =
+                                routeDescriptionItem.mSupportLineInfo =
                                     Utils.getUIString(StringIds.eStrBicycleSupport)
                             }
                         }
                     }
 
-                    routeDescriptionItem.m_agencyName =
+                    routeDescriptionItem.mAgencyName =
                         routeSegment.toPTRouteSegment()?.getAgencyName() ?: ""
-                    routeDescriptionItem.m_agencyURL =
+                    routeDescriptionItem.mAgencyURL =
                         routeSegment.toPTRouteSegment()?.getAgencyUrl() ?: ""
-                    routeDescriptionItem.m_agencyFareURL =
+                    routeDescriptionItem.mAgencyFareURL =
                         routeSegment.toPTRouteSegment()?.getAgencyFareUrl() ?: ""
-                    routeDescriptionItem.m_agencyPhone =
+                    routeDescriptionItem.mAgencyPhone =
                         routeSegment.toPTRouteSegment()?.getAgencyPhone() ?: ""
 
                     if (routeSegment.toPTRouteSegment()?.getStayOnSameTransit() == true) {
-                        routeDescriptionItem.m_stayOnSameVehicle =
+                        routeDescriptionItem.mStayOnSameVehicle =
                             Utils.getUIString(StringIds.eStrContinueOnSameVehicle)
                     }
                 } else {
-                    routeDescriptionItem.m_AtoBLineName = "Walk"
-                    routeDescriptionItem.m_isWalk = true
+                    routeDescriptionItem.mAtoBLineName = "Walk"
+                    routeDescriptionItem.mIsWalk = true
 
                     if (nSegmentsCount > 1) {
                         val timeText = Utils.getTimeText(
                             routeSegment.getTimeDistance()?.getTotalTime() ?: 0
                         )
-                        routeDescriptionItem.m_timeToNextStation =
+                        routeDescriptionItem.mTimeToNextStation =
                             "${timeText.first} ${timeText.second}"
                     } else {
-                        routeDescriptionItem.m_timeToNextStation = header.m_walkingTime
+                        routeDescriptionItem.mTimeToNextStation = header.mWalkingTime
                     }
 
                     val distanceText = getDistText(
@@ -370,41 +372,41 @@ class Helper {
                         true
                     )
 
-                    routeDescriptionItem.m_distanceToNextStation =
+                    routeDescriptionItem.mDistanceToNextStation =
                         "${distanceText.first} ${distanceText.second}"
 
                     if (nSegmentIndex == 0) {
                         val waypoints = route.getWaypoints() ?: ArrayList()
                         if (waypoints.isNotEmpty()) {
-                            routeDescriptionItem.m_startStationName =
+                            routeDescriptionItem.mStartStationName =
                                 Utils.getFormattedWaypointName(waypoints[0])
                         }
-                        routeDescriptionItem.m_departureTime = header.m_departureTimeStr
+                        routeDescriptionItem.mDepartureTime = header.mDepartureTimeStr
                     } else {
-                        if ((routeDescriptionItems.size > 0) && !routeDescriptionItems.last().m_isWalk) {
-                            routeDescriptionItem.m_startStationName =
-                                routeDescriptionItems.last().m_stopStationName
-                            routeDescriptionItem.m_departureTime =
-                                routeDescriptionItems.last().m_arrivalTime
+                        if ((routeDescriptionItems.size > 0) && !routeDescriptionItems.last().mIsWalk) {
+                            routeDescriptionItem.mStartStationName =
+                                routeDescriptionItems.last().mStopStationName
+                            routeDescriptionItem.mDepartureTime =
+                                routeDescriptionItems.last().mArrivalTime
                         }
                     }
 
                     if (nSegmentIndex == (nSegmentsCount - 1)) {
                         val waypoints = route.getWaypoints() ?: ArrayList()
                         if (waypoints.isNotEmpty()) {
-                            routeDescriptionItem.m_stopStationName =
+                            routeDescriptionItem.mStopStationName =
                                 Utils.getFormattedWaypointName(waypoints.last())
                         }
 
-                        routeDescriptionItem.m_arrivalTime = header.m_arrivalTimeStr
+                        routeDescriptionItem.mArrivalTime = header.mArrivalTimeStr
                     }
 
-                    fillRouteInstructionsList(routeSegment, routeDescriptionItem.m_instructionsList)
+                    fillRouteInstructionsList(routeSegment, routeDescriptionItem.mInstructionsList)
 
-                    routeDescriptionItem.m_isStationWalk =
+                    routeDescriptionItem.mIsStationWalk =
                         (routeSegment.getSegmentType() == ERouteSegmentType.StationWalk)
-                    routeDescriptionItem.m_canExpand =
-                        (routeDescriptionItem.m_instructionsList.size > 0)
+                    routeDescriptionItem.mCanExpand =
+                        (routeDescriptionItem.mInstructionsList.size > 0)
                 }
 
                 routeDescriptionItems.add(routeDescriptionItem)
@@ -412,21 +414,21 @@ class Helper {
 
             for (i in 1 until routeDescriptionItems.size - 1) {
                 val item = routeDescriptionItems[i]
-                if (item.m_isStationWalk) {
+                if (item.mIsStationWalk) {
                     val prevItem = routeDescriptionItems[i - 1]
                     val nextItem = routeDescriptionItems[i + 1]
 
-                    if (!prevItem.m_isWalk && !nextItem.m_isWalk && nextItem.m_startStationPlatformCode.isNotEmpty()) {
-                        if (prevItem.m_endStationPlatformCode.isNotEmpty()) {
-                            item.m_stationPlatform = String.format(
+                    if (!prevItem.mIsWalk && !nextItem.mIsWalk && nextItem.mStartStationPlatformCode.isNotEmpty()) {
+                        if (prevItem.mEndStationPlatformCode.isNotEmpty()) {
+                            item.mStationPlatform = String.format(
                                 Utils.getUIString(StringIds.eStrChangeFromPlatformNoToPlatformNo),
-                                prevItem.m_endStationPlatformCode,
-                                nextItem.m_startStationPlatformCode
+                                prevItem.mEndStationPlatformCode,
+                                nextItem.mStartStationPlatformCode
                             )
                         } else {
-                            item.m_stationPlatform = String.format(
+                            item.mStationPlatform = String.format(
                                 Utils.getUIString(StringIds.eStrChangeToPlatformNo),
-                                nextItem.m_startStationPlatformCode
+                                nextItem.mStartStationPlatformCode
                             )
                         }
                     }
@@ -434,7 +436,7 @@ class Helper {
             }
         }
 
-        fun fillRouteInstructionsList(
+        private fun fillRouteInstructionsList(
             routeSegment: RouteSegment,
             routeInstructionsList: ArrayList<RouteInstructionItem>
         ) {

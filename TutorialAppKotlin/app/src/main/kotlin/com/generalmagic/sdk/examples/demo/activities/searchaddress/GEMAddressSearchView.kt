@@ -8,6 +8,8 @@
  * license agreement you entered into with General Magic.
  */
 
+@file:Suppress("SameParameterValue")
+
 package com.generalmagic.sdk.examples.demo.activities.searchaddress
 
 import android.content.Intent
@@ -44,7 +46,7 @@ object GEMAddressSearchView {
 
     fun registerActivity(viewId: Long, searchAddressActivity: SearchAddressActivity) {
         addressSearchActivitiesMap[viewId] = searchAddressActivity
-        search(m_country)
+        search(mCountry)
     }
 
     private fun unregisterActivity(viewId: Long) {
@@ -101,7 +103,7 @@ object GEMAddressSearchView {
         fieldEnabledMap[field] = value
     }
 
-    fun indexIsValid(index: Int): Boolean {
+    private fun indexIsValid(index: Int): Boolean {
         return ((index >= 0) && (index < mItems.size))
     }
 
@@ -111,15 +113,13 @@ object GEMAddressSearchView {
                 (mDetailLevel == EAddressDetailLevel.HouseNumber)
             ) {
                 val landmark = mItems[index].mLandmark
-                landmark.let { it ->
-                    showOnMap(viewId, it)
-                }
+                showOnMap(viewId, landmark)
 
             } else {
                 when (mDetailLevel) {
-                    EAddressDetailLevel.State -> m_state = mItems[index].mLandmark
-                    EAddressDetailLevel.City -> m_city = mItems[index].mLandmark
-                    EAddressDetailLevel.Street -> m_street = mItems[index].mLandmark
+                    EAddressDetailLevel.State -> mState = mItems[index].mLandmark
+                    EAddressDetailLevel.City -> mCity = mItems[index].mLandmark
+                    EAddressDetailLevel.Street -> mStreet = mItems[index].mLandmark
 
                     else -> {
                     }
@@ -156,19 +156,19 @@ object GEMAddressSearchView {
     private fun getParentLandmark(field: EAddressField): Landmark? {
         when (field) {
             EAddressField.State -> {
-                return m_country
+                return mCountry
             }
             EAddressField.City -> {
-                return if (hasState()) m_state else m_country
+                return if (hasState()) mState else mCountry
             }
             EAddressField.StreetName -> {
-                return m_city
+                return mCity
             }
             EAddressField.StreetNumber -> {
-                return m_street
+                return mStreet
             }
             EAddressField.Crossing1 -> {
-                return m_street
+                return mStreet
             }
             else -> {
                 return null
@@ -210,10 +210,10 @@ object GEMAddressSearchView {
                 return
             }
             EAddressField.City -> {
-                landmark = m_city
+                landmark = mCity
             }
             EAddressField.StreetName -> {
-                landmark = m_street
+                landmark = mStreet
             }
             else -> {
             }
@@ -283,7 +283,7 @@ object GEMAddressSearchView {
 
         if (mDetailLevel != EAddressDetailLevel.NoDetail) {
             SdkCall.execute {
-                service.search(landmark, mFilter, mDetailLevel) { landmarks, reason, hint ->
+                service.search(landmark, mFilter, mDetailLevel) { landmarks, reason, _ ->
                     val gemReason = SdkError.fromInt(reason)
                     val bNoError =
                         gemReason == SdkError.NoError || gemReason == SdkError.ReducedResult
@@ -297,7 +297,7 @@ object GEMAddressSearchView {
                             if (mDetailLevel == EAddressDetailLevel.Crossing) {
                                 mItems.add(
                                     AddressSearchModelItem(
-                                        m_street,
+                                        mStreet,
                                         mDetailLevel,
                                         true
                                     )
@@ -327,43 +327,43 @@ object GEMAddressSearchView {
         }
     }
 
-    var m_state: Landmark? = null
-    var m_country: Landmark? = null
-    var m_city: Landmark? = null
-    var m_street: Landmark? = null
+    private var mState: Landmark? = null
+    var mCountry: Landmark? = null
+    private var mCity: Landmark? = null
+    private var mStreet: Landmark? = null
 
     fun init() {
         SdkCall.checkCurrentThread()
 
-        m_state = Landmark()
-        m_city = Landmark()
-        m_street = Landmark()
+        mState = Landmark()
+        mCity = Landmark()
+        mStreet = Landmark()
     }
 
     private fun reset() {
         SdkCall.checkCurrentThread()
 
-        m_state = null
-        m_city = null
-        m_street = null
+        mState = null
+        mCity = null
+        mStreet = null
     }
 
     fun onCountrySelected(country: Landmark) {
         SdkCall.checkCurrentThread()
 
-        val isoCodeOld = m_country?.getAddress()?.getField(EAddressField.CountryCode)
+        val isoCodeOld = mCountry?.getAddress()?.getField(EAddressField.CountryCode)
         val isoCodeNew = country.getAddress()?.getField(EAddressField.CountryCode)
 
         if (isoCodeOld != isoCodeNew) {
-            m_country = country
+            mCountry = country
             reset()
-            search(m_country)
+            search(mCountry)
             refresh(0)
         }
     }
 
     fun hasState(): Boolean {
-        val country = this.m_country ?: return false
+        val country = this.mCountry ?: return false
         val list = SdkCall.execute {
             return@execute GuidedAddressSearchService().getNextAddressDetailLevel(country)
         } ?: return false
@@ -372,7 +372,7 @@ object GEMAddressSearchView {
 
     fun getCountryFlag(width: Int, height: Int): Bitmap? {
         SdkCall.checkCurrentThread()
-        val isoCode = m_country?.getAddress()?.getField(EAddressField.CountryCode)
+        val isoCode = mCountry?.getAddress()?.getField(EAddressField.CountryCode)
         if (isoCode?.isNotEmpty() == true) {
             val image = MapDetails().getCountryFlag(isoCode)
             return Utils.getImageAsBitmap(image, width, height)
@@ -469,12 +469,13 @@ object GEMAddressSearchView {
         return null
     }
 
-    fun hideKeyboard(viewId: Long) {
+    private fun hideKeyboard(viewId: Long) {
         GEMApplication.postOnMain {
             addressSearchActivitiesMap[viewId]?.hideKeyboard()
         }
     }
 
+    @Suppress("unused")
     fun showKeyboard(viewId: Long, fieldView: EditText) {
         GEMApplication.postOnMain {
             addressSearchActivitiesMap[viewId]?.showKeyboard(fieldView)

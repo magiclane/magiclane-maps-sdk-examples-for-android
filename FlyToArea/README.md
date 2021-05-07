@@ -1,8 +1,8 @@
 ## Overview
 
-This example app present the followings:
+This example app demonstrates the following features:
 - Search for a landmark.
-- Fly to resulted landmark, if exists.
+- Fly to the resulting landmark, if it exists.
 
 ## Build instructions
 

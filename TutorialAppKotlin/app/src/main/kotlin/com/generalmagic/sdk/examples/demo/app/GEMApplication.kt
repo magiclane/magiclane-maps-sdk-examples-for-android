@@ -8,6 +8,8 @@
  * license agreement you entered into with General Magic.
  */
 
+@file:Suppress("unused", "MemberVisibilityCanBePrivate", "UNUSED_PARAMETER")
+
 package com.generalmagic.sdk.examples.demo.app
 
 import android.content.Context
@@ -34,8 +36,6 @@ import com.generalmagic.sdk.examples.demo.app.TutorialsOpener.getCurrentTutorial
 import com.generalmagic.sdk.examples.demo.util.KeyboardUtil
 import com.generalmagic.sdk.examples.demo.util.Util
 import com.generalmagic.sdk.examples.demo.util.Utils
-import com.generalmagic.sdk.examples.demo.util.network.NetworkManager
-import com.generalmagic.sdk.examples.demo.util.network.NetworkProviderImpl
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.LandmarkStore
@@ -58,19 +58,16 @@ object GEMApplication {
 
     private var defaultMapStyle: ContentStoreItem? = null
 
-    private val networkProvider = NetworkProviderImpl()
-    private lateinit var networkManager: NetworkManager
-
     private var mapUpdater: ContentUpdater? = null
 
     private var mapSurface: GemSurfaceView? = null
     private var mainMapView: MapView? = null
     private val mainMapViewListener = object : MapViewListener() {}
 
-    var mHistoryLandmarkStore: LandmarkStore? = null
+    private var mHistoryLandmarkStore: LandmarkStore? = null
     var mTripsHistory: TripsHistory? = null
 
-    var mFavouritesLandmarkStore: LandmarkStore? = null
+    private var mFavouritesLandmarkStore: LandmarkStore? = null
 
     private val offboardListener = object : OffboardListener() {
         override fun onApiTokenRejected() {
@@ -132,14 +129,23 @@ object GEMApplication {
         // intern paths
 
         val recordsDirName = "records"
-        iRecordsPath = StringBuilder().append(SdkPathsHelper.getPhonePath(context))
+        iRecordsPath = StringBuilder().append(Util.getPhonePath(context))
             .append(File.separator).append(recordsDirName).toString()
 
-        eRecordsPath = StringBuilder().append(SdkPathsHelper.getSdCardPath(context))
+        eRecordsPath = StringBuilder().append(Util.getSdCardPath(context))
             .append(File.separator).append(recordsDirName).toString()
 
-        // network
-        initNewtork(context)
+        //token
+        val app = context.packageManager.getApplicationInfo(
+            context.packageName,
+            PackageManager.GET_META_DATA
+        )
+        val bundle = app.metaData
+        val token = bundle.getString("com.generalmagic.sdk.token") ?: "YOUR_TOKEN"
+
+        CommonSettings.setDefaultNetworkProvider(context, null) // using custom offboard listener.
+        CommonSettings.setAllowConnection(true, offboardListener)
+        CommonSettings.setAppAuthorization(token)
 
         mapSurface.onScreenCreated = { screen: Screen ->
             // main map view
@@ -196,27 +202,6 @@ object GEMApplication {
         postOnMain { Tutorials.openHelloWorldTutorial() }
     }
 
-    fun initNewtork(context: Context) {
-        // network
-        val networkProvider = NetworkProviderImpl()
-        networkManager = NetworkManager(context.applicationContext)
-        networkManager.onConnectionTypeChangedCallback = { type: NetworkManager.TConnectionType,
-                                                           https: ProxyDetails, http: ProxyDetails ->
-            networkProvider.onNetworkConnectionTypeChanged(type, https, http)
-        }
-
-        val app = context.packageManager.getApplicationInfo(
-            context.packageName,
-            PackageManager.GET_META_DATA
-        )
-        val bundle = app.metaData
-        val token = bundle.getString("com.generalmagic.sdk.token") ?: "invalid"
-
-        CommonSettings.setNetworkProvider(networkProvider)
-        CommonSettings.setAllowConnection(true, offboardListener)
-        CommonSettings.setAppAuthorization(token)
-    }
-
     /** absolute path to internal records */
     fun getInternalRecordsPath() = iRecordsPath
 
@@ -258,7 +243,7 @@ object GEMApplication {
                 return@execute // already following...
 
             val animation = Animation()
-            animation.setType(EAnimation.Fly)
+            animation.setType(EAnimation.AnimationLinear)
             animation.setDuration(900)
 
             mainMapView.startFollowingPosition(animation)
@@ -284,7 +269,7 @@ object GEMApplication {
     fun focusOnRouteInstructionItem(value: RouteInstruction) {
         SdkCall.execute {
             val animation = Animation()
-            animation.setType(EAnimation.Fly)
+            animation.setType(EAnimation.AnimationLinear)
             getMainMapView()?.centerOnRouteInstruction(value, -1, Xy(), animation)
         }
     }
@@ -292,7 +277,7 @@ object GEMApplication {
     fun focusOnRouteTrafficItem(value: RouteTrafficEvent) {
         SdkCall.execute {
             val animation = Animation()
-            animation.setType(EAnimation.Fly)
+            animation.setType(EAnimation.AnimationLinear)
             getMainMapView()?.centerOnRouteTrafficEvent(value, -1, Rect(), animation)
         }
     }
@@ -399,9 +384,11 @@ object GEMApplication {
             return
         }
 
-        val hasRoutes =
-            (getMainMapView()?.preferences()?.routes()?.size() ?: 0) != 0
-        if (activity == topActivity() && activityStack.size == 1 && !hasRoutes) {
+        val routesCount = SdkCall.execute {
+            getMainMapView()?.preferences()?.routes()?.size()
+        } ?: 0
+
+        if (activity == topActivity() && activityStack.size == 1 && routesCount == 0) {
             activity.displayCloseAppDialog()
         }
     }
@@ -446,21 +433,7 @@ object GEMApplication {
         ActivityCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
     }
 
-    private val REQUEST_PERMISSIONS = 110
-    fun requestPermissions(activity: BaseActivity, permissions: Array<String>): Boolean {
-        var requested = false
-        if (!hasPermissions(activity, permissions)) {
-            requested = true
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                activity.requestPermissions(permissions, REQUEST_PERMISSIONS)
-            }
-// 			else {
-// 				//TODO: implement this
-// 			}
-        }
-
-        return requested
-    }
+    const val REQUEST_PERMISSIONS = 110
 
     fun onRequestPermissionsResult(
         activity: BaseActivity, requestCode: Int, permissions: Array<String>, grantResults: IntArray
@@ -471,9 +444,7 @@ object GEMApplication {
         val result = grantResults[0]
         when (requestCode) {
             REQUEST_PERMISSIONS -> {
-                SdkCall.execute {
-                    PermissionsHelper.produce()?.notifyOnPermissionsStatusChanged()
-                }
+                PermissionsHelper.onRequestPermissionsResult(activity, requestCode, grantResults)
                 activity.onRequestPermissionsFinish(result == PackageManager.PERMISSION_GRANTED)
             }
         }
@@ -610,10 +581,9 @@ object GEMApplication {
     }
 
     fun isFavourite(landmark: Landmark): Boolean {
-        mFavouritesLandmarkStore.let { landmarkStore ->
-            return (getLandmarkStoreLandmarkId(landmarkStore, landmark) > 0)
-        }
-        return false
+        return mFavouritesLandmarkStore?.let { landmarkStore ->
+            return@let (getLandmarkStoreLandmarkId(landmarkStore, landmark) > 0)
+        } ?: false
     }
 
     fun addFavourite(landmark: Landmark, checkIfIsFavourite: Boolean = true): Boolean {

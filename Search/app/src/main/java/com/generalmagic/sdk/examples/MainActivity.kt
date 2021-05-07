@@ -10,6 +10,8 @@
 
 package com.generalmagic.sdk.examples
 
+import android.Manifest
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -23,21 +25,21 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.generalmagic.sdk.examples.util.PermissionsHelper
 import com.generalmagic.sdk.examples.util.SdkInitHelper
 import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.sensordatasource.PositionService
+import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 class MainActivity : AppCompatActivity() {
-    var listView: RecyclerView? = null
-    var progressBar: ProgressBar? = null
+    private var listView: RecyclerView? = null
+    private var progressBar: ProgressBar? = null
 
     private var searchService = SearchService()
 
@@ -94,7 +96,7 @@ class MainActivity : AppCompatActivity() {
         the app needs some permissions.
         Not requesting this permissions or not granting them will make the search to not work.
          */
-        PermissionsHelper.requestPermissions(this)
+        requestPermissions(this)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -145,7 +147,7 @@ class MainActivity : AppCompatActivity() {
             val coordinates = Coordinates(latitude, longitude)
             searchService.preferences.setSearchAddresses(true)
             searchService.preferences.setSearchMapPOIs(true)
-            searchService.searchByFilter(filter, coordinates) onCompleted@{ results, reason, hint ->
+            searchService.searchByFilter(filter, coordinates) onCompleted@{ results, reason, _ ->
                 val gemError = SdkError.fromInt(reason)
                 if (gemError == SdkError.Cancel) return@onCompleted
 
@@ -170,9 +172,30 @@ class MainActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         PermissionsHelper.onRequestPermissionsResult(this, requestCode, grantResults)
+
+        val result = grantResults[permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)]
+        if (result != PackageManager.PERMISSION_GRANTED) {
+            terminateApp(this)
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun requestPermissions(activity: Activity): Boolean {
+        val permissions = arrayListOf(
+            Manifest.permission.INTERNET,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_NETWORK_STATE
+        )
+
+        return PermissionsHelper.requestPermissions(REQUEST_PERMISSIONS, activity, permissions.toTypedArray())
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    companion object {
+        private const val REQUEST_PERMISSIONS = 110
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

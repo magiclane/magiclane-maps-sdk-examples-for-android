@@ -24,7 +24,7 @@ import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.Util.Companion.postOnMain
+import com.generalmagic.sdk.util.Util.postOnMain
 
 class MainActivity : AppCompatActivity() {
     private var mainMapView: MapView? = null
@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             val animation = Animation()
-            animation.setType(EAnimation.Fly)
+            animation.setType(EAnimation.AnimationLinear)
             animation.setDuration(900)
 
             // Start following the cursor position using the provided animation.

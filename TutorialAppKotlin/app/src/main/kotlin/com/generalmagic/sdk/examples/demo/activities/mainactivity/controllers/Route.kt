@@ -55,14 +55,14 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
     private var lastWaypoints = ArrayList<Landmark>()
 
     override fun doBackPressed(): Boolean {
-        if (mRouteProfileView == null) {
+        return if (mRouteProfileView == null) {
             setInfoButtonVisible(false)
-            return GEMApplication.clearMapVisibleRoutes()
+            GEMApplication.clearMapVisibleRoutes()
         } else {
             SdkCall.execute {
                 GEMRouteProfileView.close()
             }
-            return false
+            false
         }
     }
 
@@ -75,7 +75,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
             GEMApplication.clearMapVisibleRoutes()
         }
 
-        routingService.onCompleted = onCompleted@{ routes, reason, hint ->
+        routingService.onCompleted = onCompleted@{ routes, reason, _ ->
             hideProgress()
             updateStartStopBtn(false)
             calculatedRoutes = routes
@@ -166,7 +166,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
         SdkCall.execute { routingService.cancelRoute() }
     }
 
-    protected fun updateStartStopBtn(started: Boolean) {
+    private fun updateStartStopBtn(started: Boolean) {
         if (started) {
             setStopButtonVisible(true)
         } else {
@@ -174,7 +174,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    fun doDisplayInfo() {
+    private fun doDisplayInfo() {
         val mainRoute = SdkCall.execute {
             val routes = calculatedRoutes
             return@execute if (routes.size > MAIN_ROUTE_INDEX) {
@@ -189,7 +189,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    fun setInfoButtonVisible(visible: Boolean) {
+    private fun setInfoButtonVisible(visible: Boolean) {
         val button = getBottomRightButton() ?: return
 
         if (visible) {
@@ -203,7 +203,8 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    fun setRouteProfileButtonVisible(visible: Boolean) {
+    @Suppress("SameParameterValue")
+    private fun setRouteProfileButtonVisible(visible: Boolean) {
 
         getBottomCenterButton()?.let { button ->
             if (visible) {
@@ -299,6 +300,7 @@ open class RouteCustom(context: Context, attrs: AttributeSet?) :
             GEMApplication.clearMapVisibleRoutes()
             pickLocation.mapActivity = mapActivity
 
+            @Suppress("UNCHECKED_CAST")
             val waypoints = IntentHelper.getObjectForKey(EXTRA_WAYPOINTS) as ArrayList<Landmark>?
 
             if (waypoints != null && waypoints.isNotEmpty()) {

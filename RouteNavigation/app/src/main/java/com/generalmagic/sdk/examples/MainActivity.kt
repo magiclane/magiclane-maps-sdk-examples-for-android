@@ -11,23 +11,25 @@
 package com.generalmagic.sdk.examples
 
 import android.Manifest
+import android.app.Activity
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
-import com.generalmagic.sdk.examples.util.PermissionsHelper
+import com.generalmagic.sdk.core.*
+import com.generalmagic.sdk.d3scene.*
 import com.generalmagic.sdk.examples.util.SdkInitHelper
 import com.generalmagic.sdk.examples.util.SdkInitHelper.isMapReady
 import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
-import com.generalmagic.sdk.core.*
-import com.generalmagic.sdk.d3scene.*
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.*
+import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.Util.Companion.postOnMain
+import com.generalmagic.sdk.util.Util.postOnMain
 
 class MainActivity : AppCompatActivity() {
     private var mapView: MapView? = null
@@ -73,7 +75,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             val animation = Animation()
-            animation.setType(EAnimation.Fly)
+            animation.setType(EAnimation.AnimationLinear)
             animation.setDuration(900)
 
             // Start following the cursor position using the provided animation.
@@ -86,24 +88,23 @@ class MainActivity : AppCompatActivity() {
     private fun startNavigation() {
         if (!isMapReady) return
 
-        val hasPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-        } else {
+        val hasPermissions =
             PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+
+        if (!hasPermissions) {
+            return
         }
 
-        if (hasPermissions) {
-            val waypoints = arrayListOf(
-                Landmark("Paris", Coordinates(48.8566932, 2.3514616))
-            )
+        val waypoints = arrayListOf(
+            Landmark("Paris", Coordinates(48.8566932, 2.3514616))
+        )
 
-            navigationService.startNavigation(
-                waypoints,
-                RoutePreferences(),
-                navigationListener,
-                routingProgressListener,
-            )
-        }
+        navigationService.startNavigation(
+            waypoints,
+            RoutePreferences(),
+            navigationListener,
+            routingProgressListener,
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -159,18 +160,7 @@ class MainActivity : AppCompatActivity() {
             finish()
         }
 
-        PermissionsHelper.requestPermissions(this)
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        PermissionsHelper.onRequestPermissionsResult(this, requestCode, grantResults)
-        SdkCall.execute {
-            startNavigation()
-        }
+        requestPermissions(this)
     }
 
     override fun onDestroy() {
@@ -183,5 +173,42 @@ class MainActivity : AppCompatActivity() {
         terminateApp(this)
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<String>, grantResults: IntArray
+    ) {
+        if (requestCode != REQUEST_PERMISSIONS) return
+
+        PermissionsHelper.onRequestPermissionsResult(this, requestCode, grantResults)
+
+        for (item in grantResults) {
+            if (item != PackageManager.PERMISSION_GRANTED) {
+                terminateApp(this)
+                return
+            }
+        }
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            SdkCall.execute {
+                startNavigation()
+            }
+        }, 500)
+    }
+
+    private fun requestPermissions(activity: Activity): Boolean {
+        val permissions = arrayListOf(
+            Manifest.permission.INTERNET,
+            Manifest.permission.ACCESS_NETWORK_STATE,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+
+        return PermissionsHelper.requestPermissions(
+            REQUEST_PERMISSIONS, activity, permissions.toTypedArray()
+        )
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
+    companion object {
+        private const val REQUEST_PERMISSIONS = 110
+    }
 }

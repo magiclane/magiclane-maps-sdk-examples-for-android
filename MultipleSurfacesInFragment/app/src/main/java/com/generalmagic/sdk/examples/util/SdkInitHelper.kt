@@ -28,7 +28,7 @@ object SdkInitHelper {
     var onCancel: () -> Unit = {}
     var onNetworkConnected: () -> Unit = {}
     var onMapReady: () -> Unit = {}
-    var isMapReady = true
+    private var isMapReady = true
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -59,7 +59,7 @@ object SdkInitHelper {
 
             // No problem was encountered and the initialization of the SDK finished.
 
-            CommonSettings.onOnlineWorldMapSupportStatus = { state ->
+            CommonSettings.onOnlineWorldMapSupportStatus = {
                 isMapReady = false
 
                 SdkCall.execute stateUpdated@{

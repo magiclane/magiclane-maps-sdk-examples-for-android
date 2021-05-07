@@ -35,7 +35,7 @@ import com.generalmagic.sdk.util.SdkError
 
 class MainActivity : AppCompatActivity() {
     private var mapView: MapView? = null
-    lateinit var progressBar: ProgressBar
+    private lateinit var progressBar: ProgressBar
 
     private val routingService = RoutingService()
 
@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         }
 
-        routingService.onCompleted = onCompleted@{ routes, reason, hint ->
+        routingService.onCompleted = onCompleted@{ routes, reason, _ ->
             progressBar.visibility = View.GONE
 
             when (val gemError = SdkError.fromInt(reason)) {
@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun flyToRoute(route: Route) {
         val animation = Animation()
-        animation.setType(EAnimation.Fly)
+        animation.setType(EAnimation.AnimationLinear)
 
         // Center the map on a specific route using the provided animation.
         mapView?.centerOnRoute(route, Rect(), animation)

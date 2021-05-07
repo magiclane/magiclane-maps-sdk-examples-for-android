@@ -1,7 +1,7 @@
 ## Overview
 
-This example app present the followings:
-- Start navigation from the current position to a given landmark if any route can be calculated.
+This example app demonstrates the following features:
+- Start navigation from the current position to a given landmark if a route can be calculated.
 
 ## Build instructions
 

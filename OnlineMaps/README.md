@@ -1,8 +1,8 @@
 ## Overview
 
-This example app present the followings:
-- Gather the list of available maps.
-- Download first available map.
+This example app demonstrates the following features:
+- Get the list of available maps from the server.
+- Download the first map in the list.
 
 ## Build instructions
 

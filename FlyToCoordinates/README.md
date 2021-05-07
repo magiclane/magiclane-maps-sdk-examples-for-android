@@ -1,7 +1,7 @@
 ## Overview
 
-This example app present the followings:
-- Fly to given coodinates.
+This example app demonstrates the following features:
+- Fly to the given coodinates.
 
 ## Build instructions
 

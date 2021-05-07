@@ -1,6 +1,6 @@
 ## Overview
 
-This example app present the followings:
+This example app demonstrates the following feature:
 - Calculate the routes between 2 given landmarks.
 
 ## Build instructions

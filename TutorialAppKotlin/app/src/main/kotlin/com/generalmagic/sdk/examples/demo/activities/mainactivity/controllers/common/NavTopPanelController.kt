@@ -26,11 +26,11 @@ import com.generalmagic.sdk.d3scene.OverlayItem
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.Util
-import com.generalmagic.sdk.examples.demo.util.Util.Companion.setPanelBackground
+import com.generalmagic.sdk.examples.demo.util.Util.setPanelBackground
 import com.generalmagic.sdk.examples.demo.util.UtilUITexts
-import com.generalmagic.sdk.examples.demo.util.Utils.Companion.getDistText
-import com.generalmagic.sdk.examples.demo.util.Utils.Companion.getTimeText
-import com.generalmagic.sdk.examples.demo.util.Utils.Companion.getUIString
+import com.generalmagic.sdk.examples.demo.util.Utils.getDistText
+import com.generalmagic.sdk.examples.demo.util.Utils.getTimeText
+import com.generalmagic.sdk.examples.demo.util.Utils.getUIString
 import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
@@ -628,7 +628,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     Get Images
     ----------------------------------------------------------------------------------------------*/
 
-    fun getRoadCodeImage(from: NavigationInstruction?, width: Int, height: Int):
+    private fun getRoadCodeImage(from: NavigationInstruction?, width: Int, height: Int):
         Pair<Int, Bitmap?> {
         return SdkCall.execute {
             val navInstr = from ?: return@execute Pair(0, null)
@@ -650,7 +650,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         } ?: Pair(0, null)
     }
 
-    fun getSafetyCameraAlarmImage(
+    private fun getSafetyCameraAlarmImage(
         from: OverlayItem?,
         height: Int,
         bSameImage: TSameImage
@@ -674,7 +674,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         } ?: Pair(0, null)
     }
 
-    fun getTrafficEndOfSectionIcon(width: Int, height: Int): Bitmap? {
+    private fun getTrafficEndOfSectionIcon(width: Int, height: Int): Bitmap? {
         return SdkCall.execute {
             return@execute Util.getImageIdAsBitmap(
                 SdkIcons.Other_UI.Traffic_EndOfSection_Square.value, width, height
@@ -682,7 +682,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    fun getNextTurnImage(
+    private fun getNextTurnImage(
         from: NavigationInstruction?,
         width: Int,
         height: Int,
@@ -712,7 +712,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    fun getTurnImage(
+    private fun getTurnImage(
         from: RouteInstruction?,
         width: Int,
         height: Int,
@@ -743,7 +743,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    fun getSignpostImage(
+    private fun getSignpostImage(
         from: NavigationInstruction?, width: Int, height: Int
     ): Pair<Int, Bitmap?> {
         return SdkCall.execute {
@@ -764,7 +764,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         } ?: Pair(0, null)
     }
 
-    fun getTrafficImage(
+    private fun getTrafficImage(
         from: RouteTrafficEvent?,
         width: Int,
         height: Int,

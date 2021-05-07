@@ -45,7 +45,7 @@ class FlyToCoords(context: Context, attrs: AttributeSet?) : FlyController(contex
             val coordinates = Coordinates(45.651178, 25.604872)
 
             val animation = Animation()
-            animation.setType(EAnimation.Fly)
+            animation.setType(EAnimation.AnimationLinear)
 
             mainMap.centerOnCoordinates(coordinates, -3, Xy(), animation)
         }
@@ -69,6 +69,7 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
         }
     }
 
+    @Suppress("SameParameterValue")
     private fun doSearch(text: String, coords: Coordinates) {
         SdkCall.execute {
             searchService.onStarted = {
@@ -78,7 +79,7 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
                 setCustomStopButtonVisible(true)
             }
 
-            searchService.onCompleted = onCompleted@{ results, reason, hint ->
+            searchService.onCompleted = onCompleted@{ results, reason, _ ->
                 hideProgress()
 
                 hideAllButtons()
@@ -112,7 +113,7 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
 
                 SdkCall.execute {
                     val animation = Animation()
-                    animation.setType(EAnimation.Fly)
+                    animation.setType(EAnimation.AnimationLinear)
 
                     val settings = HighlightRenderSettings()
                     settings.setOptions(
@@ -134,7 +135,8 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
         }
     }
 
-    fun setCustomStartButtonVisible(visible: Boolean) {
+    @Suppress("SameParameterValue")
+    private fun setCustomStartButtonVisible(visible: Boolean) {
         val button = closeButton ?: return
 
         if (visible) {
@@ -148,7 +150,8 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
         }
     }
 
-    fun setCustomStopButtonVisible(visible: Boolean) {
+    @Suppress("SameParameterValue")
+    private fun setCustomStopButtonVisible(visible: Boolean) {
         val button = closeButton ?: return
 
         if (visible) {
@@ -176,7 +179,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
             GEMApplication.clearMapVisibleRoutes()
         }
 
-        routingService.onCompleted = onCompleted@{ resultsList, reason, hint ->
+        routingService.onCompleted = onCompleted@{ resultsList, reason, _ ->
             hideProgress()
             setStartButtonVisible(true)
 
@@ -215,7 +218,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
 
                 if (isFlyToRoute) {
                     val animation = Animation()
-                    animation.setType(EAnimation.Fly)
+                    animation.setType(EAnimation.AnimationLinear)
 
                     mainMap.preferences()?.routes()?.add(route, true)
 
@@ -280,7 +283,7 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
             GEMApplication.clearMapVisibleRoutes()
         }
 
-        routingService.onCompleted = onCompleted@{ resultsList, reason, hint ->
+        routingService.onCompleted = onCompleted@{ resultsList, reason, _ ->
             hideProgress()
             GEMApplication.setAppBarVisible(false)
             GEMApplication.setSystemBarsVisible(false)
@@ -384,7 +387,7 @@ class FlyToLine(context: Context, attrs: AttributeSet?) : FlyController(context,
 
             mainMap.preferences()?.markers()?.add(vector)
             val animation = Animation()
-            animation.setType(EAnimation.Fly)
+            animation.setType(EAnimation.AnimationLinear)
 
             if (area != null) {
                 mainMap.centerOnArea(area, -1, Xy(), animation)

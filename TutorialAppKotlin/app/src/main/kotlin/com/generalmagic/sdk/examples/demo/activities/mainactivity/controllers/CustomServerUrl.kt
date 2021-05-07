@@ -14,9 +14,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import android.widget.Toast
-import com.generalmagic.sdk.core.GemString
 import com.generalmagic.sdk.examples.demo.app.MapLayoutController
-import com.generalmagic.sdk.util.SdkCall
 import kotlinx.android.synthetic.main.custom_server_bottom_dialog.view.*
 
 class CustomServerUrl(context: Context, attrs: AttributeSet?) :
@@ -49,7 +47,7 @@ class CustomServerUrl(context: Context, attrs: AttributeSet?) :
     }
 
     private fun onSubmitPressed() {
-        val url = input.text.toString()
+//        val url = input.text.toString()
 
 //        SdkCall.execute {
 //            Debug().setCustomUrl(ECustomUrlService.Announce, GemString(url))

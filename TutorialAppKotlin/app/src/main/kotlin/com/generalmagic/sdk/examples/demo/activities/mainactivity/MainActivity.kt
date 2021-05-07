@@ -8,10 +8,11 @@
  * license agreement you entered into with General Magic.
  */
 
+@file:Suppress("DEPRECATION")
+
 package com.generalmagic.sdk.examples.demo.activities.mainactivity
 
 import android.Manifest
-import android.content.Context
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -19,7 +20,6 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.core.content.ContextCompat
@@ -37,6 +37,7 @@ import com.generalmagic.sdk.examples.demo.util.IntentHelper
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
+import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkError
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -89,8 +90,16 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
             R.id.tutorial_route_custom -> Tutorials.openCustomRouteTutorial(arrayListOf())
             R.id.tutorial_predef_sim -> {
                 val waypoints = ArrayList<Landmark>()
-                waypoints.add(Landmark("San Francisco", Coordinates(37.77903, -122.41991)))
-                waypoints.add(Landmark("San Jose", Coordinates(37.33619, -121.89058)))
+                SdkCall.execute { Landmark("San Francisco", Coordinates(37.77903, -122.41991)) }?.let {
+                    waypoints.add(
+                        it
+                    )
+                }
+                SdkCall.execute { Landmark("San Jose", Coordinates(37.33619, -121.89058)) }?.let {
+                    waypoints.add(
+                        it
+                    )
+                }
                 Tutorials.openLandmarksSimulationTutorial(waypoints)
             }
             R.id.tutorial_predef_nav -> Tutorials.openPredefNavigationTutorial()
@@ -171,7 +180,6 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
         drawerToggle.isDrawerIndicatorEnabled = true
         drawerToggle.syncState()
 
-        mapTutorialsOpener.init(this)
         TutorialsOpener.setMapTutorialsOpener(mapTutorialsOpener)
 
         SdkCall.execute {
@@ -183,7 +191,6 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
 
     override fun onPause() {
         super.onPause()
-        gem_surface?.onPause()
 
         SdkCall.execute {
             if (GemSdk.isInitialized())
@@ -193,7 +200,6 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
 
     override fun onResume() {
         super.onResume()
-        gem_surface?.onResume()
 
         SdkCall.execute {
             if (GemSdk.isInitialized())
@@ -249,33 +255,32 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
             GEMApplication.terminateApp()
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (firstWave) {
-                GEMApplication.requestPermissions(
-                    this, arrayListOf(
-                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                ).toTypedArray()
-                )
-                firstWave = false
-            }
-        }
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//            if (firstWave) {
+//                GEMApplication
+//                PermissionsHelper.requestPermissions(
+//                    GEMApplication.REQUEST_PERMISSIONS,
+//                    this, arrayListOf(
+//                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
+//                    ).toTypedArray()
+//                )
+//                firstWave = false
+//            }
+//        }
     }
 
     private fun requestPermissions(): Boolean {
         val permissions = arrayListOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.CAMERA,
-            Manifest.permission.ACCESS_WIFI_STATE,
-            Manifest.permission.ACCESS_NETWORK_STATE,
+            Manifest.permission.RECORD_AUDIO,
             Manifest.permission.INTERNET,
-            Manifest.permission.WAKE_LOCK,
+            Manifest.permission.ACCESS_NETWORK_STATE,
+            Manifest.permission.ACCESS_WIFI_STATE,
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.READ_CONTACTS,
-            Manifest.permission.WRITE_CONTACTS,
+            Manifest.permission.WAKE_LOCK,
             Manifest.permission.BLUETOOTH,
             Manifest.permission.MODIFY_AUDIO_SETTINGS
         )
@@ -289,7 +294,11 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
 //            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION) //DO NOT UNCOMMENT!
         }
 
-        return GEMApplication.requestPermissions(this, permissions.toTypedArray())
+        return PermissionsHelper.requestPermissions(
+            GEMApplication.REQUEST_PERMISSIONS,
+            this,
+            permissions.toTypedArray()
+        )
     }
 
     override fun setAppBarVisible(visible: Boolean) {
@@ -325,17 +334,8 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
     /** ////////////////////////////////////////////////////////////////////////////// */
 
     private val mapTutorialsOpener = object : TutorialsOpener.ITutorialsOpener {
-        lateinit var contentMain: LinearLayout
-        lateinit var context: Context
-        /////
-
-        fun init(mainActivity: MainActivity) {
-            contentMain = mainActivity.main_container
-            context = mainActivity
-        }
-
         override fun preOpenTutorial() {
-            contentMain.removeAllViews()
+            main_container.removeAllViews()
             toolbar_content.removeAllViews()
             appBarLayout.visibility = View.VISIBLE
 
@@ -350,6 +350,8 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
         /////
 
         override fun openTutorial(id: Tutorials.Id, args: Array<out Any>): Boolean {
+            val contentMain = main_container
+
             val controller: MapLayoutController? = when (id) {
                 Tutorials.Id.HelloWorld -> {
                     nav_view.setCheckedItem(R.id.tutorial_hello)
@@ -372,8 +374,7 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
                 }
 
                 Tutorials.Id.LogPlayer_PLAY -> {
-                    val filepath: String? = args[0] as String
-                    filepath ?: return false
+                    val filepath = args[0] as String
 
                     IntentHelper.addObjectForKey(filepath, LogDataSourceController.EXTRA_FILEPATH)
 

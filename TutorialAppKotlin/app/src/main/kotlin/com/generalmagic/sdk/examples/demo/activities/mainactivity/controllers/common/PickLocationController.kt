@@ -30,7 +30,7 @@ class PickLocationController(context: Context, attrs: AttributeSet?) :
     var onIntermediatePicked: (Landmark) -> Unit = {}
     var onDestinationPicked: (Landmark) -> Unit = {}
 
-    fun updateTopText(text: String) {
+    private fun updateTopText(text: String) {
         pickTopText?.text = text
     }
 
@@ -84,7 +84,7 @@ class PickLocationController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    fun pickIntermediate() {
+    private fun pickIntermediate() {
         visibility = View.VISIBLE
         updateTopText("Pick Intermediate")
         pickIcon.background = ContextCompat.getDrawable(context, R.drawable.ic_place_gray_24dp)
@@ -142,6 +142,7 @@ class PickLocationController(context: Context, attrs: AttributeSet?) :
         }
     }
 
+    @Suppress("SameParameterValue")
     private fun setPickStartButtonVisible(visible: Boolean, action: () -> Unit) {
         val button = getBottomRightButton() ?: return
 

@@ -1,7 +1,7 @@
 ## Overview
 
-This example app present the followings:
-- Display a map.
+This example app demonstrates the following feature:
+- Display an interactive map supporting pan, zoom, rotate and tilt.
 
 ## Build instructions
 

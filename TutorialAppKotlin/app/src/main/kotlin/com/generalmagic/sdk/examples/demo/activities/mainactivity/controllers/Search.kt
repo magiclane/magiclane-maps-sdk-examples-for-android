@@ -41,7 +41,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
             hideListView()
         }
 
-        searchService.onCompleted = onCompleted@{ results, reason, hint ->
+        searchService.onCompleted = onCompleted@{ results, reason, _ ->
             val gemError = SdkError.fromInt(reason)
             if (gemError == SdkError.Cancel) return@onCompleted
 
@@ -75,7 +75,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
         }
     }
 
-    protected fun wrapLandmarkList(
+    private fun wrapLandmarkList(
         list: ArrayList<Landmark>, reference: Coordinates?
     ): ArrayList<SearchListItem> {
         val result = ArrayList<SearchListItem>()
@@ -184,7 +184,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
 }
 
 class SearchTextActivity : BaseSearchTutorialActivity() {
-    var lastFilter = ""
+    private var lastFilter = ""
     private val searchViewListener = object : SearchView.OnQueryTextListener {
         override fun onQueryTextSubmit(text: String?): Boolean {
             doSearch(text)
@@ -235,6 +235,7 @@ class SearchNearbyActivity : BaseSearchTutorialActivity() {
 
     override fun doStart() {
         doStop()
+        super.doStart()
 
         SdkCall.execute {
             val reference = getCurrentCoords() ?: return@execute
@@ -342,7 +343,7 @@ class SearchHistoryActivity : BaseSearchTutorialActivity() {
         displayList(resultList)
     }
 
-    fun displayList(items: ArrayList<SearchListItem>) {
+    private fun displayList(items: ArrayList<SearchListItem>) {
         val adapter = HLIAdapter(items)
 
         list_view.adapter = adapter
@@ -430,7 +431,7 @@ class SearchFavouritesActivity : BaseSearchTutorialActivity() {
         displayList(resultList)
     }
 
-    fun displayList(items: ArrayList<SearchListItem>) {
+    private fun displayList(items: ArrayList<SearchListItem>) {
         val adapter = SLIAdapter(items)
 
         list_view.adapter = adapter
@@ -456,6 +457,7 @@ class SearchPoiActivity : BaseSearchTutorialActivity() {
 
     override fun doStart() {
         doStop()
+        super.doStart()
 
         SdkCall.execute {
             val reference = getCurrentCoords() ?: return@execute

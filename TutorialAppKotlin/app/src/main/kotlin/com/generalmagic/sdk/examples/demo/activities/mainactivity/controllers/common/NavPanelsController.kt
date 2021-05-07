@@ -10,6 +10,7 @@
 
 package com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
@@ -29,9 +30,9 @@ import com.generalmagic.sdk.core.Time
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.Util
-import com.generalmagic.sdk.examples.demo.util.Util.Companion.setPanelBackground
+import com.generalmagic.sdk.examples.demo.util.Util.setPanelBackground
 import com.generalmagic.sdk.examples.demo.util.UtilUITexts
-import com.generalmagic.sdk.examples.demo.util.Utils.Companion.getDistText
+import com.generalmagic.sdk.examples.demo.util.Utils.getDistText
 import com.generalmagic.sdk.routesandnavigation.AlarmService
 import com.generalmagic.sdk.routesandnavigation.NavigationInstruction
 import com.generalmagic.sdk.routesandnavigation.Route
@@ -159,6 +160,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
         navigationDemoText.visibility = View.GONE
     }
 
+    @SuppressLint("SetTextI18n")
     private fun adjustNavInfoTextSize() {
         val layoutListener = ViewTreeObserver.OnGlobalLayoutListener {
             val etaText = navigationBottomPanel?.navMenuETAText
@@ -438,7 +440,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
     private fun updateNavigationBottomPanel(navInfo: UINavDataProvider.NavInfo) {
         navigationBottomPanel.visibility = View.VISIBLE
 
-        val color = SdkCall.execute { navInfo.rttColor?.value()?.let { Util.getColor(it) } }?: 0
+        val color = SdkCall.execute { navInfo.rttColor?.value()?.let { Util.getColor(it) } } ?: 0
 
         navMenuETAText.text = navInfo.eta
         navMenuETAUnit.text = navInfo.etaUnit
@@ -588,8 +590,7 @@ class UINavDataProvider {
         info.isOverspeeding = (speedLimit > 0.0) && (speed > speedLimit)
 
         val speedTextPair = UtilUITexts.getSpeedText(
-            speed.toDouble(),
-            CommonSettings.getUnitSystem()
+            speed, CommonSettings.getUnitSystem()
         )
 
         info.currentSpeed = speedTextPair.first

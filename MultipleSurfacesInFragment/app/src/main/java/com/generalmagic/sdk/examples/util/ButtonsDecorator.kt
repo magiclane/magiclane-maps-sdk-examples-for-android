@@ -16,38 +16,36 @@ import androidx.core.content.ContextCompat
 import com.generalmagic.sdk.examples.R
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-class ButtonsDecorator {
-    companion object {
-        fun buttonAsAdd(context: Context, button: FloatingActionButton?, action: () -> Unit) {
-            button ?: return
+object ButtonsDecorator {
+    fun buttonAsAdd(context: Context, button: FloatingActionButton?, action: () -> Unit) {
+        button ?: return
 
-            val tag = "add"
-            val backgroundTintList =
-                AppCompatResources.getColorStateList(context, R.color.green)
-            val drawable = ContextCompat.getDrawable(context, android.R.drawable.ic_input_add)
+        val tag = "add"
+        val backgroundTintList =
+            AppCompatResources.getColorStateList(context, R.color.green)
+        val drawable = ContextCompat.getDrawable(context, android.R.drawable.ic_input_add)
 
-            button.tag = tag
-            button.setOnClickListener { action() }
-            button.setImageDrawable(drawable)
-            button.backgroundTintList = backgroundTintList
-        }
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////
-
-        fun buttonAsDelete(context: Context, button: FloatingActionButton?, action: () -> Unit) {
-            button ?: return
-
-            val tag = "delete"
-            val backgroundTintList =
-                AppCompatResources.getColorStateList(context, R.color.red)
-            val drawable = ContextCompat.getDrawable(context, android.R.drawable.ic_delete)
-
-            button.tag = tag
-            button.setOnClickListener { action() }
-            button.setImageDrawable(drawable)
-            button.backgroundTintList = backgroundTintList
-        }
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////
+        button.tag = tag
+        button.setOnClickListener { action() }
+        button.setImageDrawable(drawable)
+        button.backgroundTintList = backgroundTintList
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    fun buttonAsDelete(context: Context, button: FloatingActionButton?, action: () -> Unit) {
+        button ?: return
+
+        val tag = "delete"
+        val backgroundTintList =
+            AppCompatResources.getColorStateList(context, R.color.red)
+        val drawable = ContextCompat.getDrawable(context, android.R.drawable.ic_delete)
+
+        button.tag = tag
+        button.setOnClickListener { action() }
+        button.setImageDrawable(drawable)
+        button.backgroundTintList = backgroundTintList
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 }
