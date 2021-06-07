@@ -25,15 +25,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.generalmagic.sdk.examples.util.SdkInitHelper
-import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
-import com.generalmagic.sdk.places.Coordinates
+import com.generalmagic.sdk.core.GemSdk
+import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
-import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
+import com.generalmagic.sdk.util.Util
+import kotlin.system.exitProcess
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -41,7 +41,32 @@ class MainActivity : AppCompatActivity() {
     private var listView: RecyclerView? = null
     private var progressBar: ProgressBar? = null
 
-    private var searchService = SearchService()
+    private var searchService = SearchService(
+        onCompleted = { results, reason, _ ->
+            progressBar?.visibility = View.GONE
+            when (reason) {
+                SdkError.NoError -> {
+                    // No error encountered, we can handle the results.
+                    if (results.isNotEmpty()) {
+                        val adapter = CustomAdapter(results)
+                        listView?.adapter = adapter
+                    } else {
+                        // The search completed without errors, but there were no results found.
+                        showToast("No results!")
+                    }
+                }
+
+                SdkError.Cancel -> {
+                    // The search action was cancelled.
+                }
+
+                else -> {
+                    // There was a problem at computing the search operation.
+                    showToast("Search service error: ${reason.name}")
+                }
+            }
+        }
+    )
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -78,15 +103,16 @@ class MainActivity : AppCompatActivity() {
         )
 
         /// GENERAL MAGIC
-        SdkInitHelper.onCancel = {
-            // Defines what should be executed when the SDK initialization is cancelled.
-            cancelSearch()
+        SdkSettings.onApiTokenRejected = {
+            /* 
+            The TOKEN you provided in the AndroidManifest.xml file was rejected.
+            Make sure you provide the correct value, or if you don't have a TOKEN,
+            check the generalmagic.com website, sign up/ sing in and generate one. 
+             */
+            showToast("TOKEN REJECTED")
         }
 
-        val app = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
-        val token = app.metaData.getString("com.generalmagic.sdk.token") ?: "YOUR_TOKEN"
-
-        if (!SdkInitHelper.init(this, token)) {
+        if (!GemSdk.initSdkWithDefaults(this)) {
             // The SDK initialization was not completed.
             finish()
         }
@@ -104,14 +130,15 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        // Deinitialize the SDK.
-        SdkInitHelper.deinit()
+        // Release the SDK.
+        GemSdk.release()
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     override fun onBackPressed() {
-        terminateApp(this)
+        finish()
+        exitProcess(0)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -137,32 +164,9 @@ class MainActivity : AppCompatActivity() {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private fun search(filter: String): Int {
-        return SdkCall.execute {
-            // Get the current position of the user.
-            val position = PositionService().getPosition()
-            val latitude = position?.getLatitude() ?: 0.0
-            val longitude = position?.getLongitude() ?: 0.0
-
-            val coordinates = Coordinates(latitude, longitude)
-            searchService.preferences.setSearchAddresses(true)
-            searchService.preferences.setSearchMapPOIs(true)
-            searchService.searchByFilter(filter, coordinates) onCompleted@{ results, reason, _ ->
-                val gemError = SdkError.fromInt(reason)
-                if (gemError == SdkError.Cancel) return@onCompleted
-
-                val adapter = CustomAdapter(results)
-                listView?.adapter = adapter
-                progressBar?.visibility = View.GONE
-
-                if (reason == SdkError.NoError.value && results.isEmpty()) {
-                    Toast.makeText(
-                        this@MainActivity, "No results!", Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        } ?: SdkError.Cancel.value
-    }
+    private fun search(filter: String): Int = SdkCall.execute {
+        searchService.searchByFilter(filter)
+    } ?: SdkError.Cancel.value
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -175,7 +179,8 @@ class MainActivity : AppCompatActivity() {
 
         val result = grantResults[permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)]
         if (result != PackageManager.PERMISSION_GRANTED) {
-            terminateApp(this)
+            finish()
+            exitProcess(0)
         }
     }
 
@@ -189,10 +194,21 @@ class MainActivity : AppCompatActivity() {
             Manifest.permission.ACCESS_NETWORK_STATE
         )
 
-        return PermissionsHelper.requestPermissions(REQUEST_PERMISSIONS, activity, permissions.toTypedArray())
+        return PermissionsHelper.requestPermissions(
+            REQUEST_PERMISSIONS,
+            activity,
+            permissions.toTypedArray()
+        )
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun showToast(text: String) = Util.postOnMain {
+        Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show()
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
     companion object {
         private const val REQUEST_PERMISSIONS = 110
     }

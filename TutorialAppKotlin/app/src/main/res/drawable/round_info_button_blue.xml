@@ -1,8 +1,8 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-	<item
-		android:drawable="@drawable/ic_brightness_1_white_24dp"
-		android:gravity="fill" />
-	<item
-		android:drawable="@drawable/ic_info_blue_24dp"
-		android:gravity="fill" />
+    <item
+        android:drawable="@drawable/ic_brightness_1_white_24dp"
+        android:gravity="fill" />
+    <item
+        android:drawable="@drawable/ic_info_blue_24dp"
+        android:gravity="fill" />
 </layer-list>

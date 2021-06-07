@@ -10,11 +10,10 @@
 
 package com.generalmagic.sdk.examples
 
-import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.generalmagic.sdk.examples.util.SdkInitHelper
-import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
+import com.generalmagic.sdk.core.GemSdk
+import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,11 +21,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         /// GENERAL MAGIC
-        val app = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
-        val token = app.metaData.getString("com.generalmagic.sdk.token") ?: "YOUR_TOKEN"
-
-        if (!SdkInitHelper.init(this, token)) {
-            // The SDK initialization was not completed.
+        val token = GemSdk.getToken(this)
+        if (!GemSdk.initSdkWithDefaults(this, token)) {
             finish()
         }
     }
@@ -36,14 +32,15 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        // Deinitialize the SDK.
-        SdkInitHelper.deinit()
+        // Release the SDK.
+        GemSdk.release()
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     override fun onBackPressed() {
-        terminateApp(this)
+        finish()
+        exitProcess(0)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

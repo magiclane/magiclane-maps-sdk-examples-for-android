@@ -16,6 +16,7 @@ import android.view.View
 import android.widget.Toast
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.*
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.ECommonOverlayId
 import com.generalmagic.sdk.d3scene.OverlayService
 import com.generalmagic.sdk.examples.demo.activities.RouteDescriptionActivity
@@ -30,8 +31,8 @@ import com.generalmagic.sdk.examples.demo.util.IntentHelper
 import com.generalmagic.sdk.places.*
 import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.sensordatasource.*
+import com.generalmagic.sdk.sensordatasource.enums.EDataType
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
 import kotlinx.android.synthetic.main.nav_layout.view.*
 import kotlinx.android.synthetic.main.pick_location.view.*
 
@@ -52,21 +53,20 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
             GEMApplication.clearMapVisibleRoutes()
         }
 
-        override fun notifyComplete(reason: Int, hint: String) {
-            val gemError = SdkError.fromInt(reason)
+        override fun notifyComplete(reason: SdkError, hint: String) {
             val route = getRoute()
 
             GEMApplication.postOnMain {
                 hideProgress()
             }
 
-            if (gemError == SdkError.NoError) {
+            if (reason == SdkError.NoError) {
                 navLayout?.routeUpdated(route)
             } else {
                 GEMApplication.postOnMain {
                     Toast.makeText(
                         context,
-                        "Routing service error: $gemError",
+                        "Routing service error: $reason",
                         Toast.LENGTH_SHORT
                     )
                         .show()
@@ -426,7 +426,7 @@ open class BaseNavigationController(context: Context, attrs: AttributeSet?) :
 open class SimLandmarksController(context: Context, attrs: AttributeSet?) :
     BaseSimulationController(context, attrs) {
     override fun doStart() {
-        @Suppress("UNCHECKED_CAST") 
+        @Suppress("UNCHECKED_CAST")
         val waypoints = IntentHelper.getObjectForKey(EXTRA_WAYPOINTS) as ArrayList<Landmark>?
         waypoints ?: return
 
@@ -464,24 +464,13 @@ open class PredefNavController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-    private fun getGasCategory(): LandmarkCategory? = SdkCall.execute {
-        val categoriesList = GenericCategories().getCategories() ?: return@execute null
-
-        var category: LandmarkCategory? = null
-        if (categoriesList.size > 0) {
-            category = categoriesList[0]
-        }
-        return@execute category
-    }
-
     private fun doSearch() {
         SdkCall.checkCurrentThread()
         searchService.onStarted = {
             showProgress()
         }
 
-        searchService.onCompleted = onCompleted@{ results, reason, _ ->
-            val gemError = SdkError.fromInt(reason)
+        searchService.onCompleted = onCompleted@{ results, gemError, _ ->
             if (gemError == SdkError.Cancel) return@onCompleted
 
             hideProgress()
@@ -514,7 +503,7 @@ open class PredefNavController(context: Context, attrs: AttributeSet?) :
         val myPos = positionService.getPosition() ?: return
         val myPosition = Coordinates(myPos.getLatitude(), myPos.getLongitude())
 
-        val category = getGasCategory()
+        val category = GenericCategories().getCategory(EGenericCategoriesIDs.GasStation)
 
         if (category != null) {
             searchService.preferences.lmks()

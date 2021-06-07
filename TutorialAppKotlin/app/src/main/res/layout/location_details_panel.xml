@@ -90,12 +90,12 @@
             android:layout_marginEnd="@dimen/listItemPadding"
             android:textColor="@android:color/black"
             android:textSize="@dimen/standardTextSize"
-            app:layout_constraintVertical_chainStyle="packed"
-            app:layout_constraintVertical_bias="0.5"
             app:layout_constraintBottom_toTopOf="@id/description"
             app:layout_constraintEnd_toStartOf="@id/rightButtonContainer"
             app:layout_constraintStart_toEndOf="@id/iconContainer"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.5"
+            app:layout_constraintVertical_chainStyle="packed" />
 
         <TextView
             android:id="@+id/description"

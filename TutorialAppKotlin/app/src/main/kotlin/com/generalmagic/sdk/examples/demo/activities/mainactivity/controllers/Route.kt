@@ -17,6 +17,7 @@ import android.view.View
 import android.widget.Toast
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.*
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.demo.activities.RouteDescriptionActivity.Companion.showRouteDescription
 import com.generalmagic.sdk.examples.demo.activities.publictransport.PublicTransportRouteDescriptionActivity.Companion.showPTRouteDescription
 import com.generalmagic.sdk.examples.demo.activities.routeprofile.GEMRouteProfileView
@@ -28,15 +29,12 @@ import com.generalmagic.sdk.examples.demo.app.Tutorials
 import com.generalmagic.sdk.examples.demo.app.TutorialsOpener
 import com.generalmagic.sdk.examples.demo.app.elements.ButtonsDecorator
 import com.generalmagic.sdk.examples.demo.util.IntentHelper
-import com.generalmagic.sdk.examples.demo.util.Util
-import com.generalmagic.sdk.examples.demo.util.UtilUITexts
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
 import kotlinx.android.synthetic.main.pick_location.view.*
 
 abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
@@ -46,10 +44,6 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
     private var mRouteProfileView: RouteProfileView? = null
 
     private val routingService = RoutingService()
-
-    companion object {
-        const val MAIN_ROUTE_INDEX = 0
-    }
 
     protected var mode = ERouteTransportMode.Car
     private var lastWaypoints = ArrayList<Landmark>()
@@ -75,12 +69,11 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
             GEMApplication.clearMapVisibleRoutes()
         }
 
-        routingService.onCompleted = onCompleted@{ routes, reason, _ ->
+        routingService.onCompleted = onCompleted@{ routes, gemError, _ ->
             hideProgress()
             updateStartStopBtn(false)
             calculatedRoutes = routes
 
-            val gemError = SdkError.fromInt(reason)
             if (gemError != SdkError.NoError) {
                 Toast.makeText(
                     context, "Routing service error: $gemError", Toast.LENGTH_SHORT
@@ -89,45 +82,15 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
             }
 
             SdkCall.execute {
-                val mainRoute: Route? = if (routes.size > MAIN_ROUTE_INDEX) {
-                    routes[MAIN_ROUTE_INDEX]
-                } else {
-                    null
-                }
+                if (routes.size == 0) return@execute
+                val mainRoute = routes[0] ?: return@execute
+
+                GEMApplication.getMainMapView()?.presentRoutes(routes)
 
                 val mainMap = GEMApplication.getMainMapView() ?: return@execute
 
-                if (mainRoute != null) {
-                    mainMap.centerOnRoute(mainRoute)
-                    GEMApplication.addRouteToHistory(mainRoute)
-                }
-
-                for (routeIndex in 0 until routes.size) {
-                    val route = routes[routeIndex]
-
-                    val routeName = UtilUITexts.formatRouteName(route)
-
-                    val imageList = arrayListOf<Image>()
-                    ImageDatabase().getImageById(Util.getTrafficIconId(route))?.let {
-                        imageList.add(it)
-                    }
-
-                    if (route.hasTollRoads()) {
-                        ImageDatabase().getImageById(Util.getTollIconId())?.let {
-                            imageList.add(it)
-                        }
-                    }
-
-                    if (route.hasFerryConnections()) {
-                        ImageDatabase().getImageById(Util.getFerryIconId())?.let {
-                            imageList.add(it)
-                        }
-                    }
-
-                    mainMap.preferences()?.routes()?.add(
-                        route, routeIndex == MAIN_ROUTE_INDEX, routeName, imageList
-                    )
-                }
+                mainMap.centerOnRoute(mainRoute)
+                GEMApplication.addRouteToHistory(mainRoute)
             }
 
             setInfoButtonVisible(true)
@@ -176,10 +139,9 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
 
     private fun doDisplayInfo() {
         val mainRoute = SdkCall.execute {
-            val routes = calculatedRoutes
-            return@execute if (routes.size > MAIN_ROUTE_INDEX) {
-                routes[MAIN_ROUTE_INDEX]
-            } else null
+            if (calculatedRoutes.size > 0)
+                return@execute calculatedRoutes[0]
+            return@execute null
         } ?: return
 
         if (mode == ERouteTransportMode.Public) {

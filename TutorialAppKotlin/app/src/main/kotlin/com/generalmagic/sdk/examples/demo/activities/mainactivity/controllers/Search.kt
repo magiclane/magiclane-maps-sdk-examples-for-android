@@ -16,6 +16,7 @@ import android.widget.SearchView
 import android.widget.Toast
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.*
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.demo.activities.*
 import com.generalmagic.sdk.examples.demo.activities.history.Trip
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
@@ -25,7 +26,6 @@ import com.generalmagic.sdk.places.*
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
 import kotlinx.android.synthetic.main.activity_list_view.*
 import kotlinx.android.synthetic.main.filter_view.*
 import java.util.*
@@ -41,8 +41,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
             hideListView()
         }
 
-        searchService.onCompleted = onCompleted@{ results, reason, _ ->
-            val gemError = SdkError.fromInt(reason)
+        searchService.onCompleted = onCompleted@{ results, gemError, _ ->
             if (gemError == SdkError.Cancel) return@onCompleted
 
             hideProgress()
@@ -58,7 +57,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
             val adapter = SLIAdapter(wrapped)
 
             list_view.adapter = adapter
-            if (reason == SdkError.NoError.value && results.isEmpty()) {
+            if (gemError == SdkError.NoError && results.isEmpty()) {
                 Toast.makeText(
                     this@BaseSearchTutorialActivity, "No result!", Toast.LENGTH_SHORT
                 ).show()

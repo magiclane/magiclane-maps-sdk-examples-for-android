@@ -10,20 +10,19 @@
 
 package com.generalmagic.sdk.examples
 
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Handler
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.RectF
+import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.d3scene.MapView
-import com.generalmagic.sdk.d3scene.Screen
-import com.generalmagic.sdk.examples.util.SdkInitHelper
-import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
-import com.generalmagic.sdk.util.SdkCall
+import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
-    private var mainMapView: MapView? = null
+    private lateinit var gemSurfaceView: GemSurfaceView
+    private var secondMapView: MapView? = null
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -32,47 +31,22 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         /// GENERAL MAGIC
-        val mapSurface = findViewById<GemSurfaceView>(R.id.gem_surface)
-        mapSurface.onScreenCreated = { screen ->
-            // Defines an action that should be done after the screen is created.
-            SdkCall.execute {
-                /* 
-                Define a rectangle in which the map view will expand.
-                Predefined value of the offsets is 0.
-                Value 1 means the offset will take 100% of available space.
-                 */
-                val mainViewRect = RectF(0.0f, 0.0f, 1.0f, 1.0f)
-                // Produce a map view and establish that it is the main map view.
-                val mapView = MapView.produce(screen, mainViewRect)
-                mainMapView = mapView
+        gemSurfaceView = findViewById(R.id.gem_surface)
+        gemSurfaceView.onDefaultMapViewCreated = {
+            gemSurfaceView.getScreen()?.let { screen ->
+                val secondViewRect = RectF(0.0f, 0.0f, 0.5f, 0.5f)
+                secondMapView = MapView.produce(screen, secondViewRect)
             }
         }
 
-        SdkInitHelper.onNetworkConnected = {
-            // Defines an action that should be done after the network is connected.
-            Handler(mainLooper).postDelayed({
-                SdkCall.execute {
-                    addSecondMapView(mainMapView?.getScreen())
-                }
-            }, 1000)
+        SdkSettings.onApiTokenRejected = {
+            /* 
+            The TOKEN you provided in the AndroidManifest.xml file was rejected.
+            Make sure you provide the correct value, or if you don't have a TOKEN,
+            check the generalmagic.com website, sign up/ sing in and generate one. 
+             */
+            Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
         }
-
-        val app = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
-        val token = app.metaData.getString("com.generalmagic.sdk.token") ?: "YOUR_TOKEN"
-
-        if (!SdkInitHelper.init(this, token)) {
-            // The SDK initialization was not completed.
-            finish()
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    private fun addSecondMapView(screen: Screen?) {
-        // Define the rectangle for the second map view.
-        val secondViewRect = RectF(0.0f, 0.0f, 0.5f, 0.5f)
-        // Produce the map view in the same screen.
-        screen?.let { MapView.produce(it, secondViewRect) }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -81,13 +55,14 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
 
         // Deinitialize the SDK.
-        SdkInitHelper.deinit()
+        GemSdk.release()
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     override fun onBackPressed() {
-        terminateApp(this)
+        finish()
+        exitProcess(0)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

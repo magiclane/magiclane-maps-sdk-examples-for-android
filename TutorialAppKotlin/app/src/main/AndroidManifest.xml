@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="com.generalmagic.sdk.examples.demo">
+    package="com.generalmagic.sdk.examples.demo">
+
+    <uses-feature android:name="android.hardware.camera2" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -15,98 +17,100 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-	<application
-		android:allowBackup="true"
-		android:label="TutorialApp"
-		android:supportsRtl="true"
-		android:theme="@style/AppTheme">
+    <application
+        android:allowBackup="true"
+        android:label="TutorialApp"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
 
-        <meta-data android:name="com.generalmagic.sdk.token" android:value="YOUR_TOKEN" />
+        <meta-data
+            android:name="com.generalmagic.sdk.token"
+            android:value="YOUR_TOKEN" />
 
-		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+        <!--/////////////////////////////////////////////////////////////////////////////////////-->
 
-		<activity
-			android:name=".activities.mainactivity.MainActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale"
-			android:windowSoftInputMode="stateAlwaysVisible"> <!-- must exist on all activities ! -->
-			<intent-filter>
-				<action android:name="android.intent.action.MAIN" />
+        <activity
+            android:name=".activities.mainactivity.MainActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale"
+            android:windowSoftInputMode="stateAlwaysVisible"> <!-- must exist on all activities ! -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
-				<category android:name="android.intent.category.LAUNCHER" />
-			</intent-filter>
-		</activity>
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
-		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+        <!--/////////////////////////////////////////////////////////////////////////////////////-->
 
-		<activity
-			android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SensorsListActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+        <activity
+            android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SensorsListActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
-		<activity
-			android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.DirectCamActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+        <activity
+            android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.DirectCamActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
-		<!--/////////////////////////////////////////////////////////////////////////////////////-->
-		
-		<activity
-			android:name=".activities.pickvideo.PickLogActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+        <!--/////////////////////////////////////////////////////////////////////////////////////-->
+
+        <activity
+            android:name=".activities.pickvideo.PickLogActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
         <activity
             android:name=".activities.pickvideo.UploadLogActivity"
             android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
-		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+        <!--/////////////////////////////////////////////////////////////////////////////////////-->
 
-		<activity
-			android:name=".activities.RouteDescriptionActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+        <activity
+            android:name=".activities.RouteDescriptionActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
-		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+        <!--/////////////////////////////////////////////////////////////////////////////////////-->
 
-		<activity
-			android:name=".activities.publictransport.PublicTransportRouteDescriptionActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+        <activity
+            android:name=".activities.publictransport.PublicTransportRouteDescriptionActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
-		<activity
-			android:name=".activities.publictransport.PublicTransportAgenciesActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+        <activity
+            android:name=".activities.publictransport.PublicTransportAgenciesActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
-		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+        <!--/////////////////////////////////////////////////////////////////////////////////////-->
 
-		<activity
-			android:name=".activities.WebActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+        <activity
+            android:name=".activities.WebActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
-		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+        <!--/////////////////////////////////////////////////////////////////////////////////////-->
 
-		<activity
-			android:name=".activities.searchaddress.SearchAddressActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+        <activity
+            android:name=".activities.searchaddress.SearchAddressActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
         <activity
             android:name=".activities.searchaddress.CountriesSearchActivity"
             android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
-		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+        <!--/////////////////////////////////////////////////////////////////////////////////////-->
 
-		<activity
-			android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.StylesActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+        <activity
+            android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.StylesActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
-		<!--/////////////////////////////////////////////////////////////////////////////////////-->
+        <!--/////////////////////////////////////////////////////////////////////////////////////-->
 
-		<activity
-			android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.OnlineMapsActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+        <activity
+            android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.OnlineMapsActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
-		<activity
-			android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SearchTextActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+        <activity
+            android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SearchTextActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
-		<activity
-			android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SearchNearbyActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+        <activity
+            android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SearchNearbyActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
         <activity
             android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SearchHistoryActivity"
@@ -116,9 +120,9 @@
             android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SearchFavouritesActivity"
             android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
-		<activity
-			android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SearchPoiActivity"
-			android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
+        <activity
+            android:name="com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SearchPoiActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
         <!--/////////////////////////////////////////////////////////////////////////////////////-->
 
@@ -127,6 +131,6 @@
             android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
 
 
-	</application>
+    </application>
 
 </manifest>

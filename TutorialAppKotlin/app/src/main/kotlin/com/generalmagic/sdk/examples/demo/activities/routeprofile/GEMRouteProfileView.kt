@@ -15,6 +15,7 @@ import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilUiTexts.getUIString
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -229,7 +230,7 @@ object GEMRouteProfileView {
         mMapView = mapView
         mAltitudeFactor = 1.0
 
-        when (CommonSettings.getUnitSystem()) {
+        when (SdkSettings.getUnitSystem()) {
             EUnitSystem.ImperialUk,
             EUnitSystem.ImperialUs -> {
                 mAltitudeFactor = METERS_TO_FT
@@ -291,30 +292,29 @@ object GEMRouteProfileView {
     }
 
     fun getTitle(): String {
-        return Utils.getUIString(StringIds.eStrRouteProfile)
+        return getUIString(StringIds.eStrRouteProfile)
     }
-
 
     fun getSectionTitle(section: Int): String {
         return when (section) {
             TRouteProfileSectionType.EElevation.ordinal -> {
-                Utils.getUIString(StringIds.eStrElevation)
+                getUIString(StringIds.eStrElevation)
             }
 
             TRouteProfileSectionType.EClimbDetails.ordinal -> {
-                Utils.getUIString(StringIds.eStrClimbDetails)
+                getUIString(StringIds.eStrClimbDetails)
             }
 
             TRouteProfileSectionType.EWays.ordinal -> {
-                Utils.getUIString(StringIds.eStrWays)
+                getUIString(StringIds.eStrWays)
             }
 
             TRouteProfileSectionType.ESurfaces.ordinal -> {
-                Utils.getUIString(StringIds.eStrSurfaces)
+                getUIString(StringIds.eStrSurfaces)
             }
 
             TRouteProfileSectionType.ESteepnesses.ordinal -> {
-                Utils.getUIString(StringIds.eStrSteepness)
+                getUIString(StringIds.eStrSteepness)
             }
 
             else -> {
@@ -487,37 +487,37 @@ object GEMRouteProfileView {
     fun getElevationChartHorizontalAxisUnit(): String {
         return when (mCrtUnitType) {
             TUnitType.EMeter -> {
-                Utils.getUIString(StringIds.eStrMeter)
+                getUIString(StringIds.eStrMeter)
             }
 
             TUnitType.EKm -> {
-                Utils.getUIString(StringIds.eStrKm)
+                getUIString(StringIds.eStrKm)
             }
 
             TUnitType.EYard -> {
-                Utils.getUIString(StringIds.eStrYd)
+                getUIString(StringIds.eStrYd)
             }
 
             TUnitType.EFoot -> {
-                Utils.getUIString(StringIds.eStrFt)
+                getUIString(StringIds.eStrFt)
             }
 
             TUnitType.EMile -> {
-                Utils.getUIString(StringIds.eStrMi)
+                getUIString(StringIds.eStrMi)
             }
         }
     }
 
 
     fun getElevationChartVerticalAxisUnit(): String {
-        return when (CommonSettings.getUnitSystem()) {
+        return when (SdkSettings.getUnitSystem()) {
             EUnitSystem.ImperialUk,
             EUnitSystem.ImperialUs -> {
-                Utils.getUIString(StringIds.eStrFt)
+                getUIString(StringIds.eStrFt)
             }
 
             else -> {
-                Utils.getUIString(StringIds.eStrMeter)
+                getUIString(StringIds.eStrMeter)
             }
         }
     }
@@ -707,7 +707,7 @@ object GEMRouteProfileView {
     }
 
     private fun getDist(meters: Int): Double {
-        val unitsSystem = CommonSettings.getUnitSystem()
+        val unitsSystem = SdkSettings.getUnitSystem()
 
         var miles = 0.0
         val yardsOrFeet: Double
@@ -852,14 +852,14 @@ object GEMRouteProfileView {
         val routeTerrainProfile = mRoute.getTerrainProfile()
 
         routeTerrainProfile.let {
-            val unitsSystem = CommonSettings.getUnitSystem()
+            val unitsSystem = SdkSettings.getUnitSystem()
 
             tmp = when (unitsSystem) {
                 EUnitSystem.Metric -> {
                     String.format(
                         "%d %s",
                         elevation.toInt(),
-                        Utils.getUIString(StringIds.eStrMeter)
+                        getUIString(StringIds.eStrMeter)
                     )
                 }
                 EUnitSystem.ImperialUk,
@@ -867,7 +867,7 @@ object GEMRouteProfileView {
                     String.format(
                         "%d %s",
                         (elevation * METERS_TO_FT).toInt(),
-                        Utils.getUIString(StringIds.eStrFt)
+                        getUIString(StringIds.eStrFt)
                     )
                 }
             }
@@ -986,23 +986,23 @@ object GEMRouteProfileView {
         return when (infoType) {
 
             TClimbDetailsInfoType.ERating.ordinal -> {
-                Utils.getUIString(StringIds.eStrRating)
+                getUIString(StringIds.eStrRating)
             }
 
             TClimbDetailsInfoType.EStartEndPoints.ordinal -> {
-                Utils.getUIString(StringIds.eStartEndPoints)
+                getUIString(StringIds.eStartEndPoints)
             }
 
             TClimbDetailsInfoType.EStartEndElevation.ordinal -> {
-                Utils.getUIString(StringIds.eStrStartEndElevation)
+                getUIString(StringIds.eStrStartEndElevation)
             }
 
             TClimbDetailsInfoType.ELength.ordinal -> {
-                Utils.getUIString(StringIds.eStrLength)
+                getUIString(StringIds.eStrLength)
             }
 
             TClimbDetailsInfoType.EAvgGrade.ordinal -> {
-                Utils.getUIString(StringIds.eStrAvgGrade)
+                getUIString(StringIds.eStrAvgGrade)
             }
 
             else -> {
@@ -1245,19 +1245,19 @@ object GEMRouteProfileView {
         return when (type) {
 
             ESurfaceType.Asphalt -> {
-                Utils.getUIString(StringIds.eStrAsphalt)
+                getUIString(StringIds.eStrAsphalt)
             }
 
             ESurfaceType.Paved -> {
-                Utils.getUIString(StringIds.eStrPaved)
+                getUIString(StringIds.eStrPaved)
             }
 
             ESurfaceType.Unpaved -> {
-                Utils.getUIString(StringIds.eStrUnpaved)
+                getUIString(StringIds.eStrUnpaved)
             }
 
             ESurfaceType.Unknown -> {
-                Utils.getUIString(StringIds.eStrUnknown)
+                getUIString(StringIds.eStrUnknown)
             }
 
             else -> {
@@ -1351,31 +1351,31 @@ object GEMRouteProfileView {
     private fun getWayName(type: ERoadType): String {
         return when (type) {
             ERoadType.Motorways -> {
-                Utils.getUIString(StringIds.eStrMotorway)
+                getUIString(StringIds.eStrMotorway)
             }
 
             ERoadType.StateRoad -> {
-                Utils.getUIString(StringIds.eStrStateRoad)
+                getUIString(StringIds.eStrStateRoad)
             }
 
             ERoadType.Road -> {
-                Utils.getUIString(StringIds.eStrRoad)
+                getUIString(StringIds.eStrRoad)
             }
 
             ERoadType.Street -> {
-                Utils.getUIString(StringIds.eStrStreet)
+                getUIString(StringIds.eStrStreet)
             }
 
             ERoadType.Cycleway -> {
-                Utils.getUIString(StringIds.eStrCycleway)
+                getUIString(StringIds.eStrCycleway)
             }
 
             ERoadType.Path -> {
-                Utils.getUIString(StringIds.eStrPath)
+                getUIString(StringIds.eStrPath)
             }
 
             ERoadType.SingleTrack -> {
-                Utils.getUIString(StringIds.eStrSingleTrack)
+                getUIString(StringIds.eStrSingleTrack)
             }
         }
     }

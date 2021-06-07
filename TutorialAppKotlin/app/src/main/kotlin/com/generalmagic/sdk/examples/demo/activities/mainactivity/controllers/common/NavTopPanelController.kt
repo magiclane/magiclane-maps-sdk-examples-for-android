@@ -20,22 +20,22 @@ import android.widget.FrameLayout
 import android.widget.RelativeLayout
 import androidx.core.content.ContextCompat
 import com.generalmagic.sdk.*
-import com.generalmagic.sdk.core.CommonSettings
 import com.generalmagic.sdk.core.Rgba
+import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.OverlayItem
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.Util
 import com.generalmagic.sdk.examples.demo.util.Util.setPanelBackground
 import com.generalmagic.sdk.examples.demo.util.UtilUITexts
-import com.generalmagic.sdk.examples.demo.util.Utils.getDistText
-import com.generalmagic.sdk.examples.demo.util.Utils.getTimeText
-import com.generalmagic.sdk.examples.demo.util.Utils.getUIString
 import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilUiTexts.getDistText
+import com.generalmagic.sdk.util.UtilUiTexts.getTimeText
+import com.generalmagic.sdk.util.UtilUiTexts.getUIString
 import kotlinx.android.synthetic.main.nav_top_panel.view.*
 
 class NavTopPanelController(context: Context, attrs: AttributeSet?) :
@@ -145,7 +145,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
         val distanceToNextTurnTexts = getDistText(
             navInstr.getTimeDistanceToNextTurn()?.getTotalDistance() ?: 0,
-            CommonSettings.getUnitSystem(),
+            SdkSettings.getUnitSystem(),
             true
         )
 
@@ -196,7 +196,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
         val distFromStartTexts = getDistText(
             remainingDistance,
-            CommonSettings.getUnitSystem(),
+            SdkSettings.getUnitSystem(),
             true
         )
 
@@ -217,7 +217,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
         val distanceToNextTurnTexts = getDistText(
             event?.getTraveledTimeDistance()?.getTotalDistance() ?: 0,
-            CommonSettings.getUnitSystem(),
+            SdkSettings.getUnitSystem(),
             true
         )
 
@@ -250,7 +250,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
         val distanceToTrafficPair = getDistText(
             distance,
-            CommonSettings.getUnitSystem(),
+            SdkSettings.getUnitSystem(),
             true
         )
 
@@ -281,7 +281,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
             } else {
                 val trafficDistTextPair = getDistText(
                     trafficEvent.getLength(),
-                    CommonSettings.getUnitSystem(),
+                    SdkSettings.getUnitSystem(),
                     true
                 )
 
@@ -356,7 +356,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
         val distance = markersList.getDistance(0)
         if (distance < maxDistanceToAlarm) {
-            val textsPair = getDistText(distance.toInt(), CommonSettings.getUnitSystem(), true)
+            val textsPair = getDistText(distance.toInt(), SdkSettings.getUnitSystem(), true)
 
             distanceToSafetyCameraAlarm = textsPair.first
             distanceToSafetyCameraAlarmUnit = textsPair.second

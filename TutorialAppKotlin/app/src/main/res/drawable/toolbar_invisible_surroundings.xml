@@ -1,52 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-	<item>
-		<shape>
-			<padding
-				android:left="@dimen/toolbar_deflate"
-				android:right="@dimen/toolbar_deflate"
-				android:top="@dimen/toolbar_deflate" />
-			<corners android:radius="@dimen/toolbar_radius" />
-			<solid android:color="#00757575" />
-		</shape>
-	</item>
-	<item>
-		<shape>
-			<padding
-				android:left="@dimen/toolbar_deflate"
-				android:right="@dimen/toolbar_deflate"
-				android:top="@dimen/toolbar_deflate" />
-			<corners android:radius="@dimen/toolbar_radius" />
-			<solid android:color="#00757575" />
-		</shape>
-	</item>
-	<item>
-		<shape>
-			<padding
-				android:left="@dimen/toolbar_deflate"
-				android:right="@dimen/toolbar_deflate"
-				android:top="@dimen/toolbar_deflate" />
-			<corners android:radius="@dimen/toolbar_radius" />
-			<solid android:color="#00757575" />
-		</shape>
-	</item>
-	<item>
-		<shape>
-			<padding
-				android:left="@dimen/toolbar_deflate"
-				android:right="@dimen/toolbar_deflate"
-				android:top="@dimen/toolbar_deflate" />
-			<corners android:radius="@dimen/toolbar_radius" />
-			<solid android:color="#00757575" />
-		</shape>
-	</item>
+    <item>
+        <shape>
+            <padding
+                android:left="@dimen/toolbar_deflate"
+                android:right="@dimen/toolbar_deflate"
+                android:top="@dimen/toolbar_deflate" />
+            <corners android:radius="@dimen/toolbar_radius" />
+            <solid android:color="#00757575" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <padding
+                android:left="@dimen/toolbar_deflate"
+                android:right="@dimen/toolbar_deflate"
+                android:top="@dimen/toolbar_deflate" />
+            <corners android:radius="@dimen/toolbar_radius" />
+            <solid android:color="#00757575" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <padding
+                android:left="@dimen/toolbar_deflate"
+                android:right="@dimen/toolbar_deflate"
+                android:top="@dimen/toolbar_deflate" />
+            <corners android:radius="@dimen/toolbar_radius" />
+            <solid android:color="#00757575" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <padding
+                android:left="@dimen/toolbar_deflate"
+                android:right="@dimen/toolbar_deflate"
+                android:top="@dimen/toolbar_deflate" />
+            <corners android:radius="@dimen/toolbar_radius" />
+            <solid android:color="#00757575" />
+        </shape>
+    </item>
 
-	<!-- Background -->
-	<item>
-		<shape>
-			<solid android:color="#476483" />
-			<corners android:radius="@dimen/toolbar_radius" />
-		</shape>
-	</item>
+    <!-- Background -->
+    <item>
+        <shape>
+            <solid android:color="#476483" />
+            <corners android:radius="@dimen/toolbar_radius" />
+        </shape>
+    </item>
 </layer-list>

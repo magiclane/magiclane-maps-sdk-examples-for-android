@@ -17,6 +17,7 @@ import android.widget.Toast
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.Rect
 import com.generalmagic.sdk.core.Xy
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.*
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.app.MapLayoutController
@@ -28,7 +29,6 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
 import kotlinx.android.synthetic.main.location_details_panel.view.*
 import kotlinx.android.synthetic.main.nav_top_panel.view.*
 
@@ -79,13 +79,12 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
                 setCustomStopButtonVisible(true)
             }
 
-            searchService.onCompleted = onCompleted@{ results, reason, _ ->
+            searchService.onCompleted = onCompleted@{ results, gemError, _ ->
                 hideProgress()
 
                 hideAllButtons()
                 setCustomStartButtonVisible(true)
 
-                val gemError = SdkError.fromInt(reason)
                 if (gemError == SdkError.Cancel) return@onCompleted
 
                 if (gemError != SdkError.NoError) {
@@ -100,7 +99,7 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
                 val value = results[0]
                 val area = SdkCall.execute { value.getContourGeograficArea() } ?: return@onCompleted
 
-                wikiView.onWikiFetchCompleteCallback = { _: Int, _: String ->
+                wikiView.onWikiFetchCompleteCallback = { _, _ ->
                     GEMApplication.postOnMain {
                         hideProgress()
                     }
@@ -179,11 +178,10 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
             GEMApplication.clearMapVisibleRoutes()
         }
 
-        routingService.onCompleted = onCompleted@{ resultsList, reason, _ ->
+        routingService.onCompleted = onCompleted@{ resultsList, gemError, _ ->
             hideProgress()
             setStartButtonVisible(true)
 
-            val gemError = SdkError.fromInt(reason)
             if (gemError != SdkError.NoError) {
                 Toast.makeText(
                     context,
@@ -283,14 +281,13 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
             GEMApplication.clearMapVisibleRoutes()
         }
 
-        routingService.onCompleted = onCompleted@{ resultsList, reason, _ ->
+        routingService.onCompleted = onCompleted@{ resultsList, gemError, _ ->
             hideProgress()
             GEMApplication.setAppBarVisible(false)
             GEMApplication.setSystemBarsVisible(false)
             hideAllButtons()
             setStartButtonVisible(true)
 
-            val gemError = SdkError.fromInt(reason)
             if (gemError != SdkError.NoError) {
                 Toast.makeText(
                     context,

@@ -20,23 +20,22 @@ import com.generalmagic.sdk.content.EContentStoreItemStatus
 import com.generalmagic.sdk.content.EContentType
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.ProgressListener
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.activities.*
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.app.Tutorials
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
 import kotlinx.android.synthetic.main.activity_list_view.*
 
 class StylesActivity : StylesListActivity() {
     private val contentStore = ContentStore()
 
     private val progressListener = object : ProgressListener() {
-        override fun notifyComplete(reason: Int, hint: String) {
+        override fun notifyComplete(reason: SdkError, hint: String) {
             GEMApplication.postOnMain { hideProgress() }
 
-            val gemError = SdkError.fromInt(reason)
-            if (gemError != SdkError.NoError) {
+            if (reason != SdkError.NoError) {
                 // show error
                 return
             }
@@ -136,7 +135,7 @@ class StylesActivity : StylesListActivity() {
                         }
                     }
 
-                    override fun notifyComplete(reason: Int, hint: String) {
+                    override fun notifyComplete(reason: SdkError, hint: String) {
                         taskRefresh()
                         selectStyle()
                     }

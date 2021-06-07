@@ -15,8 +15,8 @@ package com.generalmagic.sdk.examples.demo.activities.searchaddress
 import android.content.Intent
 import android.graphics.Bitmap
 import android.widget.EditText
-import com.generalmagic.apihelper.EnumHelp
 import com.generalmagic.sdk.core.MapDetails
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.app.Tutorials
 import com.generalmagic.sdk.examples.demo.util.Utils
@@ -24,9 +24,10 @@ import com.generalmagic.sdk.places.EAddressDetailLevel
 import com.generalmagic.sdk.places.EAddressField
 import com.generalmagic.sdk.places.GuidedAddressSearchService
 import com.generalmagic.sdk.places.Landmark
+import com.generalmagic.sdk.util.EnumHelp
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilUiTexts.getUIString
 
 object GEMAddressSearchView {
 
@@ -243,7 +244,7 @@ object GEMAddressSearchView {
     }
 
     fun getTitle(): String {
-        return Utils.getUIString(StringIds.eStrAddress)
+        return getUIString(StringIds.eStrAddress)
     }
 
     data class AddressSearchModelItem(
@@ -283,8 +284,7 @@ object GEMAddressSearchView {
 
         if (mDetailLevel != EAddressDetailLevel.NoDetail) {
             SdkCall.execute {
-                service.search(landmark, mFilter, mDetailLevel) { landmarks, reason, _ ->
-                    val gemReason = SdkError.fromInt(reason)
+                service.search(landmark, mFilter, mDetailLevel) { landmarks, gemReason, _ ->
                     val bNoError =
                         gemReason == SdkError.NoError || gemReason == SdkError.ReducedResult
 
@@ -384,19 +384,19 @@ object GEMAddressSearchView {
     fun getHint(field: Int): String {
         when (EnumHelp.fromInt<EAddressField>(field)) {
             EAddressField.State -> {
-                return Utils.getUIString(StringIds.eStrState)
+                return getUIString(StringIds.eStrState)
             }
             EAddressField.City -> {
-                return Utils.getUIString(StringIds.eStrCity)
+                return getUIString(StringIds.eStrCity)
             }
             EAddressField.StreetName -> {
-                return Utils.getUIString(StringIds.eStrStreet)
+                return getUIString(StringIds.eStrStreet)
             }
             EAddressField.StreetNumber -> {
-                return Utils.getUIString(StringIds.eStrNumberAbbv)
+                return getUIString(StringIds.eStrNumberAbbv)
             }
             EAddressField.Crossing1 -> {
-                return Utils.getUIString(StringIds.eStrCrossing)
+                return getUIString(StringIds.eStrCrossing)
             }
             else -> {
                 return String()
@@ -432,7 +432,7 @@ object GEMAddressSearchView {
                 text = text.substring(pos + 1, text.length)
             }
         } else if (detailLevel == EAddressDetailLevel.Crossing && item.anywhere) {
-            text = Utils.getUIString(StringIds.eStrTempAnywhere)
+            text = getUIString(StringIds.eStrTempAnywhere)
         } else {
             text = SdkCall.execute { landmark?.getName() }
         }

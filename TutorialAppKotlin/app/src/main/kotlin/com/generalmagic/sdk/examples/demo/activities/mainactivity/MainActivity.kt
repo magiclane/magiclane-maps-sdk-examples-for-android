@@ -39,7 +39,6 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
@@ -90,11 +89,12 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
             R.id.tutorial_route_custom -> Tutorials.openCustomRouteTutorial(arrayListOf())
             R.id.tutorial_predef_sim -> {
                 val waypoints = ArrayList<Landmark>()
-                SdkCall.execute { Landmark("San Francisco", Coordinates(37.77903, -122.41991)) }?.let {
-                    waypoints.add(
-                        it
-                    )
-                }
+                SdkCall.execute { Landmark("San Francisco", Coordinates(37.77903, -122.41991)) }
+                    ?.let {
+                        waypoints.add(
+                            it
+                        )
+                    }
                 SdkCall.execute { Landmark("San Jose", Coordinates(37.33619, -121.89058)) }?.let {
                     waypoints.add(
                         it
@@ -133,15 +133,6 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val sdkInitCode = SdkCall.execute execute@{
-            return@execute GemSdk.initialize(this, this)
-        }
-
-        if (sdkInitCode != SdkError.NoError.value) {
-            GEMApplication.terminateApp()
-            return
-        }
 
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
@@ -182,9 +173,11 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
 
         TutorialsOpener.setMapTutorialsOpener(mapTutorialsOpener)
 
-        SdkCall.execute {
-            GEMApplication.init(this, gem_surface) {
-                requestPermissions()
+        gem_surface.onSdkInitSucceeded = {
+            SdkCall.execute {
+                GEMApplication.init(this, gem_surface) {
+                    requestPermissions()
+                }
             }
         }
     }
@@ -249,24 +242,10 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
         dialog.show()
     }
 
-    private var firstWave = true
     override fun onRequestPermissionsFinish(granted: Boolean) {
         if (!granted) {
             GEMApplication.terminateApp()
         }
-
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-//            if (firstWave) {
-//                GEMApplication
-//                PermissionsHelper.requestPermissions(
-//                    GEMApplication.REQUEST_PERMISSIONS,
-//                    this, arrayListOf(
-//                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
-//                    ).toTypedArray()
-//                )
-//                firstWave = false
-//            }
-//        }
     }
 
     private fun requestPermissions(): Boolean {

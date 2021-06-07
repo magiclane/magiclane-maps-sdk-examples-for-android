@@ -14,22 +14,21 @@ package com.generalmagic.sdk.examples.demo.util
 
 import com.generalmagic.sdk.core.*
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
-import com.generalmagic.sdk.examples.demo.util.Utils.getDistText
-import com.generalmagic.sdk.examples.demo.util.Utils.getTimeText
-import com.generalmagic.sdk.examples.demo.util.Utils.getUIString
 import com.generalmagic.sdk.places.AddressInfo
 import com.generalmagic.sdk.places.EAddressField
 import com.generalmagic.sdk.places.Landmark
-import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteTrafficEvent
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilUiTexts.getDistText
+import com.generalmagic.sdk.util.UtilUiTexts.getTimeText
+import com.generalmagic.sdk.util.UtilUiTexts.getUIString
 import java.util.*
 
 object UtilUITexts {
     fun formatTrafficDelayAndLength(length: Int, delay: Int, isRoadblock: Boolean): String {
-        val distText = getDistText(length, CommonSettings.getUnitSystem())
+        val distText = getDistText(length, SdkSettings.getUnitSystem())
 
         return if (!isRoadblock) {
             val delayText = getTimeText(delay)
@@ -88,35 +87,8 @@ object UtilUITexts {
         return String.format("%s %s", size, unit)
     }
 
-    fun formatRouteName(route: Route): String {
-        val timeDistance = route.getTimeDistance() ?: return ""
-        val distInMeters = timeDistance.getTotalDistance()
-        val timeInSeconds = timeDistance.getTotalTime()
-
-        val distTextPair = getDistText(
-            distInMeters,
-            CommonSettings.getUnitSystem(),
-            bHighResolution = true
-        )
-
-        val timeTextPair = getTimeText(timeInSeconds)
-
-        return String.format("%%%%0%%%% ${distTextPair.first} ${distTextPair.second} \n%%%%-1%%%% ${timeTextPair.first} ${timeTextPair.second} %%%%1%%%% %%%%2%%%%")
-    }
-
-    const val MILES_TO_KM = 1.6093
-    const val MILES_TO_METERS = 1609.26939169
-    const val KM_TO_MILES = 0.6214
-    const val METERS_TO_MILES = 0.0006214
-    const val FT_TO_METERS = 0.3048
-    const val METERS_TO_FT = 3.2808
-    const val YARDS_TO_METERS = 0.9144
-    const val METERS_TO_YARDS = 1.0936
-    const val MILES_TO_YARDS = 1760
-    const val YARDS_TO_MILES = 0.00056818
-
     fun getFormattedDistanceTime(distanceInMeters: Int, timeInSeconds: Int): String {
-        val dist = getDistText(distanceInMeters, CommonSettings.getUnitSystem(), true)
+        val dist = getDistText(distanceInMeters, SdkSettings.getUnitSystem(), true)
 
         val time = formatTime(timeInSeconds)
 
@@ -414,24 +386,6 @@ object UtilUITexts {
                 Pair(formattedName, formattedDescription)
             }
         } ?: Pair("", "")
-    }
-
-    private const val MPS_TO_KMH = 3.6
-    private const val MPS_TO_MPH = 2.237
-
-    fun getSpeedText(speedInMPS: Double, unitsSystem: EUnitSystem): Pair<String, String> {
-        val nSpeed: Int
-        val speedUnitText: String
-
-        if (unitsSystem == EUnitSystem.Metric) {
-            nSpeed = ((MPS_TO_KMH * speedInMPS) + 0.5).toInt()
-            speedUnitText = getUIString(StringIds.eStrKmH)
-        } else {
-            nSpeed = ((MPS_TO_MPH * speedInMPS) + 0.5).toInt()
-            speedUnitText = getUIString(StringIds.eStrMph)
-        }
-
-        return Pair(String.format("%d", nSpeed), speedUnitText)
     }
 
     fun getTimeTextWithDays(

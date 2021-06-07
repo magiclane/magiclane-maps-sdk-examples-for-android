@@ -1,122 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.NavPanelsController xmlns:android="http://schemas.android.com/apk/res/android"
-	xmlns:app="http://schemas.android.com/apk/res-auto"
-	android:id="@+id/navLayout"
-	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	android:clipChildren="false"
-	android:visibility="gone">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/navLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:visibility="gone">
 
-	<TextView
-		android:id="@+id/statusText"
-		android:layout_width="0dp"
-		android:layout_height="wrap_content"
-		android:layout_marginStart="@dimen/route_status_text_lateral_padding"
-		android:layout_marginTop="@dimen/route_status_text_top_padding"
-		android:layout_marginEnd="@dimen/route_status_text_lateral_padding"
-		android:background="@drawable/rounded_textview_blue"
-		android:ellipsize="end"
-		android:gravity="center_vertical"
-		android:justificationMode="inter_word"
-		android:padding="@dimen/route_status_text_padding"
-		android:textAlignment="gravity"
-		android:textColor="@android:color/white"
-		android:textSize="@dimen/bigTextSize"
-		android:visibility="gone"
-		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toStartOf="parent"
-		app:layout_constraintTop_toTopOf="parent" />
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/route_status_text_lateral_padding"
+        android:layout_marginTop="@dimen/route_status_text_top_padding"
+        android:layout_marginEnd="@dimen/route_status_text_lateral_padding"
+        android:background="@drawable/rounded_textview_blue"
+        android:ellipsize="end"
+        android:gravity="center_vertical"
+        android:justificationMode="inter_word"
+        android:padding="@dimen/route_status_text_padding"
+        android:textAlignment="gravity"
+        android:textColor="@android:color/white"
+        android:textSize="@dimen/bigTextSize"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-	<TextView
-		android:id="@+id/navigationDemoText"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:layout_marginStart="@dimen/route_status_text_lateral_padding"
-		android:layout_marginTop="@dimen/route_status_text_lateral_padding"
-		android:layout_marginEnd="@dimen/route_status_text_lateral_padding"
-		android:background="@drawable/rounded_background_black"
-		android:gravity="center"
-		android:padding="@dimen/nav_demo_text_padding"
-		android:textColor="@android:color/white"
-		android:textSize="@dimen/demoTextSize"
-		android:visibility="gone"
-		android:clickable="true"
-		android:focusable="true"
-		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toStartOf="parent"
-		app:layout_constraintTop_toBottomOf="@id/topPanelController" />
+    <TextView
+        android:id="@+id/navigationDemoText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/route_status_text_lateral_padding"
+        android:layout_marginTop="@dimen/route_status_text_lateral_padding"
+        android:layout_marginEnd="@dimen/route_status_text_lateral_padding"
+        android:background="@drawable/rounded_background_black"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:padding="@dimen/nav_demo_text_padding"
+        android:textColor="@android:color/white"
+        android:textSize="@dimen/demoTextSize"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/topPanelController" />
 
-	<include
-		layout="@layout/nav_top_panel"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		app:layout_constraintStart_toStartOf="parent"
-		app:layout_constraintTop_toTopOf="parent" />
+    <include
+        layout="@layout/nav_top_panel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-	<include
-		android:id="@+id/navigationSpeedPanel"
-		layout="@layout/nav_speed_panel"
-		android:layout_width="wrap_content"
-		android:layout_height="@dimen/nav_speed_panel_height"
-		android:layout_marginTop="@dimen/route_status_text_lateral_padding"
-		android:visibility="gone"
-		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintTop_toBottomOf="@id/navigationDemoText" />
+    <include
+        android:id="@+id/navigationSpeedPanel"
+        layout="@layout/nav_speed_panel"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/nav_speed_panel_height"
+        android:layout_marginTop="@dimen/route_status_text_lateral_padding"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/navigationDemoText" />
 
-	<include
-		android:id="@+id/navigationBottomPanel"
-		layout="@layout/nav_bottom_panel"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:visibility="gone"
-		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintStart_toStartOf="parent" />
+    <include
+        android:id="@+id/navigationBottomPanel"
+        layout="@layout/nav_bottom_panel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
-	<include
-		android:id="@+id/navigationLanePanel"
-		layout="@layout/nav_lane_panel"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:layout_margin="@dimen/listItemPadding"
-		android:visibility="gone"
-		app:layout_constraintBottom_toTopOf="@id/navigationBottomPanel"
-		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toStartOf="parent" />
+    <include
+        android:id="@+id/navigationLanePanel"
+        layout="@layout/nav_lane_panel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/listItemPadding"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/navigationBottomPanel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
-	<androidx.constraintlayout.widget.ConstraintLayout
-		android:id="@+id/navBottomButtons"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:layout_margin="@dimen/mapButtonMargin"
-		android:orientation="horizontal"
-		android:clipChildren="false"
-		android:clipToPadding="false"
-		app:layout_constraintBottom_toTopOf="@id/navigationBottomPanel"
-		app:layout_constraintStart_toStartOf="parent">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/navBottomButtons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/mapButtonMargin"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@id/navigationBottomPanel"
+        app:layout_constraintStart_toStartOf="parent">
 
-		<com.google.android.material.floatingactionbutton.FloatingActionButton
-			android:id="@+id/navBottomLeftButton"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:src="@android:drawable/ic_media_play"
-			android:tag="start"
-			android:tint="@color/colorWhiteFull"
-			android:visibility="invisible"
-			app:backgroundTint="@color/colorGreenFull"
-			app:layout_constraintStart_toStartOf="parent"
-			app:layout_constraintTop_toTopOf="parent" />
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/navBottomLeftButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_media_play"
+            android:tag="start"
+            android:tint="@color/colorWhiteFull"
+            android:visibility="invisible"
+            app:backgroundTint="@color/colorGreenFull"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-		<com.google.android.material.floatingactionbutton.FloatingActionButton
-			android:id="@+id/navBottomRightButton"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:tag="start"
-			android:tint="@color/colorWhiteFull"
-			android:visibility="invisible"
-			app:backgroundTint="@color/colorGreenFull"
-			app:layout_constraintEnd_toEndOf="parent"
-			app:layout_constraintTop_toTopOf="parent" />
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/navBottomRightButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:tag="start"
+            android:tint="@color/colorWhiteFull"
+            android:visibility="invisible"
+            app:backgroundTint="@color/colorGreenFull"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-	</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.NavPanelsController>

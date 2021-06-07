@@ -4,7 +4,7 @@ Copyright (C) 2019-2021, General Magic B.V.
 All rights reserved.  
 Contact: info@generalmagic.com
 
-This repository holds a series of example projects using the **GeneralMagic - Maps SDK for Android**. More information about the API can be found on the [Documentation](https://www.generalmagic.com/documentation) page.
+This repository holds a series of example projects using the **GeneralMagic - Maps SDK for Android**. More information about the API can be found on the [Documentation](https://developer.generalmagic.com/documentation) page.
 
 This set of individual, use-case based projects is designed to be cloned by developers for their own use.
 
@@ -33,7 +33,7 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [What's Nearby Category](WhatsNearbyCategory) - Searches all landmarks of a specific category near current position; display a list of found landmarks
 * [Tutorial Demo App](TutorialAppKotlin) - Presents how you can perform a search, download a map, change the map style, make a route from point A to point B and more
 
-**Note:** As the very first step, we highly recommend that you get a token from [General Magic Portal](https://www.generalmagic.com/api). If no token is set, you can still test your apps, but a watermark will be displayed, and all the online services including mapping, searching, routing, etc. will slow down after a few minutes.
+**Note:** As the very first step, we highly recommend that you get a token from [General Magic Portal](https://developer.generalmagic.com/api). If no token is set, you can still test your apps, but a watermark will be displayed, and all the online services including mapping, searching, routing, etc. will slow down after a few minutes.
 
 ## License
 

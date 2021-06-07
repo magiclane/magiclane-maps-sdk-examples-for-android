@@ -12,14 +12,11 @@
 
 package com.generalmagic.sdk.examples.demo.util
 
-import android.content.ContentValues
 import android.content.Context
-import android.content.Intent
 import android.graphics.*
 import android.graphics.Rect
 import android.graphics.drawable.*
 import android.os.Build
-import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.util.TypedValue
 import android.view.View
@@ -29,18 +26,18 @@ import com.generalmagic.sdk.content.ContentStore
 import com.generalmagic.sdk.content.EContentStoreItemStatus
 import com.generalmagic.sdk.content.EContentType
 import com.generalmagic.sdk.core.*
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.OverlayItem
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.util.*
+import com.generalmagic.sdk.util.Util.moveFile
+import com.generalmagic.sdk.util.UtilToBitmap.imageToBitmap
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.IntBuffer
-import java.nio.channels.FileChannel
 import java.util.*
 
 object Util {
@@ -58,31 +55,6 @@ object Util {
         val internalDir = GEMApplication.getInternalRecordsPath()
 
         return filepath.startsWith(internalDir)
-    }
-
-    fun exportVideo(context: Context, videoFile: File?, outDir: File?): File? {
-        if (outDir == null) return null
-        if (videoFile == null) return null
-
-        val newFile = moveFile(videoFile, outDir)
-        if (newFile != null) {
-            val cr = context.contentResolver
-
-            val values = ContentValues()
-            values.put(MediaStore.Video.Media.TITLE, videoFile.name)
-            values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
-
-            @Suppress("DEPRECATION")
-            values.put(MediaStore.Video.Media.DATA, newFile.absolutePath)
-
-            val uri = cr.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
-
-            @Suppress("DEPRECATION")
-            context.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri))
-            return newFile
-        }
-
-        return null
     }
 
     fun Double.round(decimals: Int = 2): Double {
@@ -146,7 +118,7 @@ object Util {
         img ?: return Pair(0, null)
 
         return SdkCall.execute {
-            val resultPair = com.generalmagic.sdk.util.Util.imageToBitmap(img, width, height)
+            val resultPair = imageToBitmap(img, width, height)
             val bmp = createBitmap(resultPair?.second, resultPair?.first ?: 0, height)
 
             return@execute Pair(resultPair?.first ?: 0, bmp)
@@ -165,7 +137,7 @@ object Util {
 
         return SdkCall.execute {
             val resultPair =
-                com.generalmagic.sdk.util.Util.imageToBitmap(
+                imageToBitmap(
                     img,
                     width,
                     height,
@@ -183,7 +155,7 @@ object Util {
         img ?: return Pair(0, null)
 
         return SdkCall.execute {
-            val resultPair = com.generalmagic.sdk.util.Util.imageToBitmap(img, width, height)
+            val resultPair = imageToBitmap(img, width, height)
             val bmp = createBitmap(resultPair?.second, resultPair?.first ?: 0, height)
 
             return@execute Pair(resultPair?.first ?: 0, bmp)
@@ -202,7 +174,7 @@ object Util {
         img ?: return null
 
         return SdkCall.execute {
-            val byteArray = com.generalmagic.sdk.util.Util.imageToBitmap(
+            val byteArray = imageToBitmap(
                 img,
                 width,
                 height,
@@ -218,7 +190,7 @@ object Util {
     fun createBitmap(img: Image?, width: Int, height: Int): Bitmap? {
         img ?: return null
         return SdkCall.execute {
-            val byteArray = com.generalmagic.sdk.util.Util.imageToBitmap(img, width, height)
+            val byteArray = imageToBitmap(img, width, height)
             return@execute createBitmap(byteArray, width, height)
         }
     }
@@ -271,57 +243,11 @@ object Util {
         }
     }
 
-    const val BIG_TRAFFIC_DELAY_IN_MINUTES = 10
-    const val ROAD_BLOCK_DELAY = 3600 // one hour
-
-    fun getTrafficEventsDelay(route: Route, bCheckUserRoadblocks: Boolean = false): Int {
-        val list = route.getTrafficEvents() ?: return 0
-
-        var trafficEventsDelay = 0
-
-        var roadBlockConsidered = false
-
-        for (index in 0 until list.size) {
-            val event = list[index]
-            if (bCheckUserRoadblocks || !event.isUserRoadblock()) {
-                val isRoadblock = event.isRoadblock()
-                if (isRoadblock) {
-                    if (roadBlockConsidered) {
-                        trafficEventsDelay += ROAD_BLOCK_DELAY
-                        roadBlockConsidered = true
-                    }
-                } else {
-                    trafficEventsDelay += event.getDelay()
-                }
-            }
-        }
-
-        return trafficEventsDelay
-    }
-
-    fun getTrafficIconId(route: Route): Int {
-        val trafficDelayInMinutes = getTrafficEventsDelay(route)
-
-        return when {
-            trafficDelayInMinutes == 0 -> SdkIcons.Layout.NavigationLayout_GreenBall.value
-            trafficDelayInMinutes < BIG_TRAFFIC_DELAY_IN_MINUTES -> SdkIcons.Layout.NavigationLayout_YellowBall.value
-            else -> return SdkIcons.Layout.NavigationLayout_RedBall.value
-        }
-    }
-
     fun getPhonePath(context: Context?): String =
         com.generalmagic.sdk.util.Util.getPhonePath(context)
 
     fun getSdCardPath(context: Context?): String =
         com.generalmagic.sdk.util.Util.getSdCardPath(context)
-
-    fun getFerryIconId(): Int {
-        return SdkIcons.RoutePreviewBubble.Icon_Ferry.value
-    }
-
-    fun getTollIconId(): Int {
-        return SdkIcons.RoutePreviewBubble.Icon_Toll.value
-    }
 
     fun getContentStoreStatusIconId(status: EContentStoreItemStatus): Int {
         return when (status) {
@@ -396,34 +322,6 @@ object Util {
         return fAspectRatio
     }
 
-    fun levenshtein(lhs: CharSequence, rhs: CharSequence): Int {
-        val lhsLength = lhs.length
-        val rhsLength = rhs.length
-
-        var cost = IntArray(lhsLength + 1) { it }
-        var newCost = IntArray(lhsLength + 1) { 0 }
-
-        for (i in 1..rhsLength) {
-            newCost[0] = i
-
-            for (j in 1..lhsLength) {
-                val editCost = if (lhs[j - 1] == rhs[i - 1]) 0 else 1
-
-                val costReplace = cost[j - 1] + editCost
-                val costInsert = cost[j] + 1
-                val costDelete = newCost[j - 1] + 1
-
-                newCost[j] = minOf(costInsert, costDelete, costReplace)
-            }
-
-            val swap = cost
-            cost = newCost
-            newCost = swap
-        }
-
-        return cost[lhsLength]
-    }
-
     fun moveFileToDir(filePath: String, dirPath: String): SdkError {
         val from = File(filePath)
         if (!from.exists()) {
@@ -452,31 +350,11 @@ object Util {
         return SdkError.NoError
     }
 
-    fun moveFile(file: File, dir: File): File? {
-        val newFile = File(dir, file.name)
-        var outputChannel: FileChannel? = null
-        var inputChannel: FileChannel? = null
-
-        val result: File?
-        try {
-            outputChannel = FileOutputStream(newFile).channel
-            inputChannel = FileInputStream(file).channel
-            inputChannel.transferTo(0, inputChannel.size(), outputChannel)
-            inputChannel.close()
-            file.delete()
-            result = newFile
-        } finally {
-            inputChannel?.close()
-            outputChannel?.close()
-        }
-        return result
-    }
-
     fun downloadSecondStyle() {
         // download another style
         SdkCall.execute {
             val listener = object : ProgressListener() {
-                override fun notifyComplete(reason: Int, hint: String) {
+                override fun notifyComplete(reason: SdkError, hint: String) {
                     // select the downloaded style
                     val result =
                         ContentStore().getStoreContentList(EContentType.ViewStyleHighRes.value)
@@ -485,7 +363,7 @@ object Util {
                     val contentStoreStyles = result.first
                     if (contentStoreStyles.isNotEmpty() && contentStoreStyles.size > 1) {
                         val styleListener = object : ProgressListener() {
-                            override fun notifyComplete(reason: Int, hint: String) {}
+                            override fun notifyComplete(reason: SdkError, hint: String) {}
                         }
 
                         for (style in contentStoreStyles) {

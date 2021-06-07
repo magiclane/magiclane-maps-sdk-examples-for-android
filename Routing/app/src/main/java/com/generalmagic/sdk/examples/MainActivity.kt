@@ -10,31 +10,109 @@
 
 package com.generalmagic.sdk.examples
 
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.generalmagic.sdk.examples.util.SdkInitHelper
-import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
-import com.generalmagic.sdk.examples.util.Util
+import com.generalmagic.sdk.core.GemSdk
+import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
+import com.generalmagic.sdk.util.SdkUtil
 import com.generalmagic.sdk.util.Util.postOnMain
+import kotlin.system.exitProcess
 
-////////////////////////////////////////////////////////////////////////////////////////////////
 
 class MainActivity : AppCompatActivity() {
     private var mainRoute: Route? = null
     private lateinit var progressBar: ProgressBar
 
-    private val routingService = RoutingService()
+    private val routingService = RoutingService(
+        onStarted = {
+            progressBar.visibility = View.VISIBLE
+        },
+
+        onCompleted = { routes, reason, _ ->
+            progressBar.visibility = View.GONE
+
+            when (reason) {
+                SdkError.NoError -> {
+                    // No error encountered, we can handle the results.
+                    SdkCall.execute {
+                        // Get the main route from the ones that were found.
+                        mainRoute = if (routes.size > 0) routes[0] else null
+
+                        // Get formatted name of the main route.
+                        val routeName = mainRoute?.let { formatRouteName(it) } ?: ""
+                        postOnMain { displayRouteInfo(routeName) }
+                    }
+                }
+
+                SdkError.Cancel -> {
+                    // The routing action was cancelled.
+                }
+
+                else -> {
+                    // There was a problem at computing the routing operation.
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Routing service error: ${reason.name}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    )
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        progressBar = findViewById(R.id.progressBar)
+
+        SdkSettings.onMapDataReady = {
+            // Defines an action that should be done after the world map is updated.
+            calculateRoute()
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            /* 
+            The TOKEN you provided in the AndroidManifest.xml file was rejected.
+            Make sure you provide the correct value, or if you don't have a TOKEN,
+            check the generalmagic.com website, sign up/ sing in and generate one. 
+             */
+            Toast.makeText(this, "TOKEN REJECTED", Toast.LENGTH_LONG).show()
+        }
+
+        if (!GemSdk.initSdkWithDefaults(this)) {
+            // The SDK initialization was not completed.
+            finish()
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Release the SDK.
+        GemSdk.release()
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    override fun onBackPressed() {
+        finish()
+        exitProcess(0)
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -44,9 +122,7 @@ class MainActivity : AppCompatActivity() {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private fun calculateRoute() {
-        if (!SdkInitHelper.isMapReady) return
-
+    private fun calculateRoute() = SdkCall.execute {
         val wayPoints = arrayListOf(
             Landmark("Frankfurt am Main", Coordinates(50.11428, 8.68133)),
             Landmark("Karlsruhe", Coordinates(49.0069, 8.4037)),
@@ -58,99 +134,29 @@ class MainActivity : AppCompatActivity() {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+    private fun formatRouteName(route: Route): String {
+        val timeDistance = route.getTimeDistance() ?: return ""
+        val distInMeters = timeDistance.getTotalDistance()
+        val timeInSeconds = timeDistance.getTotalTime()
 
-        progressBar = findViewById(R.id.progressBar)
+        val distTextPair = SdkUtil.getDistText(
+            distInMeters,
+            SdkSettings.getUnitSystem(),
+            bHighResolution = true
+        )
 
-        /// GENERAL MAGIC
-        routingService.onStarted = {
-            progressBar.visibility = View.VISIBLE
+        val timeTextPair = SdkUtil.getTimeText(timeInSeconds)
 
-        }
-
-        routingService.onCompleted = onCompleted@{ routes, reason, _ ->
-            progressBar.visibility = View.GONE
-
-            when (val gemError = SdkError.fromInt(reason)) {
-                SdkError.NoError -> {
-                    // No error encountered, we can handle the results.
-                    SdkCall.execute {
-                        // Get the main route from the ones that were found.
-                        mainRoute = if (routes.size > 0) {
-                            routes[0]
-                        } else {
-                            null
-                        }
-
-                        // Get formatted name of the main route.
-                        val routeName = mainRoute?.let { Util.formatRouteName(it) } ?: ""
-                        postOnMain { displayRouteInfo(routeName) }
-                    }
-                }
-
-                SdkError.Cancel -> {
-                    // The routing action was cancelled.
-                    return@onCompleted
-                }
-
-                else -> {
-                    // There was a problem at computing the routing operation.
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Routing service error: ${gemError.name}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+        var wayPointsText = ""
+        route.getWaypoints()?.let { wayPoints ->
+            for (point in wayPoints) {
+                wayPointsText += (point.getName() + "\n")
             }
         }
 
-        val calcDefaultRoute = calcDefaultRoute@{
-            if (!SdkInitHelper.isMapReady) return@calcDefaultRoute
-
-            // Defines an action that should be done when the world map is ready. (Updated/ loaded)
-            SdkCall.execute { calculateRoute() }
-        }
-
-        SdkInitHelper.onMapReady = {
-            // Defines an action that should be done after the world map is updated.
-            calcDefaultRoute()
-        }
-
-        SdkInitHelper.onNetworkConnected = {
-            // Defines an action that should be done after the network is connected.
-            calcDefaultRoute()
-        }
-
-        SdkInitHelper.onCancel = {
-            // Defines what should be executed when the SDK initialization is cancelled.
-            SdkCall.execute { routingService.cancelRoute() }
-        }
-
-        val app = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
-        val token = app.metaData.getString("com.generalmagic.sdk.token") ?: "YOUR_TOKEN"
-
-        if (!SdkInitHelper.init(this, token)) {
-            // The SDK initialization was not completed.
-            finish()
-        }
+        return String.format(
+            "$wayPointsText \n\n ${distTextPair.first} ${distTextPair.second} \n " +
+                "${timeTextPair.first} ${timeTextPair.second}"
+        )
     }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        // Deinitialize the SDK.
-        SdkInitHelper.deinit()
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    override fun onBackPressed() {
-        terminateApp(this)
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
 }

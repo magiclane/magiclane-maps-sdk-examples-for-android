@@ -13,17 +13,19 @@
 package com.generalmagic.sdk.examples.demo.activities.publictransport
 
 import android.graphics.Bitmap
-import com.generalmagic.sdk.core.CommonSettings
 import com.generalmagic.sdk.core.RectangleGeographicArea
 import com.generalmagic.sdk.core.Rgba
+import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.Time
 import com.generalmagic.sdk.examples.demo.activities.RouteInstructionItem
 import com.generalmagic.sdk.examples.demo.util.Utils
-import com.generalmagic.sdk.examples.demo.util.Utils.getDistText
 import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilUiTexts.getDistText
+import com.generalmagic.sdk.util.UtilUiTexts.getTimeText
+import com.generalmagic.sdk.util.UtilUiTexts.getUIString
 
 class TRouteDescriptionItem {
     var mDepartureTime = ""
@@ -137,21 +139,21 @@ class Helper {
 
                     if (!bUse24HourNotation) {
                         if ((departureTimeHour >= 12) && (departureTimeHour < 24)) {
-                            departureTimeUnit = Utils.getUIString(StringIds.eStrPm)
+                            departureTimeUnit = getUIString(StringIds.eStrPm)
                             if (departureTimeHour > 12) {
                                 departureTimeHour -= 12
                             }
                         } else {
-                            departureTimeUnit = Utils.getUIString(StringIds.eStrAm)
+                            departureTimeUnit = getUIString(StringIds.eStrAm)
                         }
 
                         if ((arrivalTimeHour >= 12) && (arrivalTimeHour < 24)) {
-                            arrivalTimeUnit = Utils.getUIString(StringIds.eStrPm)
+                            arrivalTimeUnit = getUIString(StringIds.eStrPm)
                             if (arrivalTimeHour > 12) {
                                 arrivalTimeHour -= 12
                             }
                         } else {
-                            arrivalTimeUnit = Utils.getUIString(StringIds.eStrAm)
+                            arrivalTimeUnit = getUIString(StringIds.eStrAm)
                         }
                     }
 
@@ -189,7 +191,7 @@ class Helper {
 
                     if (to.isNotEmpty()) {
                         routeDescriptionItem.mToBLineName = String.format(
-                            Utils.getUIString(StringIds.eStrTowardsXLocation),
+                            getUIString(StringIds.eStrTowardsXLocation),
                             to
                         )
                     }
@@ -198,7 +200,7 @@ class Helper {
 
                     val nTravelTime = (arrivalTime.asInt() - departureTime.asInt()) / 1000
 
-                    var timeText = Utils.getTimeText(nTravelTime.toInt())
+                    var timeText = getTimeText(nTravelTime.toInt())
                     routeDescriptionItem.mTimeToNextStation = String.format(
                         "%s %s",
                         timeText.first,
@@ -212,13 +214,13 @@ class Helper {
                         var tmp: String
                         if (instructionsCount == 2) {
                             tmp = String.format(
-                                Utils.getUIString(StringIds.eStrNoOfStopsAndTime),
+                                getUIString(StringIds.eStrNoOfStopsAndTime),
                                 instructionsCount - 1,
                                 routeDescriptionItem.mTimeToNextStation
                             )
                         } else {
                             tmp = String.format(
-                                Utils.getUIString(StringIds.eStrNoOfStopsAndTime),
+                                getUIString(StringIds.eStrNoOfStopsAndTime),
                                 instructionsCount - 1,
                                 routeDescriptionItem.mTimeToNextStation
                             )
@@ -244,7 +246,7 @@ class Helper {
                             instructionList[0].toPTRouteInstruction()?.getPlatformCode() ?: ""
                         if (startPlatformCode.isNotEmpty()) {
                             routeDescriptionItem.mStationPlatform = String.format(
-                                Utils.getUIString(StringIds.eStrPlatformNo),
+                                getUIString(StringIds.eStrPlatformNo),
                                 startPlatformCode
                             )
                             routeDescriptionItem.mStartStationPlatformCode = startPlatformCode
@@ -267,19 +269,19 @@ class Helper {
 
                     if (departureDelayInSeconds != 0) {
                         if (departureDelayInSeconds < 0) {
-                            timeText = Utils.getTimeText(-departureDelayInSeconds)
+                            timeText = getTimeText(-departureDelayInSeconds)
                             val tmp = String.format("%s %s", timeText.first, timeText.second)
 
                             routeDescriptionItem.mStationEarlyTime = String.format(
-                                Utils.getUIString(StringIds.eStrXTimeEarly),
+                                getUIString(StringIds.eStrXTimeEarly),
                                 tmp
                             )
                         } else {
-                            timeText = Utils.getTimeText(departureDelayInSeconds)
+                            timeText = getTimeText(departureDelayInSeconds)
                             val tmp = String.format("%s %s", timeText.first, timeText.second)
 
                             routeDescriptionItem.mStationLaterTime = String.format(
-                                Utils.getUIString(StringIds.eStrXTimeLate),
+                                getUIString(StringIds.eStrXTimeLate),
                                 tmp
                             )
                         }
@@ -287,7 +289,7 @@ class Helper {
                             ?.getRealtimeStatus() == ERealtimeStatus.OnTime
                     ) {
                         routeDescriptionItem.mStationEarlyTime =
-                            Utils.getUIString(StringIds.eStrOnTime)
+                            getUIString(StringIds.eStrOnTime)
                     }
 
                     if (instructionsCount >= 2) {
@@ -317,24 +319,24 @@ class Helper {
                         if (bWheelChairSupportRequested && bBicycleSupportRequested) {
                             if (bRouteSegmentHasWheelchairSupport && bRouteSegmentHasBicycleSupport) {
                                 routeDescriptionItem.mSupportLineInfo =
-                                    Utils.getUIString(StringIds.eStrBicycleAndWheelchairSupport)
+                                    getUIString(StringIds.eStrBicycleAndWheelchairSupport)
                             } else if (bRouteSegmentHasWheelchairSupport) {
                                 routeDescriptionItem.mSupportLineInfo =
-                                    Utils.getUIString(StringIds.eStrWheelchairSupport)
+                                    getUIString(StringIds.eStrWheelchairSupport)
                             } else if (bRouteSegmentHasBicycleSupport) {
                                 routeDescriptionItem.mSupportLineInfo =
-                                    Utils.getUIString(StringIds.eStrBicycleSupport)
+                                    getUIString(StringIds.eStrBicycleSupport)
                             }
                         } else if (bWheelChairSupportRequested) {
                             if (bRouteSegmentHasWheelchairSupport) {
                                 routeDescriptionItem.mSupportLineInfo =
-                                    Utils.getUIString(StringIds.eStrWheelchairSupport)
+                                    getUIString(StringIds.eStrWheelchairSupport)
                             }
                         } else // if (bBicycleSupportRequested)
                         {
                             if (bRouteSegmentHasBicycleSupport) {
                                 routeDescriptionItem.mSupportLineInfo =
-                                    Utils.getUIString(StringIds.eStrBicycleSupport)
+                                    getUIString(StringIds.eStrBicycleSupport)
                             }
                         }
                     }
@@ -350,14 +352,14 @@ class Helper {
 
                     if (routeSegment.toPTRouteSegment()?.getStayOnSameTransit() == true) {
                         routeDescriptionItem.mStayOnSameVehicle =
-                            Utils.getUIString(StringIds.eStrContinueOnSameVehicle)
+                            getUIString(StringIds.eStrContinueOnSameVehicle)
                     }
                 } else {
                     routeDescriptionItem.mAtoBLineName = "Walk"
                     routeDescriptionItem.mIsWalk = true
 
                     if (nSegmentsCount > 1) {
-                        val timeText = Utils.getTimeText(
+                        val timeText = getTimeText(
                             routeSegment.getTimeDistance()?.getTotalTime() ?: 0
                         )
                         routeDescriptionItem.mTimeToNextStation =
@@ -368,7 +370,7 @@ class Helper {
 
                     val distanceText = getDistText(
                         routeSegment.getTimeDistance()?.getTotalDistance() ?: 0,
-                        CommonSettings.getUnitSystem(),
+                        SdkSettings.getUnitSystem(),
                         true
                     )
 
@@ -421,13 +423,13 @@ class Helper {
                     if (!prevItem.mIsWalk && !nextItem.mIsWalk && nextItem.mStartStationPlatformCode.isNotEmpty()) {
                         if (prevItem.mEndStationPlatformCode.isNotEmpty()) {
                             item.mStationPlatform = String.format(
-                                Utils.getUIString(StringIds.eStrChangeFromPlatformNoToPlatformNo),
+                                getUIString(StringIds.eStrChangeFromPlatformNoToPlatformNo),
                                 prevItem.mEndStationPlatformCode,
                                 nextItem.mStartStationPlatformCode
                             )
                         } else {
                             item.mStationPlatform = String.format(
-                                Utils.getUIString(StringIds.eStrChangeToPlatformNo),
+                                getUIString(StringIds.eStrChangeToPlatformNo),
                                 nextItem.mStartStationPlatformCode
                             )
                         }

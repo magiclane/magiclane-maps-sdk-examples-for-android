@@ -17,6 +17,7 @@ import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteBookmarks
 import com.generalmagic.sdk.routesandnavigation.RoutePreferences
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilUiTexts.getUIString
 import java.util.*
 import kotlin.math.abs
 
@@ -276,14 +277,14 @@ class TripsHistory {
             if (isFromAToB) {
                 defaultName = if (tripWptsCount > 2) {
                     String.format(
-                        Utils.getUIString(StringIds.eStrFromAToBViaC),
+                        getUIString(StringIds.eStrFromAToBViaC),
                         departureName,
                         destinationName,
                         intermediateWptsName
                     )
                 } else {
                     String.format(
-                        Utils.getUIString(StringIds.eStrFromAtoB),
+                        getUIString(StringIds.eStrFromAtoB),
                         departureName,
                         destinationName
                     )
@@ -291,21 +292,21 @@ class TripsHistory {
             } else {
                 defaultName = if (tripWptsCount > 1) {
                     if (isToCurrentLocation) {
-                        destinationName = Utils.getUIString(StringIds.eStrMyPosition)
+                        destinationName = getUIString(StringIds.eStrMyPosition)
                     }
 
                     String.format(
-                        Utils.getUIString(StringIds.eStrToBViaC),
+                        getUIString(StringIds.eStrToBViaC),
                         destinationName,
                         intermediateWptsName
                     )
                 } else {
                     if (isToCurrentLocation) {
-                        destinationName = Utils.getUIString(StringIds.eStrMyPosition)
+                        destinationName = getUIString(StringIds.eStrMyPosition)
                     }
 
                     String.format(
-                        Utils.getUIString(StringIds.eStrToB),
+                        getUIString(StringIds.eStrToB),
                         destinationName
                     )
                 }

@@ -8,16 +8,16 @@
     <color name="list_view_bgnd_color">#FFFFFF</color>
     <color name="map_styles_list_view_bgnd_color">#ACAAAA</color>
     <color name="map_styles_list_item_bgnd_color">#D1CC9D</color>
-	<color name="button_green_bgnd_color">#3DC11C</color>
-	<color name="button_red_bgnd_color">#F42E2E</color>
-	<color name="day_map_buttons_color">#FF444444</color>
-	<color name="blue_color_new_design">#0678f4</color>
+    <color name="button_green_bgnd_color">#3DC11C</color>
+    <color name="button_red_bgnd_color">#F42E2E</color>
+    <color name="day_map_buttons_color">#FF444444</color>
+    <color name="blue_color_new_design">#0678f4</color>
 
-	<color name="maps_view_bgnd_color">#DCDCDC</color>
+    <color name="maps_view_bgnd_color">#DCDCDC</color>
     <color name="status_bar_transparent_color">#00000000</color>
-	<color name="colorBlackFull">#000000</color>
-	<color name="colorLightBlue">#3399FF</color>
-	<color name="colorWhiteFull">#FFFFFF</color>
-	<color name="colorGreenFull">#00FF00</color>
-	<color name="colorRedFull">#FF0000</color>
+    <color name="colorBlackFull">#000000</color>
+    <color name="colorLightBlue">#3399FF</color>
+    <color name="colorWhiteFull">#FFFFFF</color>
+    <color name="colorGreenFull">#00FF00</color>
+    <color name="colorRedFull">#FF0000</color>
 </resources>

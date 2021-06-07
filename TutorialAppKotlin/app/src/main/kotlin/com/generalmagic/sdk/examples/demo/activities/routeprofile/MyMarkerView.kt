@@ -19,7 +19,7 @@ import kotlin.math.roundToInt
 class MyMarkerView(
     context: Context, layoutResource: Int, private val elevationProfile: ElevationProfile
 ) : MarkerView(context, layoutResource) {
-    
+
     private val markerText: TextView? = findViewById(R.id.marker_text)
     private val markerImage: ImageView? = findViewById(R.id.marker_image)
     private val iconSize =

@@ -10,56 +10,35 @@
 
 package com.generalmagic.sdk.examples
 
-import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.generalmagic.sdk.examples.util.SdkInitHelper
-import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
+import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.Image
-import com.generalmagic.sdk.core.RectF
-import com.generalmagic.sdk.core.Xy
-import com.generalmagic.sdk.d3scene.*
+import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.d3scene.Animation
+import com.generalmagic.sdk.d3scene.EAnimation
+import com.generalmagic.sdk.d3scene.EMarkerType
+import com.generalmagic.sdk.d3scene.Marker
+import com.generalmagic.sdk.d3scene.MarkerCollection
+import com.generalmagic.sdk.d3scene.MarkerCollectionDisplaySettings
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.util.SdkCall
+import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
-    private var mainMapView: MapView? = null
+    private lateinit var gemSurfaceView: GemSurfaceView
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        gemSurfaceView = findViewById(R.id.gem_surface)
 
-        /// GENERAL MAGIC
-        val mapSurface = findViewById<GemSurfaceView>(R.id.gem_surface)
-        mapSurface.onScreenCreated = { screen ->
-            // Defines an action that should be done after the screen is created.
-            SdkCall.execute {
-                /* 
-                Define a rectangle in which the map view will expand.
-                Predefined value of the offsets is 0.
-                Value 1 means the offset will take 100% of available space.
-                 */
-                val mainViewRect = RectF(0.0f, 0.0f, 1.0f, 1.0f)
-                // Produce a map view and establish that it is the main map view.
-                val mapView = MapView.produce(screen, mainViewRect)
-                mainMapView = mapView
-            }
-        }
-
-        SdkInitHelper.onNetworkConnected = {
-            // Defines an action that should be done after the network is connected.
+        SdkSettings.onMapDataReady = {
+            // Defines an action that should be done when the map is ready.
             flyToPolyline()
-        }
-        
-        val app = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
-        val token = app.metaData.getString("com.generalmagic.sdk.token") ?: "YOUR_TOKEN"
-
-        if (!SdkInitHelper.init(this, token)) {
-            // The SDK initialization was not completed.
-            finish()
         }
     }
 
@@ -69,52 +48,49 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
 
         // Deinitialize the SDK.
-        SdkInitHelper.deinit()
+        GemSdk.release()
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     override fun onBackPressed() {
-        terminateApp(this)
+        finish()
+        exitProcess(0)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private fun flyToPolyline() {
-        SdkCall.execute {
+    private fun flyToPolyline() = SdkCall.execute {
+        gemSurfaceView.getDefaultMapView()?.let { mapView ->
             /* 
-            Make a VectorDataSource and a VectorItem that will be stored in it.
-            You can create multiple vector items that can be added in the same data source.
+            Make a MarkerCollection and a Marker item that will be stored in the collection.
+            You can create multiple Marker items that can be added in the same collection.
              */
             val markerCollection =
                 MarkerCollection(EMarkerType.Polyline.value, "My marker collection")
-            val marker = Marker()
 
-            // Add the necessary coordinates to the vector item.
-            marker.add(Coordinates(52.360234, 4.886782))
-            marker.add(Coordinates(52.360495, 4.886266))
-            marker.add(Coordinates(52.360854, 4.885539))
-            marker.add(Coordinates(52.361184, 4.884849))
-            marker.add(Coordinates(52.361439, 4.884344))
-            marker.add(Coordinates(52.361593, 4.883986))
+            // Define a market item and add the necessary coordinates to it.
+            val marker = Marker().apply {
+                add(Coordinates(52.360234, 4.886782))
+                add(Coordinates(52.360495, 4.886266))
+                add(Coordinates(52.360854, 4.885539))
+                add(Coordinates(52.361184, 4.884849))
+                add(Coordinates(52.361439, 4.884344))
+                add(Coordinates(52.361593, 4.883986))
+            }
 
-            // Add the vector item to the vector data source.
+            // Add the marker item to the collection.
             markerCollection.add(marker)
 
-            // Make a list of settings that will decide how each data source will be displayed on the map.
-            val settings = MarkerCollectionDisplaySettings()
-            settings.setImage(Image())
+            // Make a list of settings that will decide how each marker collection will be displayed on the map.
+            val settings = MarkerCollectionDisplaySettings().apply { setImage(Image()) }
 
-            // Add the vector data source to the desired map view so it can be displayed.
-            mainMapView?.preferences()?.markers()?.add(markerCollection, settings)
+            // Add the collection to the desired map view so it can be displayed.
+            mapView.preferences()?.markers()?.add(markerCollection, settings)
 
-            val area = markerCollection.getArea()
-            if (area != null) {
-                val animation = Animation()
-                animation.setType(EAnimation.AnimationLinear)
-
-                // Center the map on a specific area using the provided animation.
-                mainMapView?.centerOnArea(area, -1, Xy(), animation)
+            markerCollection.getArea()?.let { area ->
+                // Center the map on this marker collection's area using the provided animation.
+                mapView.centerOnArea(area, animation = Animation(EAnimation.AnimationLinear))
             }
         }
     }

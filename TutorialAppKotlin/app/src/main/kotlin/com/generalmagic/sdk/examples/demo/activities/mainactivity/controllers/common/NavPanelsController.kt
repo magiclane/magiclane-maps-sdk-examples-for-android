@@ -24,21 +24,24 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.view.marginStart
 import com.generalmagic.sdk.*
-import com.generalmagic.sdk.core.CommonSettings
 import com.generalmagic.sdk.core.Rgba
+import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.Time
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.Util
 import com.generalmagic.sdk.examples.demo.util.Util.setPanelBackground
 import com.generalmagic.sdk.examples.demo.util.UtilUITexts
-import com.generalmagic.sdk.examples.demo.util.Utils.getDistText
 import com.generalmagic.sdk.routesandnavigation.AlarmService
 import com.generalmagic.sdk.routesandnavigation.NavigationInstruction
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.sensordatasource.PositionData
+import com.generalmagic.sdk.util.ConstVals.BIG_TRAFFIC_DELAY_IN_MINUTES
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
+import com.generalmagic.sdk.util.SdkUtil
+import com.generalmagic.sdk.util.UtilUiTexts.getDistText
+import com.generalmagic.sdk.util.UtilUiTexts.getSpeedText
 import kotlinx.android.synthetic.main.nav_bottom_panel.view.*
 import kotlinx.android.synthetic.main.nav_lane_panel.view.*
 import kotlinx.android.synthetic.main.nav_layout.view.*
@@ -589,17 +592,17 @@ class UINavDataProvider {
         val speed = value.getSpeed()
         info.isOverspeeding = (speedLimit > 0.0) && (speed > speedLimit)
 
-        val speedTextPair = UtilUITexts.getSpeedText(
-            speed, CommonSettings.getUnitSystem()
+        val speedTextPair = getSpeedText(
+            speed, SdkSettings.getUnitSystem()
         )
 
         info.currentSpeed = speedTextPair.first
         info.currentSpeedUnit = speedTextPair.second
 
         if (speedLimit > 0.0) {
-            info.currentSpeedLimit = UtilUITexts.getSpeedText(
+            info.currentSpeedLimit = getSpeedText(
                 speedLimit,
-                CommonSettings.getUnitSystem()
+                SdkSettings.getUnitSystem()
             ).first
         }
     }
@@ -622,7 +625,7 @@ class UINavDataProvider {
                 route.getTimeDistance()?.getTotalTime() ?: 0
             }
 
-            totalTime + Util.getTrafficEventsDelay(route, true)
+            totalTime + SdkUtil.getTrafficEventsDelay(route, true)
         }
 
         val getRemainingTravelDistance: () -> Int = {
@@ -643,7 +646,7 @@ class UINavDataProvider {
 
         val pairRemainingTravelText = getDistText(
             getRemainingTravelDistance(),
-            CommonSettings.getUnitSystem(),
+            SdkSettings.getUnitSystem(),
             true
         )
 
@@ -654,14 +657,14 @@ class UINavDataProvider {
         info.rtt = rttPair.first
         info.rttUnit = rttPair.second
 
-        val trafficDelayInMinutes = Util.getTrafficEventsDelay(route, true) / 60
+        val trafficDelayInMinutes = SdkUtil.getTrafficEventsDelay(route, true) / 60
 
         info.rttColor = when {
             trafficDelayInMinutes == 0 -> {
                 // green
                 Rgba(0, 170, 0, 255)
             }
-            trafficDelayInMinutes < Util.BIG_TRAFFIC_DELAY_IN_MINUTES -> {
+            trafficDelayInMinutes < BIG_TRAFFIC_DELAY_IN_MINUTES -> {
                 // orange
                 Rgba(255, 100, 0, 255)
             }

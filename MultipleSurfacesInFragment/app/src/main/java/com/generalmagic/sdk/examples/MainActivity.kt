@@ -13,8 +13,8 @@ package com.generalmagic.sdk.examples
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,7 +30,8 @@ class MainActivity : AppCompatActivity() {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     override fun onBackPressed() {
-        terminateApp(this)
+        finish()
+        exitProcess(0)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

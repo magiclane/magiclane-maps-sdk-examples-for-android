@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:layout_height="match_parent">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
@@ -11,142 +11,142 @@
         android:background="?attr/colorPrimary"
         app:layout_constraintTop_toTopOf="parent"
         app:popupTheme="@style/AppTheme.PopupOverlay"
-        app:titleTextColor="@android:color/white"/>
-    
+        app:titleTextColor="@android:color/white" />
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/toolbar">
 
-    <Button
-        android:id="@+id/upload_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginLeft="2dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginRight="4dp"
-        android:layout_marginBottom="4dp"
-        android:text="Upload"
-        android:textStyle="bold" />
+        <Button
+            android:id="@+id/upload_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginLeft="2dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginRight="4dp"
+            android:layout_marginBottom="4dp"
+            android:text="Upload"
+            android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/upload_info"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignTop="@id/upload_button"
-        android:layout_alignBottom="@id/upload_button"
-        android:layout_alignParentLeft="true"
-        android:layout_marginLeft="4dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginRight="4dp"
-        android:layout_marginBottom="2dp"
-        android:layout_toLeftOf="@id/upload_button"
-        android:gravity="center_vertical"
-        android:text="Log: 15-03-2017-4:15 (20 MB)"
-        android:textStyle="bold" />
+        <TextView
+            android:id="@+id/upload_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/upload_button"
+            android:layout_alignBottom="@id/upload_button"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="4dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginRight="4dp"
+            android:layout_marginBottom="2dp"
+            android:layout_toLeftOf="@id/upload_button"
+            android:gravity="center_vertical"
+            android:text="Log: 15-03-2017-4:15 (20 MB)"
+            android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/upload_name_string"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/upload_info"
-        android:layout_alignParentLeft="true"
-        android:layout_marginLeft="4dp"
-        android:layout_marginTop="2dp"
-        android:layout_marginRight="2dp"
-        android:layout_marginBottom="2dp"
-        android:text="Name:"
-        android:textStyle="bold" />
+        <TextView
+            android:id="@+id/upload_name_string"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/upload_info"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="4dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginRight="2dp"
+            android:layout_marginBottom="2dp"
+            android:text="Name:"
+            android:textStyle="bold" />
 
-    <EditText
-        android:id="@+id/upload_name"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/upload_info"
-        android:layout_alignBaseline="@id/upload_name_string"
-        android:layout_alignParentRight="true"
-        android:layout_marginLeft="2dp"
-        android:layout_marginTop="2dp"
-        android:layout_marginRight="4dp"
-        android:layout_marginBottom="2dp"
-        android:layout_toRightOf="@id/upload_name_string"
-        android:hint="enter your name (optional)"
-        android:inputType="textCapWords" />
+        <EditText
+            android:id="@+id/upload_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/upload_info"
+            android:layout_alignBaseline="@id/upload_name_string"
+            android:layout_alignParentRight="true"
+            android:layout_marginLeft="2dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginRight="4dp"
+            android:layout_marginBottom="2dp"
+            android:layout_toRightOf="@id/upload_name_string"
+            android:hint="enter your name (optional)"
+            android:inputType="textCapWords" />
 
-    <TextView
-        android:id="@+id/upload_email_string"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/upload_name"
-        android:layout_alignParentLeft="true"
-        android:layout_marginLeft="4dp"
-        android:layout_marginTop="2dp"
-        android:layout_marginRight="2dp"
-        android:layout_marginBottom="2dp"
-        android:text="Email:"
-        android:textStyle="bold" />
+        <TextView
+            android:id="@+id/upload_email_string"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/upload_name"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="4dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginRight="2dp"
+            android:layout_marginBottom="2dp"
+            android:text="Email:"
+            android:textStyle="bold" />
 
-    <EditText
-        android:id="@+id/upload_email"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/upload_name"
-        android:layout_alignBaseline="@id/upload_email_string"
-        android:layout_alignParentRight="true"
-        android:layout_marginLeft="2dp"
-        android:layout_marginTop="2dp"
-        android:layout_marginRight="4dp"
-        android:layout_marginBottom="2dp"
-        android:layout_toRightOf="@id/upload_email_string"
-        android:hint="enter your email (mandatory)"
-        android:inputType="textEmailAddress" />
+        <EditText
+            android:id="@+id/upload_email"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/upload_name"
+            android:layout_alignBaseline="@id/upload_email_string"
+            android:layout_alignParentRight="true"
+            android:layout_marginLeft="2dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginRight="4dp"
+            android:layout_marginBottom="2dp"
+            android:layout_toRightOf="@id/upload_email_string"
+            android:hint="enter your email (mandatory)"
+            android:inputType="textEmailAddress" />
 
-    <TextView
-        android:id="@+id/upload_email_explanation"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/upload_email_string"
-        android:layout_alignParentLeft="true"
-        android:layout_marginLeft="4dp"
-        android:layout_marginTop="2dp"
-        android:layout_marginRight="4dp"
-        android:layout_marginBottom="2dp"
-        android:enabled="false"
-        android:text="We need your email to be able to comunicate with you about reported issue(s)"
-        android:textStyle="italic" />
+        <TextView
+            android:id="@+id/upload_email_explanation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/upload_email_string"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="4dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginRight="4dp"
+            android:layout_marginBottom="2dp"
+            android:enabled="false"
+            android:text="We need your email to be able to comunicate with you about reported issue(s)"
+            android:textStyle="italic" />
 
-    <TextView
-        android:id="@+id/upload_issue_description_string"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/upload_email_explanation"
-        android:layout_alignParentLeft="true"
-        android:layout_marginLeft="4dp"
-        android:layout_marginTop="2dp"
-        android:layout_marginRight="4dp"
-        android:layout_marginBottom="2dp"
-        android:text="Issue description:"
-        android:textStyle="bold" />
+        <TextView
+            android:id="@+id/upload_issue_description_string"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/upload_email_explanation"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="4dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginRight="4dp"
+            android:layout_marginBottom="2dp"
+            android:text="Issue description:"
+            android:textStyle="bold" />
 
-    <EditText
-        android:id="@+id/upload_issue_description"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/upload_issue_description_string"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginLeft="4dp"
-        android:layout_marginTop="2dp"
-        android:layout_marginRight="4dp"
-        android:layout_marginBottom="4dp"
-        android:background="@drawable/upload_issue_description_bgnd"
-        android:gravity="left|top"
-        android:hint="enter the encountered issue description (optional)"
-        android:inputType="textCapSentences|textMultiLine"
-        android:padding="4dp" />
+        <EditText
+            android:id="@+id/upload_issue_description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/upload_issue_description_string"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginLeft="4dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginRight="4dp"
+            android:layout_marginBottom="4dp"
+            android:background="@drawable/upload_issue_description_bgnd"
+            android:gravity="left|top"
+            android:hint="enter the encountered issue description (optional)"
+            android:inputType="textCapSentences|textMultiLine"
+            android:padding="4dp" />
     </RelativeLayout>
 
 </RelativeLayout>

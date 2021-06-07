@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.core.LogUploaderListener
 import com.generalmagic.sdk.core.SettingsService
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.BaseActivity
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
@@ -23,7 +24,7 @@ import com.generalmagic.sdk.examples.demo.util.UtilUITexts.formatSizeAsText
 import com.generalmagic.sdk.sensordatasource.RecorderBookmarks
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
+import com.generalmagic.sdk.util.Util.exportVideo
 import kotlinx.android.synthetic.main.upload_view.*
 import java.io.File
 import java.text.SimpleDateFormat
@@ -308,7 +309,7 @@ class PickLogActivity : BaseActivity() {
 
         val context = GEMApplication.applicationContext()
 
-        return Util.exportVideo(context, videoFile, GEMApplication.getPublicRecordsDir())
+        return exportVideo(context, videoFile, GEMApplication.getPublicRecordsDir())
     }
 
     private fun updateListAdapter(inputPaths: ArrayList<String>?) {
@@ -356,7 +357,8 @@ class PickLogActivity : BaseActivity() {
         val result = ArrayList<File>()
         for (dirPath in inputPaths) {
             val moviesDir = File(dirPath)
-            if (!moviesDir.exists() || !moviesDir.isDirectory) return ArrayList()
+            if (!moviesDir.exists() || !moviesDir.isDirectory)
+                continue
 
             // OBTAIN ALL FILES
             val logs = ArrayList<File>()

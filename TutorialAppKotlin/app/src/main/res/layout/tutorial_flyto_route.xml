@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.FlyToRoute xmlns:android="http://schemas.android.com/apk/res/android"
-	android:id="@+id/flyToRouteController"
-	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	android:gravity="center_horizontal"
-	android:orientation="vertical">
+    android:id="@+id/flyToRouteController"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
 
 </com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.FlyToRoute>

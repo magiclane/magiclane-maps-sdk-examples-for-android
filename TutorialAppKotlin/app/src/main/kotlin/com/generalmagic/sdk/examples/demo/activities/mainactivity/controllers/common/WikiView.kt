@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.core.*
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.activities.WebActivity
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
@@ -36,9 +37,7 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
 import com.generalmagic.sdk.util.SdkIcons
-import com.generalmagic.sdk.util.SdkList
 import kotlinx.android.synthetic.main.location_details_panel.view.*
 import java.util.concurrent.Executors
 
@@ -49,7 +48,7 @@ open class WikiServiceController {
     private var wikiFetched = false
 
     private var listener = object : ProgressListener() {
-        override fun notifyComplete(reason: Int, hint: String) {
+        override fun notifyComplete(reason: SdkError, hint: String) {
             GEMApplication.postOnMain {
                 wikiFetched = true
                 onWikiFetchComplete(reason, hint)
@@ -140,10 +139,10 @@ open class WikiServiceController {
     private val progress = object : ProgressListener() {
         var index = 0
         var retryCount = 0
-        override fun notifyComplete(reason: Int, hint: String) {
+        override fun notifyComplete(reason: SdkError, hint: String) {
             val model = holders[index]
 
-            if (reason != SdkError.NoError.value) {
+            if (reason != SdkError.NoError) {
                 if (retryCount > 0) { // retry
                     retryCount--
                     setImageLoadStatus(index, model, TLoadState.EPendingReloading)
@@ -180,10 +179,10 @@ open class WikiServiceController {
         var index = 0
         var retryCount = 0
 
-        override fun notifyComplete(reason: Int, hint: String) {
+        override fun notifyComplete(reason: SdkError, hint: String) {
             val model = holders[index]
 
-            if (reason != SdkError.NoError.value) {
+            if (reason != SdkError.NoError) {
                 if (retryCount > 0) { // retry
                     retryCount--
                     setDescriptionLoadStatus(index, model, TLoadState.EPendingReloading)
@@ -240,7 +239,7 @@ open class WikiServiceController {
 
     //
 
-    open fun onWikiFetchComplete(reason: Int, hint: String) {}
+    open fun onWikiFetchComplete(reason: SdkError, hint: String) {}
     open fun onImageFetchStatusChanged(index: Int, status: TLoadState) {}
     open fun onImageDescriptionFetchStatusChanged(index: Int, status: TLoadState) {}
 }
@@ -262,16 +261,15 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
     private var mButtons = arrayListOf<Int>()
 
     private val service = RoutingService()
-    private val resultRoutes = SdkList(Route::class)
+    private var resultRoutes = arrayListOf<Route>()
 
-
-    var onWikiFetchCompleteCallback = { _: Int, _: String -> }
+    var onWikiFetchCompleteCallback = { _: SdkError, _: String -> }
 
     var onVisibilityChanged = {}
     val images = ArrayList<ImageViewModel>()
 
     private val wiki = object : WikiServiceController() {
-        override fun onWikiFetchComplete(reason: Int, hint: String) {
+        override fun onWikiFetchComplete(reason: SdkError, hint: String) {
 
             locationDetails.wikipediaDescription = getWikiPageDescription()
             locationDetails.wikipediaUrl = getWikiPageURL()
@@ -376,21 +374,15 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         description.text = locationDetails.description
         icon.setImageBitmap(locationDetails.image)
 
+        mButtons.add(TLocationDetailsButtonType.EFavourite.ordinal)
+
         SdkCall.execute {
             var bCalculateRoute = false
-            val route = GEMApplication.getMainMapView()?.preferences()?.routes()?.getMainRoute()
 
-            if (route != null) {
-                if (route.preferences()?.getTransportMode() != ERouteTransportMode.Public) {
-                    mButtons.add(TLocationDetailsButtonType.EPublicTransportTo.ordinal)
-                    bCalculateRoute = true
-                }
-            } else {
-                mButtons.add(TLocationDetailsButtonType.EDriveTo.ordinal)
-                val position = PositionService().getPosition()
-                if (position != null) {
-                    bCalculateRoute = true
-                }
+            mButtons.add(TLocationDetailsButtonType.EDriveTo.ordinal)
+            val position = PositionService().getPosition()
+            if (position != null) {
+                bCalculateRoute = true
             }
 
             if (bCalculateRoute) {
@@ -576,15 +568,17 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         if (isValidButtonIndex(index)) {
             var route: Route? = null
 
-            when (mButtons[index]) {
-                TLocationDetailsButtonType.EDriveTo.ordinal,
-                TLocationDetailsButtonType.EAddWaypoint.ordinal -> {
-                    val routes = resultRoutes.asArrayList()
-                    if (routes.isNotEmpty()) {
-                        route = routes[0]
+            if (isValidButtonIndex(index)) {
+                when (mButtons[index]) {
+                    TLocationDetailsButtonType.EDriveTo.ordinal,
+                    TLocationDetailsButtonType.EAddWaypoint.ordinal -> {
+                        val routes = resultRoutes
+                        if (routes.isNotEmpty()) {
+                            route = routes[0]
+                        }
                     }
-                }
-                else -> {
+                    else -> {
+                    }
                 }
             }
 
@@ -711,13 +705,13 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
                 service.preferences.setRouteType(ERouteType.Fastest)
                 service.preferences.setResultDetails(ERouteResultDetails.TimeDistance)
 
-                service.onCompleted = { _, reason, _ ->
-                    onCompleteCalculating(reason, type)
+                service.onCompleted = { routes, reason, _ ->
+                    resultRoutes = routes
+                    onCompleteCalculating(routes, reason, type)
                 }
 
                 when (type) {
                     ERouteTransportMode.Car -> {
-                        resultRoutes.assignArrayList(ArrayList())
                         service.calculateRoute(
                             waypoints
                         )
@@ -730,8 +724,11 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         }
     }
 
-    private fun onCompleteCalculating(reason: Int, type: ERouteTransportMode) {
-        val gemError = SdkError.fromInt(reason)
+    private fun onCompleteCalculating(
+        routes: ArrayList<Route>,
+        gemError: SdkError,
+        type: ERouteTransportMode
+    ) {
         if (gemError != SdkError.NoError) {
             Toast.makeText(
                 context,
@@ -744,8 +741,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         var route: Route? = null
         when (type) {
             ERouteTransportMode.Car -> {
-                val routes = SdkCall.execute { resultRoutes.asArrayList() }
-                if (routes?.isNotEmpty() == true) {
+                if (routes.isNotEmpty()) {
                     route = routes[0]
                 }
             }
@@ -754,7 +750,8 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         }
 
         if (route != null) {
-            didUpdateButtonText(0, getButtonText(0))
+            val index = mButtons.indexOf(TLocationDetailsButtonType.EDriveTo.ordinal)
+            didUpdateButtonText(0, getButtonText(index))
         }
     }
 
@@ -775,9 +772,11 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
                     val position = SdkCall.execute { PositionService().getPosition() }
                     if (position != null) {
                         val waypoints = arrayListOf<Landmark>()
-                        val latitude = position.getLatitude()
-                        val longitude = position.getLongitude()
-                        waypoints.add(Landmark("", Coordinates(latitude, longitude)))
+                        SdkCall.execute {
+                            val latitude = position.getLatitude()
+                            val longitude = position.getLongitude()
+                            waypoints.add(Landmark("", Coordinates(latitude, longitude)))
+                        }
 
                         landmark?.let { waypoints.add(it) }
 

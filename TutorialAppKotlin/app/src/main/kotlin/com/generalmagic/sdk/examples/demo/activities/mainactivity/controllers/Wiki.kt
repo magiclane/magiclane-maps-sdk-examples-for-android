@@ -17,6 +17,7 @@ import android.widget.Toast
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.ImageDatabase
 import com.generalmagic.sdk.core.Xy
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.Animation
 import com.generalmagic.sdk.d3scene.EAnimation
 import com.generalmagic.sdk.d3scene.EHighlightOptions
@@ -29,7 +30,6 @@ import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
 import com.generalmagic.sdk.util.SdkIcons
 import kotlinx.android.synthetic.main.location_details_panel.view.*
 
@@ -48,8 +48,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
             showProgress()
         }
 
-        searchService.onCompleted = onCompleted@{ results, reason, _ ->
-            val gemError = SdkError.fromInt(reason)
+        searchService.onCompleted = onCompleted@{ results, gemError, _ ->
             if (gemError == SdkError.Cancel) return@onCompleted
 
             hideProgress()
@@ -71,7 +70,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
 
     override fun doStart() {
         val inLandmark = IntentHelper.getObjectForKey(EXTRA_LANDMARK) as Landmark?
-        
+
         SdkCall.execute {
             if (inLandmark == null) {
                 val text = "Tokyo"
@@ -126,8 +125,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
             mainMap?.centerOnCoordinates(coords, -1, Xy(), animation)
         }
 
-        wikiView.onWikiFetchCompleteCallback = callback@{ reason: Int, _: String ->
-            val gemError = SdkError.fromInt(reason)
+        wikiView.onWikiFetchCompleteCallback = callback@{ gemError, _ ->
             if (gemError != SdkError.NoError) {
                 if (ignoreWikiErrorsCount == 0) {
                     Toast.makeText(

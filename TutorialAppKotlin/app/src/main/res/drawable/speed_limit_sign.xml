@@ -1,23 +1,23 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-	<item>
-		<shape android:shape="oval">
-			<solid android:color="#FFFFFF" />
-			<size
-				android:width="50dp"
-				android:height="50dp" />
-			<padding
-				android:bottom="1dp"
-				android:left="1dp"
-				android:right="1dp"
-				android:top="1dp" />
-		</shape>
-	</item>
-	<item>
-		<shape android:shape="oval">
-			<stroke
-				android:width="4dp"
-				android:color="#E13737" />
-		</shape>
-	</item>
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF" />
+            <size
+                android:width="50dp"
+                android:height="50dp" />
+            <padding
+                android:bottom="1dp"
+                android:left="1dp"
+                android:right="1dp"
+                android:top="1dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="oval">
+            <stroke
+                android:width="4dp"
+                android:color="#E13737" />
+        </shape>
+    </item>
 
 </layer-list>

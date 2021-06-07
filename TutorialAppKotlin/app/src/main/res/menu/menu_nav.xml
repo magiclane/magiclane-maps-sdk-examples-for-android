@@ -1,33 +1,33 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-	xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-	<!--/////////////////////////////////////////////////////// -->
+    <!--/////////////////////////////////////////////////////// -->
 
-	<item android:title="Map">
-		<menu>
-			<group android:checkableBehavior="single">
-				<item
-					android:id="@+id/tutorial_hello"
-					android:title="HelloMap"
-					app:showAsAction="never" />
+    <item android:title="Map">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/tutorial_hello"
+                    android:title="HelloMap"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_styles"
-					android:title="Styles"
-					app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_styles"
+                    android:title="Styles"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_twotiledViews"
-					android:title="Two tiled views"
-					app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_twotiledViews"
+                    android:title="Two tiled views"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_multiple"
-					android:title="Multiple Overlapped Maps"
-					app:showAsAction="never" />
-			</group>
-		</menu>
-	</item>
+                <item
+                    android:id="@+id/tutorial_multiple"
+                    android:title="Multiple Overlapped Maps"
+                    app:showAsAction="never" />
+            </group>
+        </menu>
+    </item>
 
     <!--/////////////////////////////////////////////////////// -->
 
@@ -42,211 +42,211 @@
         </menu>
     </item>
 
-	<!--/////////////////////////////////////////////////////// -->
-	<item android:title="Data Source">
-		<menu>
-			<group android:checkableBehavior="single">
-				<item
-					android:id="@+id/tutorial_sensorsList"
-					android:title="Sensors List"
-					app:showAsAction="never"
-					android:visible="false"/>
-				<item
-					android:id="@+id/tutorial_directcam"
-					android:title="Direct Camera"
-					app:showAsAction="never"
-					android:visible="false"/>
+    <!--/////////////////////////////////////////////////////// -->
+    <item android:title="Data Source">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/tutorial_sensorsList"
+                    android:title="Sensors List"
+                    android:visible="false"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_directcam"
+                    android:title="Direct Camera"
+                    android:visible="false"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_canvasDrawerCam"
-					android:title="Canvas Camera Drawer"
-					app:showAsAction="never"
-					android:visible="false"/>
+                <item
+                    android:id="@+id/tutorial_canvasDrawerCam"
+                    android:title="Canvas Camera Drawer"
+                    android:visible="false"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_logRecorder"
-					android:title="Log Recorder"
-					app:showAsAction="never"/>
+                <item
+                    android:id="@+id/tutorial_logRecorder"
+                    android:title="Log Recorder"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_logPlayer"
-					android:title="Log Player"
-					app:showAsAction="never"/>
-			</group>
-		</menu>
-	</item>
+                <item
+                    android:id="@+id/tutorial_logPlayer"
+                    android:title="Log Player"
+                    app:showAsAction="never" />
+            </group>
+        </menu>
+    </item>
 
-	<!--/////////////////////////////////////////////////////// -->
+    <!--/////////////////////////////////////////////////////// -->
 
-	<item android:title="Search">
-		<menu>
-			<group android:checkableBehavior="single">
-				<item
-					android:id="@+id/tutorial_searchtext"
-					android:title="Free Text Search"
-					app:showAsAction="never" />
+    <item android:title="Search">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/tutorial_searchtext"
+                    android:title="Free Text Search"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_searchnearby"
-					android:title="What's Nearby"
-					app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_searchnearby"
+                    android:title="What's Nearby"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_searchpoi"
-					android:title="Gas Stations"
-					app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_searchpoi"
+                    android:title="Gas Stations"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_addresssearch"
-					android:title="Address Search"
-					app:showAsAction="never"/>
+                <item
+                    android:id="@+id/tutorial_addresssearch"
+                    android:title="Address Search"
+                    app:showAsAction="never" />
 
                 <item
                     android:id="@+id/tutorial_history"
                     android:title="History"
-                    app:showAsAction="never"/>
+                    app:showAsAction="never" />
 
                 <item
                     android:id="@+id/tutorial_favourites"
                     android:title="Favourites"
-                    app:showAsAction="never"/>
-			</group>
-		</menu>
-	</item>
+                    app:showAsAction="never" />
+            </group>
+        </menu>
+    </item>
 
-	<!--/////////////////////////////////////////////////////// -->
+    <!--/////////////////////////////////////////////////////// -->
 
-	<item android:title="Routing">
-		<menu>
-			<group android:checkableBehavior="single">
-				<item
-					android:id="@+id/tutorial_route_ab"
-					android:title="A->B - Predefined"
-					app:showAsAction="never" />
+    <item android:title="Routing">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/tutorial_route_ab"
+                    android:title="A->B - Predefined"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_route_abc"
-					android:title="A->B->C - Predefined"
-					app:showAsAction="never" />
-				<item
-					android:id="@+id/tutorial_route_custom"
-					android:title="Route - Custom"
-					app:showAsAction="never" />
-				<item
-					android:id="@+id/tutorial_predef_ptnav"
-					android:title="Public Transport - Predefined"
-					app:showAsAction="never" />
-				<item
-					android:id="@+id/tutorial_custom_ptnav"
-					android:title="Public Transport - Custom"
-					app:showAsAction="never" />
-			</group>
-		</menu>
-	</item>
+                <item
+                    android:id="@+id/tutorial_route_abc"
+                    android:title="A->B->C - Predefined"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_route_custom"
+                    android:title="Route - Custom"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_predef_ptnav"
+                    android:title="Public Transport - Predefined"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_custom_ptnav"
+                    android:title="Public Transport - Custom"
+                    app:showAsAction="never" />
+            </group>
+        </menu>
+    </item>
 
-	<!--/////////////////////////////////////////////////////// -->
+    <!--/////////////////////////////////////////////////////// -->
 
-	<item android:title="Maps">
-		<menu>
-			<group android:checkableBehavior="single">
-				<item
-					android:id="@+id/tutorial_online_maps"
-					android:title="Online Maps"
-					app:showAsAction="never" />
-			</group>
-		</menu>
-	</item>
+    <item android:title="Maps">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/tutorial_online_maps"
+                    android:title="Online Maps"
+                    app:showAsAction="never" />
+            </group>
+        </menu>
+    </item>
 
-	<!--/////////////////////////////////////////////////////// -->
+    <!--/////////////////////////////////////////////////////// -->
 
-	<item android:title="Turn-by-turn Navigation">
-		<menu>
-			<group android:checkableBehavior="single">
-				<item
-					android:id="@+id/tutorial_predef_sim"
-					android:title="Simulation - Predefined"
-					app:showAsAction="never" />
-				<item
-					android:id="@+id/tutorial_predef_nav"
-					android:title="Navigation - Predefined"
-					app:showAsAction="never" />
-				<item
-					android:id="@+id/tutorial_custom_sim"
-					android:title="Simulation - Custom"
-					app:showAsAction="never" />
-				<item
-					android:id="@+id/tutorial_custom_nav"
-					android:title="Navigation - Custom"
-					app:showAsAction="never" />
-			</group>
-		</menu>
-	</item>
+    <item android:title="Turn-by-turn Navigation">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/tutorial_predef_sim"
+                    android:title="Simulation - Predefined"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_predef_nav"
+                    android:title="Navigation - Predefined"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_custom_sim"
+                    android:title="Simulation - Custom"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_custom_nav"
+                    android:title="Navigation - Custom"
+                    app:showAsAction="never" />
+            </group>
+        </menu>
+    </item>
 
-	<!--/////////////////////////////////////////////////////// -->
+    <!--/////////////////////////////////////////////////////// -->
 
-	<item android:title="Fly To">
-		<menu>
-			<group android:checkableBehavior="single">
+    <item android:title="Fly To">
+        <menu>
+            <group android:checkableBehavior="single">
 
-				<item
-					android:id="@+id/tutorial_flyto_coords"
-					android:title="Coords"
-					app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_flyto_coords"
+                    android:title="Coords"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_flyto_area"
-					android:title="Area"
-					app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_flyto_area"
+                    android:title="Area"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_flyto_route"
-					android:title="Route"
-					app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_flyto_route"
+                    android:title="Route"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_flyto_instr"
-					android:title="Instruction"
-					app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_flyto_instr"
+                    android:title="Instruction"
+                    app:showAsAction="never" />
 
-				<item
-					android:id="@+id/tutorial_flyto_traffic"
-					android:title="Traffic"
-					app:showAsAction="never" />
+                <item
+                    android:id="@+id/tutorial_flyto_traffic"
+                    android:title="Traffic"
+                    app:showAsAction="never" />
 
                 <item
                     android:id="@+id/tutorial_flyto_line"
                     android:title="Line"
                     app:showAsAction="never" />
-			</group>
-		</menu>
-	</item>
+            </group>
+        </menu>
+    </item>
 
-	<!--/////////////////////////////////////////////////////// -->
+    <!--/////////////////////////////////////////////////////// -->
 
-	<item android:title="Wiki">
-		<menu>
-			<group android:checkableBehavior="single">
-				<item
-					android:id="@+id/tutorial_wiki"
-					android:title="Tokyo"
-					app:showAsAction="never" />
-			</group>
-		</menu>
-	</item>
+    <item android:title="Wiki">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/tutorial_wiki"
+                    android:title="Tokyo"
+                    app:showAsAction="never" />
+            </group>
+        </menu>
+    </item>
 
-	<!--/////////////////////////////////////////////////////// -->
+    <!--/////////////////////////////////////////////////////// -->
 
-	<item android:title="Server">
-		<menu>
-			<group android:checkableBehavior="single">
-				<item
-					android:id="@+id/tutorial_custom_url"
-					android:title="Set custom server"
-					app:showAsAction="never" />
-			</group>
-		</menu>
-	</item>
+    <item android:title="Server">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/tutorial_custom_url"
+                    android:title="Set custom server"
+                    app:showAsAction="never" />
+            </group>
+        </menu>
+    </item>
 
-	<!--/////////////////////////////////////////////////////// -->
+    <!--/////////////////////////////////////////////////////// -->
 
 </menu>

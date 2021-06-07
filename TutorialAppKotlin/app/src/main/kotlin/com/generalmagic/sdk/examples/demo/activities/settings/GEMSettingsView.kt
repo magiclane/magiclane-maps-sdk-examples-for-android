@@ -19,6 +19,7 @@ import com.generalmagic.sdk.examples.demo.util.Utils
 import com.generalmagic.sdk.routesandnavigation.ERouteType
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilUiTexts.getUIString
 
 enum class TSettingItemType(val value: Int) {
     EBoolean(0),
@@ -122,10 +123,10 @@ open class COptionsListItem(val m_text: String, setting: Int) : CSettingItem(set
 class TravelModeCarOptions(m_text: String, setting: Int) : COptionsListItem(m_text, setting) {
     init {
         mOptions.add(
-            Pair(Utils.getUIString(StringIds.eStrFastest), ERouteType.Fastest.value)
+            Pair(getUIString(StringIds.eStrFastest), ERouteType.Fastest.value)
         )
         mOptions.add(
-            Pair(Utils.getUIString(StringIds.eStrShortest), ERouteType.Shortest.value)
+            Pair(getUIString(StringIds.eStrShortest), ERouteType.Shortest.value)
         )
     }
 }
@@ -133,17 +134,17 @@ class TravelModeCarOptions(m_text: String, setting: Int) : COptionsListItem(m_te
 class UnitsSystemOptions(m_text: String, setting: Int) : COptionsListItem(m_text, setting) {
     init {
         mOptions.add(
-            Pair(Utils.getUIString(StringIds.eStrInKilometres), EUnitSystem.Metric.value)
+            Pair(getUIString(StringIds.eStrInKilometres), EUnitSystem.Metric.value)
         )
         mOptions.add(
             Pair(
-                Utils.getUIString(StringIds.eStrInMilesFeet),
+                getUIString(StringIds.eStrInMilesFeet),
                 EUnitSystem.ImperialUs.value
             )
         )
         mOptions.add(
             Pair(
-                Utils.getUIString(StringIds.eStrInMilesYards),
+                getUIString(StringIds.eStrInMilesYards),
                 EUnitSystem.ImperialUk.value
             )
         )
@@ -209,19 +210,19 @@ object GEMSettingsView {
         // mobile data
         val mapDataAndWikipedia = String.format(
             "%s / %s",
-            Utils.getUIString(StringIds.eStrMapData),
-            Utils.getUIString(StringIds.eStrWikipedia)
+            getUIString(StringIds.eStrMapData),
+            getUIString(StringIds.eStrWikipedia)
         )
 
         m_chapters.add(
             Pair(
-                Utils.getUIString(StringIds.eStrMapData), arrayListOf(
+                getUIString(StringIds.eStrMapData), arrayListOf(
                     CBoolItem(
-                        Utils.getUIString(StringIds.eStrUseMobileDataConnection),
+                        getUIString(StringIds.eStrUseMobileDataConnection),
                         TBoolSettings.EUseMobileData.value
                     ),
                     CBoolItem(
-                        Utils.getUIString(StringIds.eStrTraffic),
+                        getUIString(StringIds.eStrTraffic),
                         TBoolSettings.EUseMobileDataForTraffic.value
                     ),
                     CBoolItem(
@@ -229,7 +230,7 @@ object GEMSettingsView {
                         TBoolSettings.EUseMobileDataForMapAndWikipedia.value
                     ),
                     CBoolItem(
-                        Utils.getUIString(StringIds.eStrTerrainAndSatellite),
+                        getUIString(StringIds.eStrTerrainAndSatellite),
                         TBoolSettings.EUseMobileDataForTerrainAndSatellite.value
                     )
                 )
@@ -240,33 +241,33 @@ object GEMSettingsView {
 
         m_chapters.add(
             Pair(
-                Utils.getUIString(StringIds.eStrNavigation), arrayListOf(
+                getUIString(StringIds.eStrNavigation), arrayListOf(
                     CIntItem(
-                        Utils.getUIString(StringIds.eStrSimulationSpeed),
+                        getUIString(StringIds.eStrSimulationSpeed),
                         TIntSettings.EDemoSpeed.value, 1, 10
                     ),
                     UnitsSystemOptions(
-                        Utils.getUIString(StringIds.eStrDistances),
+                        getUIString(StringIds.eStrDistances),
                         TIntSettings.EUnitsSystem.value
                     ),
                     TravelModeCarOptions(
-                        Utils.getUIString(StringIds.eStrTravelMode),
+                        getUIString(StringIds.eStrTravelMode),
                         TIntSettings.ETravelModeCar.value
                     ),
                     CBoolItem(
-                        Utils.getUIString(StringIds.eStrAvoidMotorways),
+                        getUIString(StringIds.eStrAvoidMotorways),
                         TBoolSettings.EAvoidMotorwaysCar.value
                     ),
                     CBoolItem(
-                        Utils.getUIString(StringIds.eStrAvoidTollRoads),
+                        getUIString(StringIds.eStrAvoidTollRoads),
                         TBoolSettings.EAvoidTollRoadsCar.value
                     ),
                     CBoolItem(
-                        Utils.getUIString(StringIds.eStrAvoidFerries),
+                        getUIString(StringIds.eStrAvoidFerries),
                         TBoolSettings.EAvoidFerriesCar.value
                     ),
                     CBoolItem(
-                        Utils.getUIString(StringIds.eStrAvoidUnpavedRoads),
+                        getUIString(StringIds.eStrAvoidUnpavedRoads),
                         TBoolSettings.EAvoidUnpavedRoadsCar.value
                     )
 
@@ -278,7 +279,7 @@ object GEMSettingsView {
 
         m_chapters.add(
             Pair(
-                Utils.getUIString(StringIds.eStrRecording), arrayListOf(
+                getUIString(StringIds.eStrRecording), arrayListOf(
                     CBoolItem(
                         "Record audio",
                         TBoolSettings.ERecordAudio.value
@@ -303,7 +304,7 @@ object GEMSettingsView {
         )
     }
 
-    fun getTitle(viewId: Long): String = Utils.getUIString(StringIds.eStrSettings)
+    fun getTitle(viewId: Long): String = getUIString(StringIds.eStrSettings)
 
     fun getChaptersCount(viewId: Long): Int = m_chapters.size
 

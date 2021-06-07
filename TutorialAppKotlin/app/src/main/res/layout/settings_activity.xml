@@ -18,19 +18,19 @@
             android:id="@+id/settingsToolbarTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="?android:attr/actionBarSize"
             android:textColor="@android:color/white"
-            android:textStyle="bold"
             android:textSize="@dimen/toolbarTitleTextSize"
-            android:visibility="gone"
-            android:layout_marginEnd="?android:attr/actionBarSize" />
-        
+            android:textStyle="bold"
+            android:visibility="gone" />
+
     </androidx.appcompat.widget.Toolbar>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/settingsList"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

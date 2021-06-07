@@ -16,7 +16,6 @@ import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.AppUtils
 import com.generalmagic.sdk.examples.demo.util.Utils
-import com.generalmagic.sdk.examples.demo.util.Utils.getUIString
 import com.generalmagic.sdk.routesandnavigation.ERealtimeStatus
 import com.generalmagic.sdk.routesandnavigation.ERouteSegmentType
 import com.generalmagic.sdk.routesandnavigation.ETransitType
@@ -24,6 +23,9 @@ import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilUiTexts.getDistText
+import com.generalmagic.sdk.util.UtilUiTexts.getTimeText
+import com.generalmagic.sdk.util.UtilUiTexts.getUIString
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -109,7 +111,7 @@ object GEMPublicTransportRouteDescriptionView {
         mHeader.mTripSegments.clear()
 
         if (mRoute.toPTRoute()?.getPTFrequency() ?: 0 > 0) {
-            val timeText = Utils.getTimeText(mRoute.toPTRoute()?.getPTFrequency() ?: 0)
+            val timeText = getTimeText(mRoute.toPTRoute()?.getPTFrequency() ?: 0)
             val tmp = String.format("%s %s", timeText.first, timeText.second)
             mHeader.mFrequency = String.format(getUIString(StringIds.eStrEveryXTime), tmp)
         }
@@ -170,7 +172,7 @@ object GEMPublicTransportRouteDescriptionView {
                 routeSegmentItem.mVisible = routeSegment.isSignificant()
 
                 val timeText =
-                    Utils.getTimeText(routeSegment.getTimeDistance()?.getTotalTime() ?: 0)
+                    getTimeText(routeSegment.getTimeDistance()?.getTotalTime() ?: 0)
                 routeSegmentItem.mTravelTimeValue = timeText.first
                 routeSegmentItem.mTravelTimeUnit = timeText.second
             }
@@ -195,13 +197,13 @@ object GEMPublicTransportRouteDescriptionView {
         var walkingDistance = ""
 
         if (nWalkingTime > 0) {
-            val timeText = Utils.getTimeText(nWalkingTime)
+            val timeText = getTimeText(nWalkingTime)
             walkingTime = String.format("%s %s", timeText.first, timeText.second)
         }
 
         if (nWalkingDistance > 0) {
             val distText =
-                Utils.getDistText(nWalkingDistance, CommonSettings.getUnitSystem(), true)
+                getDistText(nWalkingDistance, SdkSettings.getUnitSystem(), true)
             walkingDistance = String.format("%s %s", distText.first, distText.second)
         }
 
@@ -258,7 +260,7 @@ object GEMPublicTransportRouteDescriptionView {
         mHeader.mDepartureTimeStr = departureTimeStr
         mHeader.mArrivalTimeStr = arrivalTimeStr
 
-        val timeText = Utils.getTimeText(travelTime, bForceHours = false, bCapitalizeResult = false)
+        val timeText = getTimeText(travelTime, bForceHours = false, bCapitalizeResult = false)
         mHeader.mTripDuration = String.format("%s %s", timeText.first, timeText.second)
 
         mHeader.mDepartureTime = departureTime

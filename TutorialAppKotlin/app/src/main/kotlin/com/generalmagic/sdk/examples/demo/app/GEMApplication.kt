@@ -23,9 +23,9 @@ import android.view.MenuItem
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.generalmagic.apihelper.EnumHelp
 import com.generalmagic.sdk.content.*
 import com.generalmagic.sdk.core.*
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.*
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.activities.WebActivity
@@ -58,61 +58,13 @@ object GEMApplication {
 
     private var defaultMapStyle: ContentStoreItem? = null
 
-    private var mapUpdater: ContentUpdater? = null
-
     private var mapSurface: GemSurfaceView? = null
     private var mainMapView: MapView? = null
-    private val mainMapViewListener = object : MapViewListener() {}
 
     private var mHistoryLandmarkStore: LandmarkStore? = null
     var mTripsHistory: TripsHistory? = null
 
     private var mFavouritesLandmarkStore: LandmarkStore? = null
-
-    private val offboardListener = object : OffboardListener() {
-        override fun onApiTokenRejected() {
-            postOnMain {
-                Toast.makeText(appContext, "Token Rejected", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        override fun onConnectionStatusUpdated(connected: Boolean) {
-            if (connected) {
-                val styles =
-                    ContentStore().getLocalContentList(EContentType.ViewStyleHighRes.value)
-                styles?.let {
-                    if (styles.size < 2) {
-                        Util.downloadSecondStyle()
-                    }
-                }
-            }
-        }
-
-        override fun onOnlineWorldMapSupportStatus(state: EStatus) {
-            val listener = object : ProgressListener() {
-                override fun notifyStatusChanged(status: Int) {
-                    when (EnumHelp.fromInt<EContentUpdaterStatus>(status)) {
-                        EContentUpdaterStatus.FullyReady,
-                        EContentUpdaterStatus.PartiallyReady -> {
-                            val updater = mapUpdater ?: return
-                            // cancel routing
-                            updater.apply()
-                        }
-                        else -> {
-                        }
-                    }
-                }
-            }
-
-            val result =
-                ContentStore().createContentUpdater(EContentType.RoadMap.value) ?: return
-
-            if (result.second == SdkError.NoError.value) {
-                mapUpdater = result.first ?: return
-                mapUpdater?.update(true, listener)
-            }
-        }
-    }
 
     ///
 
@@ -122,6 +74,23 @@ object GEMApplication {
 
     fun init(context: Context, mapSurface: GemSurfaceView, onFinish: () -> Unit = {}) {
         SdkCall.checkCurrentThread()
+
+        SdkSettings.onConnected = {
+            val styles =
+                ContentStore().getLocalContentList(EContentType.ViewStyleHighRes.value)
+            styles?.let {
+                if (styles.size < 2) {
+                    Util.downloadSecondStyle()
+                }
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            postOnMain {
+                Toast.makeText(context, "Token Rejected", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         this.mapSurface = mapSurface
 
         appContext = context.applicationContext
@@ -135,26 +104,11 @@ object GEMApplication {
         eRecordsPath = StringBuilder().append(Util.getSdCardPath(context))
             .append(File.separator).append(recordsDirName).toString()
 
-        //token
-        val app = context.packageManager.getApplicationInfo(
-            context.packageName,
-            PackageManager.GET_META_DATA
-        )
-        val bundle = app.metaData
-        val token = bundle.getString("com.generalmagic.sdk.token") ?: "YOUR_TOKEN"
-
-        CommonSettings.setDefaultNetworkProvider(context, null) // using custom offboard listener.
-        CommonSettings.setAllowConnection(true, offboardListener)
-        CommonSettings.setAppAuthorization(token)
-
-        mapSurface.onScreenCreated = { screen: Screen ->
-            // main map view
-            SdkCall.execute {
-                val mainViewRect = RectF(0.0f, 0.0f, 1.0f, 1.0f)
-                val mainMapView = MapView.produce(screen, mainViewRect, mainMapViewListener, null)
-
-                mainMapView?.let { notifyMapFollowStatusChanged(it.isFollowingPosition()) }
-                this.mainMapView = mainMapView
+        mapSurface.onScreenCreated = { screen ->
+            val rectF = RectF(0.0f, 0.0f, 1.0f, 1.0f)
+            MapView.produce(screen, rectF)?.let {
+                mainMapView = it
+                notifyMapFollowStatusChanged(it.isFollowingPosition())
             }
         }
 
@@ -548,26 +502,26 @@ object GEMApplication {
         return false
     }
 
-    private fun getLandmarkStoreLandmarkId(landmarkStore: LandmarkStore?, landmark: Landmark): Int {
-        val treshold = 0.00001
-        val landmarks = landmarkStore?.getLandmarks() ?: arrayListOf()
-        val name = landmark.getName() ?: ""
-        val lat = landmark.getCoordinates()?.getLatitude() ?: 0.0
-        val lon = landmark.getCoordinates()?.getLongitude() ?: 0.0
+    private fun getLandmarkStoreLandmarkId(landmarkStore: LandmarkStore?, landmark: Landmark): Int =
+        SdkCall.execute {
+            val treshold = 0.00001
+            val landmarks = landmarkStore?.getLandmarks() ?: arrayListOf()
+            val name = landmark.getName() ?: ""
+            val lat = landmark.getCoordinates()?.getLatitude() ?: 0.0
+            val lon = landmark.getCoordinates()?.getLongitude() ?: 0.0
 
-        for (item in landmarks) {
-            val itemLatitude = item.getCoordinates()?.getLatitude() ?: 0.0
-            val itemLongitude = item.getCoordinates()?.getLongitude() ?: 0.0
-            if ((item.getName() == name) &&
-                (abs(itemLatitude - lat) < treshold) &&
-                (abs(itemLongitude - lon) < treshold)
-            ) {
-                return item.getLandmarkId()
+            for (item in landmarks) {
+                val itemLatitude = item.getCoordinates()?.getLatitude() ?: 0.0
+                val itemLongitude = item.getCoordinates()?.getLongitude() ?: 0.0
+                if ((item.getName() == name) &&
+                    (abs(itemLatitude - lat) < treshold) &&
+                    (abs(itemLongitude - lon) < treshold)
+                ) {
+                    return@execute item.getLandmarkId()
+                }
             }
-        }
-
-        return 0
-    }
+            return@execute 0
+        } ?: 0
 
     fun addRouteToHistory(route: Route, isFromAToB: Boolean = true) {
         val trip = Trip()
@@ -610,7 +564,7 @@ object GEMApplication {
         mFavouritesLandmarkStore.let { landmarkStore ->
             val id = getLandmarkStoreLandmarkId(landmarkStore, landmark)
             if (id > 0) {
-                landmarkStore?.removeLandmark(id)
+                SdkCall.execute { landmarkStore?.removeLandmark(id) }
                 return true
             }
         }

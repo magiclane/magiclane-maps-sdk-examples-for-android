@@ -8,11 +8,11 @@
         android:id="@+id/settingsText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textColor="@android:color/black"
-        android:textSize="@dimen/standardTextSize"
         android:layout_marginStart="@dimen/listItemPadding"
         android:layout_marginLeft="@dimen/listItemPadding"
         android:layout_marginTop="@dimen/listItemPadding"
+        android:textColor="@android:color/black"
+        android:textSize="@dimen/standardTextSize"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -59,8 +59,8 @@
             android:layout_height="wrap_content"
             android:maxHeight="@dimen/nav_demo_text_padding"
             android:minHeight="@dimen/nav_demo_text_padding"
-            android:paddingLeft="@dimen/listItemPadding"
             android:paddingStart="@dimen/listItemPadding"
+            android:paddingLeft="@dimen/listItemPadding"
             android:paddingEnd="@dimen/listItemPadding"
             android:paddingRight="@dimen/listItemPadding"
             android:progressDrawable="@drawable/seek_bar_progress"

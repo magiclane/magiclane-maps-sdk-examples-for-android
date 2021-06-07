@@ -24,23 +24,23 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.*
-import com.generalmagic.sdk.core.CommonSettings
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.Rgba
+import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.IntentHelper
 import com.generalmagic.sdk.examples.demo.util.Util
 import com.generalmagic.sdk.examples.demo.util.UtilUITexts
-import com.generalmagic.sdk.examples.demo.util.Utils.getDistText
 import com.generalmagic.sdk.examples.demo.util.Utils.getFormattedWaypointName
-import com.generalmagic.sdk.examples.demo.util.Utils.getUIString
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteInstruction
 import com.generalmagic.sdk.routesandnavigation.RouteTrafficEvent
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilUiTexts.getDistText
+import com.generalmagic.sdk.util.UtilUiTexts.getUIString
 import kotlinx.android.synthetic.main.activity_route_description.*
 import kotlinx.android.synthetic.main.route_description_item.view.*
 
@@ -365,7 +365,7 @@ class RouteInstructionItem(val instruction: RouteInstruction, distOffset: Double
 
             mSortKey = (distance + 0.5).toInt()
 
-            val distText = getDistText(distance.toInt(), CommonSettings.getUnitSystem())
+            val distText = getDistText(distance.toInt(), SdkSettings.getUnitSystem())
             statusText = distText.first
             statusDescription = distText.second
             if (statusText == "0.00") {
@@ -438,7 +438,7 @@ class TrafficEventItem(val event: RouteTrafficEvent, totalRouteLength: Int) :
 
         mSortKey = (distance + 1)
 
-        val distText = getDistText(distance, CommonSettings.getUnitSystem(), true)
+        val distText = getDistText(distance, SdkSettings.getUnitSystem(), true)
         statusText = distText.first
         statusDescription = distText.second
 

@@ -10,14 +10,14 @@
 
 package com.generalmagic.sdk.examples.demo.activities.settings
 
-import com.generalmagic.apihelper.EnumHelp
-import com.generalmagic.sdk.core.CommonSettings
 import com.generalmagic.sdk.core.EServiceGroupType
 import com.generalmagic.sdk.core.EUnitSystem
+import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.SettingsService
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.routesandnavigation.ERouteType
 import com.generalmagic.sdk.routesandnavigation.RoutePreferences
+import com.generalmagic.sdk.util.EnumHelp
 import com.generalmagic.sdk.util.SdkCall
 
 enum class TBoolSettings(val value: Int) {
@@ -300,24 +300,24 @@ object SettingsProvider {
                     val bUseMobileDataForTerrainAndSatellite =
                         getBooleanValue(TBoolSettings.EUseMobileDataForTerrainAndSatellite.value)
 
-                    CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.TrafficService, bUseMobileDataForTraffic.second
                     )
-                    CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.MapDataService, bUseMobileDataForMapAndWikipedia.second
                     )
-                    CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.TerrainService,
                         bUseMobileDataForTerrainAndSatellite.second
                     )
                 } else {
-                    CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.TrafficService, value
                     )
-                    CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.MapDataService, value
                     )
-                    CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.TerrainService, value
                     )
                 }
@@ -327,7 +327,7 @@ object SettingsProvider {
 
         val useMobileDataForTraffic = { value: Boolean ->
             if (mService != null) {
-                CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                     EServiceGroupType.TrafficService, value
                 )
             }
@@ -336,7 +336,7 @@ object SettingsProvider {
 
         val useMobileDataForMapAndWikipedia = { value: Boolean ->
             if (mService != null) {
-                CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                     EServiceGroupType.MapDataService,
                     value
                 )
@@ -344,12 +344,12 @@ object SettingsProvider {
                     val bUseMobileDataForTerrainAndSatellite =
                         getBooleanValue(TBoolSettings.EUseMobileDataForTerrainAndSatellite.value)
 
-                    CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.TerrainService,
                         bUseMobileDataForTerrainAndSatellite.second
                     )
                 } else {
-                    CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.TerrainService, value
                     )
                 }
@@ -360,7 +360,7 @@ object SettingsProvider {
 
         val useMobileDataForTerrainAndSatellite = { value: Boolean ->
             if (mService != null) {
-                CommonSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
                     EServiceGroupType.TerrainService,
                     value
                 )
@@ -373,7 +373,7 @@ object SettingsProvider {
 
         val unitsSystem = { value: Int ->
             if (mService != null) {
-                CommonSettings.setUnitSystem(EnumHelp.fromInt(value))
+                SdkSettings.setUnitSystem(EnumHelp.fromInt(value))
             }
         }
         mIntCallbacks[TIntSettings.EUnitsSystem.value - TIntSettings.EIntSettingsBase.value] =

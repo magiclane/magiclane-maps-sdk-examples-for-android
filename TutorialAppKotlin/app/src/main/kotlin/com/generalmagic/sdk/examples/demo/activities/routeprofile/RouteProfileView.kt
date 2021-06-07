@@ -17,14 +17,14 @@ import kotlinx.android.synthetic.main.route_profile.view.*
 class RouteProfileView(val parent: IMapControllerActivity) {
     private val routeProfilePanelFactor = 0.5
     private val routeProfileLandscapePanelFactor = 1.0
-    private lateinit var fullMapViewCoords : RectF
-    private lateinit var topUpMapViewCoords : RectF
-    private lateinit var rightMapViewCoords : RectF
+    private lateinit var fullMapViewCoords: RectF
+    private lateinit var topUpMapViewCoords: RectF
+    private lateinit var rightMapViewCoords: RectF
     private val mShowHideAnimationDelay = 300L
 
     private lateinit var routeProfile: ElevationProfile
-    
-    init{
+
+    init {
         SdkCall.execute {
             fullMapViewCoords = RectF(0.0f, 0.0f, 1.0f, 1.0f)
             topUpMapViewCoords = RectF(0.0f, 0.5f, 1.0f, 1.0f)

@@ -10,6 +10,7 @@
 
 package com.generalmagic.sdk.examples
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -17,15 +18,14 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.content.ContextCompat
 import androidx.core.view.get
 import androidx.core.view.setMargins
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.generalmagic.sdk.core.GemSurfaceView
-import com.generalmagic.sdk.core.RectF
 import com.generalmagic.sdk.d3scene.MapView
-import com.generalmagic.sdk.d3scene.Screen
-import com.generalmagic.sdk.examples.util.ButtonsDecorator
 import com.generalmagic.sdk.util.SdkCall
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
@@ -53,13 +53,13 @@ class SecondFragment : Fragment() {
 
         val leftBtn = view.findViewById<FloatingActionButton>(R.id.bottomLeftButton)
         leftBtn.visibility = View.VISIBLE
-        ButtonsDecorator.buttonAsDelete(requireContext(), leftBtn) {
+        buttonAsDelete(requireContext(), leftBtn) {
             deleteLastSurface()
         }
 
         val rightBtn = view.findViewById<FloatingActionButton>(R.id.bottomRightButton)
         rightBtn.visibility = View.VISIBLE
-        ButtonsDecorator.buttonAsAdd(requireContext(), rightBtn) {
+        buttonAsAdd(requireContext(), rightBtn) {
             addSurface()
         }
 
@@ -87,15 +87,17 @@ class SecondFragment : Fragment() {
             return
         }
 
-        val surface = SdkCall.execute { GemSurfaceView(requireContext()) }
-        surface?.layoutParams = ViewGroup.LayoutParams(
+        val surface = GemSurfaceView(requireContext())
+        surface.layoutParams = ViewGroup.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
 
-        surface?.onScreenCreated = { screen ->
-            // Defines an action that should be done after the screen is created.
-            onScreenCreated(screen)
+        surface.onDefaultMapViewCreated = onDefaultMapViewCreated@{
+            val screen = surface.getScreen() ?: return@onDefaultMapViewCreated
+
+            // Add the map view to the collection of displayed maps.
+            maps[screen.address()] = it
         }
 
         val params = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, 400)
@@ -132,21 +134,33 @@ class SecondFragment : Fragment() {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private fun onScreenCreated(screen: Screen) {
-        SdkCall.checkCurrentThread() // Ensure we are on SDK thread.
+    fun buttonAsAdd(context: Context, button: FloatingActionButton?, action: () -> Unit) {
+        button ?: return
 
-        /* 
-        Define a rectangle in which the map view will expand.
-        Predefined value of the offsets is 0.
-        Value 1 means the offset will take 100% of available space.
-         */
-        val mainViewRect = RectF(0.0f, 0.0f, 1.0f, 1.0f)
-        // Produce a map view and establish that it is the main map view.
-        val mapView = MapView.produce(screen, mainViewRect) ?: return
+        val tag = "add"
+        val backgroundTintList =
+            AppCompatResources.getColorStateList(context, R.color.green)
+        val drawable = ContextCompat.getDrawable(context, android.R.drawable.ic_input_add)
 
-        // Add the map view to the collection of displayed maps.
-        maps[screen.address()] = mapView
+        button.tag = tag
+        button.setOnClickListener { action() }
+        button.setImageDrawable(drawable)
+        button.backgroundTintList = backgroundTintList
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    fun buttonAsDelete(context: Context, button: FloatingActionButton?, action: () -> Unit) {
+        button ?: return
+
+        val tag = "delete"
+        val backgroundTintList =
+            AppCompatResources.getColorStateList(context, R.color.red)
+        val drawable = ContextCompat.getDrawable(context, android.R.drawable.ic_delete)
+
+        button.tag = tag
+        button.setOnClickListener { action() }
+        button.setImageDrawable(drawable)
+        button.backgroundTintList = backgroundTintList
+    }
 }

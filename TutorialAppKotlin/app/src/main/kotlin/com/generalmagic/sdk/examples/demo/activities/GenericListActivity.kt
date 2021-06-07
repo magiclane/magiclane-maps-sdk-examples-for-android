@@ -36,6 +36,7 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
+import com.generalmagic.sdk.util.UtilUiTexts.getDistText
 import io.github.luizgrp.sectionedrecyclerviewadapter.Section
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionParameters
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionedRecyclerViewAdapter
@@ -755,7 +756,7 @@ open class LandmarkViewModel(val it: Landmark?, reference: Coordinates?) : Searc
             return@execute it?.getCoordinates()?.getDistance(reference)?.toInt()
         } ?: 0
 
-        dist = Utils.getDistText(meters, EUnitSystem.Metric, true)
+        dist = getDistText(meters, EUnitSystem.Metric, true)
     }
 
     override fun getIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {

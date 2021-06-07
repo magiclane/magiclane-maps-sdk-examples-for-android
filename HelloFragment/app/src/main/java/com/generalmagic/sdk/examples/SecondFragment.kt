@@ -17,14 +17,8 @@ import android.view.ViewGroup
 import android.widget.Button
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.generalmagic.sdk.core.GemSurfaceView
-import com.generalmagic.sdk.core.RectF
-import com.generalmagic.sdk.d3scene.MapView
-import com.generalmagic.sdk.util.SdkCall
 
 class SecondFragment : Fragment() {
-    private var mainMapView: MapView? = null
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     override fun onCreateView(
@@ -41,34 +35,6 @@ class SecondFragment : Fragment() {
 
         view.findViewById<Button>(R.id.button_second).setOnClickListener {
             findNavController().navigate(R.id.action_SecondFragment_to_FirstFragment)
-        }
-
-        /// GENERAL MAGIC
-        val mapSurface = view.findViewById<GemSurfaceView>(R.id.gem_surface)
-        mapSurface.onScreenCreated = { screen ->
-            // Defines an action that should be done after the screen is created.
-            SdkCall.execute {
-                /* 
-                Define a rectangle in which the map view will expand.
-                Predefined value of the offsets is 0.
-                Value 1 means the offset will take 100% of available space.
-                 */
-                val mainViewRect = RectF(0.0f, 0.0f, 1.0f, 1.0f)
-                // Produce a map view and establish that it is the main map view.
-                val mapView = MapView.produce(screen, mainViewRect)
-                mainMapView = mapView
-            }
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        SdkCall.execute {
-            // Release the map view along with the resources.
-            mainMapView?.release()
         }
     }
 

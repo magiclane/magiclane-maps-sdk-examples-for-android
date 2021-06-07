@@ -18,11 +18,12 @@ import android.view.SurfaceHolder
 import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
-import com.generalmagic.apihelper.EnumHelp
-import com.generalmagic.datatypes.EDirectBufferType
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.RectF
+import com.generalmagic.sdk.core.enums.EDirectBufferType
+import com.generalmagic.sdk.core.enums.EResolution
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.Canvas
 import com.generalmagic.sdk.d3scene.CanvasBufferRenderer
 import com.generalmagic.sdk.d3scene.CanvasListener
@@ -42,9 +43,10 @@ import com.generalmagic.sdk.examples.demo.app.elements.ButtonsDecorator
 import com.generalmagic.sdk.examples.demo.util.IntentHelper
 import com.generalmagic.sdk.examples.demo.util.Util
 import com.generalmagic.sdk.sensordatasource.*
+import com.generalmagic.sdk.sensordatasource.enums.EDataType
+import com.generalmagic.sdk.util.EnumHelp
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
-import com.generalmagic.sensors.EResolution
+import com.generalmagic.sdk.util.Util.exportVideo
 import kotlinx.android.synthetic.main.activity_camera.*
 import kotlinx.android.synthetic.main.activity_list_view.*
 import kotlinx.android.synthetic.main.activity_list_view.root_view
@@ -517,11 +519,15 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
             if (!videoFile.exists())
                 return false
 
-            return Util.exportVideo(context, videoFile, GEMApplication.getPublicRecordsDir()) != null
+            return exportVideo(
+                context,
+                videoFile,
+                GEMApplication.getPublicRecordsDir()
+            ) != null
         }
 
-        override fun notifyComplete(reason: Int, hint: String) {
-            when (val error = SdkError.fromInt(reason)) {
+        override fun notifyComplete(reason: SdkError, hint: String) {
+            when (reason) {
                 SdkError.NoError -> {
 //                    val text = if (export(hint)) "Exported!"
 //                    else "Not Exported!"
@@ -530,7 +536,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
                 }
                 else -> {
                     postOnMain {
-                        Toast.makeText(context, "${error.name} - $hint", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "${reason.name} - $hint", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -632,7 +638,6 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
 
             val quality = EResolution.HD_720p
 //            val chunkLengthInMin = 5 //or RecorderConfiguration.INFINITE_RECORDING
-            val minimumBatteryPercent = 5
             val continuousRecording = true
 
             val config = RecorderConfiguration(logsDir, availableTypes)
@@ -640,7 +645,6 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
             config.setEnableAudio(enableAudio)
             config.setContinuousRecording(continuousRecording)
             config.setChunkDurationSeconds(chunkLengthInMin * 60L)
-            config.setMinimumBatteryPercent(minimumBatteryPercent)
             config.setKeepMinimumSeconds(keepRecentMin * 60L)
             config.setDiskSpaceLimit(diskLimitMB * 1024 * 1024)
 

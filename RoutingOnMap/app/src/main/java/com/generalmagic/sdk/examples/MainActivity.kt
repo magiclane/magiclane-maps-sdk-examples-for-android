@@ -10,90 +10,58 @@
 
 package com.generalmagic.sdk.examples
 
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.generalmagic.sdk.core.*
-import com.generalmagic.sdk.d3scene.Animation
-import com.generalmagic.sdk.d3scene.EAnimation
-import com.generalmagic.sdk.d3scene.MapView
-import com.generalmagic.sdk.examples.util.SdkInitHelper
-import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
-import com.generalmagic.sdk.examples.util.Util
+import com.generalmagic.sdk.core.GemSdk
+import com.generalmagic.sdk.core.GemSurfaceView
+import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
-import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
+import kotlin.system.exitProcess
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 class MainActivity : AppCompatActivity() {
-    private var mainMapView: MapView? = null
     private lateinit var progressBar: ProgressBar
+    private lateinit var gemSurfaceView: GemSurfaceView
 
-    private val routingService = RoutingService()
+    private val routingService = RoutingService(
+        onStarted = {
+            progressBar.visibility = View.VISIBLE
+        },
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+        onCompleted = { routes, reason, _ ->
+            progressBar.visibility = View.GONE
 
-    private fun calculateRoute() {
-        val waypoints = arrayListOf(
-            Landmark("London", Coordinates(51.5073204, -0.1276475)),
-            Landmark("Paris", Coordinates(48.8566932, 2.3514616))
-        )
+            when (reason) {
+                SdkError.NoError -> {
+                    SdkCall.execute {
+                        gemSurfaceView.getDefaultMapView()
+                            ?.presentRoutes(routes, displayLabel = true)
+                    }
+                }
 
-        routingService.calculateRoute(waypoints)
-    }
+                SdkError.Cancel -> {
+                    // The routing action was cancelled.
+                }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    private fun flyToRoute(route: Route) {
-        val animation = Animation()
-        animation.setType(EAnimation.AnimationLinear)
-
-        // Center the map on a specific route using the provided animation.
-        mainMapView?.centerOnRoute(route, Rect(), animation)
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    private fun formatAndAddRoutes(routes: ArrayList<Route>) {
-        for (routeIndex in 0 until routes.size) {
-            val route = routes[routeIndex]
-
-            // Format the route name.
-            val routeName = Util.formatRouteName(route)
-
-            /* 
-            Create an image list that will be added to the route name
-            and then be displayed in the route's bubble.
-             */
-            val imageList = arrayListOf<Image>()
-
-            // Check if the route has toll roads and if so, add the specific icon to image list.
-            if (route.hasTollRoads()) {
-                ImageDatabase().getImageById(Util.getTollIconId())?.let {
-                    imageList.add(it)
+                else -> {
+                    // There was a problem at computing the routing operation.
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Routing service error: ${reason.name}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
-
-            // Check if the route has ferry connections and if so, add the specific icon to image list.
-            if (route.hasFerryConnections()) {
-                ImageDatabase().getImageById(Util.getFerryIconId())?.let {
-                    imageList.add(it)
-                }
-            }
-
-            // Add the route to the map (along with the image list).
-            mainMapView?.preferences()?.routes()?.add(
-                route, routeIndex == 0, routeName, imageList
-            )
         }
-    }
+    )
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -102,90 +70,20 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         progressBar = findViewById(R.id.progressBar)
+        gemSurfaceView = findViewById(R.id.gem_surface)
 
-        /// GENERAL MAGIC
-        val mapSurface = findViewById<GemSurfaceView>(R.id.gem_surface)
-        mapSurface.onScreenCreated = { screen ->
-            // Defines an action that should be done after the screen is created.
-            SdkCall.execute {
-                /* 
-                Define a rectangle in which the map view will expand.
-                Predefined value of the offsets is 0.
-                Value 1 means the offset will take 100% of available space.
-                 */
-                val mainViewRect = RectF(0.0f, 0.0f, 1.0f, 1.0f)
-                // Produce a map view and establish that it is the main map view.
-                val mapView = MapView.produce(screen, mainViewRect)
-                mainMapView = mapView
-            }
-        }
-
-        routingService.onStarted = {
-            progressBar.visibility = View.VISIBLE
-        }
-
-        routingService.onCompleted = onCompleted@{ routes, reason, _ ->
-            progressBar.visibility = View.GONE
-
-            when (val gemError = SdkError.fromInt(reason)) {
-                SdkError.NoError -> {
-                    SdkCall.execute {
-                        // Format route names and add them to the map.
-                        formatAndAddRoutes(routes)
-
-                        // Get the main route from the ones that were found.
-                        val mainRoute: Route? = if (routes.size > 0) {
-                            routes[0]
-                        } else {
-                            null
-                        }
-
-                        if (mainRoute != null) {
-                            flyToRoute(mainRoute)
-                        }
-                    }
-                }
-
-                SdkError.Cancel -> {
-                    // The routing action was cancelled.
-                    return@onCompleted
-                }
-
-                else -> {
-                    // There was a problem at computing the routing operation.
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Routing service error: ${gemError.name}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-
-        SdkInitHelper.onMapReady = {
+        SdkSettings.onMapDataReady = {
             // Defines an action that should be done when the world map is ready (Updated/ loaded).
-            SdkCall.execute {
-                if (!SdkInitHelper.isMapReady) return@execute
-                calculateRoute()
-            }
+            calculateRoute()
         }
 
-        SdkInitHelper.onNetworkConnected = {
-            // Defines an action that should be done after the network is connected.
-            SdkInitHelper.onMapReady()
-        }
-
-        SdkInitHelper.onCancel = {
-            // Defines what should be executed when the SDK initialization is cancelled.
-            routingService.cancelRoute()
-        }
-
-        val app = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
-        val token = app.metaData.getString("com.generalmagic.sdk.token") ?: "YOUR_TOKEN"
-
-        if (!SdkInitHelper.init(this, token)) {
-            // The SDK initialization was not completed.
-            finish()
+        SdkSettings.onApiTokenRejected = {
+            /* 
+            The TOKEN you provided in the AndroidManifest.xml file was rejected.
+            Make sure you provide the correct value, or if you don't have a TOKEN,
+            check the generalmagic.com website, sign up/ sing in and generate one. 
+             */
+            Toast.makeText(this, "TOKEN REJECTED", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -195,13 +93,25 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
 
         // Deinitialize the SDK.
-        SdkInitHelper.deinit()
+        GemSdk.release()
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     override fun onBackPressed() {
-        terminateApp(this)
+        finish()
+        exitProcess(0)
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun calculateRoute() = SdkCall.execute {
+        val waypoints = arrayListOf(
+            Landmark("London", Coordinates(51.5073204, -0.1276475)),
+            Landmark("Paris", Coordinates(48.8566932, 2.3514616))
+        )
+
+        routingService.calculateRoute(waypoints)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

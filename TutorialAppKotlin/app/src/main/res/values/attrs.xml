@@ -1,148 +1,148 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-	<attr name="directionsEditTextStyle" format="reference"/>
+    <attr name="directionsEditTextStyle" format="reference" />
 
-	<declare-styleable name="DirectionsEditText">
-		<attr name="currentLocationTextColor" format="reference|color"/>
-		<attr name="highlightedTextColor" format="reference|color"/>
-	</declare-styleable>
+    <declare-styleable name="DirectionsEditText">
+        <attr name="currentLocationTextColor" format="reference|color" />
+        <attr name="highlightedTextColor" format="reference|color" />
+    </declare-styleable>
 
-	<declare-styleable name="Theme.GEM.Light">
-		<attr name="directionsEditTextStyle"/>
-	</declare-styleable>
+    <declare-styleable name="Theme.GEM.Light">
+        <attr name="directionsEditTextStyle" />
+    </declare-styleable>
 
-	<declare-styleable name="Theme.GEM.Dark">
-		<attr name="directionsEditTextStyle"/>
-	</declare-styleable>
+    <declare-styleable name="Theme.GEM.Dark">
+        <attr name="directionsEditTextStyle" />
+    </declare-styleable>
 
-	<attr name="dialogButtonTextColor" format="reference"/>
+    <attr name="dialogButtonTextColor" format="reference" />
 
-	<declare-styleable name="DialogButtonTextColor">
-		<attr name="buttonTextColor" format="reference|color"/>
-	</declare-styleable>
+    <declare-styleable name="DialogButtonTextColor">
+        <attr name="buttonTextColor" format="reference|color" />
+    </declare-styleable>
 
-	<declare-styleable name="ThemeDialog">
-		<attr name="dialogButtonTextColor"/>
-	</declare-styleable>
+    <declare-styleable name="ThemeDialog">
+        <attr name="dialogButtonTextColor" />
+    </declare-styleable>
 
-	<declare-styleable name="ThemeDialogDark">
-		<attr name="dialogButtonTextColor"/>
-	</declare-styleable>
+    <declare-styleable name="ThemeDialogDark">
+        <attr name="dialogButtonTextColor" />
+    </declare-styleable>
 
-	<declare-styleable name="DragListView">
-		<attr name="collapsed_height" format="dimension"/>
-		<attr name="drag_scroll_start" format="float"/>
-		<attr name="max_drag_scroll_speed" format="float"/>
-		<attr name="float_background_color" format="color"/>
-		<attr name="remove_mode">
-			<enum name="clickRemove" value="0"/>
-			<enum name="flingRemove" value="1"/>
-		</attr>
-		<attr name="track_drag_sort" format="boolean"/>
-		<attr name="float_alpha" format="float"/>
-		<attr name="slide_shuffle_speed" format="float"/>
-		<attr name="remove_animation_duration" format="integer"/>
-		<attr name="drop_animation_duration" format="integer"/>
-		<attr name="drag_enabled" format="boolean"/>
-		<attr name="sort_enabled" format="boolean"/>
-		<attr name="remove_enabled" format="boolean"/>
-		<attr name="drag_start_mode">
-			<enum name="onDown" value="0"/>
-			<enum name="onMove" value="1"/>
-			<enum name="onLongPress" value="2"/>
-		</attr>
-		<attr name="drag_handle_id" format="integer"/>
-		<attr name="fling_handle_id" format="integer"/>
-		<attr name="click_remove_id" format="integer"/>
-		<attr name="use_default_controller" format="boolean"/>
-	</declare-styleable>
+    <declare-styleable name="DragListView">
+        <attr name="collapsed_height" format="dimension" />
+        <attr name="drag_scroll_start" format="float" />
+        <attr name="max_drag_scroll_speed" format="float" />
+        <attr name="float_background_color" format="color" />
+        <attr name="remove_mode">
+            <enum name="clickRemove" value="0" />
+            <enum name="flingRemove" value="1" />
+        </attr>
+        <attr name="track_drag_sort" format="boolean" />
+        <attr name="float_alpha" format="float" />
+        <attr name="slide_shuffle_speed" format="float" />
+        <attr name="remove_animation_duration" format="integer" />
+        <attr name="drop_animation_duration" format="integer" />
+        <attr name="drag_enabled" format="boolean" />
+        <attr name="sort_enabled" format="boolean" />
+        <attr name="remove_enabled" format="boolean" />
+        <attr name="drag_start_mode">
+            <enum name="onDown" value="0" />
+            <enum name="onMove" value="1" />
+            <enum name="onLongPress" value="2" />
+        </attr>
+        <attr name="drag_handle_id" format="integer" />
+        <attr name="fling_handle_id" format="integer" />
+        <attr name="click_remove_id" format="integer" />
+        <attr name="use_default_controller" format="boolean" />
+    </declare-styleable>
 
-	<attr name="gravity">
-		<flag name="top" value="0x30"/>
-		<flag name="bottom" value="0x50"/>
-		<flag name="left" value="0x03"/>
-		<flag name="right" value="0x05"/>
-		<flag name="center_vertical" value="0x10"/>
-		<flag name="fill_vertical" value="0x70"/>
-		<flag name="center_horizontal" value="0x01"/>
-		<flag name="fill_horizontal" value="0x07"/>
-		<flag name="center" value="0x11"/>
-		<flag name="fill" value="0x77"/>
-		<flag name="clip_vertical" value="0x80"/>
-		<flag name="clip_horizontal" value="0x08"/>
-	</attr>
+    <attr name="gravity">
+        <flag name="top" value="0x30" />
+        <flag name="bottom" value="0x50" />
+        <flag name="left" value="0x03" />
+        <flag name="right" value="0x05" />
+        <flag name="center_vertical" value="0x10" />
+        <flag name="fill_vertical" value="0x70" />
+        <flag name="center_horizontal" value="0x01" />
+        <flag name="fill_horizontal" value="0x07" />
+        <flag name="center" value="0x11" />
+        <flag name="fill" value="0x77" />
+        <flag name="clip_vertical" value="0x80" />
+        <flag name="clip_horizontal" value="0x08" />
+    </attr>
 
-	<attr name="gridViewStyle" format="reference"/>
+    <attr name="gridViewStyle" format="reference" />
 
-	<declare-styleable name="TwoWayAbsListView">
-		<attr name="listSelector" format="color|reference"/>
-		<attr name="drawSelectorOnTop" format="boolean"/>
-		<attr name="stackFromBottom" format="boolean"/>
-		<attr name="scrollingCache" format="boolean"/>
-		<attr name="transcriptMode">
-			<enum name="disabled" value="0"/>
-			<enum name="normal" value="1"/>
-			<enum name="alwaysScroll" value="2"/>
-		</attr>
-		<attr name="cacheColorHint" format="color"/>
-		<attr name="smoothScrollbar" format="boolean"/>
-		<attr name="scrollDirectionPortrait">
-			<enum name="vertical" value="0"/>
-			<enum name="horizontal" value="1"/>
-		</attr>
-		<attr name="scrollDirectionLandscape">
-			<enum name="vertical" value="0"/>
-			<enum name="horizontal" value="1"/>
-		</attr>
-	</declare-styleable>
+    <declare-styleable name="TwoWayAbsListView">
+        <attr name="listSelector" format="color|reference" />
+        <attr name="drawSelectorOnTop" format="boolean" />
+        <attr name="stackFromBottom" format="boolean" />
+        <attr name="scrollingCache" format="boolean" />
+        <attr name="transcriptMode">
+            <enum name="disabled" value="0" />
+            <enum name="normal" value="1" />
+            <enum name="alwaysScroll" value="2" />
+        </attr>
+        <attr name="cacheColorHint" format="color" />
+        <attr name="smoothScrollbar" format="boolean" />
+        <attr name="scrollDirectionPortrait">
+            <enum name="vertical" value="0" />
+            <enum name="horizontal" value="1" />
+        </attr>
+        <attr name="scrollDirectionLandscape">
+            <enum name="vertical" value="0" />
+            <enum name="horizontal" value="1" />
+        </attr>
+    </declare-styleable>
 
-	<declare-styleable name="TwoWayGridView">
-		<attr name="horizontalSpacing" format="dimension"/>
-		<attr name="verticalSpacing" format="dimension"/>
-		<attr name="stretchMode">
-			<enum name="none" value="0"/>
-			<enum name="spacingWidth" value="1"/>
-			<enum name="columnWidth" value="2"/>
-			<enum name="spacingWidthUniform" value="3"/>
-		</attr>
-		<attr name="columnWidth" format="dimension"/>
-		<attr name="rowHeight" format="dimension"/>
-		<attr name="numColumns" format="integer" min="0">
-			<enum name="auto_fit" value="-1"/>
-		</attr>
-		<attr name="numRows" format="integer" min="0">
-			<enum name="auto_fit" value="-1"/>
-		</attr>
-		<attr name="gravity"/>
-	</declare-styleable>
+    <declare-styleable name="TwoWayGridView">
+        <attr name="horizontalSpacing" format="dimension" />
+        <attr name="verticalSpacing" format="dimension" />
+        <attr name="stretchMode">
+            <enum name="none" value="0" />
+            <enum name="spacingWidth" value="1" />
+            <enum name="columnWidth" value="2" />
+            <enum name="spacingWidthUniform" value="3" />
+        </attr>
+        <attr name="columnWidth" format="dimension" />
+        <attr name="rowHeight" format="dimension" />
+        <attr name="numColumns" format="integer" min="0">
+            <enum name="auto_fit" value="-1" />
+        </attr>
+        <attr name="numRows" format="integer" min="0">
+            <enum name="auto_fit" value="-1" />
+        </attr>
+        <attr name="gravity" />
+    </declare-styleable>
 
-	<declare-styleable name="PublicTransportRouteDescriptionLineView">
-		<attr name="textSize" format="dimension"/>
-		<attr name="strokeWidth" format="dimension"/>
-		<attr name="padding" format="dimension"/>
-		<attr name="radius" format="dimension"/>
-		<attr name="cellHeight" format="dimension"/>
-	</declare-styleable>
+    <declare-styleable name="PublicTransportRouteDescriptionLineView">
+        <attr name="textSize" format="dimension" />
+        <attr name="strokeWidth" format="dimension" />
+        <attr name="padding" format="dimension" />
+        <attr name="radius" format="dimension" />
+        <attr name="cellHeight" format="dimension" />
+    </declare-styleable>
 
-	<declare-styleable name="SlidingUpPanelLayout">
-		<attr name="umanoPanelHeight" format="dimension" />
-		<attr name="umanoShadowHeight" format="dimension" />
-		<attr name="umanoParallaxOffset" format="dimension" />
-		<attr name="umanoFadeColor" format="color" />
-		<attr name="umanoFlingVelocity" format="integer" />
-		<attr name="umanoDragView" format="reference" />
-		<attr name="umanoScrollableView" format="reference" />
-		<attr name="umanoOverlay" format="boolean"/>
-		<attr name="umanoClipPanel" format="boolean"/>
-		<attr name="umanoAnchorPoint" format="float" />
-		<attr name="umanoInitialState" format="enum">
-			<enum name="hidden" value="0" />
-			<enum name="collapsed" value="1" />
-			<enum name="anchored" value="2" />
-			<enum name="expanded" value="3" />
-		</attr>
-		<attr name="umanoScrollInterpolator" format="reference" />
-	</declare-styleable>
+    <declare-styleable name="SlidingUpPanelLayout">
+        <attr name="umanoPanelHeight" format="dimension" />
+        <attr name="umanoShadowHeight" format="dimension" />
+        <attr name="umanoParallaxOffset" format="dimension" />
+        <attr name="umanoFadeColor" format="color" />
+        <attr name="umanoFlingVelocity" format="integer" />
+        <attr name="umanoDragView" format="reference" />
+        <attr name="umanoScrollableView" format="reference" />
+        <attr name="umanoOverlay" format="boolean" />
+        <attr name="umanoClipPanel" format="boolean" />
+        <attr name="umanoAnchorPoint" format="float" />
+        <attr name="umanoInitialState" format="enum">
+            <enum name="hidden" value="0" />
+            <enum name="collapsed" value="1" />
+            <enum name="anchored" value="2" />
+            <enum name="expanded" value="3" />
+        </attr>
+        <attr name="umanoScrollInterpolator" format="reference" />
+    </declare-styleable>
 
 </resources>

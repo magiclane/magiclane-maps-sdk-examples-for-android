@@ -24,24 +24,63 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.generalmagic.sdk.core.EGenericCategoriesIDs
 import com.generalmagic.sdk.core.EUnitSystem
+import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GenericCategories
-import com.generalmagic.sdk.examples.util.SdkInitHelper
-import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
-import com.generalmagic.sdk.examples.util.Util
-import com.generalmagic.sdk.places.*
+import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.places.Coordinates
+import com.generalmagic.sdk.places.Landmark
+import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
+import com.generalmagic.sdk.util.SdkUtil.getDistText
+import com.generalmagic.sdk.util.Util.postOnMain
+import kotlin.system.exitProcess
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 class MainActivity : AppCompatActivity() {
-    private var listView: RecyclerView? = null
-    private var progressBar: ProgressBar? = null
+    private lateinit var listView: RecyclerView
+    private lateinit var progressBar: ProgressBar
 
-    private val searchService = SearchService()
+    private val searchService = SearchService(
+        onStarted = {
+            progressBar.visibility = View.VISIBLE
+        },
+
+        onCompleted = { results, reason, _ ->
+            progressBar.visibility = View.GONE
+
+            when (reason) {
+                SdkError.NoError -> {
+                    // No error encountered, we can handle the results.
+                    val position = SdkCall.execute { PositionService().getCurrentPosition() }
+
+                    position?.let { reference ->
+                        if (results.isNotEmpty()) {
+                            val adapter = CustomAdapter(reference, results)
+                            listView.adapter = adapter
+                        } else {
+                            // The search completed without errors, but there were no results found.
+                            showToast("No results!")
+                        }
+                    }
+                }
+
+                SdkError.Cancel -> {
+                    // The search action was cancelled.
+                }
+
+                else -> {
+                    // There was a problem at computing the search operation.
+                    showToast("Search service error: ${reason.name}")
+                }
+            }
+        }
+    )
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -52,86 +91,42 @@ class MainActivity : AppCompatActivity() {
         listView = findViewById(R.id.list_view)
         progressBar = findViewById(R.id.progressBar)
         val layoutManager = LinearLayoutManager(this)
-        listView?.layoutManager = layoutManager
+        listView.layoutManager = layoutManager
 
         val separator = DividerItemDecoration(applicationContext, layoutManager.orientation)
-        listView?.addItemDecoration(separator)
+        listView.addItemDecoration(separator)
 
-        listView?.setBackgroundResource(R.color.white)
+        listView.setBackgroundResource(R.color.white)
         val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
-        listView?.setPadding(lateralPadding, 0, lateralPadding, 0)
+        listView.setPadding(lateralPadding, 0, lateralPadding, 0)
 
         /// GENERAL MAGIC
-        SdkInitHelper.onMapReady = {
+        SdkSettings.onMapDataReady = {
             // Defines an action that should be done after the world map is ready.
             search()
         }
 
-        SdkInitHelper.onNetworkConnected = {
-            // Defines an action that should be done after the network is connected.
-            SdkInitHelper.onMapReady()
+        SdkSettings.onApiTokenRejected = {
+            /* 
+            The TOKEN you provided in the AndroidManifest.xml file was rejected.
+            Make sure you provide the correct value, or if you don't have a TOKEN,
+            check the generalmagic.com website, sign up/ sing in and generate one. 
+             */
+            showToast("TOKEN REJECTED")
         }
 
-        searchService.onStarted = {
-            progressBar?.visibility = View.VISIBLE
-        }
-
-        searchService.onCompleted = onCompleted@{ results, reason, _ ->
-            progressBar?.visibility = View.GONE
-
-            when (val gemError = SdkError.fromInt(reason)) {
-                SdkError.NoError -> {
-                    // No error encountered, we can handle the results.
-                    val reference = Util.getMyPosition() ?: return@onCompleted
-
-                    val adapter = CustomAdapter(reference, results)
-                    listView?.adapter = adapter
-
-                    if (results.isEmpty()) {
-                        // The search completed without errors, but there were no results found.
-                        Toast.makeText(
-                            this@MainActivity, "No results!", Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-
-                SdkError.Cancel -> {
-                    // The search action was cancelled.
-                    return@onCompleted
-                }
-
-                else -> {
-                    // There was a problem at computing the search operation.
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Search service error: ${gemError.name}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-
-
-        SdkInitHelper.onCancel = {
-            // Defines what should be executed when the SDK initialization is cancelled.
-            cancelSearch()
-        }
-
-        val app = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
-        val token = app.metaData.getString("com.generalmagic.sdk.token") ?: "YOUR_TOKEN"
-
-        if (!SdkInitHelper.init(this, token)) {
+        // This step of initialization is mandatory if you want to use the SDK without a map.
+        if (!GemSdk.initSdkWithDefaults(this)) {
             // The SDK initialization was not completed.
             finish()
         }
 
         /* 
         The SDK initialization completed with success, but for the search action to be executed
-        the app needs some permissions.
-        Not requesting this permissions or not granting them will make the search to not work.
+        properly the app needs permission to get your location.
+        Not requesting this permission or not granting it will make the search fail.
          */
         requestPermissions(this)
-
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -139,80 +134,48 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        // Deinitialize the SDK.
-        SdkInitHelper.deinit()
+        // Release the SDK.
+        GemSdk.release()
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     override fun onBackPressed() {
-        terminateApp(this)
+        finish()
+        exitProcess(0)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private fun search() {
+    private fun search() = SdkCall.execute {
         // If one of the location permissions is granted, we can do the search around action.
         val hasPermissions =
             PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        if (!hasPermissions) return@execute
 
-        if (hasPermissions) {
-            SdkCall.execute {
-                val position = PositionService().getPosition()
-                val latitude = position?.getLatitude() ?: 0.0
-                val longitude = position?.getLongitude() ?: 0.0
-
-                val coordinates = Coordinates(latitude, longitude)
-                searchAround(coordinates)
-            }
+        PositionService().getCurrentPosition()?.let {
+            searchAround(it)
         }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private fun getFirstCategory(): LandmarkCategory? = SdkCall.execute {
-        // Get a list of all the landmark categories.
-        val categoriesList = GenericCategories().getCategories() ?: return@execute null
-
-        var category: LandmarkCategory? = null
-        if (categoriesList.size > 0) {
-            category = categoriesList[0]
-        }
-
-        return@execute category
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    private fun searchAround(reference: Coordinates) {
-        SdkCall.execute {
-            if (!SdkInitHelper.isMapReady) return@execute
-
-            // Cancel any search that is in progress now.
-            cancelSearch()
-
-            // Set the necessary preferences.
-            searchService.preferences.setSearchMapPOIs(true)
-
-            // Get the desired category.
-            val category = getFirstCategory()
-            category?.let {
-                // Add to the search preferences the landmark category you want to search into.
-                searchService.preferences.lmks()
-                    ?.addStoreCategoryId(it.getLandmarkStoreId(), it.getId())
-
-                // Search around position using the provided search preferences and/ or filter.
-                searchService.searchAroundPosition(
-                    reference, ""
-                )
-            }
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    private fun cancelSearch() = SdkCall.execute {
+    private fun searchAround(reference: Coordinates) = SdkCall.execute {
+        // Cancel any search that is in progress now.
         searchService.cancelSearch()
+
+        // Set the necessary preferences.
+        searchService.preferences.setSearchMapPOIs(true)
+
+        // Get the landmark category for Gas Stations.
+        GenericCategories().getCategory(EGenericCategoriesIDs.GasStation)?.let {
+            // Add to the search preferences the landmark category you want to search into.
+            searchService.preferences.lmks()
+                ?.addStoreCategoryId(it.getLandmarkStoreId(), it.getId())
+
+            // Search around position using the provided search preferences and/ or filter.
+            searchService.searchAroundPosition(reference)
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -230,12 +193,11 @@ class MainActivity : AppCompatActivity() {
 
         val result = grantResults[permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)]
         if (result != PackageManager.PERMISSION_GRANTED) {
-            terminateApp(this)
+            finish()
+            exitProcess(0)
         }
 
-        com.generalmagic.sdk.util.Util.postOnMain {
-            search()
-        }
+        postOnMain { search() }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -253,6 +215,12 @@ class MainActivity : AppCompatActivity() {
             activity,
             permissions.toTypedArray()
         )
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun showToast(text: String) = postOnMain {
+        Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show()
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -290,18 +258,14 @@ class CustomAdapter(private val reference: Coordinates, private val dataSet: Arr
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
-        val dist: Pair<String, String>
-        val meters = SdkCall.execute {
-            return@execute dataSet[position].getCoordinates()?.getDistance(reference)?.toInt()
-        } ?: 0
+    override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) = SdkCall.execute {
+        val meters = dataSet[position].getCoordinates()?.getDistance(reference)?.toInt() ?: 0
+        val dist = getDistText(meters, EUnitSystem.Metric, true)
 
-        dist = Util.getDistText(meters, EUnitSystem.Metric, true)
-
-        viewHolder.text.text = SdkCall.execute { dataSet[position].getName() }
-        viewHolder.status.text = SdkCall.execute { dist.first }
-        viewHolder.description.text = SdkCall.execute { dist.second }
-    }
+        viewHolder.text.text = dataSet[position].getName()
+        viewHolder.status.text = dist.first
+        viewHolder.description.text = dist.second
+    } ?: Unit
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 

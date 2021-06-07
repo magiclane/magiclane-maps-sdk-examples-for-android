@@ -13,6 +13,7 @@ package com.generalmagic.sdk.examples.demo.activities.searchaddress
 import android.graphics.Bitmap
 import android.os.Bundle
 import com.generalmagic.sdk.core.MapDetails
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.demo.activities.SLIAdapter
 import com.generalmagic.sdk.examples.demo.activities.SearchListActivity
 import com.generalmagic.sdk.examples.demo.activities.SearchListItem
@@ -23,8 +24,8 @@ import com.generalmagic.sdk.places.EAddressField
 import com.generalmagic.sdk.places.GuidedAddressSearchService
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilUiTexts.getUIString
 import kotlinx.android.synthetic.main.activity_list_view.*
 
 class CountriesSearchActivity : SearchListActivity() {
@@ -57,8 +58,7 @@ class CountriesSearchActivity : SearchListActivity() {
         SdkCall.execute {
             service.search(
                 Landmark(), mFilter, EAddressDetailLevel.Country
-            ) { landmarks, reason, _ ->
-                val gemError = SdkError.fromInt(reason)
+            ) { landmarks, gemError, _ ->
                 if (gemError != SdkError.Cancel) {
                     mItems.clear()
                 }
@@ -105,7 +105,7 @@ class CountriesSearchActivity : SearchListActivity() {
 
     @Suppress("unused")
     fun getFilterHint(): String {
-        return Utils.getUIString(StringIds.eStrSearch)
+        return getUIString(StringIds.eStrSearch)
     }
 }
 

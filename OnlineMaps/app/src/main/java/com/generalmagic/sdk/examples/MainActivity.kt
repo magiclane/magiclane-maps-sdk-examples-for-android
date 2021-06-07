@@ -10,7 +10,6 @@
 
 package com.generalmagic.sdk.examples
 
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -22,108 +21,87 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.generalmagic.sdk.examples.util.SdkInitHelper
-import com.generalmagic.sdk.examples.util.SdkInitHelper.terminateApp
-import com.generalmagic.sdk.examples.util.Utils
 import com.generalmagic.sdk.content.ContentStore
 import com.generalmagic.sdk.content.ContentStoreItem
 import com.generalmagic.sdk.content.EContentType
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.ProgressListener
+import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkError
-import com.generalmagic.sdk.util.Util.postOnMain
+import com.generalmagic.sdk.util.SdkUtil
+import com.generalmagic.sdk.util.Util
+import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
     private var listView: RecyclerView? = null
     private val contentStore = ContentStore()
-    var progressBar: ProgressBar? = null
+    private var progressBar: ProgressBar? = null
 
-    private val progressListener = object : ProgressListener() {
-        override fun notifyStart(hasProgress: Boolean) {
-            postOnMain { progressBar?.visibility = View.VISIBLE }
-        }
+    private val progressListener = ProgressListener.create(
+        onStarted = {
+            progressBar?.visibility = View.VISIBLE
+        },
 
-        override fun notifyComplete(reason: Int, hint: String) {
-            when (val gemError = SdkError.fromInt(reason)) {
+        onCompleted = { reason, _ ->
+            progressBar?.visibility = View.GONE
+
+            when (reason) {
                 SdkError.NoError -> {
-                    // No error encountered, we can handle the results.
-                    var models: ArrayList<ContentStoreItem>? = null
-                    // Get the list of maps that was retrieved in the content store.
-                    val result = contentStore.getStoreContentList(EContentType.RoadMap.value)
-                    if (result != null) models = result.first
+                    SdkCall.execute {
+                        // No error encountered, we can handle the results.
+                        var models: ArrayList<ContentStoreItem>? = null
+                        // Get the list of maps that was retrieved in the content store.
+                        val result = contentStore.getStoreContentList(EContentType.RoadMap.value)
+                        if (result != null) models = result.first
 
-                    if (!models.isNullOrEmpty()) {
-                        // The map items list is not empty or null.
-                        val item = models[0]
-                        val itemName = item.getName()
+                        if (!models.isNullOrEmpty()) {
+                            // The map items list is not empty or null.
+                            val mapItem = models[0]
+                            val itemName = mapItem.getName()
 
-                        // Define a listener to the progress of the map download action. 
-                        val downloadProgressListener = object : ProgressListener() {
-                            override fun notifyStart(hasProgress: Boolean) {
-                                postOnMain {
+                            // Define a listener to the progress of the map download action.
+                            val downloadProgressListener = ProgressListener.create(
+                                onStarted = {
                                     progressBar?.visibility = View.VISIBLE
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        "Started downloading $itemName.",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
+                                    showToast("Started downloading $itemName.")
+                                },
 
-                            override fun notifyComplete(reason: Int, hint: String) {
-                                postOnMain {
+                                onCompleted = { _, _ ->
                                     progressBar?.visibility = View.GONE
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        "$itemName was downloaded.",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
+                                    showToast("$itemName was downloaded.")
+                                },
+
+                                postOnMain = true
+                            )
+
+                            // Start downloading the first map item.
+                            SdkCall.execute {
+                                mapItem.asyncDownload(
+                                    downloadProgressListener,
+                                    GemSdk.EDataSavePolicy.UseDefault,
+                                    true
+                                )
                             }
                         }
 
-                        // Start downloading the first map item.
-                        SdkCall.execute {
-                            item.asyncDownload(
-                                downloadProgressListener,
-                                GemSdk.EDataSavePolicy.UseDefault,
-                                true
-                            )
-                        }
-                    }
-
-                    postOnMain {
-                        progressBar?.visibility = View.GONE
                         displayList(models)
                     }
                 }
 
                 SdkError.Cancel -> {
                     // The action was cancelled.
-                    return
                 }
 
                 else -> {
                     // There was a problem at retrieving the content store items.
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Content store service error: ${gemError.name}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showToast("Content store service error: ${reason.name}")
                 }
             }
-        }
-    }
+        },
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    private fun displayList(models: ArrayList<ContentStoreItem>?) {
-        if (models != null) {
-            val adapter = CustomAdapter(models)
-            listView?.adapter = adapter
-        }
-    }
+        postOnMain = true
+    )
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -144,22 +122,25 @@ class MainActivity : AppCompatActivity() {
         listView?.setPadding(lateralPadding, 0, lateralPadding, 0)
 
         /// GENERAL MAGIC
-        SdkInitHelper.onMapReady = {
+        SdkSettings.onMapDataReady = {
             SdkCall.execute {
                 // Defines an action that should be done after the network is connected.
                 // Call to the content store to asynchronously retrieve the list of maps.
                 contentStore.asyncGetStoreContentList(EContentType.RoadMap.value, progressListener)
             }
         }
-        
-        SdkInitHelper.onNetworkConnected = {
-            SdkInitHelper.onMapReady()
+
+        SdkSettings.onApiTokenRejected = {
+            /* 
+            The TOKEN you provided in the AndroidManifest.xml file was rejected.
+            Make sure you provide the correct value, or if you don't have a TOKEN,
+            check the generalmagic.com website, sign up/ sing in and generate one. 
+             */
+            showToast("TOKEN REJECTED")
         }
 
-        val app = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
-        val token = app.metaData.getString("com.generalmagic.sdk.token") ?: "YOUR_TOKEN"
-
-        if (!SdkInitHelper.init(this, token)) {
+        // This step of initialization is mandatory if you want to use the SDK without a map.
+        if (!GemSdk.initSdkWithDefaults(this)) {
             // The SDK initialization was not completed.
             finish()
         }
@@ -171,14 +152,32 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
 
         // Deinitialize the SDK.
-        SdkInitHelper.deinit()
+        GemSdk.release()
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     override fun onBackPressed() {
-        terminateApp(this)
+        finish()
+        exitProcess(0)
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun displayList(models: ArrayList<ContentStoreItem>?) {
+        if (models != null) {
+            val adapter = CustomAdapter(models)
+            listView?.adapter = adapter
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun showToast(text: String) = Util.postOnMain {
+        Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show()
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -209,7 +208,7 @@ class CustomAdapter(private val dataSet: ArrayList<ContentStoreItem>) :
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         viewHolder.text.text =
-            SdkCall.execute { dataSet[position].getName() + " (" + Utils.formatSizeAsText(dataSet[position].getTotalSize()) + ")" }
+            SdkCall.execute { dataSet[position].getName() + " (" + SdkUtil.formatSizeAsText(dataSet[position].getTotalSize()) + ")" }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
