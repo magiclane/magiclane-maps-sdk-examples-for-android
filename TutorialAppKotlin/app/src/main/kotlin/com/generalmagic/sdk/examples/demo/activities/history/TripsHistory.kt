@@ -17,7 +17,7 @@ import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteBookmarks
 import com.generalmagic.sdk.routesandnavigation.RoutePreferences
 import com.generalmagic.sdk.util.StringIds
-import com.generalmagic.sdk.util.UtilUiTexts.getUIString
+import com.generalmagic.sdk.util.SdkUtil.getUIString
 import java.util.*
 import kotlin.math.abs
 

@@ -19,18 +19,15 @@ import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.enums.SdkError
-import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkUtil
-import com.generalmagic.sdk.util.Util.postOnMain
 import kotlin.system.exitProcess
 
 
 class MainActivity : AppCompatActivity() {
-    private var mainRoute: Route? = null
     private lateinit var progressBar: ProgressBar
 
     private val routingService = RoutingService(
@@ -38,20 +35,15 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { routes, reason, _ ->
+        onCompleted = onCompleted@{ routes, reason, _ ->
             progressBar.visibility = View.GONE
 
             when (reason) {
                 SdkError.NoError -> {
-                    // No error encountered, we can handle the results.
-                    SdkCall.execute {
-                        // Get the main route from the ones that were found.
-                        mainRoute = if (routes.size > 0) routes[0] else null
+                    if (routes.size == 0) return@onCompleted
 
-                        // Get formatted name of the main route.
-                        val routeName = mainRoute?.let { formatRouteName(it) } ?: ""
-                        postOnMain { displayRouteInfo(routeName) }
-                    }
+                    // Get the main route from the ones that were found.
+                    displayRouteInfo(formatRouteName(routes[0]))
                 }
 
                 SdkError.Cancel -> {
@@ -124,9 +116,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun calculateRoute() = SdkCall.execute {
         val wayPoints = arrayListOf(
-            Landmark("Frankfurt am Main", Coordinates(50.11428, 8.68133)),
-            Landmark("Karlsruhe", Coordinates(49.0069, 8.4037)),
-            Landmark("Munich", Coordinates(48.1351, 11.5820))
+            Landmark("Frankfurt am Main", 50.11428, 8.68133),
+            Landmark("Karlsruhe", 49.0069, 8.4037),
+            Landmark("Munich", 48.1351, 11.5820)
         )
 
         routingService.calculateRoute(wayPoints)
@@ -134,14 +126,14 @@ class MainActivity : AppCompatActivity() {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private fun formatRouteName(route: Route): String {
-        val timeDistance = route.getTimeDistance() ?: return ""
+    private fun formatRouteName(route: Route): String = SdkCall.execute {
+        val timeDistance = route.getTimeDistance() ?: return@execute ""
         val distInMeters = timeDistance.getTotalDistance()
         val timeInSeconds = timeDistance.getTotalTime()
 
         val distTextPair = SdkUtil.getDistText(
             distInMeters,
-            SdkSettings.getUnitSystem(),
+            SdkSettings().getUnitSystem(),
             bHighResolution = true
         )
 
@@ -154,9 +146,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        return String.format(
+        return@execute String.format(
             "$wayPointsText \n\n ${distTextPair.first} ${distTextPair.second} \n " +
                 "${timeTextPair.first} ${timeTextPair.second}"
         )
-    }
+    } ?: ""
 }

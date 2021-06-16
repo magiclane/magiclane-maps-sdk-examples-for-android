@@ -15,7 +15,7 @@ import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
-import com.generalmagic.sdk.util.UtilUiTexts.getUIString
+import com.generalmagic.sdk.util.SdkUtil.getUIString
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -230,7 +230,7 @@ object GEMRouteProfileView {
         mMapView = mapView
         mAltitudeFactor = 1.0
 
-        when (SdkSettings.getUnitSystem()) {
+        when (SdkSettings().getUnitSystem()) {
             EUnitSystem.ImperialUk,
             EUnitSystem.ImperialUs -> {
                 mAltitudeFactor = METERS_TO_FT
@@ -510,7 +510,7 @@ object GEMRouteProfileView {
 
 
     fun getElevationChartVerticalAxisUnit(): String {
-        return when (SdkSettings.getUnitSystem()) {
+        return when (SdkSettings().getUnitSystem()) {
             EUnitSystem.ImperialUk,
             EUnitSystem.ImperialUs -> {
                 getUIString(StringIds.eStrFt)
@@ -707,7 +707,7 @@ object GEMRouteProfileView {
     }
 
     private fun getDist(meters: Int): Double {
-        val unitsSystem = SdkSettings.getUnitSystem()
+        val unitsSystem = SdkSettings().getUnitSystem()
 
         var miles = 0.0
         val yardsOrFeet: Double
@@ -852,7 +852,7 @@ object GEMRouteProfileView {
         val routeTerrainProfile = mRoute.getTerrainProfile()
 
         routeTerrainProfile.let {
-            val unitsSystem = SdkSettings.getUnitSystem()
+            val unitsSystem = SdkSettings().getUnitSystem()
 
             tmp = when (unitsSystem) {
                 EUnitSystem.Metric -> {

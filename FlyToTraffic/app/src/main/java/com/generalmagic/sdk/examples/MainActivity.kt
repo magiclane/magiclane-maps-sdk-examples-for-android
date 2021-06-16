@@ -19,11 +19,7 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.enums.SdkError
-import com.generalmagic.sdk.d3scene.Animation
-import com.generalmagic.sdk.d3scene.EAnimation
-import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
-import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteTrafficEvent
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
@@ -41,31 +37,31 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { routes, gemError, _ ->
+        onCompleted = onCompleted@{ routes, gemError, _ ->
             progressBar.visibility = View.GONE
 
             when (gemError) {
                 SdkError.NoError -> {
-                    // No error encountered, we can handle the results.
+                    if (routes.size == 0) return@onCompleted
+
+                    val route = routes[0]
+
+                    // Get Traffic events from the main route.
+                    val events = SdkCall.execute { route.getTrafficEvents() }
+
+                    if (events == null || events.size == 0) {
+                        showToast("No traffic events!")
+                        return@onCompleted
+                    }
+
+                    // Get the first traffic event from the main route.
+                    val trafficEvent = events[0]
+
                     SdkCall.execute {
-                        // Get the main route from the ones that were found.
-                        val mainRoute: Route? = if (routes.size > 0) routes[0] else null
+                        // Add the main route to the map so it can be displayed.
+                        gemSurfaceView.getDefaultMapView()?.presentRoute(route)
 
-                        // Get the traffic events along the main route.
-                        val trafficEventsLists = mainRoute?.getTrafficEvents() ?: ArrayList()
-                        // Get the first traffic event from the main route.
-                        val trafficEvent =
-                            if (trafficEventsLists.size == 0) null else trafficEventsLists[0]
-
-                        if (trafficEvent != null && mainRoute != null) {
-                            // Add the main route to the map so it can be displayed.
-                            gemSurfaceView.getDefaultMapView()
-                                ?.presentRoutes(arrayListOf(mainRoute), displayLabel = false)
-
-                            flyToTraffic(trafficEvent)
-                        } else {
-                            showToast("No traffic events!")
-                        }
+                        flyToTraffic(trafficEvent)
                     }
                 }
 
@@ -93,8 +89,8 @@ class MainActivity : AppCompatActivity() {
         SdkSettings.onMapDataReady = {
             SdkCall.execute {
                 val waypoints = arrayListOf(
-                    Landmark("London", Coordinates(51.5073204, -0.1276475)),
-                    Landmark("Paris", Coordinates(48.8566932, 2.3514616))
+                    Landmark("London", 51.5073204, -0.1276475),
+                    Landmark("Paris", 48.8566932, 2.3514616)
                 )
 
                 routingService.calculateRoute(waypoints)
@@ -131,9 +127,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun flyToTraffic(trafficEvent: RouteTrafficEvent) = SdkCall.execute {
         // Center the map on a specific traffic event using the provided animation.
-        gemSurfaceView.getDefaultMapView()?.centerOnRouteTrafficEvent(
-            trafficEvent, animation = Animation(EAnimation.AnimationLinear)
-        )
+        gemSurfaceView.getDefaultMapView()?.centerOnRouteTrafficEvent(trafficEvent)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

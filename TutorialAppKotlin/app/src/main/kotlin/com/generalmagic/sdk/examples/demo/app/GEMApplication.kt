@@ -104,12 +104,9 @@ object GEMApplication {
         eRecordsPath = StringBuilder().append(Util.getSdCardPath(context))
             .append(File.separator).append(recordsDirName).toString()
 
-        mapSurface.onScreenCreated = { screen ->
-            val rectF = RectF(0.0f, 0.0f, 1.0f, 1.0f)
-            MapView.produce(screen, rectF)?.let {
-                mainMapView = it
-                notifyMapFollowStatusChanged(it.isFollowingPosition())
-            }
+        mapSurface.onDefaultMapViewCreated = {
+            mainMapView = it
+            notifyMapFollowStatusChanged(it.isFollowingPosition())
         }
 
         // touch
@@ -196,11 +193,7 @@ object GEMApplication {
             if (isFollowingGps())
                 return@execute // already following...
 
-            val animation = Animation()
-            animation.setType(EAnimation.AnimationLinear)
-            animation.setDuration(900)
-
-            mainMapView.startFollowingPosition(animation)
+            mainMapView.startFollowingPosition()
             notifyMapFollowStatusChanged(true)
         }
     }
@@ -222,17 +215,13 @@ object GEMApplication {
 
     fun focusOnRouteInstructionItem(value: RouteInstruction) {
         SdkCall.execute {
-            val animation = Animation()
-            animation.setType(EAnimation.AnimationLinear)
-            getMainMapView()?.centerOnRouteInstruction(value, -1, Xy(), animation)
+            getMainMapView()?.centerOnRouteInstruction(value)
         }
     }
 
     fun focusOnRouteTrafficItem(value: RouteTrafficEvent) {
         SdkCall.execute {
-            val animation = Animation()
-            animation.setType(EAnimation.AnimationLinear)
-            getMainMapView()?.centerOnRouteTrafficEvent(value, -1, Rect(), animation)
+            getMainMapView()?.centerOnRouteTrafficEvent(value)
         }
     }
 

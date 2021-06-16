@@ -19,11 +19,7 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.enums.SdkError
-import com.generalmagic.sdk.d3scene.Animation
-import com.generalmagic.sdk.d3scene.EAnimation
-import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
-import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteInstruction
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
@@ -41,31 +37,32 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { routes, gemError, _ ->
+        onCompleted = onCompleted@{ routes, gemError, _ ->
             progressBar.visibility = View.GONE
 
             when (gemError) {
                 SdkError.NoError -> {
-                    // No error encountered, we can handle the results.
+                    if (routes.size == 0) return@onCompleted
+
+                    // Get the main route from the ones that were found.
+                    val route = routes[0]
+
                     SdkCall.execute {
-                        // Get the main route from the ones that were found.
-                        val mainRoute: Route? = if (routes.size > 0) routes[0] else null
+                        val instructions = route.getInstructions()
+                        if (instructions.size == 0) {
+                            showToast("No route instructions found!")
+                            return@execute
+                        }
 
                         // Get an instruction from the main route.
-                        val routeInstruction =
-                            mainRoute?.getInstructions()?.let {
-                                if (it.size > 2) it[3] else it[0]
-                            }
-
-                        if (routeInstruction != null) {
-                            // Add the main route to the map so it can be displayed.
-                            gemSurfaceView.getDefaultMapView()
-                                ?.presentRoutes(arrayListOf(mainRoute), displayLabel = false)
-
-                            flyToInstruction(routeInstruction)
-                        } else {
-                            showToast("No route instructions found!")
+                        val instruction = route.getInstructions().let {
+                            if (it.size >= 4) it[3] else it[0]
                         }
+
+                        // Add the main route to the map so it can be displayed.
+                        gemSurfaceView.getDefaultMapView()?.presentRoute(route)
+
+                        flyToInstruction(instruction)
                     }
                 }
 
@@ -93,8 +90,8 @@ class MainActivity : AppCompatActivity() {
         SdkSettings.onMapDataReady = {
             SdkCall.execute {
                 val waypoints = arrayListOf(
-                    Landmark("London", Coordinates(51.5073204, -0.1276475)),
-                    Landmark("Paris", Coordinates(48.8566932, 2.3514616))
+                    Landmark("London", 51.5073204, -0.1276475),
+                    Landmark("Paris", 48.8566932, 2.3514616)
                 )
 
                 routingService.calculateRoute(waypoints)
@@ -129,11 +126,9 @@ class MainActivity : AppCompatActivity() {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private fun flyToInstruction(routeInstruction: RouteInstruction) = SdkCall.execute {
+    private fun flyToInstruction(instruction: RouteInstruction) = SdkCall.execute {
         // Center the map on a specific route instruction using the provided animation.
-        gemSurfaceView.getDefaultMapView()?.centerOnRouteInstruction(
-            routeInstruction, animation = Animation(EAnimation.AnimationLinear)
-        )
+        gemSurfaceView.getDefaultMapView()?.centerOnRouteInstruction(instruction)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

@@ -16,13 +16,10 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.Image
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.d3scene.Animation
-import com.generalmagic.sdk.d3scene.EAnimation
 import com.generalmagic.sdk.d3scene.EMarkerType
 import com.generalmagic.sdk.d3scene.Marker
 import com.generalmagic.sdk.d3scene.MarkerCollection
 import com.generalmagic.sdk.d3scene.MarkerCollectionDisplaySettings
-import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.util.SdkCall
 import kotlin.system.exitProcess
 
@@ -66,32 +63,29 @@ class MainActivity : AppCompatActivity() {
             Make a MarkerCollection and a Marker item that will be stored in the collection.
             You can create multiple Marker items that can be added in the same collection.
              */
-            val markerCollection =
-                MarkerCollection(EMarkerType.Polyline.value, "My marker collection")
+            val markerCollection = MarkerCollection(EMarkerType.Polyline, "My marker collection")
 
             // Define a market item and add the necessary coordinates to it.
             val marker = Marker().apply {
-                add(Coordinates(52.360234, 4.886782))
-                add(Coordinates(52.360495, 4.886266))
-                add(Coordinates(52.360854, 4.885539))
-                add(Coordinates(52.361184, 4.884849))
-                add(Coordinates(52.361439, 4.884344))
-                add(Coordinates(52.361593, 4.883986))
+                add(52.360234, 4.886782)
+                add(52.360495, 4.886266)
+                add(52.360854, 4.885539)
+                add(52.361184, 4.884849)
+                add(52.361439, 4.884344)
+                add(52.361593, 4.883986)
             }
 
             // Add the marker item to the collection.
             markerCollection.add(marker)
 
             // Make a list of settings that will decide how each marker collection will be displayed on the map.
-            val settings = MarkerCollectionDisplaySettings().apply { setImage(Image()) }
+            val settings = MarkerCollectionDisplaySettings(image = Image())
 
             // Add the collection to the desired map view so it can be displayed.
             mapView.preferences()?.markers()?.add(markerCollection, settings)
 
-            markerCollection.getArea()?.let { area ->
-                // Center the map on this marker collection's area using the provided animation.
-                mapView.centerOnArea(area, animation = Animation(EAnimation.AnimationLinear))
-            }
+            // Center the map on this marker collection's area.
+            markerCollection.getArea()?.let { mapView.centerOnArea(it) }
         }
     }
 

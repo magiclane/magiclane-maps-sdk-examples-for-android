@@ -33,8 +33,8 @@ import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
+import com.generalmagic.sdk.util.SdkUtil
 import com.generalmagic.sdk.util.Util.postOnMain
-import com.generalmagic.sdk.util.UtilUiTexts.getDistText
 import kotlin.system.exitProcess
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -43,27 +43,23 @@ class MainActivity : AppCompatActivity() {
     private lateinit var listView: RecyclerView
     private lateinit var progressBar: ProgressBar
 
+    private var reference: Coordinates? = null
     private val searchService = SearchService(
         onStarted = {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { results, reason, _ ->
+        onCompleted = onCompleted@{ results, reason, _ ->
             progressBar.visibility = View.GONE
 
             when (reason) {
                 SdkError.NoError -> {
                     // No error encountered, we can handle the results.
-                    val position = SdkCall.execute { PositionService().getCurrentPosition() }
-
-                    position?.let { reference ->
-                        if (results.isNotEmpty()) {
-                            val adapter = CustomAdapter(reference, results)
-                            listView.adapter = adapter
-                        } else {
-                            // The search completed without errors, but there were no results found.
-                            showToast("No results!")
-                        }
+                    if (results.isNotEmpty()) {
+                        reference?.let { listView.adapter = CustomAdapter(it, results) }
+                    } else {
+                        // The search completed without errors, but there were no results found.
+                        showToast("No results!")
                     }
                 }
 
@@ -156,6 +152,8 @@ class MainActivity : AppCompatActivity() {
         searchService.cancelSearch()
 
         PositionService().getCurrentPosition()?.let {
+            reference = it
+
             // Search around position using the provided search preferences and/ or filter.
             searchService.searchAroundPosition(it)
         }
@@ -233,7 +231,7 @@ class CustomAdapter(private val reference: Coordinates, private val dataSet: Arr
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) = SdkCall.execute {
         val meters = dataSet[position].getCoordinates()?.getDistance(reference)?.toInt() ?: 0
-        val dist = getDistText(meters, EUnitSystem.Metric, true)
+        val dist = SdkUtil.getDistText(meters, EUnitSystem.Metric, true)
 
         viewHolder.text.text = dataSet[position].getName()
         viewHolder.status.text = dist.first

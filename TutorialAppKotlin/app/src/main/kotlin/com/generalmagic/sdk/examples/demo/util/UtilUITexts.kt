@@ -21,14 +21,14 @@ import com.generalmagic.sdk.routesandnavigation.RouteTrafficEvent
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
-import com.generalmagic.sdk.util.UtilUiTexts.getDistText
-import com.generalmagic.sdk.util.UtilUiTexts.getTimeText
-import com.generalmagic.sdk.util.UtilUiTexts.getUIString
+import com.generalmagic.sdk.util.SdkUtil.getDistText
+import com.generalmagic.sdk.util.SdkUtil.getTimeText
+import com.generalmagic.sdk.util.SdkUtil.getUIString
 import java.util.*
 
 object UtilUITexts {
     fun formatTrafficDelayAndLength(length: Int, delay: Int, isRoadblock: Boolean): String {
-        val distText = getDistText(length, SdkSettings.getUnitSystem())
+        val distText = getDistText(length, SdkSettings().getUnitSystem())
 
         return if (!isRoadblock) {
             val delayText = getTimeText(delay)
@@ -88,7 +88,7 @@ object UtilUITexts {
     }
 
     fun getFormattedDistanceTime(distanceInMeters: Int, timeInSeconds: Int): String {
-        val dist = getDistText(distanceInMeters, SdkSettings.getUnitSystem(), true)
+        val dist = getDistText(distanceInMeters, SdkSettings().getUnitSystem(), true)
 
         val time = formatTime(timeInSeconds)
 

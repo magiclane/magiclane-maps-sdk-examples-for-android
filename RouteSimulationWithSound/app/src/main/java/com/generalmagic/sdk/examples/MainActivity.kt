@@ -15,14 +15,17 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.generalmagic.sdk.core.*
-import com.generalmagic.sdk.d3scene.Animation
-import com.generalmagic.sdk.d3scene.EAnimation
-import com.generalmagic.sdk.places.Coordinates
+import com.generalmagic.sdk.core.GemSdk
+import com.generalmagic.sdk.core.GemSurfaceView
+import com.generalmagic.sdk.core.ISound
+import com.generalmagic.sdk.core.ProgressListener
+import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.core.SoundPlayingListener
+import com.generalmagic.sdk.core.SoundPlayingPreferences
+import com.generalmagic.sdk.core.SoundPlayingService
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
-import com.generalmagic.sdk.routesandnavigation.RoutePreferences
 import com.generalmagic.sdk.util.SdkCall
 import kotlin.system.exitProcess
 
@@ -52,7 +55,7 @@ class MainActivity : AppCompatActivity() {
                 gemSurfaceView.getDefaultMapView()?.let { mapView ->
                     mapView.preferences()?.enableCursor(false)
                     navigationService.getNavigationRoute(this)?.let { route ->
-                        mapView.presentRoutes(arrayListOf(route), displayLabel = false)
+                        mapView.presentRoute(route)
                     }
 
                     followCursor()
@@ -90,7 +93,6 @@ class MainActivity : AppCompatActivity() {
         gemSurfaceView = findViewById(R.id.gem_surface)
 
         /// GENERAL MAGIC
-
         SdkSettings.onMapDataReady = {
             // Defines an action that should be done when the world map is ready (Updated/ loaded).
             startSimulation()
@@ -130,7 +132,7 @@ class MainActivity : AppCompatActivity() {
         gemSurfaceView.getDefaultMapView()?.let { mapView ->
             if (following) {
                 // Start following the cursor position using the provided animation.
-                mapView.startFollowingPosition(Animation(EAnimation.AnimationLinear, 900))
+                mapView.startFollowingPosition()
             } else {
                 // Stop following the cursor if requested.
                 mapView.stopFollowingPosition()
@@ -142,17 +144,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun startSimulation() = SdkCall.execute {
         val waypoints = arrayListOf(
-            Landmark("London", Coordinates(51.5073204, -0.1276475)),
-            Landmark("Paris", Coordinates(48.8566932, 2.3514616))
+            Landmark("London", 51.5073204, -0.1276475),
+            Landmark("Paris", 48.8566932, 2.3514616)
         )
 
-        navigationService.startSimulation(
-            waypoints,
-            RoutePreferences(),
-            navigationListener,
-            routingProgressListener,
-            1F
-        )
+        navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

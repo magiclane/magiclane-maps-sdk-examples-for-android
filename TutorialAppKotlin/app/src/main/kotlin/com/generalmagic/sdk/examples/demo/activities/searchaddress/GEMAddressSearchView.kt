@@ -27,7 +27,7 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.util.EnumHelp
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.StringIds
-import com.generalmagic.sdk.util.UtilUiTexts.getUIString
+import com.generalmagic.sdk.util.SdkUtil.getUIString
 
 object GEMAddressSearchView {
 

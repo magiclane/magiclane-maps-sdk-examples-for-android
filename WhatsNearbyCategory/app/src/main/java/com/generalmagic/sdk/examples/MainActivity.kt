@@ -27,7 +27,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.core.EGenericCategoriesIDs
 import com.generalmagic.sdk.core.EUnitSystem
 import com.generalmagic.sdk.core.GemSdk
-import com.generalmagic.sdk.core.GenericCategories
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.places.Coordinates
@@ -51,23 +50,19 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { results, reason, _ ->
+        onCompleted = onCompleted@{ results, reason, _ ->
             progressBar.visibility = View.GONE
 
             when (reason) {
                 SdkError.NoError -> {
-                    // No error encountered, we can handle the results.
-                    val position = SdkCall.execute { PositionService().getCurrentPosition() }
-
-                    position?.let { reference ->
-                        if (results.isNotEmpty()) {
-                            val adapter = CustomAdapter(reference, results)
-                            listView.adapter = adapter
-                        } else {
-                            // The search completed without errors, but there were no results found.
-                            showToast("No results!")
-                        }
+                    val reference = reference ?: return@onCompleted
+                    if (results.isEmpty()) {
+                        // The search completed without errors, but there were no results found.
+                        showToast("No results!")
+                        return@onCompleted
                     }
+
+                    listView.adapter = CustomAdapter(reference, results)
                 }
 
                 SdkError.Cancel -> {
@@ -81,6 +76,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
     )
+
+    private var reference: Coordinates? = null
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -161,21 +158,17 @@ class MainActivity : AppCompatActivity() {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private fun searchAround(reference: Coordinates) = SdkCall.execute {
+        this.reference = reference
+
         // Cancel any search that is in progress now.
         searchService.cancelSearch()
 
         // Set the necessary preferences.
         searchService.preferences.setSearchMapPOIs(true)
+        searchService.preferences.addCategoryFilter(EGenericCategoriesIDs.GasStation)
 
-        // Get the landmark category for Gas Stations.
-        GenericCategories().getCategory(EGenericCategoriesIDs.GasStation)?.let {
-            // Add to the search preferences the landmark category you want to search into.
-            searchService.preferences.lmks()
-                ?.addStoreCategoryId(it.getLandmarkStoreId(), it.getId())
-
-            // Search around position using the provided search preferences and/ or filter.
-            searchService.searchAroundPosition(reference)
-        }
+        // Search around position using the provided search preferences and/ or filter.
+        searchService.searchAroundPosition(reference)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

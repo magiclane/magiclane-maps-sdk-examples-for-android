@@ -40,8 +40,8 @@ import com.generalmagic.sdk.sensordatasource.PositionData
 import com.generalmagic.sdk.util.ConstVals.BIG_TRAFFIC_DELAY_IN_MINUTES
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkUtil
-import com.generalmagic.sdk.util.UtilUiTexts.getDistText
-import com.generalmagic.sdk.util.UtilUiTexts.getSpeedText
+import com.generalmagic.sdk.util.SdkUtil.getDistText
+import com.generalmagic.sdk.util.SdkUtil.getSpeedText
 import kotlinx.android.synthetic.main.nav_bottom_panel.view.*
 import kotlinx.android.synthetic.main.nav_lane_panel.view.*
 import kotlinx.android.synthetic.main.nav_layout.view.*
@@ -593,7 +593,7 @@ class UINavDataProvider {
         info.isOverspeeding = (speedLimit > 0.0) && (speed > speedLimit)
 
         val speedTextPair = getSpeedText(
-            speed, SdkSettings.getUnitSystem()
+            speed, SdkSettings().getUnitSystem()
         )
 
         info.currentSpeed = speedTextPair.first
@@ -602,7 +602,7 @@ class UINavDataProvider {
         if (speedLimit > 0.0) {
             info.currentSpeedLimit = getSpeedText(
                 speedLimit,
-                SdkSettings.getUnitSystem()
+                SdkSettings().getUnitSystem()
             ).first
         }
     }
@@ -646,7 +646,7 @@ class UINavDataProvider {
 
         val pairRemainingTravelText = getDistText(
             getRemainingTravelDistance(),
-            SdkSettings.getUnitSystem(),
+            SdkSettings().getUnitSystem(),
             true
         )
 

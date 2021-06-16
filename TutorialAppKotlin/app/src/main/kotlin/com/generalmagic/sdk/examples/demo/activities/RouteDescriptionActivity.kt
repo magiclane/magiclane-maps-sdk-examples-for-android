@@ -38,9 +38,9 @@ import com.generalmagic.sdk.routesandnavigation.RouteInstruction
 import com.generalmagic.sdk.routesandnavigation.RouteTrafficEvent
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
+import com.generalmagic.sdk.util.SdkUtil.getDistText
+import com.generalmagic.sdk.util.SdkUtil.getUIString
 import com.generalmagic.sdk.util.StringIds
-import com.generalmagic.sdk.util.UtilUiTexts.getDistText
-import com.generalmagic.sdk.util.UtilUiTexts.getUIString
 import kotlinx.android.synthetic.main.activity_route_description.*
 import kotlinx.android.synthetic.main.route_description_item.view.*
 
@@ -365,7 +365,7 @@ class RouteInstructionItem(val instruction: RouteInstruction, distOffset: Double
 
             mSortKey = (distance + 0.5).toInt()
 
-            val distText = getDistText(distance.toInt(), SdkSettings.getUnitSystem())
+            val distText = getDistText(distance.toInt(), SdkSettings().getUnitSystem())
             statusText = distText.first
             statusDescription = distText.second
             if (statusText == "0.00") {
@@ -438,7 +438,7 @@ class TrafficEventItem(val event: RouteTrafficEvent, totalRouteLength: Int) :
 
         mSortKey = (distance + 1)
 
-        val distText = getDistText(distance, SdkSettings.getUnitSystem(), true)
+        val distText = getDistText(distance, SdkSettings().getUnitSystem(), true)
         statusText = distText.first
         statusDescription = distText.second
 

@@ -28,7 +28,7 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.StringIds
-import com.generalmagic.sdk.util.UtilUiTexts.getUIString
+import com.generalmagic.sdk.util.SdkUtil.getUIString
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.IntBuffer

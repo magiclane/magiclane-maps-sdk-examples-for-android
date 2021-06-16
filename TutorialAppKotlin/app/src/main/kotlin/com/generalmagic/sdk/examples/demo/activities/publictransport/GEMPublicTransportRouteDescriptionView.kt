@@ -17,15 +17,14 @@ import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.AppUtils
 import com.generalmagic.sdk.examples.demo.util.Utils
 import com.generalmagic.sdk.routesandnavigation.ERealtimeStatus
-import com.generalmagic.sdk.routesandnavigation.ERouteSegmentType
 import com.generalmagic.sdk.routesandnavigation.ETransitType
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
+import com.generalmagic.sdk.util.SdkUtil.getDistText
+import com.generalmagic.sdk.util.SdkUtil.getTimeText
+import com.generalmagic.sdk.util.SdkUtil.getUIString
 import com.generalmagic.sdk.util.StringIds
-import com.generalmagic.sdk.util.UtilUiTexts.getDistText
-import com.generalmagic.sdk.util.UtilUiTexts.getTimeText
-import com.generalmagic.sdk.util.UtilUiTexts.getUIString
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -122,7 +121,7 @@ object GEMPublicTransportRouteDescriptionView {
 
             val routeSegmentItem = TRouteSegmentItem()
 
-            if (routeSegment.getSegmentType() == ERouteSegmentType.PublicTransport) {
+            if (routeSegment.isPublicTransportSegment()) {
                 ++nNonWalkingSegmentsCount
 
                 val ptRouteSegment = routeSegment.toPTRouteSegment()
@@ -131,7 +130,7 @@ object GEMPublicTransportRouteDescriptionView {
                     routeSegmentItem.mType = it.getTransitType()
                     routeSegmentItem.mName = it.getShortName() ?: ""
 
-                    routeSegmentItem.mVisible = routeSegment.isSignificant()
+                    routeSegmentItem.mVisible = ptRouteSegment.isSignificant()
 
                     val lineColor = it.getLineColor()
                     if (lineColor != null) {
@@ -169,7 +168,7 @@ object GEMPublicTransportRouteDescriptionView {
                 routeSegmentItem.mType = ETransitType.Walk
                 routeSegmentItem.mIconId = Helper.getIconId(routeSegmentItem.mType)
 
-                routeSegmentItem.mVisible = routeSegment.isSignificant()
+                routeSegmentItem.mVisible = true//routeSegment.isSignificant()
 
                 val timeText =
                     getTimeText(routeSegment.getTimeDistance()?.getTotalTime() ?: 0)
@@ -203,7 +202,7 @@ object GEMPublicTransportRouteDescriptionView {
 
         if (nWalkingDistance > 0) {
             val distText =
-                getDistText(nWalkingDistance, SdkSettings.getUnitSystem(), true)
+                getDistText(nWalkingDistance, SdkSettings().getUnitSystem(), true)
             walkingDistance = String.format("%s %s", distText.first, distText.second)
         }
 

@@ -16,10 +16,10 @@ import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.content.ContentStore
+import com.generalmagic.sdk.content.ContentStoreItem
 import com.generalmagic.sdk.content.EContentType
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
-import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.util.SdkCall
@@ -32,78 +32,6 @@ class MainActivity : AppCompatActivity() {
     // Define a content store item so we can request the map styles from it.
     private val contentStore = ContentStore()
 
-    // Define a listener that will let us know the progress of the map styles retrieving process.
-    private val progressListener = ProgressListener.create(
-        onStarted = {
-            progressBar.visibility = View.VISIBLE
-        },
-
-        onCompleted = onCompleted@{ reason, _ ->
-            progressBar.visibility = View.GONE
-
-            when (reason) {
-                SdkError.NoError -> SdkCall.execute {
-                    // No error encountered, we can handle the results.
-                    // Get the list of map styles that was retrieved in the content store.
-                    contentStore.getStoreContentList(EContentType.ViewStyleHighRes.value)?.first?.let { styles ->
-                        // The map style items list is not empty or null so we will select an item.
-                        val style = if (styles.size > 1) styles[(styles.size / 2) - 1] else styles[0]
-                        val styleName = style.getName() ?: "NO_NAME"
-
-                        // Define a listener to the progress of the map style download action. 
-                        val downloadProgressListener = ProgressListener.create(
-                            onStarted = {
-                                progressBar.visibility = View.VISIBLE
-                                Toast.makeText(
-                                    this@MainActivity, "Started downloading $styleName.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            },
-
-                            onCompleted = { _, _ ->
-                                progressBar.visibility = View.GONE
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "$styleName was downloaded. Applying style...",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-
-                                SdkCall.execute {
-                                    // Apply the style to the main map view.
-                                    gemSurfaceView.getDefaultMapView()?.preferences()
-                                        ?.setMapStyleById(style.getId())
-                                }
-                            },
-
-                            postOnMain = true
-                        )
-
-                        // Start downloading a map style item.
-                        style.asyncDownload(
-                            downloadProgressListener, GemSdk.EDataSavePolicy.UseDefault, true
-                        )
-                    }
-                }
-
-                SdkError.Cancel -> {
-                    // The action was cancelled.
-                    return@onCompleted
-                }
-
-                else -> {
-                    // There was a problem at retrieving the content store items.
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Content store service error: ${reason.name}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        },
-
-        postOnMain = true
-    )
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -114,11 +42,7 @@ class MainActivity : AppCompatActivity() {
         gemSurfaceView = findViewById(R.id.gem_surface)
 
         SdkSettings.onMapDataReady = {
-            // Call to the content store to asynchronously retrieve the list of map styles.
-            contentStore.asyncGetStoreContentList(
-                EContentType.ViewStyleHighRes.value,
-                progressListener
-            )
+            fetchAvailableStyles()
         }
 
         SdkSettings.onApiTokenRejected = {
@@ -148,4 +72,73 @@ class MainActivity : AppCompatActivity() {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun fetchAvailableStyles() = SdkCall.execute {
+        // Call to the content store to asynchronously retrieve the list of map styles.
+        contentStore.asyncGetStoreContentList(EContentType.ViewStyleHighRes,
+            onStarted = {
+                progressBar.visibility = View.VISIBLE
+            },
+
+            onCompleted = onCompleted@{ styles, reason, _ ->
+                progressBar.visibility = View.GONE
+
+                when (reason) {
+                    SdkError.NoError -> {
+                        if (styles.size == 0) return@onCompleted
+
+                        // The map style items list is not empty or null so we will select an item.
+                        var style = styles[0]
+                        if (styles.size > 1) // does it have a middle element?
+                            style = styles[(styles.size / 2) - 1]
+
+                        startDownloadingStyle(style)
+                    }
+                    SdkError.Cancel -> {
+                        // The action was cancelled.
+                        return@onCompleted
+                    }
+
+                    else -> {
+                        // There was a problem at retrieving the content store items.
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Content store service error: ${reason.name}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            })
+    }
+
+    private fun applyStyle(style: ContentStoreItem) = SdkCall.execute {
+        // Apply the style to the main map view.
+        gemSurfaceView.getDefaultMapView()?.preferences()?.setMapStyleById(style.getId())
+    }
+
+    private fun startDownloadingStyle(style: ContentStoreItem) = SdkCall.execute {
+        val styleName = style.getName() ?: "NO_NAME"
+
+        // Start downloading a map style item.
+        style.asyncDownload(
+            onStarted = {
+                progressBar.visibility = View.VISIBLE
+                Toast.makeText(
+                    this@MainActivity, "Started downloading $styleName.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+
+            onCompleted = { _, _ ->
+                progressBar.visibility = View.GONE
+                Toast.makeText(
+                    this@MainActivity,
+                    "$styleName was downloaded. Applying style...",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                applyStyle(style)
+            }
+        )
+    }
 }

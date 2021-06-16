@@ -22,13 +22,9 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.d3scene.Animation
-import com.generalmagic.sdk.d3scene.EAnimation
-import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
-import com.generalmagic.sdk.routesandnavigation.RoutePreferences
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
 import kotlin.system.exitProcess
@@ -52,7 +48,13 @@ class MainActivity : AppCompatActivity() {
                 gemSurfaceView.getDefaultMapView()?.let { mapView ->
                     mapView.preferences()?.enableCursor(false)
                     navigationService.getNavigationRoute(this)?.let { route ->
-                        mapView.presentRoutes(arrayListOf(route), displayLabel = false)
+                        mapView.presentRoute(route)
+                        val remainingDistance = route.getTimeDistance(true)?.getTotalDistance() ?: 0
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Remaining distance $remainingDistance m",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
 
                     followCursor()
@@ -159,7 +161,7 @@ class MainActivity : AppCompatActivity() {
         gemSurfaceView.getDefaultMapView()?.let { mapView ->
             if (following) {
                 // Start following the cursor position using the provided animation.
-                mapView.startFollowingPosition(Animation(EAnimation.AnimationLinear, 900))
+                mapView.startFollowingPosition()
             } else {
                 // Stop following the cursor if requested.
                 mapView.stopFollowingPosition()
@@ -174,16 +176,13 @@ class MainActivity : AppCompatActivity() {
             PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
 
         if (hasPermissions) {
-            val waypoints = arrayListOf(
-                Landmark("Paris", Coordinates(48.8566932, 2.3514616))
-            )
+            val destination = Landmark("Paris", 48.8566932, 2.3514616)
 
             // Cancel any navigation in progress.
             navigationService.cancelNavigation(navigationListener)
             // Start the new navigation.
             navigationService.startNavigation(
-                waypoints,
-                RoutePreferences(),
+                destination,
                 navigationListener,
                 routingProgressListener,
             )

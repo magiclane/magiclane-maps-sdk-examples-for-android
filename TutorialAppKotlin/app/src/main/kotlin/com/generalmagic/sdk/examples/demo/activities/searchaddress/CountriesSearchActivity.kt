@@ -25,7 +25,7 @@ import com.generalmagic.sdk.places.GuidedAddressSearchService
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.StringIds
-import com.generalmagic.sdk.util.UtilUiTexts.getUIString
+import com.generalmagic.sdk.util.SdkUtil.getUIString
 import kotlinx.android.synthetic.main.activity_list_view.*
 
 class CountriesSearchActivity : SearchListActivity() {

@@ -19,7 +19,6 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.enums.SdkError
-import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
@@ -43,7 +42,7 @@ class MainActivity : AppCompatActivity() {
                 SdkError.NoError -> {
                     SdkCall.execute {
                         gemSurfaceView.getDefaultMapView()
-                            ?.presentRoutes(routes, displayLabel = true)
+                            ?.presentRoutes(routes, displayBubble = true)
                     }
                 }
 
@@ -107,8 +106,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun calculateRoute() = SdkCall.execute {
         val waypoints = arrayListOf(
-            Landmark("London", Coordinates(51.5073204, -0.1276475)),
-            Landmark("Paris", Coordinates(48.8566932, 2.3514616))
+            Landmark("London", 51.5073204, -0.1276475),
+            Landmark("Paris", 48.8566932, 2.3514616)
         )
 
         routingService.calculateRoute(waypoints)

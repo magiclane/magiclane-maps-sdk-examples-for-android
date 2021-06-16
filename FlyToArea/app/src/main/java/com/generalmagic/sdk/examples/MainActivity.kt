@@ -19,8 +19,6 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.enums.SdkError
-import com.generalmagic.sdk.d3scene.Animation
-import com.generalmagic.sdk.d3scene.EAnimation
 import com.generalmagic.sdk.d3scene.EHighlightOptions
 import com.generalmagic.sdk.d3scene.HighlightRenderSettings
 import com.generalmagic.sdk.places.Coordinates
@@ -118,14 +116,13 @@ class MainActivity : AppCompatActivity() {
         landmark.getContourGeograficArea()?.let { area ->
             gemSurfaceView.getDefaultMapView()?.let { mainMapView ->
                 // Define highlight settings for displaying the area contour on map. 
-                val settings =
-                    HighlightRenderSettings().apply { setOptions(EHighlightOptions.ShowContour.value) }
+                val settings = HighlightRenderSettings(EHighlightOptions.ShowContour)
 
                 // Center the map on a specific area using the provided animation.
-                mainMapView.centerOnArea(area, animation = Animation(EAnimation.AnimationLinear))
+                mainMapView.centerOnArea(area)
 
                 // Highlights a specific area on the map using the provided settings.
-                mainMapView.activateHighlightLandmarks(arrayListOf(landmark), settings)
+                mainMapView.activateHighlightLandmarks(landmark, settings)
             }
         }
     }

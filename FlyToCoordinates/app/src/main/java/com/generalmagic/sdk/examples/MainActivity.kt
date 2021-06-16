@@ -15,8 +15,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.d3scene.Animation
-import com.generalmagic.sdk.d3scene.EAnimation
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.util.SdkCall
 import kotlin.system.exitProcess
@@ -59,10 +57,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun flyTo(coordinates: Coordinates) = SdkCall.execute {
         // Center the map on a specific set of coordinates using the provided animation.
-        gemSurfaceView.getDefaultMapView()?.centerOnCoordinates(
-            coordinates,
-            animation = Animation(EAnimation.AnimationLinear)
-        )
+        gemSurfaceView.getDefaultMapView()?.centerOnCoordinates(coordinates)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

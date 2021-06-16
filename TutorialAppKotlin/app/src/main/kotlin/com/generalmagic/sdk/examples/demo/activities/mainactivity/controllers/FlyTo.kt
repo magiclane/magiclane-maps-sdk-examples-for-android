@@ -15,8 +15,6 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.Toast
 import com.generalmagic.sdk.*
-import com.generalmagic.sdk.core.Rect
-import com.generalmagic.sdk.core.Xy
 import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.*
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
@@ -44,10 +42,7 @@ class FlyToCoords(context: Context, attrs: AttributeSet?) : FlyController(contex
         SdkCall.execute {
             val coordinates = Coordinates(45.651178, 25.604872)
 
-            val animation = Animation()
-            animation.setType(EAnimation.AnimationLinear)
-
-            mainMap.centerOnCoordinates(coordinates, -3, Xy(), animation)
+            mainMap.centerOnCoordinates(coordinates, -3)
         }
     }
 }
@@ -111,20 +106,13 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
                 }
 
                 SdkCall.execute {
-                    val animation = Animation()
-                    animation.setType(EAnimation.AnimationLinear)
+                    val setting = if (area.isEmpty()) {
+                        EHighlightOptions.ShowLandmark
+                    } else
+                        EHighlightOptions.ShowContour
 
-                    val settings = HighlightRenderSettings()
-                    settings.setOptions(
-                        if (area.isEmpty()) {
-                            EHighlightOptions.ShowLandmark.value
-                        } else {
-                            EHighlightOptions.ShowContour.value
-                        }
-                    )
-
-                    mainMap.centerOnRectArea(area, -3, Rect(), animation)
-                    mainMap.activateHighlightLandmarks(arrayListOf(value), settings)
+                    mainMap.centerOnRectArea(area, -3)
+                    mainMap.activateHighlightLandmarks(value, HighlightRenderSettings(setting))
                 }
             }
 
@@ -215,12 +203,9 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
                 }
 
                 if (isFlyToRoute) {
-                    val animation = Animation()
-                    animation.setType(EAnimation.AnimationLinear)
-
                     mainMap.preferences()?.routes()?.add(route, true)
 
-                    mainMap.centerOnRoute(route, Rect(), animation)
+                    mainMap.centerOnRoute(route)
                 } else {
                     val instructionsList = segment.getInstructions() ?: return@execute
                     val instruction =
@@ -368,11 +353,10 @@ class FlyToLine(context: Context, attrs: AttributeSet?) : FlyController(context,
         val mainMap = GEMApplication.getMainMapView() ?: return
 
         SdkCall.execute {
-            val vector =
-                MarkerCollection(EMarkerType.Polyline.value, "My polylines data source")
+            val vector = MarkerCollection(EMarkerType.Polyline, "My polylines data source")
             val marker = Marker()
 
-            marker.add(Coordinates(52.360234, 4.886782))
+            marker.add(52.360234, 4.886782)
             marker.add(Coordinates(52.360495, 4.886266))
             marker.add(Coordinates(52.360854, 4.885539))
             marker.add(Coordinates(52.361184, 4.884849))
@@ -380,15 +364,9 @@ class FlyToLine(context: Context, attrs: AttributeSet?) : FlyController(context,
             marker.add(Coordinates(52.361593, 4.883986))
 
             vector.add(marker)
-            val area = vector.getArea()
-
             mainMap.preferences()?.markers()?.add(vector)
-            val animation = Animation()
-            animation.setType(EAnimation.AnimationLinear)
 
-            if (area != null) {
-                mainMap.centerOnArea(area, -1, Xy(), animation)
-            }
+            vector.getArea()?.let { mainMap.centerOnArea(it) }
         }
     }
 

@@ -300,24 +300,24 @@ object SettingsProvider {
                     val bUseMobileDataForTerrainAndSatellite =
                         getBooleanValue(TBoolSettings.EUseMobileDataForTerrainAndSatellite.value)
 
-                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings().setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.TrafficService, bUseMobileDataForTraffic.second
                     )
-                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings().setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.MapDataService, bUseMobileDataForMapAndWikipedia.second
                     )
-                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings().setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.TerrainService,
                         bUseMobileDataForTerrainAndSatellite.second
                     )
                 } else {
-                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings().setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.TrafficService, value
                     )
-                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings().setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.MapDataService, value
                     )
-                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings().setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.TerrainService, value
                     )
                 }
@@ -327,7 +327,7 @@ object SettingsProvider {
 
         val useMobileDataForTraffic = { value: Boolean ->
             if (mService != null) {
-                SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                SdkSettings().setAllowOffboardServiceOnExtraChargedNetwork(
                     EServiceGroupType.TrafficService, value
                 )
             }
@@ -336,7 +336,7 @@ object SettingsProvider {
 
         val useMobileDataForMapAndWikipedia = { value: Boolean ->
             if (mService != null) {
-                SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                SdkSettings().setAllowOffboardServiceOnExtraChargedNetwork(
                     EServiceGroupType.MapDataService,
                     value
                 )
@@ -344,12 +344,12 @@ object SettingsProvider {
                     val bUseMobileDataForTerrainAndSatellite =
                         getBooleanValue(TBoolSettings.EUseMobileDataForTerrainAndSatellite.value)
 
-                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings().setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.TerrainService,
                         bUseMobileDataForTerrainAndSatellite.second
                     )
                 } else {
-                    SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                    SdkSettings().setAllowOffboardServiceOnExtraChargedNetwork(
                         EServiceGroupType.TerrainService, value
                     )
                 }
@@ -360,7 +360,7 @@ object SettingsProvider {
 
         val useMobileDataForTerrainAndSatellite = { value: Boolean ->
             if (mService != null) {
-                SdkSettings.setAllowOffboardServiceOnExtraChargedNetwork(
+                SdkSettings().setAllowOffboardServiceOnExtraChargedNetwork(
                     EServiceGroupType.TerrainService,
                     value
                 )
@@ -373,7 +373,7 @@ object SettingsProvider {
 
         val unitsSystem = { value: Int ->
             if (mService != null) {
-                SdkSettings.setUnitSystem(EnumHelp.fromInt(value))
+                SdkSettings().setUnitSystem(EnumHelp.fromInt(value))
             }
         }
         mIntCallbacks[TIntSettings.EUnitsSystem.value - TIntSettings.EIntSettingsBase.value] =

@@ -11,8 +11,14 @@
 package com.generalmagic.sdk.examples
 
 import android.os.Bundle
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
+import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.util.SdkCall
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
@@ -20,9 +26,17 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        /// GENERAL MAGIC
-        val token = GemSdk.getToken(this)
-        if (!GemSdk.initSdkWithDefaults(this, token)) {
+        SdkSettings.onApiTokenRejected = {
+            /* 
+            The TOKEN you provided in the AndroidManifest.xml file was rejected.
+            Make sure you provide the correct value, or if you don't have a TOKEN,
+            check the generalmagic.com website, sign up/ sing in and generate one. 
+             */
+            Toast.makeText(this, "TOKEN REJECTED", Toast.LENGTH_LONG).show()
+        }
+
+        if (!GemSdk.initSdkWithDefaults(this)) {
+            // The SDK initialization was not completed.
             finish()
         }
     }

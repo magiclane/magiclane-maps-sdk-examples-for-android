@@ -365,9 +365,9 @@ open class BaseSimulationController(context: Context, attrs: AttributeSet?) :
 
             navigationService.startSimulation(
                 waypoints,
-                preferences,
                 navigationListener,
                 routeCalcListener,
+                preferences,
                 speedMultiplier.toFloat()
             )
         }
@@ -415,7 +415,7 @@ open class BaseNavigationController(context: Context, attrs: AttributeSet?) :
             preferences.setAvoidTraffic(true)
 
             navigationService.startNavigation(
-                waypoints, preferences, navigationListener, routeCalcListener
+                waypoints, navigationListener, routeCalcListener, preferences
             )
         }
     }

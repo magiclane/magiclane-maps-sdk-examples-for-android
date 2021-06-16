@@ -48,8 +48,7 @@ class MainActivity : AppCompatActivity() {
                 SdkError.NoError -> {
                     // No error encountered, we can handle the results.
                     if (results.isNotEmpty()) {
-                        val adapter = CustomAdapter(results)
-                        listView?.adapter = adapter
+                        listView?.adapter = CustomAdapter(results)
                     } else {
                         // The search completed without errors, but there were no results found.
                         showToast("No results!")

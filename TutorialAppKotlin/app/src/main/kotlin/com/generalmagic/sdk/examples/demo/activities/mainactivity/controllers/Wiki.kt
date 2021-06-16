@@ -16,10 +16,7 @@ import android.view.View
 import android.widget.Toast
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.ImageDatabase
-import com.generalmagic.sdk.core.Xy
 import com.generalmagic.sdk.core.enums.SdkError
-import com.generalmagic.sdk.d3scene.Animation
-import com.generalmagic.sdk.d3scene.EAnimation
 import com.generalmagic.sdk.d3scene.EHighlightOptions
 import com.generalmagic.sdk.d3scene.HighlightRenderSettings
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
@@ -100,8 +97,6 @@ class WikiController(context: Context, attrs: AttributeSet?) :
 
         val mainMap = GEMApplication.getMainMapView()
         SdkCall.execute {
-            val animation = Animation()
-            animation.setType(EAnimation.AnimationLinear)
             val coords = landmark.getCoordinates() ?: return@execute
 
             val areaIsEmpty = landmark.getContourGeograficArea()?.isEmpty() ?: true
@@ -122,7 +117,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
 
             GEMApplication.addLandmarkToHistory(landmark)
 
-            mainMap?.centerOnCoordinates(coords, -1, Xy(), animation)
+            mainMap?.centerOnCoordinates(coords)
         }
 
         wikiView.onWikiFetchCompleteCallback = callback@{ gemError, _ ->

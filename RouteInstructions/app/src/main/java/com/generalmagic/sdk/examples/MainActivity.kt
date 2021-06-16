@@ -24,7 +24,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.enums.SdkError
-import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteInstruction
@@ -39,22 +38,21 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity() {
     private var listView: RecyclerView? = null
     private var progressBar: ProgressBar? = null
-    private var mainRoute: Route? = null
 
     private val routingService = RoutingService(
         onStarted = {
             progressBar?.visibility = View.VISIBLE
         },
 
-        onCompleted = { routes, reason, _ ->
+        onCompleted = onCompleted@{ routes, reason, _ ->
+            progressBar?.visibility = View.GONE
+
             when (reason) {
                 SdkError.NoError -> {
-                    // No error encountered, we can handle the results.
-                    SdkCall.execute {
-                        // Get the main route from the ones that were found.
-                        mainRoute = if (routes.size > 0) routes[0] else null
-                        postOnMain { mainRoute?.let { displayRouteInstructions(it) } }
-                    }
+                    if (routes.size == 0) return@onCompleted
+
+                    // Get the main route from the ones that were found.
+                    displayRouteInstructions(routes[0])
                 }
 
                 SdkError.Cancel -> {
@@ -133,9 +131,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun startCalculateRoute() = SdkCall.execute {
         val wayPoints = arrayListOf(
-            Landmark("Frankfurt am Main", Coordinates(50.11428, 8.68133)),
-            Landmark("Karlsruhe", Coordinates(49.0069, 8.4037)),
-            Landmark("Munich", Coordinates(48.1351, 11.5820))
+            Landmark("Frankfurt am Main", 50.11428, 8.68133),
+            Landmark("Karlsruhe", 49.0069, 8.4037),
+            Landmark("Munich", 48.1351, 11.5820)
         )
         routingService.calculateRoute(wayPoints)
     }
@@ -145,9 +143,7 @@ class MainActivity : AppCompatActivity() {
     private fun displayRouteInstructions(route: Route) {
         // Get the instructions from the route.
         val instructions = SdkCall.execute { route.getInstructions() } ?: arrayListOf()
-        val adapter = CustomAdapter(instructions)
-        listView?.adapter = adapter
-        progressBar?.visibility = View.GONE
+        listView?.adapter = CustomAdapter(instructions)
     }
 }
 
@@ -195,7 +191,7 @@ class CustomAdapter(private val dataSet: ArrayList<RouteInstruction>) :
                 val distance =
                     instruction.getTraveledTimeDistance()?.getTotalDistance()?.toDouble() ?: 0.0
 
-                val distText = SdkUtil.getDistText(distance.toInt(), SdkSettings.getUnitSystem())
+                val distText = SdkUtil.getDistText(distance.toInt(), SdkSettings().getUnitSystem())
                 status = distText.first
                 description = distText.second
                 if (status == "0.00") {

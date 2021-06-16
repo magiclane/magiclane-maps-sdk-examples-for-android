@@ -19,9 +19,6 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.enums.SdkError
-import com.generalmagic.sdk.d3scene.Animation
-import com.generalmagic.sdk.d3scene.EAnimation
-import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.routesandnavigation.Route
@@ -108,8 +105,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun calculateRoute() = SdkCall.execute {
         val waypoints = arrayListOf(
-            Landmark("San Francisco", Coordinates(37.77903, -122.41991)),
-            Landmark("San Jose", Coordinates(37.33619, -121.89058))
+            Landmark("San Francisco", 37.77903, -122.41991),
+            Landmark("San Jose", 37.33619, -121.89058)
         )
 
         routingService.preferences.setTransportMode(ERouteTransportMode.Public)
@@ -119,7 +116,7 @@ class MainActivity : AppCompatActivity() {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private fun displayRoutesOnMap(routes: ArrayList<Route>) = SdkCall.execute {
-        gemSurfaceView.getDefaultMapView()?.presentRoutes(routes, displayLabel = false)
+        gemSurfaceView.getDefaultMapView()?.presentRoutes(routes)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
