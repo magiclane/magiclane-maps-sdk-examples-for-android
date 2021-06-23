@@ -27,7 +27,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.generalmagic.sdk.examples.SecondActivity" />
+
+        <activity
+            android:name="com.generalmagic.sdk.examples.SecondActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale" />
     </application>
 
 </manifest>

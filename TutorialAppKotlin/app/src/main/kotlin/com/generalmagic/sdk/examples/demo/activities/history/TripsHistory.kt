@@ -16,8 +16,9 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteBookmarks
 import com.generalmagic.sdk.routesandnavigation.RoutePreferences
-import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkUtil.getUIString
+import com.generalmagic.sdk.util.StringIds
 import java.util.*
 import kotlin.math.abs
 
@@ -254,7 +255,7 @@ class TripsHistory {
             isFromAToB: Boolean,
             isToCurrentLocation: Boolean
         ): Pair<Boolean, String> {
-            val defaultName: String
+            var defaultName = ""
             var departureName = ""
             var destinationName = ""
 
@@ -274,41 +275,43 @@ class TripsHistory {
             //getIntermediateWaypointsName(waypoints, bIsFromAToB, intermediateWptsName);
             val intermediateWptsName = getIntermediateWaypointsName(waypoints, isFromAToB).second
 
-            if (isFromAToB) {
-                defaultName = if (tripWptsCount > 2) {
-                    String.format(
-                        getUIString(StringIds.eStrFromAToBViaC),
-                        departureName,
-                        destinationName,
-                        intermediateWptsName
-                    )
-                } else {
-                    String.format(
-                        getUIString(StringIds.eStrFromAtoB),
-                        departureName,
-                        destinationName
-                    )
-                }
-            } else {
-                defaultName = if (tripWptsCount > 1) {
-                    if (isToCurrentLocation) {
-                        destinationName = getUIString(StringIds.eStrMyPosition)
+            SdkCall.execute {
+                if (isFromAToB) {
+                    defaultName = if (tripWptsCount > 2) {
+                        String.format(
+                            getUIString(StringIds.eStrFromAToBViaC),
+                            departureName,
+                            destinationName,
+                            intermediateWptsName
+                        )
+                    } else {
+                        String.format(
+                            getUIString(StringIds.eStrFromAtoB),
+                            departureName,
+                            destinationName
+                        )
                     }
-
-                    String.format(
-                        getUIString(StringIds.eStrToBViaC),
-                        destinationName,
-                        intermediateWptsName
-                    )
                 } else {
-                    if (isToCurrentLocation) {
-                        destinationName = getUIString(StringIds.eStrMyPosition)
-                    }
+                    defaultName = if (tripWptsCount > 1) {
+                        if (isToCurrentLocation) {
+                            destinationName = getUIString(StringIds.eStrMyPosition)
+                        }
 
-                    String.format(
-                        getUIString(StringIds.eStrToB),
-                        destinationName
-                    )
+                        String.format(
+                            getUIString(StringIds.eStrToBViaC),
+                            destinationName,
+                            intermediateWptsName
+                        )
+                    } else {
+                        if (isToCurrentLocation) {
+                            destinationName = getUIString(StringIds.eStrMyPosition)
+                        }
+
+                        String.format(
+                            getUIString(StringIds.eStrToB),
+                            destinationName
+                        )
+                    }
                 }
             }
 

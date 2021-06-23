@@ -20,13 +20,17 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.RouteTrafficEvent
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
-import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.SdkUtil
 import com.generalmagic.sdk.util.SdkUtil.getDistText
 import com.generalmagic.sdk.util.SdkUtil.getTimeText
-import com.generalmagic.sdk.util.SdkUtil.getUIString
+import com.generalmagic.sdk.util.StringIds
 import java.util.*
 
 object UtilUITexts {
+    fun getUIString(stringIds: StringIds): String = SdkCall.execute {
+        SdkUtil.getUIString(stringIds)
+    } ?: ""
+
     fun formatTrafficDelayAndLength(length: Int, delay: Int, isRoadblock: Boolean): String {
         val distText = getDistText(length, SdkSettings().getUnitSystem())
 

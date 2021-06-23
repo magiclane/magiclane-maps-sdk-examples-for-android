@@ -15,11 +15,10 @@ package com.generalmagic.sdk.examples.demo.activities.settings
 import android.content.Intent
 import com.generalmagic.sdk.core.EUnitSystem
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
-import com.generalmagic.sdk.examples.demo.util.Utils
+import com.generalmagic.sdk.examples.demo.util.UtilUITexts.getUIString
 import com.generalmagic.sdk.routesandnavigation.ERouteType
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.StringIds
-import com.generalmagic.sdk.util.SdkUtil.getUIString
 
 enum class TSettingItemType(val value: Int) {
     EBoolean(0),

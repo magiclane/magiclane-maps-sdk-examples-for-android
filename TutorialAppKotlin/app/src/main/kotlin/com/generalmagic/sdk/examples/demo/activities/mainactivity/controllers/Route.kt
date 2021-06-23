@@ -83,7 +83,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
 
             SdkCall.execute {
                 if (routes.size == 0) return@execute
-                val mainRoute = routes[0] ?: return@execute
+                val mainRoute = routes[0]
 
                 GEMApplication.getMainMapView()?.presentRoutes(routes)
 

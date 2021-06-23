@@ -57,9 +57,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
 
             if (results.size == 0) return@onCompleted
 
-            val value = results[0]
-
-            SdkCall.execute { doStart(value) }
+            doStart(results[0])
         }
     }
 
@@ -90,7 +88,6 @@ class WikiController(context: Context, attrs: AttributeSet?) :
     }
 
     private fun doStart(landmark: Landmark) {
-        SdkCall.checkCurrentThread()
         this.landmark = landmark
 
         ignoreWikiErrorsCount = 3 // reset

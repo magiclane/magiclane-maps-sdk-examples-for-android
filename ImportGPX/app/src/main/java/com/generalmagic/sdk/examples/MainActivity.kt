@@ -37,18 +37,13 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { routes, reason, _ ->
+        onCompleted = { _, reason, _ ->
             progressBar.visibility = View.GONE
 
             when (reason) {
-                SdkError.NoError -> {
-                    SdkCall.execute {
-                        gemSurfaceView.getDefaultMapView()?.presentRoutes(routes)
-                    }
-                }
-
+                SdkError.NoError,
                 SdkError.Cancel -> {
-                    // The routing action was cancelled.
+                    // No action.
                 }
 
                 else -> {
@@ -115,9 +110,11 @@ class MainActivity : AppCompatActivity() {
         // Produce a Path based on the data in the buffer.
         val track = Path.produceWithGpx(input/*.readBytes()*/) ?: return@execute
 
+        val mapView = gemSurfaceView.getDefaultMapView() ?: return@execute
+
         // Set the line color to red and display the path on the map.
         val lineColor = Rgba.red()
-        gemSurfaceView.getDefaultMapView()?.displayPath(track, lineColor, lineColor)
+        mapView.presentPath(track, lineColor, lineColor)
 
         // Set the transport mode to bike and calculate the route.
         routingService.calculateRoute(track, ERouteTransportMode.Bicycle)

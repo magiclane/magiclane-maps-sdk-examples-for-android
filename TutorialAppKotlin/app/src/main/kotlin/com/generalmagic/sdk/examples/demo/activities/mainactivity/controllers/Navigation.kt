@@ -488,29 +488,7 @@ open class PredefNavController(context: Context, attrs: AttributeSet?) :
             doStart(arrayListOf(results[0]))
         }
 
-        val liveDataSource = DataSourceFactory.produceLive()
-        liveDataSource ?: return
-
-        val posServiceError = SdkError.fromInt(positionService.setDataSource(liveDataSource))
-        if (posServiceError != SdkError.NoError) {
-            GEMApplication.postOnMain {
-                Toast.makeText(context, "PositionService: $posServiceError", Toast.LENGTH_SHORT)
-                    .show()
-            }
-            return
-        }
-
-        val myPos = positionService.getPosition() ?: return
-        val myPosition = Coordinates(myPos.getLatitude(), myPos.getLongitude())
-
-        val category = GenericCategories().getCategory(EGenericCategoriesIDs.GasStation)
-
-        if (category != null) {
-            searchService.preferences.lmks()
-                ?.addStoreCategoryId(category.getLandmarkStoreId(), category.getId())
-        }
-
-        searchService.searchAroundPosition(myPosition, "")
+        searchService.searchAroundPosition(EGenericCategoriesIDs.GasStation)
     }
 }
 

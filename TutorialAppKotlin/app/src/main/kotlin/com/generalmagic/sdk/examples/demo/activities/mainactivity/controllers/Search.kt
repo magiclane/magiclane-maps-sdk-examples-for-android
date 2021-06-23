@@ -79,7 +79,10 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
     ): ArrayList<SearchListItem> {
         val result = ArrayList<SearchListItem>()
         for (item in list) {
-            val wrappedItem = LandmarkViewModel(item, reference)
+            val wrappedItem = SdkCall.execute {
+                LandmarkViewModel(item, reference)
+            } ?: continue
+
             wrappedItem.mOnClick = { onLandmarkItemClicked(wrappedItem) }
             result.add(wrappedItem)
         }
