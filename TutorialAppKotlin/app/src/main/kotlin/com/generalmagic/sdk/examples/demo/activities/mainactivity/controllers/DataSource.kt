@@ -15,9 +15,12 @@ import android.os.Bundle
 import android.util.AttributeSet
 import android.view.Surface
 import android.view.SurfaceHolder
+import android.view.SurfaceView
 import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
+import androidx.appcompat.widget.Toolbar
+import androidx.constraintlayout.widget.ConstraintLayout
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.RectF
@@ -41,17 +44,12 @@ import com.generalmagic.sdk.examples.demo.app.GEMApplication.postOnMain
 import com.generalmagic.sdk.examples.demo.app.MapLayoutController
 import com.generalmagic.sdk.examples.demo.app.elements.ButtonsDecorator
 import com.generalmagic.sdk.examples.demo.util.IntentHelper
-import com.generalmagic.sdk.examples.demo.util.Util
 import com.generalmagic.sdk.sensordatasource.*
 import com.generalmagic.sdk.sensordatasource.enums.EDataType
 import com.generalmagic.sdk.util.EnumHelp
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util.exportVideo
-import kotlinx.android.synthetic.main.activity_camera.*
-import kotlinx.android.synthetic.main.activity_list_view.*
-import kotlinx.android.synthetic.main.activity_list_view.root_view
-import kotlinx.android.synthetic.main.activity_list_view.toolbar
-import kotlinx.android.synthetic.main.tutorial_logplayer.view.*
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
 
 open class BasicSensorsActivity : GenericListActivity() {
@@ -59,7 +57,7 @@ open class BasicSensorsActivity : GenericListActivity() {
     val lastData = HashMap<EDataType, SenseData?>()
 
     override fun refresh() {
-        list_view.adapter = ChapterLISIAdapter(wrapList(lastData.keys))
+        listView.adapter = ChapterLISIAdapter(wrapList(lastData.keys))
     }
 
     private fun wrapList(list: MutableSet<EDataType>): ArrayList<ListItemStatusImage> {
@@ -228,7 +226,7 @@ class SensorsListActivity : BasicSensorsActivity() {
 
             postOnMain {
                 if (willAdd) refresh()
-                else list_view.adapter?.notifyDataSetChanged()
+                else listView.adapter?.notifyDataSetChanged()
             }
         }
     }
@@ -297,10 +295,18 @@ class DirectCamActivity : BaseActivity() {
 // 			Log.d("GEMSDK", "zzzzz")
         }
     }
+    
+    lateinit var root_view: ConstraintLayout
+    lateinit var toolbar: Toolbar
+    lateinit var surface_cam: SurfaceView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
+        
+        root_view = findViewById(R.id.root_view)
+        toolbar = findViewById(R.id.toolbar)
+        surface_cam = findViewById(R.id.surface_cam)
 
         // set root view background (we used grouped style for list view)
         root_view.setBackgroundResource(R.color.list_view_bgnd_color)
@@ -391,15 +397,15 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
         var camData: CameraData? = null
         override fun onRender() {
             val buffer = camData?.getDirectBuffer() ?: return
-            val bufferType = EDirectBufferType.EByteBuffer
+//            val bufferType = EDirectBufferType.EByteBuffer
             val configs = camData?.getCameraConfiguration() ?: return
 
             val width = configs.frameWidth()
             val height = configs.frameHeight()
-            val rotation = configs.rotationAngle().toInt()
+            val rotation = configs.rotationAngle()
             val format = configs.pixelFormat()
 
-            drawer?.uploadFrame(bufferType, buffer, width, height, format, rotation)
+            drawer?.uploadFrame(buffer, width, height, format, rotation)
             drawer?.renderFrame()
         }
     }
@@ -695,6 +701,9 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
 
 class LogPlayerController(context: Context, attrs: AttributeSet) :
     LogDataSourceController(context, attrs) {
+    
+    lateinit var seekBar: SeekBar
+    lateinit var playBotLeftButton: FloatingActionButton
 
     private var drawer: FrameDrawController? = null
 
@@ -739,6 +748,12 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
         }
     }
 
+    override fun onFinishInflate() {
+        super.onFinishInflate()
+        seekBar = findViewById(R.id.seekBar)
+        playBotLeftButton = findViewById(R.id.playBotLeftButton)
+    }
+    
     /** doStart/doResume */
     override fun doStart() {
         var constructedNow = false

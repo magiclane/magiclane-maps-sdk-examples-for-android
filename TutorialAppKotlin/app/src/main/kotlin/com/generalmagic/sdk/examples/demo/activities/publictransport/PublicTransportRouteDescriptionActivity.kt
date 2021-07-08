@@ -23,6 +23,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.appcompat.widget.Toolbar
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.doOnPreDraw
 import com.generalmagic.sdk.examples.demo.R
@@ -32,7 +33,6 @@ import com.generalmagic.sdk.examples.demo.util.AppUtils
 import com.generalmagic.sdk.examples.demo.util.IntentHelper
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
-import kotlinx.android.synthetic.main.pt_route_description_activity.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -41,6 +41,8 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
     private var viewId: Long = 0
 
     private lateinit var route: Route
+    
+    lateinit var toolbar: Toolbar
 
     private var routeDescriptionList: ListView? = null
     private var routeDescriptionAdapter: BaseAdapter? = null
@@ -84,6 +86,8 @@ class PublicTransportRouteDescriptionActivity : BaseActivity() {
 
         setContentView(R.layout.pt_route_description_activity)
 
+        toolbar = findViewById(R.id.toolbar)
+        
         setSupportActionBar(toolbar)
 
         // display back button

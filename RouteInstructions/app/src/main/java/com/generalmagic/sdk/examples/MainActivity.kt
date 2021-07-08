@@ -91,7 +91,9 @@ class MainActivity : AppCompatActivity() {
 
 
         /// GENERAL MAGIC
-        SdkSettings.onMapDataReady = {
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
+            if (!isReady) return@onMapDataReady
+
             // Defines an action that should be done when the world map is ready (Updated/ loaded).
             startCalculateRoute()
         }

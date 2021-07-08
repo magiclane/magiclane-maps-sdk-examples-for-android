@@ -70,7 +70,9 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
         gemSurfaceView = findViewById(R.id.gem_surface)
 
-        SdkSettings.onMapDataReady = {
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
+            if (!isReady) return@onMapDataReady
+
             // Defines an action that should be done when the world map is ready (Updated/ loaded).
             calculateRoute()
         }

@@ -35,7 +35,9 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
         gemSurfaceView = findViewById(R.id.gem_surface)
 
-        SdkSettings.onMapDataReady = {
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
+            if (!isReady) return@onMapDataReady
+
             applyCustomAssetStyle(gemSurfaceView.getDefaultMapView())
         }
 

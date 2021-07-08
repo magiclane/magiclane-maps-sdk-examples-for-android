@@ -27,6 +27,7 @@ import java.util.*
 ///                 TUTORIALS
 /** //////////////////////////////////////////////////////////// */
 
+@Suppress("DEPRECATION")
 object TutorialsOpener {
     private val tutorialStack = Stack<ITutorialController>()
     private var mapTutorialsOpener: ITutorialsOpener? = null

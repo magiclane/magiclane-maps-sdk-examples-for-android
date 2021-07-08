@@ -14,6 +14,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
@@ -25,6 +26,8 @@ import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
+import com.generalmagic.sdk.sensordatasource.PositionListener
+import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
 import kotlin.system.exitProcess
@@ -86,7 +89,9 @@ class MainActivity : AppCompatActivity() {
         gemSurfaceView = findViewById(R.id.gem_surface)
 
         /// GENERAL MAGIC
-        SdkSettings.onMapDataReady = {
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
+            if (!isReady) return@onMapDataReady
+
             // Defines an action that should be done when the world map is ready (Updated/ loaded).
             startNavigation()
         }
@@ -134,6 +139,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         SdkCall.execute {
+            // Notice permission status had changed
             PermissionsHelper.onRequestPermissionsResult(this, requestCode, grantResults)
         }
 
@@ -171,21 +177,44 @@ class MainActivity : AppCompatActivity() {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private fun startNavigation() = SdkCall.execute {
-        val hasPermissions =
-            PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+    private fun startNavigation() {
+        val startNavTask = {
+            val hasPermissions =
+                PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
 
-        if (hasPermissions) {
-            val destination = Landmark("Paris", 48.8566932, 2.3514616)
+            if (hasPermissions) {
+                val destination = Landmark("Paris", 48.8566932, 2.3514616)
 
-            // Cancel any navigation in progress.
-            navigationService.cancelNavigation(navigationListener)
-            // Start the new navigation.
-            navigationService.startNavigation(
-                destination,
-                navigationListener,
-                routingProgressListener,
-            )
+                // Cancel any navigation in progress.
+                navigationService.cancelNavigation(navigationListener)
+                // Start the new navigation.
+                Log.i("GEMSDK", "MainActivity.startNavigation: before")
+                val error = navigationService.startNavigation(
+                    destination,
+                    navigationListener,
+                    routingProgressListener,
+                )
+                Log.i("GEMSDK", "MainActivity.startNavigation: after = $error")
+            }
+        }
+
+        SdkCall.execute {
+            val positionService = PositionService()
+
+            lateinit var positionListener: PositionListener
+            if (positionService.getPosition()?.isValid() == true) {
+                startNavTask()
+            } else {
+                positionListener = PositionListener {
+                    if (!it.isValid()) return@PositionListener
+
+                    PositionService().removeListener(positionListener)
+                    startNavTask()
+                }
+
+                // listen for first valid position to start the nav
+                PositionService().addListener(positionListener)
+            }
         }
     }
 

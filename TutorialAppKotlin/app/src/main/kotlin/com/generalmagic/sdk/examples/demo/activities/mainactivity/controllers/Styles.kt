@@ -26,7 +26,6 @@ import com.generalmagic.sdk.examples.demo.activities.*
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.app.Tutorials
 import com.generalmagic.sdk.util.SdkCall
-import kotlinx.android.synthetic.main.activity_list_view.*
 
 class StylesActivity : StylesListActivity() {
     private val contentStore = ContentStore()
@@ -99,7 +98,7 @@ class StylesActivity : StylesListActivity() {
         adapter.onDeleteIconTapped = { _: Int, it, holder ->
             onDeleteTapped(it, holder)
         }
-        list_view.adapter = adapter
+        listView.adapter = adapter
     }
 
     private fun onItemTapped(itUncasted: BaseListItem, holder: StylesViewHolder) {
@@ -187,7 +186,7 @@ class StylesActivity : StylesListActivity() {
     }
 
     private fun refreshChecked() {
-        val adapter = list_view.adapter as ChapterStylesAdapter? ?: return
+        val adapter = listView.adapter as ChapterStylesAdapter? ?: return
         val styleId = SdkCall.execute {
             GEMApplication.getMainMapView()?.preferences()?.getMapStyleId()
         } ?: return

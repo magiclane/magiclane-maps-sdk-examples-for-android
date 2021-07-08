@@ -76,11 +76,13 @@ object GEMApplication {
         SdkCall.checkCurrentThread()
 
         SdkSettings.onConnected = {
-            val styles =
-                ContentStore().getLocalContentList(EContentType.ViewStyleHighRes.value)
-            styles?.let {
-                if (styles.size < 2) {
-                    Util.downloadSecondStyle()
+            SdkCall.execute {
+                val styles =
+                    ContentStore().getLocalContentList(EContentType.ViewStyleHighRes.value)
+                styles?.let {
+                    if (styles.size < 2) {
+                        Util.downloadSecondStyle()
+                    }
                 }
             }
         }
@@ -235,20 +237,20 @@ object GEMApplication {
             logUploader = SdkCall.execute {
                 val proxyListener = object : LogUploaderListener() {
                     override fun onLogStatusChanged(
-                        sLogPath: String, nProgress: Int, nStatus: Int
+                        logPath: String, progress: Int, status: Int
                     ) {
                         for (listener in logUploaderListeners) {
-                            listener.onLogStatusChanged(sLogPath, nProgress, nStatus)
+                            listener.onLogStatusChanged(logPath, progress, status)
                         }
 
-                        if (nStatus < 0) { // internally aborted
+                        if (status < 0) { // internally aborted
                             return
                         }
 
-                        val chunks = sLogPath.split("/")
+                        val chunks = logPath.split("/")
                         val name = chunks.last()
 
-                        when (EnumHelp.fromInt<ELogUploaderState>(nStatus)) {
+                        when (EnumHelp.fromInt<ELogUploaderState>(status)) {
                             ELogUploaderState.Progress -> {
                                 //
                             }

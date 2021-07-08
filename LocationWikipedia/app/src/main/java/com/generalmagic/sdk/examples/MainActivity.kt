@@ -82,7 +82,9 @@ class MainActivity : AppCompatActivity() {
         locationWiki = findViewById(R.id.locationWiki)
         progressBar = findViewById(R.id.progressBar)
 
-        SdkSettings.onMapDataReady = {
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
+            if (!isReady) return@onMapDataReady
+
             search()
         }
 

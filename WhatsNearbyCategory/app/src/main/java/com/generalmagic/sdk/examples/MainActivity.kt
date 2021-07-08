@@ -98,7 +98,9 @@ class MainActivity : AppCompatActivity() {
         listView.setPadding(lateralPadding, 0, lateralPadding, 0)
 
         /// GENERAL MAGIC
-        SdkSettings.onMapDataReady = {
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
+            if (!isReady) return@onMapDataReady
+
             // Defines an action that should be done after the world map is ready.
             search()
         }
@@ -163,12 +165,8 @@ class MainActivity : AppCompatActivity() {
         // Cancel any search that is in progress now.
         searchService.cancelSearch()
 
-        // Set the necessary preferences.
-        searchService.preferences.setSearchMapPOIs(true)
-        searchService.preferences.addCategoryFilter(EGenericCategoriesIDs.GasStation)
-
         // Search around position using the provided search preferences and/ or filter.
-        searchService.searchAroundPosition(reference)
+        searchService.searchAroundPosition(EGenericCategoriesIDs.GasStation)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

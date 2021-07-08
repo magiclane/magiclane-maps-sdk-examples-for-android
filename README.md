@@ -13,6 +13,7 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Hello Fragment](HelloFragment) - Display a map on an Android Fragment
 * [Hello Fragment Custom Style](HelloFragmentCustomStyle) - Display a map on an Android Fragment; apply custom style to a map
 * [Multiple surfaces in Fragment](MultipleSurfacesInFragment) - Display a variable list of maps on an Android Fragment
+* [Multiple surfaces in Fragment Recycler](MultipleSurfacesInFragmentRecycler) - Displaying a variable list of maps on an Android Fragment
 * [Online Maps](OnlineMaps) - Gather the list of available maps; download first available map
 * [Overlapped Maps](OverlappedMaps) - Display a second map view over the existing one
 * [Map Style](ApplyMapStyle) - Gather the list of available map styles; download and apply one

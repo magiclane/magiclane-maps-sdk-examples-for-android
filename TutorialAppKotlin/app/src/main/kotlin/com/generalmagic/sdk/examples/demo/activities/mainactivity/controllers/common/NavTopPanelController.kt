@@ -17,7 +17,10 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.RelativeLayout
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.Rgba
@@ -36,7 +39,7 @@ import com.generalmagic.sdk.util.SdkUtil.getDistText
 import com.generalmagic.sdk.util.SdkUtil.getTimeText
 import com.generalmagic.sdk.util.SdkUtil.getUIString
 import com.generalmagic.sdk.util.StringIds
-import kotlinx.android.synthetic.main.nav_top_panel.view.*
+
 
 class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     RelativeLayout(context, attrs) {
@@ -69,6 +72,63 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     private var bSameTurnImage = false
     private var bSameAlarmImage = false
     private var bSameTrafficImage = false
+
+    lateinit var status_text: TextView
+    lateinit var turn_instruction: TextView
+    lateinit var turn_image: ImageView
+    lateinit var turn_distance: TextView
+    lateinit var turn_distance_unit: TextView
+    lateinit var sign_post: ImageView
+    lateinit var road_code: ImageView
+    lateinit var traffic_panel: LinearLayout
+    lateinit var traffic_image: ImageView
+    lateinit var traffic_event_description: TextView
+    lateinit var traffic_delay_distance: TextView
+    lateinit var traffic_delay_distance_unit: TextView
+    lateinit var traffic_delay_time: TextView
+    lateinit var traffic_delay_time_unit: TextView
+    lateinit var end_of_section: ImageView
+    lateinit var distance_to_traffic: TextView
+    lateinit var distance_to_traffic_prefix: TextView
+    lateinit var distance_to_traffic_unit: TextView
+    lateinit var alarm_panel: LinearLayout
+    lateinit var alarm_distance_container: LinearLayout
+    lateinit var alarm_score: TextView
+    lateinit var distance_to_alarm: TextView
+    lateinit var distance_to_alarm_unit: TextView
+    lateinit var alarm_icon_container: RelativeLayout
+    lateinit var alarm_icon: ImageView
+    lateinit var voting_panel: LinearLayout
+
+    override fun onFinishInflate() {
+        super.onFinishInflate()
+        status_text = findViewById(R.id.status_text)
+        turn_instruction = findViewById(R.id.turn_instruction)
+        turn_image = findViewById(R.id.turn_image)
+        turn_distance = findViewById(R.id.turn_distance)
+        turn_distance_unit = findViewById(R.id.turn_distance_unit)
+        sign_post = findViewById(R.id.sign_post)
+        road_code = findViewById(R.id.road_code)
+        traffic_panel = findViewById(R.id.traffic_panel)
+        traffic_image = findViewById(R.id.traffic_image)
+        traffic_event_description = findViewById(R.id.traffic_event_description)
+        traffic_delay_distance = findViewById(R.id.traffic_delay_distance)
+        traffic_delay_distance_unit = findViewById(R.id.traffic_delay_distance_unit)
+        traffic_delay_time = findViewById(R.id.traffic_delay_time)
+        traffic_delay_time_unit = findViewById(R.id.traffic_delay_time_unit)
+        end_of_section = findViewById(R.id.end_of_section)
+        distance_to_traffic = findViewById(R.id.distance_to_traffic)
+        distance_to_traffic_prefix = findViewById(R.id.distance_to_traffic_prefix)
+        distance_to_traffic_unit = findViewById(R.id.distance_to_traffic_unit)
+        alarm_panel = findViewById(R.id.alarm_panel)
+        alarm_distance_container = findViewById(R.id.alarm_distance_container)
+        alarm_score = findViewById(R.id.alarm_score)
+        distance_to_alarm = findViewById(R.id.distance_to_alarm)
+        distance_to_alarm_unit = findViewById(R.id.distance_to_alarm_unit)
+        alarm_icon_container = findViewById(R.id.alarm_icon_container)
+        alarm_icon = findViewById(R.id.alarm_icon)
+        voting_panel = findViewById(R.id.voting_panel)
+    }
 
     fun update(navInstr: NavigationInstruction?, route: Route?, alarmService: AlarmService?) {
         reset()

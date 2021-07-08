@@ -70,7 +70,9 @@ class MainActivity : AppCompatActivity() {
 
         progressBar = findViewById(R.id.progressBar)
 
-        SdkSettings.onMapDataReady = {
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
+            if (!isReady) return@onMapDataReady
+
             // Defines an action that should be done after the world map is updated.
             calculateRoute()
         }

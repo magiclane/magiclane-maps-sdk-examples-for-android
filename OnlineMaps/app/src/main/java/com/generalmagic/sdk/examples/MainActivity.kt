@@ -122,7 +122,9 @@ class MainActivity : AppCompatActivity() {
         listView?.setPadding(lateralPadding, 0, lateralPadding, 0)
 
         /// GENERAL MAGIC
-        SdkSettings.onMapDataReady = {
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
+            if (!isReady) return@onMapDataReady
+
             SdkCall.execute {
                 // Defines an action that should be done after the network is connected.
                 // Call to the content store to asynchronously retrieve the list of maps.

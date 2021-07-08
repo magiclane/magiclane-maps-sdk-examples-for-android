@@ -15,6 +15,8 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
 import android.widget.*
+import androidx.appcompat.widget.Toolbar
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.GridLayoutManager
@@ -41,8 +43,6 @@ import io.github.luizgrp.sectionedrecyclerviewadapter.Section
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionParameters
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionedRecyclerViewAdapter
 import io.github.luizgrp.sectionedrecyclerviewadapter.utils.EmptyViewHolder
-import kotlinx.android.synthetic.main.activity_list_view.*
-import kotlinx.android.synthetic.main.filter_view.*
 
 abstract class BaseListItem
 
@@ -145,23 +145,36 @@ open class GenericListActivity : BaseActivity() {
     private var statusIconSize: Int = 0
     private var iconSize: Int = 0
 
+    lateinit var listView: RecyclerView
+    lateinit var rootView: ConstraintLayout
+    lateinit var filterView: ConstraintLayout
+    lateinit var searchInput: SearchView
+    lateinit var toolbar: Toolbar
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_list_view)
+
+        progressBar = findViewById(R.id.progressBar)
+        listView = findViewById(R.id.list_view)
+        rootView = findViewById(R.id.root_view)
+        filterView = findViewById(R.id.filterView)
+        toolbar = findViewById(R.id.toolbar)
+        searchInput = findViewById(R.id.searchInput)
 
         statusIconSize = resources.getDimension(R.dimen.statusIconSize).toInt()
         iconSize = resources.getDimension(R.dimen.listIconSize).toInt()
 
         val layoutManager = LinearLayoutManager(this)
-        list_view.layoutManager = layoutManager
+        listView.layoutManager = layoutManager
 
         val separator = DividerItemDecoration(applicationContext, layoutManager.orientation)
-        list_view.addItemDecoration(separator)
+        listView.addItemDecoration(separator)
 
         // set root view background (we used grouped style for list view)
-        root_view.setBackgroundResource(R.color.list_view_bgnd_color)
+        rootView.setBackgroundResource(R.color.list_view_bgnd_color)
         val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
-        list_view.setPadding(lateralPadding, 0, lateralPadding, 0)
+        listView.setPadding(lateralPadding, 0, lateralPadding, 0)
 
         filterView.visibility = View.GONE
 
@@ -174,7 +187,7 @@ open class GenericListActivity : BaseActivity() {
     }
 
     fun hideListView() {
-        list_view?.adapter = SectionedRecyclerViewAdapter()
+        listView.adapter = SectionedRecyclerViewAdapter()
     }
 }
 
@@ -182,17 +195,17 @@ open class StylesListActivity : GenericListActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        list_view.layoutManager = GridLayoutManager(
+        listView.layoutManager = GridLayoutManager(
             this,
             if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) 2 else 1
         )
 
-        val separator = list_view.getItemDecorationAt(0)
-        list_view.removeItemDecoration(separator)
+        val separator = listView.getItemDecorationAt(0)
+        listView.removeItemDecoration(separator)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        list_view.layoutManager = GridLayoutManager(
+        listView.layoutManager = GridLayoutManager(
             this,
             if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) 2 else 1
         )
@@ -226,7 +239,7 @@ open class MapsListActivity : GenericListActivity() {
             }
         )
 
-        list_view.setBackgroundColor(ContextCompat.getColor(this, R.color.maps_view_bgnd_color))
+        listView.setBackgroundColor(ContextCompat.getColor(this, R.color.maps_view_bgnd_color))
     }
 
     open fun applyFilter(filter: String) {}
@@ -756,7 +769,7 @@ open class LandmarkViewModel(val it: Landmark?, reference: Coordinates?) : Searc
             return@execute it?.getCoordinates()?.getDistance(reference)?.toInt()
         } ?: 0
 
-        dist = getDistText(meters, EUnitSystem.Metric, true)
+        dist = SdkCall.execute { getDistText(meters, EUnitSystem.Metric, true) } ?: Pair("", "")
     }
 
     override fun getIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {

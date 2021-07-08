@@ -13,6 +13,8 @@ package com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.c
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
@@ -20,7 +22,6 @@ import com.generalmagic.sdk.examples.demo.app.MapLayoutController
 import com.generalmagic.sdk.examples.demo.app.elements.ButtonsDecorator
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.util.SdkCall
-import kotlinx.android.synthetic.main.pick_location.view.*
 
 class PickLocationController(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
@@ -29,9 +30,18 @@ class PickLocationController(context: Context, attrs: AttributeSet?) :
     var onStartPicked: (Landmark) -> Unit = {}
     var onIntermediatePicked: (Landmark) -> Unit = {}
     var onDestinationPicked: (Landmark) -> Unit = {}
+    
+    lateinit var pickTopText: TextView
+    lateinit var pickIcon: ImageView
+
+    override fun onFinishInflate() {
+        super.onFinishInflate()
+        pickTopText = findViewById(R.id.pickTopText)
+        pickIcon = findViewById(R.id.pickIcon)
+    }
 
     private fun updateTopText(text: String) {
-        pickTopText?.text = text
+        pickTopText.text = text
     }
 
     override fun onMapFollowStatusChanged(following: Boolean) {}

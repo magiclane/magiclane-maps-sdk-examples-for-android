@@ -5,10 +5,11 @@
     android:layout_height="match_parent"
     android:gravity="center_horizontal"
     android:orientation="vertical">
-
     <include
+        android:id="@+id/navLayout"
         layout="@layout/nav_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
 
 </com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SimLandmarksController>

@@ -23,7 +23,6 @@ import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.demo.activities.*
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.util.SdkCall
-import kotlinx.android.synthetic.main.activity_list_view.*
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -147,13 +146,13 @@ class OnlineMapsActivity : MapsListActivity() {
 
     override fun applyFilter(filter: String) {
         val resultList = if (filter.isNotEmpty()) {
-            val lowerFilter = filter.toLowerCase(Locale.getDefault())
+            val lowerFilter = filter.lowercase(Locale.getDefault())
             val filterTokens = lowerFilter.split(' ', '-')
 
             ArrayList(
                 models.filter {
                     val arg = SdkCall.execute { it.getName() }
-                    val lowerArg = arg?.toLowerCase(Locale.getDefault()) ?: ""
+                    val lowerArg = arg?.lowercase(Locale.getDefault()) ?: ""
                     val argTokens = lowerArg.split(' ', '-')
 
                     for (filterWord in filterTokens) {
@@ -193,7 +192,7 @@ class OnlineMapsActivity : MapsListActivity() {
             onItemTapped(it, holder)
         }
 
-        list_view.adapter = adapter
+        listView.adapter = adapter
     }
 
     private fun onItemTapped(itUncasted: BaseListItem, holder: LISIViewHolder) {

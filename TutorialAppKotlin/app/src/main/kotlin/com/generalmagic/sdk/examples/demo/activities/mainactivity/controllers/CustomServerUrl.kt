@@ -13,16 +13,23 @@ package com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
+import android.widget.Button
 import android.widget.Toast
+import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.MapLayoutController
-import kotlinx.android.synthetic.main.custom_server_bottom_dialog.view.*
 
 class CustomServerUrl(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
+    
+    private lateinit var positiveButton: Button
+    private lateinit var negativeButton: Button
 
     override fun onCreated() {
         super.onCreated()
 
+        positiveButton = findViewById(R.id.positiveButton)
+        negativeButton = findViewById(R.id.negativeButton)
+        
         hideAllButtons()
 
         positiveButton.setOnClickListener {

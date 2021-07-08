@@ -205,15 +205,15 @@ object GEMRouteProfileView {
                         mRouteLengthInMeters - item.getStartDistanceM()
                     }
 
-                    if (mSteepnessTypes.containsKey(item.getCateg())) {
-                        mSteepnessTypes[item.getCateg()]?.add(
+                    if (mSteepnessTypes.containsKey(item.getCategory())) {
+                        mSteepnessTypes[item.getCategory()]?.add(
                             CSectionItem(
                                 item.getStartDistanceM(),
                                 nLength
                             )
                         )
                     } else {
-                        mSteepnessTypes[item.getCateg()] = arrayListOf(
+                        mSteepnessTypes[item.getCategory()] = arrayListOf(
                             CSectionItem(
                                 item.getStartDistanceM(),
                                 nLength

@@ -19,7 +19,10 @@ import com.generalmagic.sdk.core.*
 import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.ECommonOverlayId
 import com.generalmagic.sdk.d3scene.OverlayService
+import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.activities.RouteDescriptionActivity
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.NavPanelsController
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.PickLocationController
 import com.generalmagic.sdk.examples.demo.activities.settings.SettingsProvider
 import com.generalmagic.sdk.examples.demo.activities.settings.TIntSettings
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
@@ -33,13 +36,17 @@ import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.sensordatasource.*
 import com.generalmagic.sdk.sensordatasource.enums.EDataType
 import com.generalmagic.sdk.util.SdkCall
-import kotlinx.android.synthetic.main.nav_layout.view.*
-import kotlinx.android.synthetic.main.pick_location.view.*
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 // BASE
 
 abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
+
+    lateinit var pickLocation: PickLocationController
+    lateinit var navLayout: NavPanelsController
+    lateinit var navBottomLeftButton: FloatingActionButton
+    lateinit var navBottomRightButton: FloatingActionButton
 
     protected val navigationService = NavigationService()
 
@@ -47,7 +54,7 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
         override fun notifyStart(hasProgress: Boolean) {
             GEMApplication.postOnMain {
                 showProgress()
-                navLayout?.let { setStopButtonVisible(true) }
+                setStopButtonVisible(true)
             }
 
             GEMApplication.clearMapVisibleRoutes()
@@ -61,7 +68,7 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
             }
 
             if (reason == SdkError.NoError) {
-                navLayout?.routeUpdated(route)
+                navLayout.routeUpdated(route)
             } else {
                 GEMApplication.postOnMain {
                     Toast.makeText(
@@ -114,14 +121,14 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
                     startNotified = true
                 }
 
-                navLayout?.updateNavInstruction(instr)
+                navLayout.updateNavInstruction(instr)
             }
         }
 
         override fun onNavigationSound(sound: ISound) {}
 
         override fun onRouteUpdated(route: Route) {
-            navLayout?.routeUpdated(route)
+            navLayout.routeUpdated(route)
         }
 
         override fun onWaypointReached(landmark: Landmark) {}
@@ -131,6 +138,13 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
                 this@BaseNavControllerLayout.onNavigationStarted()
             }
         }
+    }
+
+    override fun onCreated() {
+        navLayout = findViewById(R.id.navLayout)
+        navBottomLeftButton = navLayout.findViewById(R.id.navBottomLeftButton)
+        navBottomRightButton = navLayout.findViewById(R.id.navBottomRightButton)
+        super.onCreated()
     }
 
     fun isTripActive(): Boolean {
@@ -169,7 +183,7 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
     }
 
     fun setNavInfoButtonVisible(visible: Boolean) {
-        val button = navBottomRightButton ?: return
+        val button = navBottomRightButton
 
         if (visible) {
             ButtonsDecorator.buttonAsInfo(context, button) {
@@ -183,7 +197,7 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
     }
 
     fun setNavStopButtonVisible(visible: Boolean) {
-        val button = navBottomLeftButton ?: return
+        val button = navBottomLeftButton
 
         if (visible) {
             ButtonsDecorator.buttonAsStop(context, navBottomLeftButton) {
@@ -379,7 +393,7 @@ open class BaseSimulationController(context: Context, attrs: AttributeSet?) :
 
         doStop() // stop any sim in progress
 
-        navLayout?.routeUpdated(route)
+        navLayout.routeUpdated(route)
 
         SdkCall.execute {
             var speedMultiplier = 1
@@ -500,9 +514,10 @@ class CustomSimController(context: Context, attrs: AttributeSet?) :
     private var picking = false
 
     override fun onCreated() {
+        pickLocation = findViewById(R.id.pickLocation)
         super.onCreated()
 
-        pickLocation?.let {
+        pickLocation.let {
             it.onCancelPressed = {
                 hideAllButtons()
                 pickLocation.visibility = View.GONE
@@ -533,8 +548,8 @@ class CustomSimController(context: Context, attrs: AttributeSet?) :
         landmarks.clear()
 
         picking = true
-        pickLocation?.mapActivity = mapActivity
-        pickLocation?.pickStart()
+        pickLocation.mapActivity = mapActivity
+        pickLocation.pickStart()
     }
 
     override fun onMapFollowStatusChanged(following: Boolean) {
@@ -551,9 +566,10 @@ class CustomNavController(context: Context, attrs: AttributeSet?) :
     private var picking = false
 
     override fun onCreated() {
+        pickLocation = findViewById(R.id.pickLocation)
         super.onCreated()
 
-        pickLocation?.let {
+        pickLocation.let {
             it.onCancelPressed = {
                 hideAllButtons()
                 pickLocation.visibility = View.GONE
@@ -582,8 +598,8 @@ class CustomNavController(context: Context, attrs: AttributeSet?) :
         landmarks.clear()
 
         picking = true
-        pickLocation?.mapActivity = mapActivity
-        pickLocation?.pickDestination()
+        pickLocation.mapActivity = mapActivity
+        pickLocation.pickDestination()
     }
 
     override fun onMapFollowStatusChanged(following: Boolean) {

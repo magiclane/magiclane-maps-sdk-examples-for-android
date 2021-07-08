@@ -19,6 +19,8 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewTreeObserver
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
@@ -42,12 +44,6 @@ import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkUtil
 import com.generalmagic.sdk.util.SdkUtil.getDistText
 import com.generalmagic.sdk.util.SdkUtil.getSpeedText
-import kotlinx.android.synthetic.main.nav_bottom_panel.view.*
-import kotlinx.android.synthetic.main.nav_lane_panel.view.*
-import kotlinx.android.synthetic.main.nav_layout.view.*
-import kotlinx.android.synthetic.main.nav_speed_limit_sign.view.*
-import kotlinx.android.synthetic.main.nav_speed_panel.view.*
-import kotlinx.android.synthetic.main.nav_top_panel.view.*
 import kotlin.math.roundToInt
 
 class NavPanelsController(context: Context, attrs: AttributeSet?) :
@@ -72,6 +68,21 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
     private var position: PositionData? = null
 
     private var laneInfoImage: Bitmap? = null
+
+    lateinit var navigationBottomPanel: ConstraintLayout
+    lateinit var topPanelController: NavTopPanelController
+    lateinit var navigationDemoText: TextView
+    lateinit var navigationSpeedPanel: ConstraintLayout
+    lateinit var navigationLanePanel: ConstraintLayout
+
+//    init {
+//        // TODO
+//            navigationBottomPanel = findViewById(R.id.navigationBottomPanel)
+//            topPanelController = findViewById(R.id.topPanelController)
+//            navigationDemoText = findViewById(R.id.navigationDemoText)
+//            navigationSpeedPanel = findViewById(R.id.navigationSpeedPanel)
+//            navigationLanePanel = findViewById(R.id.navigationLanePanel)
+//    }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
@@ -109,6 +120,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
     }
 
     fun updateNavInstruction(value: NavigationInstruction?) {
+        if (!allowRefresh) return
         navInstr = value
 
         val screen = SdkCall.execute { GEMApplication.gemMapScreen() }
@@ -149,6 +161,12 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
     }
 
     fun showNavInfo() {
+        navigationBottomPanel = findViewById(R.id.navigationBottomPanel)
+        topPanelController = findViewById(R.id.topPanelController)
+        navigationDemoText = findViewById(R.id.navigationDemoText)
+        navigationSpeedPanel = findViewById(R.id.navigationSpeedPanel)
+        navigationLanePanel = findViewById(R.id.navigationLanePanel)
+        
         allowRefresh = true
         updateDemoPanel(navDataProvider.info)
         adjustNavInfoTextSize()
@@ -156,22 +174,25 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
 
     fun hideNavInfo() {
         allowRefresh = false
-        navigationBottomPanel.visibility = View.GONE
-        topPanelController.visibility = View.GONE
-        navigationSpeedPanel.visibility = View.GONE
-        navigationLanePanel.visibility = View.GONE
-        navigationDemoText.visibility = View.GONE
+//        navigationBottomPanel.visibility = View.GONE
+//        topPanelController.visibility = View.GONE
+//        navigationSpeedPanel.visibility = View.GONE
+//        navigationLanePanel.visibility = View.GONE
+//        navigationDemoText.visibility = View.GONE
     }
 
     @SuppressLint("SetTextI18n")
     private fun adjustNavInfoTextSize() {
         val layoutListener = ViewTreeObserver.OnGlobalLayoutListener {
-            val etaText = navigationBottomPanel?.navMenuETAText
-            val etaTextUnit = navigationBottomPanel?.navMenuETAUnit
-            val tripDuration = navigationBottomPanel?.navMenuTripDurationText
-            val tripDurationUnit = navigationBottomPanel?.navMenuTripDurationUnit
-            val navDistance = navigationBottomPanel?.navMenuDistanceText
-            val navDistanceUnit = navigationBottomPanel?.navMenuDistanceUnit
+            val etaText = navigationBottomPanel.findViewById<TextView>(R.id.navMenuETAText)
+            val etaTextUnit = navigationBottomPanel.findViewById<TextView>(R.id.navMenuETAUnit)
+            val tripDuration =
+                navigationBottomPanel.findViewById<TextView>(R.id.navMenuTripDurationText)
+            val tripDurationUnit =
+                navigationBottomPanel.findViewById<TextView>(R.id.navMenuTripDurationUnit)
+            val navDistance = navigationBottomPanel.findViewById<TextView>(R.id.navMenuDistanceText)
+            val navDistanceUnit =
+                navigationBottomPanel.findViewById<TextView>(R.id.navMenuDistanceUnit)
 
 // 			if (navMenuETAText != null && navMenuETAUnit != null &&
 // 				navMenuTripDurationText != null && navMenuTripDurationUnit != null &&
@@ -180,8 +201,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
 // 				return@OnGlobalLayoutListener
 // 			}
 
-            val navMenuPadding = etaText?.marginStart ?: 0
-            val availableWidth = navigationBottomPanel?.measuredWidth ?: 0 - 2 * navMenuPadding
+            val availableWidth = navigationBottomPanel.measuredWidth
             val availableWidthForANavigationTextGroup: Int = availableWidth / 3
             var bigTextFontSize = etaText?.textSize?.roundToInt()?.toFloat() ?: 0.0f
             var smallTextFontSize = etaTextUnit?.textSize?.roundToInt()?.toFloat() ?: 0.0f
@@ -254,8 +274,8 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
                 }
             }
         }
-        navigationBottomPanel?.viewTreeObserver?.addOnGlobalLayoutListener(layoutListener)
-        navigationBottomPanel?.viewTreeObserver?.removeOnGlobalLayoutListener(layoutListener)
+        navigationBottomPanel.viewTreeObserver?.addOnGlobalLayoutListener(layoutListener)
+        navigationBottomPanel.viewTreeObserver?.removeOnGlobalLayoutListener(layoutListener)
     }
 
     private fun adjustViewsForOrientation(orientation: Int) {
@@ -264,7 +284,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
                 Configuration.ORIENTATION_LANDSCAPE -> {
                     val constraintSet = ConstraintSet()
 
-                    constraintSet.clone(navLayout)
+                    constraintSet.clone(this)
                     constraintSet.connect(
                         R.id.navigationDemoText,
                         ConstraintSet.TOP,
@@ -280,9 +300,9 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
                         10
                     )
                     constraintSet.clear(R.id.navigationDemoText, ConstraintSet.START)
-                    constraintSet.applyTo(navLayout)
+                    constraintSet.applyTo(this)
 
-                    constraintSet.clone(navLayout)
+                    constraintSet.clone(this)
                     constraintSet.connect(
                         R.id.navigationSpeedPanel,
                         ConstraintSet.TOP,
@@ -297,9 +317,9 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
                         ConstraintSet.END,
                         0
                     )
-                    constraintSet.applyTo(navLayout)
+                    constraintSet.applyTo(this)
 
-                    constraintSet.clone(navLayout)
+                    constraintSet.clone(this)
                     constraintSet.connect(
                         R.id.navigationLanePanel,
                         ConstraintSet.START,
@@ -321,13 +341,13 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
                         ConstraintSet.END,
                         10
                     )
-                    constraintSet.applyTo(navLayout)
+                    constraintSet.applyTo(this)
                 }
 
                 Configuration.ORIENTATION_PORTRAIT -> {
                     val constraintSet = ConstraintSet()
 
-                    constraintSet.clone(navLayout)
+                    constraintSet.clone(this)
                     constraintSet.connect(
                         R.id.navigationDemoText,
                         ConstraintSet.TOP,
@@ -349,9 +369,9 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
                         ConstraintSet.START,
                         10
                     )
-                    constraintSet.applyTo(navLayout)
+                    constraintSet.applyTo(this)
 
-                    constraintSet.clone(navLayout)
+                    constraintSet.clone(this)
                     constraintSet.connect(
                         R.id.navigationSpeedPanel,
                         ConstraintSet.TOP,
@@ -366,9 +386,9 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
                         ConstraintSet.END,
                         0
                     )
-                    constraintSet.applyTo(navLayout)
+                    constraintSet.applyTo(this)
 
-                    constraintSet.clone(navLayout)
+                    constraintSet.clone(this)
                     constraintSet.connect(
                         R.id.navigationLanePanel,
                         ConstraintSet.START,
@@ -390,7 +410,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
                         ConstraintSet.END,
                         10
                     )
-                    constraintSet.applyTo(navLayout)
+                    constraintSet.applyTo(this)
                 }
 
                 else -> return
@@ -445,25 +465,29 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
 
         val color = SdkCall.execute { navInfo.rttColor?.value()?.let { Util.getColor(it) } } ?: 0
 
-        navMenuETAText.text = navInfo.eta
-        navMenuETAUnit.text = navInfo.etaUnit
-        navMenuTripDurationText.text = navInfo.rtt
-        navMenuTripDurationText.setTextColor(color)
-        navMenuTripDurationUnit.text = navInfo.rttUnit
-        navMenuTripDurationUnit.setTextColor(color)
-        navMenuDistanceText.text = navInfo.rtd
-        navMenuDistanceUnit.text = navInfo.rtdUnit
+        findViewById<TextView>(R.id.navMenuETAText).text = navInfo.eta
+        findViewById<TextView>(R.id.navMenuETAUnit).text = navInfo.etaUnit
+        findViewById<TextView>(R.id.navMenuTripDurationText).text = navInfo.rtt
+        findViewById<TextView>(R.id.navMenuTripDurationText).setTextColor(color)
+        findViewById<TextView>(R.id.navMenuTripDurationUnit).text = navInfo.rttUnit
+        findViewById<TextView>(R.id.navMenuTripDurationUnit).setTextColor(color)
+        findViewById<TextView>(R.id.navMenuDistanceText).text = navInfo.rtd
+        findViewById<TextView>(R.id.navMenuDistanceUnit).text = navInfo.rtdUnit
     }
 
     private fun updateNavigationTopPanel() {
-        topPanelController?.visibility = View.VISIBLE
+        topPanelController.visibility = View.VISIBLE
 
         val laneInfoImage = this.laneInfoImage
-
+        val laneInformationImage =
+            navigationLanePanel.findViewById<ImageView>(R.id.laneInformationImage)
         if (laneInfoImage != null) {
             navigationLanePanel.visibility = View.VISIBLE
-            laneInformationImage.visibility = View.VISIBLE
-            laneInformationImage.setImageBitmap(laneInfoImage)
+
+            laneInformationImage.apply {
+                visibility = View.VISIBLE
+                setImageBitmap(laneInfoImage)
+            }
 
             if (laneInfoImage.height > 0) {
                 val ratio: Float = (laneInfoImage.width).toFloat() / laneInfoImage.height
@@ -477,8 +501,16 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
     }
 
     private fun updateSpeedPanel(navInfo: UINavDataProvider.NavInfo) {
+        val navCurrentSpeed = navigationSpeedPanel.findViewById<TextView>(R.id.navCurrentSpeed)
+        val navCurrentSpeedUnit =
+            navigationSpeedPanel.findViewById<TextView>(R.id.navCurrentSpeedUnit)
+        val navCurrentSpeedLimit =
+            navigationSpeedPanel.findViewById<TextView>(R.id.navCurrentSpeedLimit)
+        val navLegalSpeed = navigationSpeedPanel.findViewById<ConstraintLayout>(R.id.navLegalSpeed)
+
         if (!navInfo.currentSpeed.isNullOrEmpty()) {
             navigationSpeedPanel.visibility = View.VISIBLE
+
 
             navCurrentSpeed.text = navInfo.currentSpeed
             navCurrentSpeedUnit.text = navInfo.currentSpeedUnit

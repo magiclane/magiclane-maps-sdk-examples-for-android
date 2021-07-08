@@ -33,7 +33,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         gemSurfaceView = findViewById(R.id.gem_surface)
 
-        SdkSettings.onMapDataReady = {
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
+            if (!isReady) return@onMapDataReady
+
             // Defines an action that should be done when the map is ready.
             flyToPolyline()
         }

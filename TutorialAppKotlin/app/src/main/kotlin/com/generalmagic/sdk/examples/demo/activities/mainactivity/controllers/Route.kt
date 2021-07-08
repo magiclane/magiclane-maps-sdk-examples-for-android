@@ -18,7 +18,9 @@ import android.widget.Toast
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.*
 import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.activities.RouteDescriptionActivity.Companion.showRouteDescription
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.PickLocationController
 import com.generalmagic.sdk.examples.demo.activities.publictransport.PublicTransportRouteDescriptionActivity.Companion.showPTRouteDescription
 import com.generalmagic.sdk.examples.demo.activities.routeprofile.GEMRouteProfileView
 import com.generalmagic.sdk.examples.demo.activities.routeprofile.RouteProfileView
@@ -35,10 +37,11 @@ import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
-import kotlinx.android.synthetic.main.pick_location.view.*
 
 abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
+    
+    lateinit var pickLocation: PickLocationController
 
     protected var calculatedRoutes = ArrayList<Route>()
     private var mRouteProfileView: RouteProfileView? = null
@@ -231,7 +234,7 @@ open class RouteCustom(context: Context, attrs: AttributeSet?) :
     override fun onCreated() {
         super.onCreated()
 
-        pickLocation?.let {
+        pickLocation.let {
             it.onCancelPressed = {
                 pickLocation.visibility = View.GONE
                 GEMApplication.doMapFollow(false)
@@ -255,6 +258,11 @@ open class RouteCustom(context: Context, attrs: AttributeSet?) :
         }
     }
 
+    override fun onFinishInflate() {
+        super.onFinishInflate()
+        pickLocation = findViewById(R.id.pickLocation)
+    }
+
     override fun doStart() {
         if (calculatedRoutes.size == 0) {
             landmarks.clear()
@@ -268,7 +276,7 @@ open class RouteCustom(context: Context, attrs: AttributeSet?) :
             if (waypoints != null && waypoints.isNotEmpty()) {
                 doStart(waypoints)
             } else {
-                pickLocation?.pickStart()
+                pickLocation.pickStart()
             }
         } else {
             doStart(landmarks)

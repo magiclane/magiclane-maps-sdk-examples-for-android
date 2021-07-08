@@ -95,8 +95,9 @@ class MainActivity : AppCompatActivity() {
         listView.setPadding(lateralPadding, 0, lateralPadding, 0)
 
         /// GENERAL MAGIC
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
+            if (!isReady) return@onMapDataReady
 
-        SdkSettings.onMapDataReady = {
             // Defines an action that should be done after the network is connected.
             search()
         }

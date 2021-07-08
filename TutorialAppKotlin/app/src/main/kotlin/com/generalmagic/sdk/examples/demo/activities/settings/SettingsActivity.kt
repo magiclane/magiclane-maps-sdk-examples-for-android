@@ -19,8 +19,11 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatSeekBar
 import androidx.appcompat.widget.SwitchCompat
+import androidx.appcompat.widget.Toolbar
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.adapters.GEMGenericAdapter
 import com.generalmagic.sdk.examples.demo.adapters.sectionedlist.GenericSectionedAdapter
@@ -28,12 +31,16 @@ import com.generalmagic.sdk.examples.demo.app.BaseActivity
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.app.Tutorials
 import com.generalmagic.sdk.util.SdkCall
-import kotlinx.android.synthetic.main.settings_activity.*
 
 class SettingsActivity : BaseActivity(), ISettingsView {
 
     private var viewId: Long = 0
     private var settingsListAdapter: SettingsListAdapter? = null
+    
+    lateinit var toolbar: Toolbar
+    lateinit var root_view: ConstraintLayout
+    lateinit var settingsList: RecyclerView
+    lateinit var settingsToolbarTitle: TextView
 
     data class SettingsListItem(
         var itemType: Int = 0,
@@ -473,6 +480,11 @@ class SettingsActivity : BaseActivity(), ISettingsView {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.settings_activity)
+        
+        toolbar = findViewById(R.id.toolbar)
+        root_view = findViewById(R.id.root_view)
+        settingsList = findViewById(R.id.settingsList)
+        settingsToolbarTitle = findViewById(R.id.settingsToolbarTitle)
 
         setSupportActionBar(toolbar)
 

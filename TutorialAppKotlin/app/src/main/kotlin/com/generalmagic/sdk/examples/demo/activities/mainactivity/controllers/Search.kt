@@ -26,8 +26,6 @@ import com.generalmagic.sdk.places.*
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.SdkCall
-import kotlinx.android.synthetic.main.activity_list_view.*
-import kotlinx.android.synthetic.main.filter_view.*
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -56,7 +54,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
             val wrapped = wrapLandmarkList(results, referencePoint)
             val adapter = SLIAdapter(wrapped)
 
-            list_view.adapter = adapter
+            listView.adapter = adapter
             if (gemError == SdkError.NoError && results.isEmpty()) {
                 Toast.makeText(
                     this@BaseSearchTutorialActivity, "No result!", Toast.LENGTH_SHORT
@@ -257,7 +255,7 @@ class SearchHistoryActivity : BaseSearchTutorialActivity() {
             if (text != null) {
                 doSearch(text)
             }
-            searchInput?.clearFocus()
+            searchInput.clearFocus()
             return true
         }
 
@@ -306,20 +304,20 @@ class SearchHistoryActivity : BaseSearchTutorialActivity() {
             listToDisplay.sortByDescending { it.getId() }
             val adapter = HLIAdapter(listToDisplay)
 
-            GEMApplication.postOnMain { list_view.adapter = adapter }
+            GEMApplication.postOnMain { listView.adapter = adapter }
 
         }
     }
 
     private fun doSearch(filter: String) {
         val resultList = if (filter.isNotEmpty()) {
-            val lowerFilter = filter.toLowerCase(Locale.getDefault())
+            val lowerFilter = filter.lowercase(Locale.getDefault())
             val filterTokens = lowerFilter.split(' ', '-')
 
             ArrayList(
                 listToDisplay.filter {
                     val arg = SdkCall.execute { it.getText() }
-                    val lowerArg = arg?.toLowerCase(Locale.getDefault()) ?: ""
+                    val lowerArg = arg?.lowercase(Locale.getDefault()) ?: ""
                     val argTokens = lowerArg.split(' ', '-')
 
                     for (filterWord in filterTokens) {
@@ -348,7 +346,7 @@ class SearchHistoryActivity : BaseSearchTutorialActivity() {
     private fun displayList(items: ArrayList<SearchListItem>) {
         val adapter = HLIAdapter(items)
 
-        list_view.adapter = adapter
+        listView.adapter = adapter
     }
 }
 
@@ -359,7 +357,7 @@ class SearchFavouritesActivity : BaseSearchTutorialActivity() {
             if (text != null) {
                 doSearch(text)
             }
-            searchInput?.clearFocus()
+            searchInput.clearFocus()
             return true
         }
 
@@ -395,19 +393,19 @@ class SearchFavouritesActivity : BaseSearchTutorialActivity() {
             listToDisplay.sortByDescending { it.getId() }
             val adapter = SLIAdapter(listToDisplay)
 
-            GEMApplication.postOnMain { list_view.adapter = adapter }
+            GEMApplication.postOnMain { listView.adapter = adapter }
         }
     }
 
     private fun doSearch(filter: String) {
         val resultList = if (filter.isNotEmpty()) {
-            val lowerFilter = filter.toLowerCase(Locale.getDefault())
+            val lowerFilter = filter.lowercase(Locale.getDefault())
             val filterTokens = lowerFilter.split(' ', '-')
 
             ArrayList(
                 listToDisplay.filter {
                     val arg = SdkCall.execute { it.getText() }
-                    val lowerArg = arg?.toLowerCase(Locale.getDefault()) ?: ""
+                    val lowerArg = arg?.lowercase(Locale.getDefault()) ?: ""
                     val argTokens = lowerArg.split(' ', '-')
 
                     for (filterWord in filterTokens) {
@@ -436,7 +434,7 @@ class SearchFavouritesActivity : BaseSearchTutorialActivity() {
     private fun displayList(items: ArrayList<SearchListItem>) {
         val adapter = SLIAdapter(items)
 
-        list_view.adapter = adapter
+        listView.adapter = adapter
     }
 }
 

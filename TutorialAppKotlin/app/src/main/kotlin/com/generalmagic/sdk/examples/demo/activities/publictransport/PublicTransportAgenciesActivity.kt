@@ -17,6 +17,8 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.widget.Toolbar
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.examples.demo.R
@@ -28,7 +30,6 @@ import com.generalmagic.sdk.util.SdkCall
 import io.github.luizgrp.sectionedrecyclerviewadapter.Section
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionParameters
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionedRecyclerViewAdapter
-import kotlinx.android.synthetic.main.agencies_activity.*
 
 class PublicTransportAgenciesActivity : BaseActivity() {
 
@@ -37,6 +38,10 @@ class PublicTransportAgenciesActivity : BaseActivity() {
     var urlBmp: Bitmap? = null
     var fareBmp: Bitmap? = null
     var phoneBmp: Bitmap? = null
+    
+    lateinit var root_view: ConstraintLayout
+    lateinit var toolbar: Toolbar
+    lateinit var mapsList: RecyclerView
 
     data class AgencyListItem(
         var name: String = "",
@@ -195,6 +200,10 @@ class PublicTransportAgenciesActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.agencies_activity)
+        
+        root_view = findViewById(R.id.root_view)
+        toolbar = findViewById(R.id.toolbar)
+        mapsList = findViewById(R.id.mapsList)
 
         setSupportActionBar(toolbar)
 

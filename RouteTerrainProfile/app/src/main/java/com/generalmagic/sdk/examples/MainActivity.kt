@@ -82,7 +82,9 @@ class MainActivity : AppCompatActivity() {
 
         progressBar = findViewById(R.id.progressBar)
 
-        SdkSettings.onMapDataReady = {
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
+            if (!isReady) return@onMapDataReady
+
             // Defines an action that should be done after the world map is ready.
             calculateRoute()
         }
@@ -136,7 +138,7 @@ class MainActivity : AppCompatActivity() {
         var totalUp = .0f
         var totalDown = .0f
         var climbingSections = 0
-        
+
         SdkCall.execute {
             maxElv = terrain.getMaxElevation()
             minElv = terrain.getMinElevation()

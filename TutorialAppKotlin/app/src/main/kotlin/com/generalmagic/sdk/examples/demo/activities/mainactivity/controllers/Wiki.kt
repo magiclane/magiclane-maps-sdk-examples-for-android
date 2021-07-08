@@ -19,6 +19,8 @@ import com.generalmagic.sdk.core.ImageDatabase
 import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.EHighlightOptions
 import com.generalmagic.sdk.d3scene.HighlightRenderSettings
+import com.generalmagic.sdk.examples.demo.R
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.WikiView
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.app.MapLayoutController
 import com.generalmagic.sdk.examples.demo.app.elements.ButtonsDecorator
@@ -28,17 +30,21 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
-import kotlinx.android.synthetic.main.location_details_panel.view.*
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class WikiController(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
     private lateinit var landmark: Landmark
     private var ignoreWikiErrorsCount = 0
+    
+    private lateinit var wikiView: WikiView
+    private lateinit var closeButton: FloatingActionButton
 
     private val searchService = SearchService()
 
     override fun onCreated() {
         super.onCreated()
+
         hideAllButtons()
 
         searchService.onStarted = {
@@ -61,11 +67,18 @@ class WikiController(context: Context, attrs: AttributeSet?) :
         }
     }
 
+    private fun initViews() {
+        wikiView = findViewById(R.id.wikiView)
+        closeButton = findViewById(R.id.closeButton)
+    }
+
     override fun onMapFollowStatusChanged(following: Boolean) {}
 
     override fun doStart() {
         val inLandmark = IntentHelper.getObjectForKey(EXTRA_LANDMARK) as Landmark?
-
+        
+        initViews()
+        
         SdkCall.execute {
             if (inLandmark == null) {
                 val text = "Tokyo"
@@ -80,7 +93,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
     }
 
     override fun doStop() {
-        wikiView?.stopRequesting()
+        wikiView.stopRequesting()
 
         SdkCall.execute {
             searchService.cancelSearch()
@@ -146,13 +159,12 @@ class WikiController(context: Context, attrs: AttributeSet?) :
         }
     }
 
-
     private fun showCloseButton() {
         ButtonsDecorator.buttonAsStop(context, closeButton) {
             doBackPressed()
         }
 
-        closeButton?.visibility = View.VISIBLE
+        closeButton.visibility = View.VISIBLE
     }
 
     companion object {

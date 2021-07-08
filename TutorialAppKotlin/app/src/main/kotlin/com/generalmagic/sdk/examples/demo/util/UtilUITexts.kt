@@ -414,9 +414,9 @@ object UtilUITexts {
 
         // units abbreviations
         val dAbbrev = "d"
-        val hrAbbrev = getUIString(StringIds.eStrHoursAbbrev)
-        val mAbbrev = getUIString(StringIds.eStrTimeMin)
-        val sAbbrev = getUIString(StringIds.eStrTimeS)
+        val hrAbbrev = SdkCall.execute { getUIString(StringIds.eStrHoursAbbrev) } ?: ""
+        val mAbbrev = SdkCall.execute { getUIString(StringIds.eStrTimeMin) } ?: ""
+        val sAbbrev = SdkCall.execute { getUIString(StringIds.eStrTimeS) } ?: ""
 
         val time: String
         val unit: String
@@ -453,8 +453,8 @@ object UtilUITexts {
         }
 
         if (bCapitalizeResult) {
-            time.toUpperCase(Locale.getDefault())
-            unit.toUpperCase(Locale.getDefault())
+            time.uppercase(Locale.getDefault())
+            unit.uppercase(Locale.getDefault())
         }
 
         return Pair(time, unit)

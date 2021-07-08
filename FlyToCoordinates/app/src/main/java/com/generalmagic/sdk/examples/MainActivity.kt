@@ -31,7 +31,9 @@ class MainActivity : AppCompatActivity() {
 
         gemSurfaceView = findViewById(R.id.gem_surface)
 
-        SdkSettings.onMapDataReady = {
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
+            if (!isReady) return@onMapDataReady
+
             // Defines an action that should be done after the world map is ready.
             flyTo(Coordinates(45.65112176095828, 25.60473923113322))
         }

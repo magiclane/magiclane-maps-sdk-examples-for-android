@@ -17,6 +17,9 @@ import android.widget.Toast
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.*
+import com.generalmagic.sdk.examples.demo.R
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.NavTopPanelController
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.WikiView
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.app.MapLayoutController
 import com.generalmagic.sdk.examples.demo.app.Tutorials
@@ -27,8 +30,7 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.util.SdkCall
-import kotlinx.android.synthetic.main.location_details_panel.view.*
-import kotlinx.android.synthetic.main.nav_top_panel.view.*
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 abstract class FlyController(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs)
@@ -49,6 +51,15 @@ class FlyToCoords(context: Context, attrs: AttributeSet?) : FlyController(contex
 
 class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context, attrs) {
     private val searchService = SearchService()
+    
+    private lateinit var wikiView: WikiView
+    private lateinit var closeButton: FloatingActionButton
+
+    override fun onCreated() {
+        wikiView = findViewById(R.id.wikiView)
+        closeButton = wikiView.findViewById(R.id.closeButton)
+        super.onCreated()
+    }
 
     override fun doStart() {
         SdkCall.execute {
@@ -100,7 +111,6 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
                     }
                 }
 
-//            showProgress()
                 if (!wikiView.show(value)) {
                     hideProgress()
                 }
@@ -124,7 +134,7 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
 
     @Suppress("SameParameterValue")
     private fun setCustomStartButtonVisible(visible: Boolean) {
-        val button = closeButton ?: return
+        val button = closeButton
 
         if (visible) {
             ButtonsDecorator.buttonAsStart(context, button) {
@@ -139,7 +149,7 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
 
     @Suppress("SameParameterValue")
     private fun setCustomStopButtonVisible(visible: Boolean) {
-        val button = closeButton ?: return
+        val button = closeButton
 
         if (visible) {
             ButtonsDecorator.buttonAsStop(context, button) {
@@ -156,6 +166,14 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
 open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(context, attrs) {
     protected var isFlyToRoute = false
     private val routingService = RoutingService()
+    
+    lateinit var topPanelController: NavTopPanelController
+
+    override fun onFinishInflate() {
+        super.onFinishInflate()
+        if (!isFlyToRoute)
+            topPanelController = findViewById(R.id.topPanelController)
+    }
 
     override fun doStart() {
         routingService.onStarted = {
@@ -257,6 +275,13 @@ class FlyToRoute(context: Context, attrs: AttributeSet?) : FlyToInstr(context, a
 class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(context, attrs) {
     private val routingService = RoutingService()
 
+    private lateinit var topPanelController: NavTopPanelController
+
+    override fun onCreated() {
+        topPanelController = findViewById(R.id.topPanelController)
+        super.onCreated()
+    }
+    
     override fun doStart() {
         routingService.onStarted = {
             showProgress()

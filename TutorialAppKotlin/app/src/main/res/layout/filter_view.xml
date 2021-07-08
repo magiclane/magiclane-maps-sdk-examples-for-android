@@ -11,7 +11,6 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/filterHeight"
         android:layout_marginEnd="@dimen/smallPadding"
-        android:layout_marginRight="@dimen/smallPadding"
         android:background="@drawable/rounded_background_white"
         android:closeIcon="@drawable/ic_close_gray_24dp"
         android:iconifiedByDefault="false"

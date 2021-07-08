@@ -38,7 +38,6 @@ import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
-import kotlinx.android.synthetic.main.location_details_panel.view.*
 import java.util.concurrent.Executors
 
 open class WikiServiceController {
@@ -248,6 +247,18 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
     private var landmark: Landmark? = null
     private var locationDetails = LocationDetails()
 
+    private lateinit var text: TextView
+    private lateinit var description: TextView
+    private lateinit var iconContainer: FrameLayout
+    private lateinit var icon: ImageView
+    private lateinit var favoritesIcon: ImageView
+    private lateinit var wikiDescription: TextView
+    private lateinit var wikiTitle: TextView
+    private lateinit var wikiImageList: RecyclerView
+    private lateinit var rightButtonContainer: LinearLayout
+    private lateinit var rightButtonIcon: ImageView
+    private lateinit var rightButtonText: TextView
+
     enum class TLocationDetailsButtonType {
         EUnknown,
         EDriveTo,
@@ -344,6 +355,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
      * @return true if it started the wiki request else false.
      */
     fun show(value: Landmark): Boolean {
+        initViews()
         landmark = value
         hide()
         val imgSizes = context.resources.getDimension(R.dimen.navigationImageSize).toInt()
@@ -365,8 +377,8 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
             wiki.requestWiki(value)
         }
 
-        wiki_description.visibility = View.GONE
-        wiki_title.visibility = View.GONE
+        wikiDescription.visibility = View.GONE
+        wikiTitle.visibility = View.GONE
         rightButtonContainer.visibility = View.GONE
 
         // put landmark info to view
@@ -464,7 +476,21 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         return true
     }
 
-    private fun hide() {
+    private fun initViews() {
+        text = findViewById(R.id.text)
+        description = findViewById(R.id.description)
+        iconContainer = findViewById(R.id.iconContainer)
+        icon = findViewById(R.id.icon)
+        favoritesIcon = findViewById(R.id.favoritesIcon)
+        wikiDescription = findViewById(R.id.wiki_description)
+        wikiTitle = findViewById(R.id.wiki_title)
+        rightButtonContainer = findViewById(R.id.rightButtonContainer)
+        rightButtonIcon = findViewById(R.id.rightButtonIcon)
+        rightButtonText = findViewById(R.id.rightButtonText)
+        wikiImageList = findViewById(R.id.wiki_image_list)
+    }
+
+    private fun hide() = GEMApplication.postOnMain {
         this.visibility = View.GONE
     }
 
@@ -472,7 +498,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         wiki.stopRequesting()
     }
 
-    private fun show() {
+    private fun show() = GEMApplication.postOnMain {
         this.visibility = View.VISIBLE
     }
 
@@ -583,7 +609,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
             }
 
             if (route != null) {
-                val time = route.getTimeDistance()?.getTotalTime() ?: 0
+                val time = SdkCall.execute { route.getTimeDistance()?.getTotalTime() } ?: 0
                 if (time > 0) {
                     val rtt = UtilUITexts.getTimeTextWithDays(time)
                     return String.format("%s %s", rtt.first, rtt.second)
@@ -602,25 +628,25 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
     private var wikiListAdapter: WikiImagesListAdapter? = null
     private fun updateWikiContents() {
         locationDetails.wikipediaText?.let {
-            wiki_title.visibility = View.VISIBLE
-            wiki_description.visibility = View.VISIBLE
-            wiki_description.maxLines = 5
+            wikiTitle.visibility = View.VISIBLE
+            wikiDescription.visibility = View.VISIBLE
+            wikiDescription.maxLines = 5
 
-            wiki_title.text = locationDetails.wikipediaText
-            wiki_description.text = locationDetails.wikipediaDescription
+            wikiTitle.text = locationDetails.wikipediaText
+            wikiDescription.text = locationDetails.wikipediaDescription
 
             val url = locationDetails.wikipediaUrl
             if (!url.isNullOrEmpty()) {
                 val titleColor = ContextCompat.getColor(context, android.R.color.holo_blue_dark)
-                wiki_title.setTextColor(titleColor)
-                wiki_title.setOnClickListener {
+                wikiTitle.setTextColor(titleColor)
+                wikiTitle.setOnClickListener {
                     val intent = Intent(context, WebActivity::class.java)
                     intent.putExtra("url", url)
                     context.startActivity(intent)
                 }
             }
 
-            wiki_description.setOnClickListener {
+            wikiDescription.setOnClickListener {
                 if (it is TextView) {
                     val maxLines = it.maxLines
                     if (maxLines < 10) {
@@ -631,17 +657,17 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
                 }
             }
         } ?: run {
-            wiki_title.visibility = View.GONE
-            wiki_description.visibility = View.GONE
+            wikiTitle.visibility = View.GONE
+            wikiDescription.visibility = View.GONE
         }
 
-        wiki_image_list.layoutManager =
+        wikiImageList.layoutManager =
             LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
 
 //        val nMaxImageWidth = 3 * width.coerceAtMost(height)
 
         wikiListAdapter = WikiImagesListAdapter(context, images)
-        wiki_image_list.adapter = wikiListAdapter
+        wikiImageList.adapter = wikiListAdapter
     }
 
     data class LocationDetails(

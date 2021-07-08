@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.core.LogUploaderListener
@@ -25,7 +26,6 @@ import com.generalmagic.sdk.sensordatasource.RecorderBookmarks
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util.exportVideo
-import kotlinx.android.synthetic.main.upload_view.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -36,6 +36,17 @@ class UploadLogActivity : BaseActivity() {
     private var mName: EditText? = null
     private var mEmail: EditText? = null
     private var mIssueDescription: EditText? = null
+    
+    lateinit var toolbar: Toolbar
+    lateinit var upload_button: Button
+    lateinit var upload_info: TextView
+    lateinit var upload_name: EditText
+    lateinit var upload_name_string: TextView
+    lateinit var upload_email: EditText
+    lateinit var upload_email_string: TextView
+    lateinit var upload_email_explanation: TextView
+    lateinit var upload_issue_description: EditText
+    lateinit var upload_issue_description_string: TextView
 
     companion object {
         const val VIDEO_PATH = "RESULT_VIDEO_PATH"
@@ -118,6 +129,17 @@ class UploadLogActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.upload_view)
 
+        toolbar = findViewById(R.id.toolbar)
+        upload_button = findViewById(R.id.upload_button)
+        upload_info = findViewById(R.id.upload_info)
+        upload_name = findViewById(R.id.upload_name)
+        upload_name_string = findViewById(R.id.upload_name_string)
+        upload_email = findViewById(R.id.upload_email)
+        upload_email_string = findViewById(R.id.upload_email_string)
+        upload_email_explanation = findViewById(R.id.upload_email_explanation)
+        upload_issue_description = findViewById(R.id.upload_issue_description)
+        upload_issue_description_string = findViewById(R.id.upload_issue_description_string)
+        
         val inputFilepath = intent.getStringExtra(VIDEO_PATH) ?: ""
 
         this.mData = UploadViewData(this, inputFilepath)
@@ -126,7 +148,7 @@ class UploadLogActivity : BaseActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = mData.getTitle()
 
-        upload_button?.let {
+        upload_button.let {
             it.text = mData.getUploadString()
             it.setOnClickListener {
                 if (mName != null && mEmail != null && mIssueDescription != null) {
@@ -142,8 +164,8 @@ class UploadLogActivity : BaseActivity() {
             }
         }
 
-        upload_info?.text = mData.getUploadInfo()
-        upload_name_string?.text = mData.getNameString()
+        upload_info.text = mData.getUploadInfo()
+        upload_name_string.text = mData.getNameString()
 
         mName = upload_name
         mName?.let {
@@ -151,7 +173,7 @@ class UploadLogActivity : BaseActivity() {
             it.hint = mData.getNameHint()
         }
 
-        upload_email_string?.text = mData.getEmailString()
+        upload_email_string.text = mData.getEmailString()
 
         mEmail = upload_email
         mEmail?.let {
@@ -159,9 +181,9 @@ class UploadLogActivity : BaseActivity() {
             it.hint = mData.getEmailHint()
         }
 
-        upload_email_explanation?.text = mData.getEmailExplanationString()
+        upload_email_explanation.text = mData.getEmailExplanationString()
 
-        upload_issue_description_string?.text = mData.getIssueDescriptionString()
+        upload_issue_description_string.text = mData.getIssueDescriptionString()
 
         mIssueDescription = upload_issue_description
         mIssueDescription?.let {
@@ -192,7 +214,7 @@ class PickLogActivity : BaseActivity() {
     private var inputDirectories: ArrayList<String>? = null
 
     private val uploadListener = object : LogUploaderListener() {
-        override fun onLogStatusChanged(sLogPath: String, nProgress: Int, nStatus: Int) {
+        override fun onLogStatusChanged(logPath: String, progress: Int, status: Int) {
 
         }
     }
@@ -364,17 +386,17 @@ class PickLogActivity : BaseActivity() {
             val logs = ArrayList<File>()
 
             moviesDir.listFiles { _, name ->
-                name.toLowerCase(Locale.getDefault()).endsWith(".mp4")
+                name.lowercase(Locale.getDefault()).endsWith(".mp4")
             }?.let {
                 logs.addAll(it)
             }
             moviesDir.listFiles { _, name ->
-                name.toLowerCase(Locale.getDefault()).endsWith(".mov")
+                name.lowercase(Locale.getDefault()).endsWith(".mov")
             }?.let {
                 logs.addAll(it)
             }
             moviesDir.listFiles { _, name ->
-                name.toLowerCase(Locale.getDefault()).endsWith(".gm")
+                name.lowercase(Locale.getDefault()).endsWith(".gm")
             }?.let {
                 logs.addAll(it)
             }

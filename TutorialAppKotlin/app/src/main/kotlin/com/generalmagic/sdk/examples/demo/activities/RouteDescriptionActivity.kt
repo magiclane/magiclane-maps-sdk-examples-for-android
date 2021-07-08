@@ -10,6 +10,7 @@
 
 package com.generalmagic.sdk.examples.demo.activities
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -22,7 +23,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.ImageView
+import android.widget.ListView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.Rgba
@@ -41,15 +46,21 @@ import com.generalmagic.sdk.util.SdkIcons
 import com.generalmagic.sdk.util.SdkUtil.getDistText
 import com.generalmagic.sdk.util.SdkUtil.getUIString
 import com.generalmagic.sdk.util.StringIds
-import kotlinx.android.synthetic.main.activity_route_description.*
-import kotlinx.android.synthetic.main.route_description_item.view.*
 
 class RouteDescriptionActivity : AppCompatActivity() {
     private lateinit var route: Route
+    
+    private lateinit var rdToolbar: Toolbar
+    lateinit var routeDescriptionList: ListView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_route_description)
-        setSupportActionBar(rd_toolbar)
+
+        rdToolbar = findViewById(R.id.rd_toolbar)
+        routeDescriptionList = findViewById(R.id.routeDescriptionList)
+
+        setSupportActionBar(rdToolbar)
         supportActionBar?.title = "Route Description"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
@@ -198,21 +209,27 @@ class RouteAdapter(context: Context, items: ArrayList<ListViewItem>) :
         val modelItem = getItem(position) ?: return resultView
         val bitmap = modelItem.getBitmap(iconSize, iconSize)
 
-        resultView.text.text = textToHtml(modelItem.text)
+        val text = resultView.findViewById<TextView>(R.id.text)
+        val description = resultView.findViewById<TextView>(R.id.description)
+        val statusText = resultView.findViewById<TextView>(R.id.status_text)
+        val statusDescription = resultView.findViewById<TextView>(R.id.status_description)
+        val icon = resultView.findViewById<ImageView>(R.id.icon)
+
+        text.text = textToHtml(modelItem.text)
 
         if (modelItem.description.isEmpty()) {
-            resultView.description.visibility = View.GONE
+            description.visibility = View.GONE
         } else {
-            resultView.description.visibility = View.VISIBLE
-            resultView.description.text = textToHtml(modelItem.description)
-            resultView.description.setTextColor(Util.getColor(modelItem.descriptionColor))
+            description.visibility = View.VISIBLE
+            description.text = textToHtml(modelItem.description)
+            description.setTextColor(Util.getColor(modelItem.descriptionColor))
         }
 
-        resultView.status_text.text = textToHtml(modelItem.statusText)
-        resultView.status_description.text = textToHtml(modelItem.statusDescription)
+        statusText.text = textToHtml(modelItem.statusText)
+        statusDescription.text = textToHtml(modelItem.statusDescription)
 
         if (bitmap != null) {
-            resultView.icon.setImageBitmap(bitmap)
+            icon.setImageBitmap(bitmap)
         }
 
         resultView.setOnClickListener {
@@ -221,6 +238,7 @@ class RouteAdapter(context: Context, items: ArrayList<ListViewItem>) :
         return resultView
     }
 
+    @SuppressLint("ObsoleteSdkInt")
     private fun textToHtml(text: String): Spanned {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             Html.fromHtml(text, Html.FROM_HTML_MODE_COMPACT)

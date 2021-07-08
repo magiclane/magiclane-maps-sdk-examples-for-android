@@ -14,6 +14,7 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import com.generalmagic.sdk.core.MapDetails
 import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.activities.SLIAdapter
 import com.generalmagic.sdk.examples.demo.activities.SearchListActivity
 import com.generalmagic.sdk.examples.demo.activities.SearchListItem
@@ -26,7 +27,6 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.StringIds
 import com.generalmagic.sdk.util.SdkUtil.getUIString
-import kotlinx.android.synthetic.main.activity_list_view.*
 
 class CountriesSearchActivity : SearchListActivity() {
     private var mFilter = ""
@@ -38,6 +38,7 @@ class CountriesSearchActivity : SearchListActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        progressBar = findViewById(R.id.progressBar)
         // display all countries
         search(mFilter)
     }
@@ -100,7 +101,7 @@ class CountriesSearchActivity : SearchListActivity() {
         }
 
         val adapter = SLIAdapter(result)
-        list_view.adapter = adapter
+        listView.adapter = adapter
     }
 
     @Suppress("unused")

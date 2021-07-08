@@ -16,11 +16,15 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
+import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.navigation.NavigationView
-import kotlinx.android.synthetic.main.activity_list_view.*
 
+@Suppress("DEPRECATION")
 open class BaseActivity : AppCompatActivity(), TutorialsOpener.ITutorialController {
+
+    lateinit var progressBar: ProgressBar
+
     // SYSTEM METHODS
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,10 +84,8 @@ open class BaseActivity : AppCompatActivity(), TutorialsOpener.ITutorialControll
     fun setSystemBarsVisible(visible: Boolean) {
         if (visible) {
             window?.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-//        window?.decorView?.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
         } else {
             window?.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-//        window?.decorView?.systemUiVisibility = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
         }
     }
 
@@ -91,10 +93,11 @@ open class BaseActivity : AppCompatActivity(), TutorialsOpener.ITutorialControll
     fun hideProgress() = setProgressVisible(false)
 
     fun setProgressVisible(visible: Boolean) {
-        if (visible)
-            progressBar?.visibility = View.VISIBLE
-        else
-            progressBar?.visibility = View.GONE
+        if (this::progressBar.isInitialized)
+            if (visible)
+                progressBar.visibility = View.VISIBLE
+            else
+                progressBar.visibility = View.GONE
     }
 
     // ITutorialController

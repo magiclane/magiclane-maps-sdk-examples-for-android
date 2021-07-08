@@ -759,7 +759,7 @@ object GEMPublicTransportRouteDescriptionView {
         var tmp = ""
         if (mAgencies.size > 0) {
             tmp = getUIString(StringIds.eStrAgencyInfo)
-            tmp.toUpperCase(Locale.getDefault())
+            tmp.uppercase(Locale.getDefault())
         }
         return tmp
     }

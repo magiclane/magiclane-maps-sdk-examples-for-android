@@ -22,6 +22,7 @@ import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
+import androidx.appcompat.widget.Toolbar
 import com.generalmagic.sdk.core.MapDetails
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.BaseActivity
@@ -33,7 +34,6 @@ import com.generalmagic.sdk.places.EAddressField
 import com.generalmagic.sdk.places.GuidedAddressSearchService
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.SdkCall
-import kotlinx.android.synthetic.main.search_address_view.*
 
 class SearchAddressActivity : BaseActivity() {
     private var searchAddressAdapter: SearchAddressAdapter? = null
@@ -47,6 +47,16 @@ class SearchAddressActivity : BaseActivity() {
     private lateinit var streetTextChangedListener: CustomTextWatcher
     private lateinit var streetNumberTextChangedListener: CustomTextWatcher
     private lateinit var intersectionTextChangedListener: CustomTextWatcher
+    
+    lateinit var toolbar: Toolbar
+    lateinit var state: EditText
+    lateinit var city: EditText
+    lateinit var street: EditText
+    lateinit var streetNumber: EditText
+    lateinit var intersection: EditText
+    lateinit var resultsList: ListView
+    lateinit var flagIcon: ImageView
+    lateinit var submitButton: ImageView
 
     companion object {
         var updateItems: Runnable? = null
@@ -112,6 +122,17 @@ class SearchAddressActivity : BaseActivity() {
         viewId = intent.getLongExtra("viewId", 0)
 
         setContentView(R.layout.search_address_view)
+        
+        progressBar = findViewById(R.id.progressBar)
+        toolbar = findViewById(R.id.toolbar)
+        state = findViewById(R.id.state)
+        city = findViewById(R.id.city)
+        street = findViewById(R.id.street)
+        streetNumber = findViewById(R.id.street_number)
+        intersection = findViewById(R.id.intersection)
+        resultsList = findViewById(R.id.recent_list)
+        flagIcon = findViewById(R.id.flag_icon)
+        submitButton = findViewById(R.id.submit_button)
 
         setSupportActionBar(toolbar)
 
@@ -153,7 +174,7 @@ class SearchAddressActivity : BaseActivity() {
         // set title
         supportActionBar?.title = title
 
-        flag_icon?.let { icon ->
+        flagIcon.let { icon ->
             icon.setOnClickListener {
                 SdkCall.execute {
                     GEMAddressSearchView.didTapCountryFlag(viewId)
@@ -163,63 +184,63 @@ class SearchAddressActivity : BaseActivity() {
             icon.setImageBitmap(flag)
 
             if (!GEMAddressSearchView.isEnabled(EAddressField.Country)) {
-                flag_icon.isEnabled = false
-                flag_icon.imageAlpha = 128
+                flagIcon.isEnabled = false
+                flagIcon.imageAlpha = 128
             }
         }
 
         val bLandscape =
             GEMApplication.appResources().configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-        street?.let { streetTopPadding = it.paddingTop }
+        street.let { streetTopPadding = it.paddingTop }
 
-        recent_list?.itemsCanFocus = false
-        recent_list?.setOnItemClickListener { _, view, position, _ ->
+        resultsList.itemsCanFocus = false
+        resultsList.setOnItemClickListener { _, view, position, _ ->
             SdkCall.execute {
                 GEMAddressSearchView.didTapItem(viewId, position)
             }
 
             val textView = view.findViewById<TextView>(R.id.address_item)
             when {
-                state?.isFocused == true -> {
+                state.isFocused -> {
                     GEMAddressSearchView.shouldChangeText = false
-                    state?.text =
+                    state.text =
                         Editable.Factory.getInstance().newEditable(textView.text.split("-")[0])
-                    city?.requestFocus()
+                    city.requestFocus()
 
                     SdkCall.execute {
                         GEMAddressSearchView.shouldChangeText = true
                         GEMAddressSearchView.didChangeFilter(
                             EAddressField.City.value,
-                            city?.text.toString()
+                            city.text.toString()
                         )
                     }
                 }
 
-                city?.isFocused == true -> {
+                city.isFocused -> {
                     GEMAddressSearchView.shouldChangeText = false
-                    city?.text = Editable.Factory.getInstance().newEditable(textView.text)
-                    street?.requestFocus()
+                    city.text = Editable.Factory.getInstance().newEditable(textView.text)
+                    street.requestFocus()
 
                     SdkCall.execute {
                         GEMAddressSearchView.shouldChangeText = true
                         GEMAddressSearchView.didChangeFilter(
                             EAddressField.StreetName.value,
-                            street?.text.toString()
+                            street.text.toString()
                         )
                     }
                 }
 
-                street?.isFocused == true -> {
+                street.isFocused -> {
                     GEMAddressSearchView.shouldChangeText = false
-                    street?.text = Editable.Factory.getInstance().newEditable(textView.text)
-                    street_number?.requestFocus()
+                    street.text = Editable.Factory.getInstance().newEditable(textView.text)
+                    streetNumber.requestFocus()
 
                     SdkCall.execute {
                         GEMAddressSearchView.shouldChangeText = true
                         GEMAddressSearchView.didChangeFilter(
                             EAddressField.StreetNumber.value,
-                            street_number?.text.toString()
+                            streetNumber.text.toString()
                         )
                     }
                 }
@@ -228,14 +249,14 @@ class SearchAddressActivity : BaseActivity() {
 
         searchAddressAdapter = SearchAddressAdapter()
 
-        state?.setOnTouchListener { _, event ->
+        state.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
-                if (!city?.text.isNullOrEmpty()) {
+                if (!city.text.isNullOrEmpty()) {
                     GEMAddressSearchView.shouldChangeText = false
-                    city?.text?.clear()
+                    city.text?.clear()
 
                     GEMAddressSearchView.shouldChangeText = false
-                    street?.text?.clear()
+                    street.text?.clear()
 
                     setAddressFieldEnabledState(
                         street,
@@ -244,7 +265,7 @@ class SearchAddressActivity : BaseActivity() {
                     )
 
                     setAddressFieldEnabledState(
-                        street_number,
+                        streetNumber,
                         EAddressField.StreetNumber,
                         false
                     )
@@ -264,7 +285,7 @@ class SearchAddressActivity : BaseActivity() {
                         false
                     )
                     setAddressFieldEnabledState(
-                        street_number,
+                        streetNumber,
                         EAddressField.StreetNumber,
                         false
                     )
@@ -275,7 +296,7 @@ class SearchAddressActivity : BaseActivity() {
                     )
                 }
 
-                state?.let {
+                state.let {
                     if (!it.isFocused) {
                         SdkCall.execute {
                             GEMAddressSearchView.didChangeFilter(
@@ -289,14 +310,14 @@ class SearchAddressActivity : BaseActivity() {
             false
         }
 
-        city?.setOnTouchListener { _, event ->
+        city.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
-                if (!street?.text.isNullOrEmpty()) {
+                if (!street.text.isNullOrEmpty()) {
                     GEMAddressSearchView.shouldChangeText = false
-                    street?.text?.clear()
+                    street.text?.clear()
 
                     setAddressFieldEnabledState(
-                        street_number,
+                        streetNumber,
                         EAddressField.StreetNumber,
                         false
                     )
@@ -310,7 +331,7 @@ class SearchAddressActivity : BaseActivity() {
                     GEMAddressSearchView.isEnabled(EAddressField.Crossing1)
                 ) {
                     setAddressFieldEnabledState(
-                        street_number,
+                        streetNumber,
                         EAddressField.StreetNumber,
                         false
                     )
@@ -320,13 +341,13 @@ class SearchAddressActivity : BaseActivity() {
                         EAddressField.Crossing1,
                         false
                     )
-                } else if (state?.text.isNullOrEmpty()) {
+                } else if (state.text.isNullOrEmpty()) {
                     val text = SdkCall.execute {
                         GEMAddressSearchView.getItemText(0)
                     } ?: ""
 
                     GEMApplication.postOnMain {
-                        state?.text = Editable.Factory.getInstance().newEditable(text)
+                        state.text = Editable.Factory.getInstance().newEditable(text)
                     }
 
                     SdkCall.execute {
@@ -338,22 +359,22 @@ class SearchAddressActivity : BaseActivity() {
                 SdkCall.execute {
                     GEMAddressSearchView.didChangeFilter(
                         EAddressField.City.value,
-                        city?.text.toString()
+                        city.text.toString()
                     )
                 }
             }
             false
         }
 
-        street?.setOnTouchListener { _, event ->
+        street.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
-                if (city?.text.isNullOrEmpty() || city.isFocused) {
+                if (city.text.isNullOrEmpty() || city.isFocused) {
                     val text = SdkCall.execute {
                         GEMAddressSearchView.getItemText(0)
                     } ?: ""
 
                     GEMApplication.postOnMain {
-                        city?.text = Editable.Factory.getInstance().newEditable(text)
+                        city.text = Editable.Factory.getInstance().newEditable(text)
                     }
 
                     SdkCall.execute {
@@ -365,22 +386,22 @@ class SearchAddressActivity : BaseActivity() {
                 SdkCall.execute {
                     GEMAddressSearchView.didChangeFilter(
                         EAddressField.StreetName.value,
-                        street?.text.toString()
+                        street.text.toString()
                     )
                 }
             }
             false
         }
 
-        street_number?.setOnTouchListener { _, event ->
+        streetNumber.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
-                if (street?.text.isNullOrEmpty() || street.isFocused) {
+                if (street.text.isNullOrEmpty() || street.isFocused) {
                     val text = SdkCall.execute {
                         GEMAddressSearchView.getItemText(0)
                     } ?: ""
 
                     GEMApplication.postOnMain {
-                        street?.text = Editable.Factory.getInstance().newEditable(text)
+                        street.text = Editable.Factory.getInstance().newEditable(text)
                     }
 
                     SdkCall.execute {
@@ -392,22 +413,22 @@ class SearchAddressActivity : BaseActivity() {
                 SdkCall.execute {
                     GEMAddressSearchView.didChangeFilter(
                         EAddressField.StreetNumber.value,
-                        street_number?.text.toString()
+                        streetNumber.text.toString()
                     )
                 }
             }
             false
         }
 
-        intersection?.setOnTouchListener { _, event ->
+        intersection.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
-                if (street?.text.isNullOrEmpty() || street.isFocused) {
+                if (street.text.isNullOrEmpty() || street.isFocused) {
                     val text = SdkCall.execute {
                         GEMAddressSearchView.getItemText(0)
                     }
 
                     GEMApplication.postOnMain {
-                        street?.text = Editable.Factory.getInstance().newEditable(text)
+                        street.text = Editable.Factory.getInstance().newEditable(text)
                     }
 
                     SdkCall.execute {
@@ -419,7 +440,7 @@ class SearchAddressActivity : BaseActivity() {
                 SdkCall.execute {
                     GEMAddressSearchView.didChangeFilter(
                         EAddressField.Crossing1.value,
-                        intersection?.text.toString()
+                        intersection.text.toString()
                     )
                 }
             }
@@ -446,15 +467,15 @@ class SearchAddressActivity : BaseActivity() {
 
         city.addTextChangedListener(cityTextChangedListener)
         street.addTextChangedListener(streetTextChangedListener)
-        street_number.addTextChangedListener(streetNumberTextChangedListener)
+        streetNumber.addTextChangedListener(streetNumberTextChangedListener)
         intersection.addTextChangedListener(intersectionTextChangedListener)
 
         setAddressFieldImeAction(city)
         setAddressFieldImeAction(street)
-        setAddressFieldImeAction(street_number)
+        setAddressFieldImeAction(streetNumber)
         setAddressFieldImeAction(intersection)
 
-        recent_list?.adapter = searchAddressAdapter
+        resultsList.adapter = searchAddressAdapter
 
         var cityHint = ""
         var streetHint = ""
@@ -476,7 +497,7 @@ class SearchAddressActivity : BaseActivity() {
             )
         }
 
-        recent_list.setOnScrollListener(object : AbsListView.OnScrollListener {
+        resultsList.setOnScrollListener(object : AbsListView.OnScrollListener {
             private var lastFirstVisibleItem: Int = 0
             override fun onScrollStateChanged(view: AbsListView, scrollState: Int) {}
             override fun onScroll(
@@ -496,33 +517,33 @@ class SearchAddressActivity : BaseActivity() {
         setStateField(hasState)
         setAddressFieldEnabledState(city, EAddressField.City, !hasState)
 
-        city?.hint = cityHint
+        city.hint = cityHint
         if (!hasState) {
-            city?.requestFocus()
+            city.requestFocus()
             showKeyboard(city)
         }
 
-        street?.hint = streetHint
-        street_number?.hint = streetNumberHint
-        intersection?.hint = intersectionHint
+        street.hint = streetHint
+        streetNumber.hint = streetNumberHint
+        intersection.hint = intersectionHint
 
         setAddressFieldEnabledState(street, EAddressField.StreetName, false)
-        setAddressFieldEnabledState(street_number, EAddressField.StreetNumber, false)
+        setAddressFieldEnabledState(streetNumber, EAddressField.StreetNumber, false)
         setAddressFieldEnabledState(intersection, EAddressField.Crossing1, false)
 
         if (!bLandscape) {
             setAddressFieldPadding(street)
         }
-        setAddressFieldPadding(street_number)
+        setAddressFieldPadding(streetNumber)
         setAddressFieldPadding(intersection)
 
-        submit_button?.setOnClickListener {
+        submitButton.setOnClickListener {
             SdkCall.execute {
                 GEMAddressSearchView.didTapSearchButton(viewId)
             }
         }
 
-        submit_button?.setImageResource(R.drawable.ic_search_gray_24dp)
+        submitButton.setImageResource(R.drawable.ic_search_gray_24dp)
 
         if (bLandscape) {
             setAddressFieldsLandscapeLayoutParams()
@@ -561,7 +582,7 @@ class SearchAddressActivity : BaseActivity() {
     }
 
     private fun setStateField(visible: Boolean) {
-        val state = this.state ?: return
+        val state = this.state
 
         if (!visible) {
             state.visibility = View.GONE
@@ -592,7 +613,7 @@ class SearchAddressActivity : BaseActivity() {
     private fun setAddressFieldsLayoutParams(newOrientation: Int) {
         if (newOrientation == Configuration.ORIENTATION_LANDSCAPE) {
             setAddressFieldsLandscapeLayoutParams()
-            street?.let {
+            street.let {
                 it.setPadding(
                     it.paddingLeft,
                     streetTopPadding,
@@ -602,7 +623,7 @@ class SearchAddressActivity : BaseActivity() {
             }
         } else {
             setAddressFieldsPortraitLayoutParams()
-            street?.let { setAddressFieldPadding(it) }
+            street.let { setAddressFieldPadding(it) }
         }
     }
 
@@ -618,7 +639,7 @@ class SearchAddressActivity : BaseActivity() {
         } ?: false
 
         val state = this.state
-        val fieldWidth = if (state != null && hasState) {
+        val fieldWidth = if (hasState) {
             val text = state.hint
             val textWidth = state.paint.measureText(text, 0, text.length).toInt()
             w + textWidth / 2
@@ -635,7 +656,7 @@ class SearchAddressActivity : BaseActivity() {
             findViewById<LinearLayout>(R.id.flag_city_container).layoutParams = params
         }
 
-        street?.let {
+        street.let {
             val params = getBaseLandscapeLayoutParams(fieldMargin, fieldWidth)
 
             params.addRule(RelativeLayout.LEFT_OF, R.id.flag_city_container)
@@ -671,7 +692,7 @@ class SearchAddressActivity : BaseActivity() {
             findViewById<LinearLayout>(R.id.flag_city_container).layoutParams = params
         }
 
-        street?.let {
+        street.let {
             val params = getBasePortraitLayoutParams(fieldMargin)
             params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT)
             params.addRule(RelativeLayout.BELOW, R.id.flag_city_container)
@@ -763,7 +784,7 @@ class SearchAddressActivity : BaseActivity() {
 
     private fun notifyDataChanged() {
         searchAddressAdapter?.notifyDataSetChanged()
-        recent_list?.let { it.post { it.setSelection(0) } }
+        resultsList.let { it.post { it.setSelection(0) } }
     }
 
     private fun setAddressFieldImeAction(addressField: EditText?) {
@@ -783,7 +804,7 @@ class SearchAddressActivity : BaseActivity() {
                     val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                     imm.hideSoftInputFromWindow(v.windowToken, 0)
                 } else {
-                    if (submit_button?.isEnabled == true) {
+                    if (submitButton.isEnabled) {
                         SdkCall.execute { GEMAddressSearchView.didTapSearchButton(viewId) }
                     }
                 }
@@ -828,11 +849,11 @@ class SearchAddressActivity : BaseActivity() {
             EAddressField.Crossing1,
             true
         )
-        intersection?.requestFocus()
+        intersection.requestFocus()
         SdkCall.execute {
             GEMAddressSearchView.didChangeFilter(
                 EAddressField.Crossing1.value,
-                intersection?.text.toString()
+                intersection.text.toString()
             )
         }
     }
@@ -840,28 +861,28 @@ class SearchAddressActivity : BaseActivity() {
     fun setField(field: Int, filter: String) {
         when (field) {
             EAddressField.State.value -> {
-                state?.text = Editable.Factory.getInstance().newEditable(filter)
+                state.text = Editable.Factory.getInstance().newEditable(filter)
                 state.setSelection(state.text.length)
             }
 
             EAddressField.City.value -> {
-                city?.text = Editable.Factory.getInstance().newEditable(filter)
-                city.setSelection(city?.text?.length ?: 0)
+                city.text = Editable.Factory.getInstance().newEditable(filter)
+                city.setSelection(city.text?.length ?: 0)
             }
 
             EAddressField.StreetName.value -> {
-                street?.text = Editable.Factory.getInstance().newEditable(filter)
-                street.setSelection(street?.text?.length ?: 0)
+                street.text = Editable.Factory.getInstance().newEditable(filter)
+                street.setSelection(street.text?.length ?: 0)
             }
 
             EAddressField.StreetNumber.value -> {
-                street_number?.text = Editable.Factory.getInstance().newEditable(filter)
-                street_number.setSelection(street_number?.text?.length ?: 0)
+                streetNumber.text = Editable.Factory.getInstance().newEditable(filter)
+                streetNumber.setSelection(streetNumber.text?.length ?: 0)
             }
 
             EAddressField.Crossing1.value -> {
-                intersection?.text = Editable.Factory.getInstance().newEditable(filter)
-                intersection.setSelection(intersection?.text?.length ?: 0)
+                intersection.text = Editable.Factory.getInstance().newEditable(filter)
+                intersection.setSelection(intersection.text?.length ?: 0)
             }
         }
     }
@@ -869,15 +890,15 @@ class SearchAddressActivity : BaseActivity() {
     override fun refresh() {
         city.removeTextChangedListener(cityTextChangedListener)
         street.removeTextChangedListener(streetNumberTextChangedListener)
-        street_number.removeTextChangedListener(streetNumberTextChangedListener)
+        streetNumber.removeTextChangedListener(streetNumberTextChangedListener)
         intersection.removeTextChangedListener(intersectionTextChangedListener)
 
         street.text?.clear()
         setAddressFieldEnabledState(street, EAddressField.StreetName, false)
 
-        street_number.text?.clear()
+        streetNumber.text?.clear()
         setAddressFieldEnabledState(
-            street_number,
+            streetNumber,
             EAddressField.StreetNumber,
             false
         )
@@ -900,8 +921,8 @@ class SearchAddressActivity : BaseActivity() {
         setStateField(hasState)
 
         if (hasState) {
-            state?.text?.clear()
-            city?.text?.clear()
+            state.text?.clear()
+            city.text?.clear()
 
             setAddressFieldEnabledState(city, EAddressField.City, false)
 
@@ -918,22 +939,22 @@ class SearchAddressActivity : BaseActivity() {
             }
         }
 
-        flag_icon.setImageBitmap(flag)
+        flagIcon.setImageBitmap(flag)
     }
 
     fun refreshSearchResultsList() {
         notifyDataChanged()
         when {
-            state?.isFocused == true -> {
+            state.isFocused -> {
                 setAddressFieldEnabledState(city, EAddressField.City, true)
             }
 
-            city?.isFocused == true -> {
+            city.isFocused -> {
                 setAddressFieldEnabledState(street, EAddressField.StreetName, true)
             }
 
-            street?.isFocused == true -> {
-                setAddressFieldEnabledState(street_number, EAddressField.StreetNumber, true)
+            street.isFocused -> {
+                setAddressFieldEnabledState(streetNumber, EAddressField.StreetNumber, true)
                 setAddressFieldEnabledState(intersection, EAddressField.Crossing1, true)
             }
         }

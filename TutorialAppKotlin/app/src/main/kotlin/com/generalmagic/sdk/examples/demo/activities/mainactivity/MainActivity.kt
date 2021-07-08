@@ -13,6 +13,7 @@
 package com.generalmagic.sdk.examples.demo.activities.mainactivity
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -20,17 +21,43 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.widget.Toolbar
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.iterator
 import androidx.drawerlayout.widget.DrawerLayout
 import com.generalmagic.sdk.core.GemSdk
+import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.examples.demo.R
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.CustomNavController
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.CustomPTNavController
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.CustomServerUrl
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.CustomSimController
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.FlyToArea
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.FlyToCoords
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.FlyToInstr
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.FlyToRoute
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.FlyToTraffic
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.HelloViewController
 import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.LogDataSourceController
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.LogPlayerController
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.LogRecorderController
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.MultipleViewsController
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.PredefNavController
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.PredefPTNavController
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.RouteAb
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.RouteAbc
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.RouteCustom
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SimLandmarksController
 import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SimLandmarksController.Companion.EXTRA_WAYPOINTS
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SimRouteController
 import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.SimRouteController.Companion.EXTRA_ROUTE
+import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.TwoTiledViewsController
 import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.WikiController
 import com.generalmagic.sdk.examples.demo.app.*
 import com.generalmagic.sdk.examples.demo.util.IntentHelper
@@ -39,38 +66,23 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.app_bar_layout.*
-import kotlinx.android.synthetic.main.app_bar_layout.view.*
-import kotlinx.android.synthetic.main.tutorial_custom_nav.view.*
-import kotlinx.android.synthetic.main.tutorial_custom_ptnav.view.*
-import kotlinx.android.synthetic.main.tutorial_custom_sim.view.*
-import kotlinx.android.synthetic.main.tutorial_custom_url.view.*
-import kotlinx.android.synthetic.main.tutorial_flyto_area.view.*
-import kotlinx.android.synthetic.main.tutorial_flyto_coords.view.*
-import kotlinx.android.synthetic.main.tutorial_flyto_instr.view.*
-import kotlinx.android.synthetic.main.tutorial_flyto_line.view.*
-import kotlinx.android.synthetic.main.tutorial_flyto_route.view.*
-import kotlinx.android.synthetic.main.tutorial_flyto_traffic.view.*
-import kotlinx.android.synthetic.main.tutorial_hello.view.*
-import kotlinx.android.synthetic.main.tutorial_logplayer.view.*
-import kotlinx.android.synthetic.main.tutorial_logrecorder.view.*
-import kotlinx.android.synthetic.main.tutorial_multiplemaps.view.*
-import kotlinx.android.synthetic.main.tutorial_predef_nav.view.*
-import kotlinx.android.synthetic.main.tutorial_predef_ptnav.view.*
-import kotlinx.android.synthetic.main.tutorial_route_ab.view.*
-import kotlinx.android.synthetic.main.tutorial_route_abc.view.*
-import kotlinx.android.synthetic.main.tutorial_route_custom.view.*
-import kotlinx.android.synthetic.main.tutorial_sim_landmarks.view.*
-import kotlinx.android.synthetic.main.tutorial_sim_route.view.*
-import kotlinx.android.synthetic.main.tutorial_twotiledviews.view.*
-import kotlinx.android.synthetic.main.tutorial_wiki.view.*
-
 
 class MainActivity : BaseActivity(), IMapControllerActivity {
+
+    lateinit var gem_surface: GemSurfaceView
+    lateinit var drawer_layout: DrawerLayout
+    lateinit var main_container: LinearLayout
+    lateinit var toolbar_content: LinearLayout
+    lateinit var appBarLayout: AppBarLayout
+    lateinit var toolbar: Toolbar
+    lateinit var nav_view: NavigationView
+    lateinit var bottomButtons: ConstraintLayout
+    lateinit var route_profile: RelativeLayout
+
     private val appNavMenuListener = NavigationView.OnNavigationItemSelectedListener { item ->
         when (item.itemId) {
             R.id.tutorial_hello -> Tutorials.openHelloWorldTutorial()
@@ -127,14 +139,26 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
             }
         }
 
-        drawer_layout?.closeDrawer(GravityCompat.START)
+        drawer_layout.closeDrawer(GravityCompat.START)
         true
     }
 
+    @SuppressLint("ObsoleteSdkInt")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.activity_main)
+
+        gem_surface = findViewById(R.id.gem_surface)
+        drawer_layout = findViewById(R.id.drawer_layout)
+        main_container = findViewById(R.id.main_container)
+        toolbar_content = findViewById(R.id.toolbar_content)
+        appBarLayout = findViewById(R.id.appBarLayout)
+        toolbar = findViewById(R.id.toolbar)
+        nav_view = findViewById(R.id.nav_view)
+        bottomButtons = findViewById(R.id.bottomButtons)
+        route_profile = findViewById(R.id.route_profile)
+
+
         setSupportActionBar(toolbar)
 
         // make status bar transparent
@@ -283,14 +307,14 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
     override fun setAppBarVisible(visible: Boolean) {
         if (visible) {
             supportActionBar?.show()
-            drawer_layout?.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
+            drawer_layout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
         } else {
             supportActionBar?.hide()
-            drawer_layout?.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+            drawer_layout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
         }
     }
 
-    override fun getNavigationView(): NavigationView? {
+    override fun getNavigationView(): NavigationView {
         return nav_view
     }
 
@@ -298,9 +322,14 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
     ///             IMapControllerActivity
     /** ////////////////////////////////////////////////////////////////////////////// */
 
-    override fun getBottomLeftButton(): FloatingActionButton? = bottomButtons.bottomLeftButton
-    override fun getBottomCenterButton(): FloatingActionButton? = bottomButtons.bottomCenterButton
-    override fun getBottomRightButton(): FloatingActionButton? = bottomButtons.bottomRightButton
+    override fun getBottomLeftButton(): FloatingActionButton? =
+        bottomButtons.findViewById(R.id.bottomLeftButton)
+
+    override fun getBottomCenterButton(): FloatingActionButton? =
+        bottomButtons.findViewById(R.id.bottomCenterButton)
+
+    override fun getBottomRightButton(): FloatingActionButton? =
+        bottomButtons.findViewById(R.id.bottomRightButton)
 
     override fun getRouteProfileView(): View = route_profile
 
@@ -318,7 +347,7 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
             toolbar_content.removeAllViews()
             appBarLayout.visibility = View.VISIBLE
 
-            bottomButtons?.let { buttons ->
+            bottomButtons.let { buttons ->
                 for (button in buttons)
                     button.visibility = View.GONE
             }
@@ -336,7 +365,7 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
                     nav_view.setCheckedItem(R.id.tutorial_hello)
                     layoutInflater.inflate(
                         R.layout.tutorial_hello, contentMain
-                    ).helloViewController
+                    ).findViewById<HelloViewController>(R.id.helloViewController)
                 }
 
                 Tutorials.Id.Wiki -> {
@@ -349,7 +378,7 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
                     layoutInflater.inflate(
                         R.layout.tutorial_wiki,
                         contentMain
-                    ).wikiController
+                    ).findViewById<WikiController>(R.id.wikiController)
                 }
 
                 Tutorials.Id.LogPlayer_PLAY -> {
@@ -360,35 +389,35 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
                     layoutInflater.inflate(
                         R.layout.tutorial_logplayer,
                         contentMain
-                    ).logPlayerController
+                    ).findViewById<LogPlayerController>(R.id.logPlayerController)
                 }
 
                 Tutorials.Id.TwoTiledViews -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_twotiledviews,
                         contentMain
-                    ).twoTiledViewsController
+                    ).findViewById<TwoTiledViewsController>(R.id.twoTiledViewsController)
                 }
 
                 Tutorials.Id.MultipleViews -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_multiplemaps,
                         contentMain
-                    ).multipleViewsController
+                    ).findViewById<MultipleViewsController>(R.id.multipleViewsController)
                 }
 
                 Tutorials.Id.Route_AB -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_route_ab,
                         contentMain
-                    ).routeAbController
+                    ).findViewById<RouteAb>(R.id.routeAbController)
                 }
 
                 Tutorials.Id.Route_ABC -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_route_abc,
                         contentMain
-                    ).routeAbcController
+                    ).findViewById<RouteAbc>(R.id.routeAbcController)
                 }
 
                 Tutorials.Id.Route_Custom -> {
@@ -406,7 +435,7 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
                     layoutInflater.inflate(
                         R.layout.tutorial_route_custom,
                         contentMain
-                    ).routeCustomController
+                    ).findViewById<RouteCustom>(R.id.routeCustomController)
                 }
 
                 Tutorials.Id.Simulation_Landmarks -> {
@@ -424,7 +453,7 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
                     layoutInflater.inflate(
                         R.layout.tutorial_sim_landmarks,
                         contentMain
-                    ).simLandmarksController
+                    ).findViewById<SimLandmarksController>(R.id.simLandmarksController)
                 }
 
                 Tutorials.Id.Simulation_Route -> {
@@ -438,21 +467,21 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
                     layoutInflater.inflate(
                         R.layout.tutorial_sim_route,
                         contentMain
-                    ).simRouteController
+                    ).findViewById<SimRouteController>(R.id.simRouteController)
                 }
 
                 Tutorials.Id.Navigation_Predef -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_predef_nav,
                         contentMain
-                    ).predefNavController
+                    ).findViewById<PredefNavController>(R.id.predefNavController)
                 }
 
                 Tutorials.Id.PublicNav_Predef -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_predef_ptnav,
                         contentMain
-                    ).predefPtNavController
+                    ).findViewById<PredefPTNavController>(R.id.predefPtNavController)
                 }
 
                 Tutorials.Id.PublicNav_Custom -> {
@@ -470,21 +499,21 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
                     layoutInflater.inflate(
                         R.layout.tutorial_custom_ptnav,
                         contentMain
-                    ).customPtNavController
+                    ).findViewById<CustomPTNavController>(R.id.customPtNavController)
                 }
 
                 Tutorials.Id.Simulation_Custom -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_custom_sim,
                         contentMain
-                    ).customSimController
+                    ).findViewById<CustomSimController>(R.id.customSimController)
                 }
 
                 Tutorials.Id.Navigation_Custom -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_custom_nav,
                         contentMain
-                    ).customNavController
+                    ).findViewById<CustomNavController>(R.id.customNavController)
                 }
 
                 Tutorials.Id.CanvasDrawerCam -> {
@@ -499,56 +528,56 @@ class MainActivity : BaseActivity(), IMapControllerActivity {
                     layoutInflater.inflate(
                         R.layout.tutorial_logrecorder,
                         contentMain
-                    ).logRecorderController
+                    ).findViewById<LogRecorderController>(R.id.logRecorderController)
                 }
 
                 Tutorials.Id.FlyTo_Coords -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_flyto_coords,
                         contentMain
-                    ).flyToCoordsController
+                    ).findViewById<FlyToCoords>(R.id.flyToCoordsController)
                 }
 
                 Tutorials.Id.FlyTo_Area -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_flyto_area,
                         contentMain
-                    ).flyToAreaController
+                    ).findViewById<FlyToArea>(R.id.flyToAreaController)
                 }
 
                 Tutorials.Id.FlyTo_Instr -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_flyto_instr,
                         contentMain
-                    ).flyToInstrController
+                    ).findViewById<FlyToInstr>(R.id.flyToInstrController)
                 }
 
                 Tutorials.Id.FlyTo_Route -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_flyto_route,
                         contentMain
-                    ).flyToRouteController
+                    ).findViewById<FlyToRoute>(R.id.flyToRouteController)
                 }
 
                 Tutorials.Id.FlyTo_Traffic -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_flyto_traffic,
                         contentMain
-                    ).flyToTrafficController
+                    ).findViewById<FlyToTraffic>(R.id.flyToTrafficController)
                 }
 
                 Tutorials.Id.FlyTo_Line -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_flyto_line,
                         contentMain
-                    ).flyToLineController
+                    ).findViewById<FlyToTraffic>(R.id.flyToLineController)
                 }
 
                 Tutorials.Id.CustomUrl -> {
                     layoutInflater.inflate(
                         R.layout.tutorial_custom_url,
                         contentMain
-                    ).customServerController
+                    ).findViewById<CustomServerUrl>(R.id.customServerController)
                 }
 
                 else -> null

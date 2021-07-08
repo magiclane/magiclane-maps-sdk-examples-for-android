@@ -17,11 +17,16 @@ import android.os.Bundle
 import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.ProgressBar
+import androidx.appcompat.widget.Toolbar
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.BaseActivity
-import kotlinx.android.synthetic.main.web_activity.*
 
 class WebActivity : BaseActivity() {
+    
+    lateinit var toolbar: Toolbar
+    lateinit var webView: WebView
+    
     companion object {
         fun open(context: Context, url: String) {
             val intent = Intent(context, WebActivity::class.java)
@@ -34,6 +39,10 @@ class WebActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.web_activity)
 
+        toolbar = findViewById(R.id.toolbar)
+        webView = findViewById(R.id.webView)
+        progressBar = findViewById(R.id.progressBar)
+        
         setSupportActionBar(toolbar)
         // no title
         supportActionBar?.title = ""
@@ -44,13 +53,13 @@ class WebActivity : BaseActivity() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 view?.visibility = View.GONE
-                progressBar?.visibility = View.VISIBLE
+                progressBar.visibility = View.VISIBLE
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 view?.visibility = View.VISIBLE
-                progressBar?.visibility = View.GONE
+                progressBar.visibility = View.GONE
             }
 
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
