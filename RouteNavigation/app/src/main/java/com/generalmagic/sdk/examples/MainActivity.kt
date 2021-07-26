@@ -49,10 +49,10 @@ class MainActivity : AppCompatActivity() {
         override fun onNavigationStarted() {
             SdkCall.execute {
                 gemSurfaceView.getDefaultMapView()?.let { mapView ->
-                    mapView.preferences()?.enableCursor(false)
+                    mapView.preferences?.enableCursor = false
                     navigationService.getNavigationRoute(this)?.let { route ->
                         mapView.presentRoute(route)
-                        val remainingDistance = route.getTimeDistance(true)?.getTotalDistance() ?: 0
+                        val remainingDistance = route.getTimeDistance(true)?.totalDistance ?: 0
                         Toast.makeText(
                             this@MainActivity,
                             "Remaining distance $remainingDistance m",
@@ -129,6 +129,7 @@ class MainActivity : AppCompatActivity() {
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode != REQUEST_PERMISSIONS) return
 
         for (item in grantResults) {
@@ -202,7 +203,7 @@ class MainActivity : AppCompatActivity() {
             val positionService = PositionService()
 
             lateinit var positionListener: PositionListener
-            if (positionService.getPosition()?.isValid() == true) {
+            if (positionService.position?.isValid() == true) {
                 startNavTask()
             } else {
                 positionListener = PositionListener {

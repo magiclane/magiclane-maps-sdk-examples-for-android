@@ -123,7 +123,7 @@ class PickLocationController(context: Context, attrs: AttributeSet?) :
     private fun getLandmark(): Landmark? {
         return SdkCall.execute {
             val myPosition =
-                GEMApplication.getMainMapView()?.getCursorWgsPosition() ?: return@execute null
+                GEMApplication.getMainMapView()?.cursorWgsPosition ?: return@execute null
             Landmark("", myPosition)
         }
     }

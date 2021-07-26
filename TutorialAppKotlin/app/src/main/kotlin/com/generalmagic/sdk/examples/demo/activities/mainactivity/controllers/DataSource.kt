@@ -24,7 +24,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.RectF
-import com.generalmagic.sdk.core.enums.EDirectBufferType
 import com.generalmagic.sdk.core.enums.EResolution
 import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.Canvas
@@ -36,7 +35,6 @@ import com.generalmagic.sdk.examples.demo.activities.ChapterLISIAdapter
 import com.generalmagic.sdk.examples.demo.activities.GenericListActivity
 import com.generalmagic.sdk.examples.demo.activities.ListItemStatusImage
 import com.generalmagic.sdk.examples.demo.activities.settings.SettingsProvider
-import com.generalmagic.sdk.examples.demo.activities.settings.TBoolSettings
 import com.generalmagic.sdk.examples.demo.activities.settings.TIntSettings
 import com.generalmagic.sdk.examples.demo.app.BaseActivity
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
@@ -85,15 +83,15 @@ open class BasicSensorsActivity : GenericListActivity() {
 
     companion object {
         fun toString(SenseData: SenseData): String {
-            return when (SenseData.getType()) {
+            return when (SenseData.type) {
 //                EDataType.MountInformation ->{
 //                    ""
 //                }
                 EDataType.Acceleration -> {
                     val data = AccelerationData(SenseData)
-                    val x = data.getX()
-                    val y = data.getY()
-                    val z = data.getZ()
+                    val x = data.x
+                    val y = data.y
+                    val z = data.z
 
                     String.format("$x, $y, $z")
                 }
@@ -101,8 +99,8 @@ open class BasicSensorsActivity : GenericListActivity() {
                 EDataType.Activity -> {
                     val data = ActivityData(SenseData)
 
-                    val x = data.getActivityConfidence()
-                    val y = data.getType()
+                    val x = data.activityConfidence
+                    val y = data.type
 
                     String.format("$x, $y")
                 }
@@ -110,9 +108,9 @@ open class BasicSensorsActivity : GenericListActivity() {
                 EDataType.Attitude -> {
                     val data = AttitudeData(SenseData)
 
-                    val x = data.getPitch()
-                    val y = data.getRoll()
-                    val z = data.getYaw()
+                    val x = data.pitch
+                    val y = data.roll
+                    val z = data.yaw
 
                     String.format("$x, $y, $z")
                 }
@@ -120,9 +118,9 @@ open class BasicSensorsActivity : GenericListActivity() {
                 EDataType.Battery -> {
                     val data = BatteryData(SenseData)
 
-                    val y = data.getBatteryLevel()
-                    val x = data.getBatteryHealth()
-                    val z = data.getBatteryState()
+                    val y = data.batteryLevel
+                    val x = data.batteryHealth
+                    val z = data.batteryState
 
                     String.format("$x, $y, $z")
                 }
@@ -130,12 +128,12 @@ open class BasicSensorsActivity : GenericListActivity() {
                 EDataType.Camera -> {
                     val data = CameraData(SenseData)
 
-                    val config = data.getCameraConfiguration() ?: return ""
+                    val config = data.cameraConfiguration ?: return ""
 // 				val bmp = Util.createBitmapFromNV21(data.getBuffer(), 1280, 720)
 
                     val x = 0//data.getAcquisitionTimestamp()
-                    val y = config.frameWidth()
-                    val z = config.frameHeight()
+                    val y = config.frameWidth
+                    val z = config.frameHeight
 
                     String.format("$x, $y, $z")
                 }
@@ -143,8 +141,8 @@ open class BasicSensorsActivity : GenericListActivity() {
                 EDataType.Compass -> {
                     val data = CompassData(SenseData)
 
-                    val x = data.getHeading()
-                    val y = data.getAccuracy()
+                    val x = data.heading
+                    val y = data.accuracy
 
                     String.format("$x, $y")
                 }
@@ -152,9 +150,9 @@ open class BasicSensorsActivity : GenericListActivity() {
                 EDataType.MagneticField -> {
                     val data = MagneticFieldData(SenseData)
 
-                    val x = data.getX()
-                    val y = data.getY()
-                    val z = data.getZ()
+                    val x = data.x
+                    val y = data.y
+                    val z = data.z
 
                     String.format("$x, $y, $z")
                 }
@@ -162,8 +160,8 @@ open class BasicSensorsActivity : GenericListActivity() {
                 EDataType.Orientation -> {
                     val data = OrientationData(SenseData)
 
-                    val x = data.getFaceType()
-                    val y = data.getDeviceOrientation()
+                    val x = data.faceType
+                    val y = data.deviceOrientation
 
                     String.format("$x, $y")
                 }
@@ -172,8 +170,8 @@ open class BasicSensorsActivity : GenericListActivity() {
                 EDataType.Position -> {
                     val data = PositionData(SenseData)
 
-                    val x = data.getLatitude()
-                    val y = data.getLongitude()
+                    val x = data.latitude
+                    val y = data.longitude
 
                     String.format("$x, $y")
                 }
@@ -181,9 +179,9 @@ open class BasicSensorsActivity : GenericListActivity() {
                 EDataType.RotationRate -> {
                     val data = RotationRateData(SenseData)
 
-                    val x = data.getX()
-                    val y = data.getY()
-                    val z = data.getZ()
+                    val x = data.x
+                    val y = data.y
+                    val z = data.z
 
                     String.format("$x, $y, $z")
                 }
@@ -191,8 +189,8 @@ open class BasicSensorsActivity : GenericListActivity() {
                 EDataType.Temperature -> {
                     val data = TemperatureData(SenseData)
 
-                    val x = data.getTemperatureDegrees()
-                    val y = data.getTemperatureLevel()
+                    val x = data.temperatureDegrees
+                    val y = data.temperatureLevel
 
                     String.format("$x, $y")
                 }
@@ -219,7 +217,7 @@ class SensorsListActivity : BasicSensorsActivity() {
         override fun onNewData(data: SenseData?) {
             data ?: return
 
-            val type = data.getType()
+            val type = data.type
 
             val willAdd = lastData[type] == null
             lastData[type] = data
@@ -285,17 +283,17 @@ class DirectCamActivity : BaseActivity() {
     private var currentDataSource: DataSource? = null
     private var listener = object : DataSourceListener() {
         override fun onNewData(data: SenseData?) {
-            if (data?.getType() != EDataType.Camera) return
+            if (data?.type != EDataType.Camera) return
 
 //            val camData = CameraData(data)
 //            val configs = camData.getCameraConfiguration() ?: return
 
-// 			val bmp = Util.createBitmap(data.getBuffer()?.array(), configs.frameWidth(), configs.frameHeight())
+// 			val bmp = Util.createBitmap(data.getBuffer()?.array(), configs.frameWidth, configs.frameHeight)
 
 // 			Log.d("GEMSDK", "zzzzz")
         }
     }
-    
+
     lateinit var root_view: ConstraintLayout
     lateinit var toolbar: Toolbar
     lateinit var surface_cam: SurfaceView
@@ -303,7 +301,7 @@ class DirectCamActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera)
-        
+
         root_view = findViewById(R.id.root_view)
         toolbar = findViewById(R.id.toolbar)
         surface_cam = findViewById(R.id.surface_cam)
@@ -396,14 +394,14 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
     private val canvasListener = object : CanvasListener() {
         var camData: CameraData? = null
         override fun onRender() {
-            val buffer = camData?.getDirectBuffer() ?: return
+            val buffer = camData?.directBuffer ?: return
 //            val bufferType = EDirectBufferType.EByteBuffer
-            val configs = camData?.getCameraConfiguration() ?: return
+            val configs = camData?.cameraConfiguration ?: return
 
-            val width = configs.frameWidth()
-            val height = configs.frameHeight()
-            val rotation = configs.rotationAngle()
-            val format = configs.pixelFormat()
+            val width = configs.frameWidth
+            val height = configs.frameHeight
+            val rotation = configs.rotationAngle
+            val format = configs.pixelFormat
 
             drawer?.uploadFrame(buffer, width, height, format, rotation)
             drawer?.renderFrame()
@@ -415,7 +413,7 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
             data ?: return
 
             SdkCall.execute {
-                when (data.getType()) {
+                when (data.type) {
                     EDataType.Camera -> {
                         canvasListener.camData = CameraData(data)
                         GEMApplication.getGlContext()?.needsRender()
@@ -431,7 +429,7 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
     private var canvas: Canvas? = null
 
     fun doStart() = SdkCall.execute {
-        if (!currentDataSource.getAvailableDataTypes().contains(EDataType.Camera)) {
+        if (!currentDataSource.availableDataTypes.contains(EDataType.Camera)) {
             postOnMain {
                 Toast.makeText(context, "CAMERA FRAME IS NOT AVAILABLE !", Toast.LENGTH_SHORT)
                     .show()
@@ -439,7 +437,7 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
             return@execute
         }
 
-        val screen = GEMApplication.getMainMapView()?.getScreen()
+        val screen = GEMApplication.getMainMapView()?.screen
         if (screen == null) {
             postOnMain {
                 Toast.makeText(context, "No screen !", Toast.LENGTH_SHORT).show()
@@ -587,10 +585,10 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
             data ?: return
 
             SdkCall.execute {
-                when (data.getType()) {
+                when (data.type) {
                     EDataType.Orientation -> {
                         val orientationData = OrientationData(data)
-                        val orientation = orientationData.getDeviceOrientation()
+                        val orientation = orientationData.deviceOrientation
 
                         if (mOrientation != orientation) {
                             val wasUnknown =
@@ -620,11 +618,11 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
         SdkCall.execute {
             val currentDataSource = this.currentDataSource ?: return@execute
 
-            val availableTypes = currentDataSource.getAvailableDataTypes()
+            val availableTypes = currentDataSource.availableDataTypes
 
             val chunkSizeSetting = SettingsProvider.getIntValue(TIntSettings.ERecordingChunk.value)
-            val recordAudioSetting =
-                SettingsProvider.getBooleanValue(TBoolSettings.ERecordAudio.value)
+//            val recordAudioSetting =
+//                SettingsProvider.getBooleanValue(TBoolSettings.ERecordAudio.value)
             val keepRecentSetting = SettingsProvider.getIntValue(TIntSettings.EMinMinutes.value)
             val diskLimitSetting = SettingsProvider.getIntValue(TIntSettings.EDiskLimit.value)
 
@@ -632,7 +630,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
                 RecorderConfiguration.INFINITE_RECORDING
             } else chunkSizeSetting.second.toLong()
 
-            val enableAudio = recordAudioSetting.second
+//            val enableAudio = recordAudioSetting.second
 
             val keepRecentMin = if (keepRecentSetting.second == 181) {
                 RecorderConfiguration.KEEP_ALL_RECORDINGS
@@ -644,15 +642,15 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
 
             val quality = EResolution.HD_720p
 //            val chunkLengthInMin = 5 //or RecorderConfiguration.INFINITE_RECORDING
-            val continuousRecording = true
+//            val continuousRecording = true
 
             val config = RecorderConfiguration(logsDir, availableTypes)
-            config.setVideoQuality(quality)
-            config.setEnableAudio(enableAudio)
-            config.setContinuousRecording(continuousRecording)
-            config.setChunkDurationSeconds(chunkLengthInMin * 60L)
-            config.setKeepMinimumSeconds(keepRecentMin * 60L)
-            config.setDiskSpaceLimit(diskLimitMB * 1024 * 1024)
+            config.videoQuality = quality
+            config.enableAudio
+            config.continuousRecording
+            config.chunkDurationSeconds = chunkLengthInMin * 60L
+            config.keepMinimumSeconds = keepRecentMin * 60L
+            config.diskSpaceLimit = diskLimitMB * 1024 * 1024
 
             recorder = Recorder.produce(config, currentDataSource)
             recorder?.addListener(recorderListener)
@@ -701,7 +699,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
 
 class LogPlayerController(context: Context, attrs: AttributeSet) :
     LogDataSourceController(context, attrs) {
-    
+
     lateinit var seekBar: SeekBar
     lateinit var playBotLeftButton: FloatingActionButton
 
@@ -734,9 +732,9 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
             if (fromUser) {
                 SdkCall.execute {
                     val currentDataSource = currentDataSource ?: return@execute
-                    val playback = currentDataSource.getPlayback() ?: return@execute
+                    val playback = currentDataSource.playback ?: return@execute
 
-                    playback.setCurrentPosition(progress.toLong())
+                    playback.currentPosition = progress.toLong()
                 }
             }
         }
@@ -753,7 +751,7 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
         seekBar = findViewById(R.id.seekBar)
         playBotLeftButton = findViewById(R.id.playBotLeftButton)
     }
-    
+
     /** doStart/doResume */
     override fun doStart() {
         var constructedNow = false
@@ -766,7 +764,7 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
 
         seekBar.progress = 0
         seekBar.max = SdkCall.execute {
-            currentDataSource.getPlayback()?.getDuration()?.toInt()
+            currentDataSource.playback?.duration?.toInt()
         } ?: 0
         seekBar.setOnSeekBarChangeListener(seekBarListener)
 
@@ -784,9 +782,9 @@ class LogPlayerController(context: Context, attrs: AttributeSet) :
                 }
             }
 
-            val playback = currentDataSource.getPlayback() ?: return@execute
+            val playback = currentDataSource.playback ?: return@execute
 
-            if (playback.getState() == EPlayingStatus.Paused) {
+            if (playback.state == EPlayingStatus.Paused) {
                 playback.resume()
             }
         }

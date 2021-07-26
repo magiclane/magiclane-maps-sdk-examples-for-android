@@ -49,7 +49,7 @@ import com.generalmagic.sdk.util.StringIds
 
 class RouteDescriptionActivity : AppCompatActivity() {
     private lateinit var route: Route
-    
+
     private lateinit var rdToolbar: Toolbar
     lateinit var routeDescriptionList: ListView
 
@@ -127,8 +127,8 @@ class RouteDescriptionActivity : AppCompatActivity() {
 
             // add restricted area item
             val timeDistance = route.getTimeDistance()
-            val distanceInMeters = timeDistance?.getRestrictedDistance() ?: 0
-            val timeInSeconds = timeDistance?.getRestrictedTime() ?: 0
+            val distanceInMeters = timeDistance?.restrictedDistance ?: 0
+            val timeInSeconds = timeDistance?.restrictedTime ?: 0
 
             if ((distanceInMeters > 0) || (timeInSeconds > 0)) { // ROUTE WARNING
                 result.add(
@@ -151,7 +151,7 @@ class RouteDescriptionActivity : AppCompatActivity() {
             }
 
             // add traffic events
-            val routeLength = timeDistance?.getTotalDistance() ?: 0
+            val routeLength = timeDistance?.totalDistance ?: 0
             val trafficEventsList = route.getTrafficEvents()
             if (trafficEventsList != null) {
                 for (event in trafficEventsList) {
@@ -256,14 +256,14 @@ class RouteTitleItem(route: Route, sortKey: Int) : ListViewItem() {
         SdkCall.checkCurrentThread()
 
         val timeDistance = route.getTimeDistance()
-        val distanceInMeters = timeDistance?.getTotalDistance() ?: 0
-        val timeInSeconds = timeDistance?.getTotalTime() ?: 0
+        val distanceInMeters = timeDistance?.totalDistance ?: 0
+        val timeInSeconds = timeDistance?.totalTime ?: 0
 
         description = UtilUITexts.getFormattedDistanceTime(distanceInMeters, timeInSeconds)
         val waypoints = route.getWaypoints()
         if (waypoints != null && waypoints.size > 0) {
-            var departureName = waypoints[0].getName() ?: ""
-            var destinationName = waypoints.last().getName() ?: ""
+            var departureName = waypoints[0].name ?: ""
+            var destinationName = waypoints.last().name ?: ""
 
             if (departureName.isEmpty()) {
                 departureName = getFormattedWaypointName(waypoints[0], true)
@@ -276,7 +276,7 @@ class RouteTitleItem(route: Route, sortKey: Int) : ListViewItem() {
             val departureNameFormatted: String
             val destinationNameFormatted: String
 
-            if (GemSdk.getNativeConfiguration() == GemSdk.ENativeConfiguration.Android) {
+            if (GemSdk.nativeConfiguration == GemSdk.ENativeConfiguration.Android) {
                 departureNameFormatted = String.format("<b>$departureName</b>")
                 destinationNameFormatted = String.format("<b>$destinationName</b>")
             } else {
@@ -321,15 +321,15 @@ class RouteWarningItem(val route: Route, private val type: TRouteWarningType, so
 
         if (type == TRouteWarningType.RestrictedAreas) {
             val timeDistance = route.getTimeDistance()
-            val distanceInMeters = timeDistance?.getRestrictedDistance() ?: 0
-            val timeInSeconds = timeDistance?.getRestrictedTime() ?: 0
+            val distanceInMeters = timeDistance?.restrictedDistance ?: 0
+            val timeInSeconds = timeDistance?.restrictedTime ?: 0
 
             if (distanceInMeters > 0 || timeInSeconds > 0) {
                 description = UtilUITexts.getFormattedDistanceTime(distanceInMeters, timeInSeconds)
             }
         }
 
-        text = if (GemSdk.getNativeConfiguration() == GemSdk.ENativeConfiguration.Android) {
+        text = if (GemSdk.nativeConfiguration == GemSdk.ENativeConfiguration.Android) {
             String.format("<b>$warningText</b>")
         } else {
             warningText
@@ -376,14 +376,14 @@ class RouteInstructionItem(val instruction: RouteInstruction, distOffset: Double
             }
 
             var distance =
-                instruction.getTraveledTimeDistance()?.getTotalDistance()?.toDouble() ?: 0.0
+                instruction.getTraveledTimeDistance()?.totalDistance?.toDouble() ?: 0.0
             if ((distOffset > 0.0) && (distance >= distOffset)) {
                 distance -= distOffset
             }
 
             mSortKey = (distance + 0.5).toInt()
 
-            val distText = getDistText(distance.toInt(), SdkSettings().getUnitSystem())
+            val distText = getDistText(distance.toInt(), SdkSettings().unitSystem)
             statusText = distText.first
             statusDescription = distText.second
             if (statusText == "0.00") {
@@ -392,9 +392,9 @@ class RouteInstructionItem(val instruction: RouteInstruction, distOffset: Double
 
             val timeDistToNextTurn = instruction.getTimeDistanceToNextTurn()
             if (timeDistToNextTurn != null) {
-                if (timeDistToNextTurn.getRestrictedTime() > 0 || timeDistToNextTurn.getRestrictedDistance() > 0) {
+                if (timeDistToNextTurn.restrictedTime > 0 || timeDistToNextTurn.restrictedDistance > 0) {
                     mCrossesRestrictedArea = true
-                    descriptionColor = Rgba(255, 0, 0, 255).value()
+                    descriptionColor = Rgba(255, 0, 0, 255).value
                 }
             }
         }
@@ -406,7 +406,7 @@ class RouteInstructionItem(val instruction: RouteInstruction, distOffset: Double
         val iInner = Rgba(128, 128, 128, 255)
         val iOuter = Rgba(128, 128, 128, 255)
 
-        val image = instruction.getTurnDetails()?.getAbstractGeometryImage()
+        val image = instruction.getTurnDetails()?.abstractGeometryImage
         return@execute Util.createBitmap(image, width, height, aInner, aOuter, iInner, iOuter)
     }
 }
@@ -418,11 +418,11 @@ class TrafficEventItem(val event: RouteTrafficEvent, totalRouteLength: Int) :
         SdkCall.checkCurrentThread()
 
         text = UtilUITexts.formatTrafficDelayAndLength(
-            event.getLength(),
-            event.getDelay(),
+            event.length,
+            event.delay,
             event.isRoadblock()
         )
-        val eDescription = event.getDescription() ?: ""
+        val eDescription = event.description ?: ""
 
         if (description.isNotEmpty()) {
             text = String.format("%s (%s)", text, eDescription)
@@ -431,8 +431,8 @@ class TrafficEventItem(val event: RouteTrafficEvent, totalRouteLength: Int) :
 // 			eDescription = eStrTraffic
 // 		}
 
-        val from = event.getFromLandmark()
-        val to = event.getToLandmark()
+        val from = event.fromLandmark
+        val to = event.toLandmark
 
         if (from != null && to != null) {
             if (from.second && to.second) {
@@ -448,7 +448,7 @@ class TrafficEventItem(val event: RouteTrafficEvent, totalRouteLength: Int) :
                 }
             }
         }
-        val remainingDistance = event.getDistanceToDestination()
+        val remainingDistance = event.distanceToDestination
         var distance = totalRouteLength - remainingDistance
         if (distance < 0) {
             distance = 0
@@ -456,7 +456,7 @@ class TrafficEventItem(val event: RouteTrafficEvent, totalRouteLength: Int) :
 
         mSortKey = (distance + 1)
 
-        val distText = getDistText(distance, SdkSettings().getUnitSystem(), true)
+        val distText = getDistText(distance, SdkSettings().unitSystem, true)
         statusText = distText.first
         statusDescription = distText.second
 
@@ -466,6 +466,6 @@ class TrafficEventItem(val event: RouteTrafficEvent, totalRouteLength: Int) :
     }
 
     override fun getBitmap(width: Int, height: Int): Bitmap? = SdkCall.execute {
-        return@execute Util.createBitmap(event.getImage(), width, height)
+        return@execute Util.createBitmap(event.image, width, height)
     }
 }

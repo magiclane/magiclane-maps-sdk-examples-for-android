@@ -16,11 +16,7 @@ import android.graphics.Color
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.RelativeLayout
-import android.widget.TextView
+import android.widget.*
 import androidx.core.content.ContextCompat
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.Rgba
@@ -175,40 +171,40 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
         if (navInstr == null) return
 
-        if (navInstr.getNavigationStatus() != SdkError.NoError.value) {
+        if (navInstr.navigationStatus != ENavigationStatus.Running) {
             return
         }
 
-        val bHasNextRoadCode = (navInstr.getNextRoadInformation()?.size ?: 0) > 0
-        val turnDetails = navInstr.getNextTurnDetails()
+        val bHasNextRoadCode = (navInstr.nextRoadInformation?.size ?: 0) > 0
+        val turnDetails = navInstr.nextTurnDetails
 
         if (turnDetails != null &&
-            (turnDetails.getEvent() == ETurnEvent.Stop || turnDetails.getEvent() == ETurnEvent.Intermediate)
+            (turnDetails.event == ETurnEvent.Stop || turnDetails.event == ETurnEvent.Intermediate)
         ) {
-            turnInstruction = navInstr.getNextTurnInstruction() ?: ""
+            turnInstruction = navInstr.nextTurnInstruction ?: ""
         } else if (navInstr.hasSignpostInfo()) {
-            turnInstruction = navInstr.getSignpostInstruction() ?: ""
+            turnInstruction = navInstr.signpostInstruction ?: ""
             if (!turnInstruction.isNullOrEmpty()) {
-                turnInstruction = navInstr.getNextStreetName() ?: ""
+                turnInstruction = navInstr.nextStreetName ?: ""
             }
         } else {
-            turnInstruction = navInstr.getNextStreetName() ?: ""
+            turnInstruction = navInstr.nextStreetName ?: ""
         }
 
         if (!turnInstruction.isNullOrEmpty() && !bHasNextRoadCode) {
-            turnInstruction = navInstr.getNextTurnInstruction() ?: ""
+            turnInstruction = navInstr.nextTurnInstruction ?: ""
         }
 
         val distanceToNextTurnTexts = getDistText(
-            navInstr.getTimeDistanceToNextTurn()?.getTotalDistance() ?: 0,
-            SdkSettings().getUnitSystem(),
+            navInstr.timeDistanceToNextTurn?.totalDistance ?: 0,
+            SdkSettings().unitSystem,
             true
         )
 
         // sizes
         val screen = GEMApplication.gemMapScreen()
-        val surfaceWidth = screen?.getViewPort()?.width() ?: 0
-        val surfaceHeight = screen?.getViewPort()?.height() ?: 0
+        val surfaceWidth = screen?.viewport?.width ?: 0
+        val surfaceHeight = screen?.viewport?.height ?: 0
 
         val panelWidth = if (surfaceWidth <= surfaceHeight) {
             surfaceWidth
@@ -248,18 +244,18 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
         updateTrafficEvent(event)
 
-        val remainingDistance = routeLength - (event?.getDistanceToDestination() ?: 0)
+        val remainingDistance = routeLength - (event?.distanceToDestination ?: 0)
 
         val distFromStartTexts = getDistText(
             remainingDistance,
-            SdkSettings().getUnitSystem(),
+            SdkSettings().unitSystem,
             true
         )
 
         val text = String.format(
             "%s\n%s",
             UtilUITexts.formatTrafficDelayAndLength(event),
-            event?.getDescription() ?: ""
+            event?.description ?: ""
         )
 
         turnImage = trafficImage
@@ -272,8 +268,8 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         SdkCall.checkCurrentThread()
 
         val distanceToNextTurnTexts = getDistText(
-            event?.getTraveledTimeDistance()?.getTotalDistance() ?: 0,
-            SdkSettings().getUnitSystem(),
+            event?.getTraveledTimeDistance()?.totalDistance ?: 0,
+            SdkSettings().unitSystem,
             true
         )
 
@@ -296,7 +292,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
         if (trafficEvent == null) return
 
-        trafficEventDescription = trafficEvent.getDescription() ?: ""
+        trafficEventDescription = trafficEvent.description ?: ""
 
         val distance = if (bInsideTrafficEvent) {
             nRemainingDistanceInsideTrafficEvent
@@ -306,7 +302,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
         val distanceToTrafficPair = getDistText(
             distance,
-            SdkSettings().getUnitSystem(),
+            SdkSettings().unitSystem,
             true
         )
 
@@ -323,11 +319,11 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
         if (!trafficEvent.isRoadblock()) {
             if (bInsideTrafficEvent) {
-                if (trafficEvent.getLength() > 0) {
+                if (trafficEvent.length > 0) {
                     val nRemainingTimeInsideTrafficEvent = (
-                        trafficEvent.getDelay() *
+                        trafficEvent.delay *
                             nRemainingDistanceInsideTrafficEvent
-                        ) / trafficEvent.getLength()
+                        ) / trafficEvent.length
 
                     val trafficDelayTextPair = getTimeText(nRemainingTimeInsideTrafficEvent)
 
@@ -336,15 +332,15 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
                 }
             } else {
                 val trafficDistTextPair = getDistText(
-                    trafficEvent.getLength(),
-                    SdkSettings().getUnitSystem(),
+                    trafficEvent.length,
+                    SdkSettings().unitSystem,
                     true
                 )
 
                 trafficDelayDistance = trafficDistTextPair.first
                 trafficDelayDistanceUnit = trafficDistTextPair.second
 
-                val trafficDelayTextPair = getTimeText(trafficEvent.getDelay())
+                val trafficDelayTextPair = getTimeText(trafficEvent.delay)
 
                 trafficDelayTime = String.format("+%s", trafficDelayTextPair.first)
                 trafficDelayTimeUnit = trafficDelayTextPair.second
@@ -370,21 +366,21 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
         if (navInstr == null || route == null) return null
 
-        if (navInstr.getNavigationStatus() != SdkError.NoError.value) return null
+        if (navInstr.navigationStatus != ENavigationStatus.Running) return null
         val trafficEventsList = route.getTrafficEvents() ?: return null
 
         val remainingTravelDistance =
-            navInstr.getRemainingTravelTimeDistance()?.getTotalDistance() ?: 0
+            navInstr.remainingTravelTimeDistance?.totalDistance ?: 0
 
         // pick current traffic event
         for (event in trafficEventsList) {
-            val distToDest = event.getDistanceToDestination()
+            val distToDest = event.distanceToDestination
             nDistanceToTrafficEvent =
                 remainingTravelDistance - distToDest
 
             if (nDistanceToTrafficEvent <= 0) {
                 nRemainingDistanceInsideTrafficEvent =
-                    event.getLength() - (distToDest - remainingTravelDistance)
+                    event.length - (distToDest - remainingTravelDistance)
 
                 if (nRemainingDistanceInsideTrafficEvent >= 0) {
                     bInsideTrafficEvent = true
@@ -405,14 +401,14 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         SdkCall.checkCurrentThread()
         alarmService ?: return
 
-        val maxDistanceToAlarm = alarmService.getAlarmDistance()
+        val maxDistanceToAlarm = alarmService.alarmDistance
 
-        val markersList = alarmService.getOverlayItemAlarms()
-        if (markersList == null || markersList.size() == 0) return
+        val markersList = alarmService.overlayItemAlarms
+        if (markersList == null || markersList.size == 0) return
 
         val distance = markersList.getDistance(0)
         if (distance < maxDistanceToAlarm) {
-            val textsPair = getDistText(distance.toInt(), SdkSettings().getUnitSystem(), true)
+            val textsPair = getDistText(distance.toInt(), SdkSettings().unitSystem, true)
 
             distanceToSafetyCameraAlarm = textsPair.first
             distanceToSafetyCameraAlarmUnit = textsPair.second
@@ -688,7 +684,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         Pair<Int, Bitmap?> {
         return SdkCall.execute {
             val navInstr = from ?: return@execute Pair(0, null)
-            val roadsInfo = navInstr.getNextRoadInformation() ?: return@execute Pair(0, null)
+            val roadsInfo = navInstr.nextRoadInformation ?: return@execute Pair(0, null)
             if (roadsInfo.isEmpty()) return@execute Pair(0, null)
 
             var resultWidth = width
@@ -713,7 +709,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
     ): Pair<Int, Bitmap?> {
         return SdkCall.execute {
             val marker = from ?: return@execute Pair(0, null)
-            if (marker.getImage()?.getUid() ?: 0 == mLastAlarmImageId) {
+            if (marker.image?.uid ?: 0 == mLastAlarmImageId) {
                 bSameImage.value = true
                 return@execute Pair(0, null)
             }
@@ -721,9 +717,9 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
             val aspectRatio = Util.getImageAspectRatio(marker)
             val actualWidth = (aspectRatio * height).toInt()
 
-            val image = marker.getImage()
+            val image = marker.image
             if (image != null) {
-                mLastAlarmImageId = image.getUid()
+                mLastAlarmImageId = image.uid
             }
 
             return@execute Pair(actualWidth, Util.createBitmap(image, actualWidth, height))
@@ -747,16 +743,16 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         return SdkCall.execute {
             val navInstr = from ?: return@execute null
             if (!navInstr.hasNextTurnInfo()) return@execute null
-            if (navInstr.getNextTurnDetails()?.getAbstractGeometryImage()
-                    ?.getUid() ?: 0 == mLastTurnImageId
+            if (navInstr.nextTurnDetails?.abstractGeometryImage
+                    ?.uid ?: 0 == mLastTurnImageId
             ) {
                 bSameImage.value = true
                 return@execute null
             }
 
-            val image = navInstr.getNextTurnDetails()?.getAbstractGeometryImage()
+            val image = navInstr.nextTurnDetails?.abstractGeometryImage
             if (image != null) {
-                mLastTurnImageId = image.getUid()
+                mLastTurnImageId = image.uid
             }
 
             val aInner = Rgba(255, 255, 255, 255)
@@ -777,17 +773,17 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         return SdkCall.execute {
             val navInstr = from ?: return@execute null
             if (!navInstr.hasTurnInfo()) return@execute null
-            if (navInstr.getTurnDetails()?.getAbstractGeometryImage()
-                    ?.getUid() ?: 0 == mLastTurnImageId
+            if (navInstr.getTurnDetails()?.abstractGeometryImage
+                    ?.uid ?: 0 == mLastTurnImageId
             ) {
                 bSameImage.value = true
                 return@execute null
             }
 
-            val image = navInstr.getTurnDetails()?.getAbstractGeometryImage()
+            val image = navInstr.getTurnDetails()?.abstractGeometryImage
             if (image != null) {
                 val details = navInstr.getTurnDetails()
-                mLastTurnImageId = details?.getAbstractGeometryImage()?.getUid() ?: 0
+                mLastTurnImageId = details?.abstractGeometryImage?.uid ?: 0
             }
 
             val aInner = Rgba(255, 255, 255, 255)
@@ -811,7 +807,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
                 resultWidth = (2.5 * height).toInt()
             }
 
-            val image = navInstr.getSignpostDetails()?.getImage()
+            val image = navInstr.signpostDetails?.image
 
             val resultPair = Util.createBitmap(image, resultWidth, height)
             resultWidth = resultPair.first
@@ -827,14 +823,14 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         sameImage: TSameImage
     ): Bitmap? {
         return SdkCall.execute {
-            if (from?.getImage()?.getUid() ?: 0 == mLastTrafficImageId) {
+            if (from?.image?.uid ?: 0 == mLastTrafficImageId) {
                 sameImage.value = true
                 return@execute null
             }
 
-            val image = from?.getImage()
+            val image = from?.image
             if (image != null) {
-                mLastTrafficImageId = image.getUid()
+                mLastTrafficImageId = image.uid
             }
 
             Util.createBitmap(image, width, height)

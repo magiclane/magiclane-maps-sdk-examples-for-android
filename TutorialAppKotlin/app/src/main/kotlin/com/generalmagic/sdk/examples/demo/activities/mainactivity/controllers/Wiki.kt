@@ -36,7 +36,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
     MapLayoutController(context, attrs) {
     private lateinit var landmark: Landmark
     private var ignoreWikiErrorsCount = 0
-    
+
     private lateinit var wikiView: WikiView
     private lateinit var closeButton: FloatingActionButton
 
@@ -76,9 +76,9 @@ class WikiController(context: Context, attrs: AttributeSet?) :
 
     override fun doStart() {
         val inLandmark = IntentHelper.getObjectForKey(EXTRA_LANDMARK) as Landmark?
-        
+
         initViews()
-        
+
         SdkCall.execute {
             if (inLandmark == null) {
                 val text = "Tokyo"
@@ -107,15 +107,15 @@ class WikiController(context: Context, attrs: AttributeSet?) :
 
         val mainMap = GEMApplication.getMainMapView()
         SdkCall.execute {
-            val coords = landmark.getCoordinates() ?: return@execute
+            val coords = landmark.coordinates ?: return@execute
 
-            val areaIsEmpty = landmark.getContourGeograficArea()?.isEmpty() ?: true
+            val areaIsEmpty = landmark.geographicArea?.isEmpty() ?: true
 
             if (areaIsEmpty) {
                 val simplePinLandmark = SdkCall.execute { Landmark("", coords) }
                 simplePinLandmark?.run {
                     ImageDatabase().getImageById(SdkIcons.Other_UI.Search_Results_Pin.value)?.let {
-                        setImage(it)
+                        image = it
                     }
                     mainMap?.activateHighlightLandmarks(arrayListOf(simplePinLandmark))
                 }
@@ -154,7 +154,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
     @Suppress("SameParameterValue")
     private fun doSearch(text: String, coords: Coordinates) {
         SdkCall.execute {
-            searchService.preferences.setSearchMapPOIs(true)
+            searchService.preferences.searchMapPOIsEnabled = true
             searchService.searchByFilter(text, coords)
         }
     }

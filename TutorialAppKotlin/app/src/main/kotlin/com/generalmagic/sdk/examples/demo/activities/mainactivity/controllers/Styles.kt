@@ -40,7 +40,7 @@ class StylesActivity : StylesListActivity() {
             }
 
             // get call result
-            val result = ContentStore().getStoreContentList(EContentType.ViewStyleHighRes.value)
+            val result = ContentStore().getStoreContentList(EContentType.ViewStyleHighRes)
             result ?: return
 
             GEMApplication.postOnMain {
@@ -58,11 +58,11 @@ class StylesActivity : StylesListActivity() {
 
         SdkCall.execute {
             val localItems =
-                contentStore.getLocalContentList(EContentType.ViewStyleHighRes.value)
+                contentStore.getLocalContentList(EContentType.ViewStyleHighRes)
                     ?: ArrayList()
 
             contentStore.asyncGetStoreContentList(
-                EContentType.ViewStyleHighRes.value, progressListener
+                EContentType.ViewStyleHighRes, progressListener
             )
 
             GEMApplication.postOnMain {
@@ -79,13 +79,13 @@ class StylesActivity : StylesListActivity() {
 
     private fun wrapList(list: ArrayList<ContentStoreItem>): ArrayList<StylesListItem> {
         val styleId = SdkCall.execute {
-            GEMApplication.getMainMapView()?.preferences()?.getMapStyleId()
+            GEMApplication.getMainMapView()?.preferences?.mapStyleId
         }
 
         val result = ArrayList<StylesListItem>()
         for (item in list) {
             val wrapped = StyleItemViewModel(item)
-            wrapped.mChecked = SdkCall.execute { item.getId() } == styleId
+            wrapped.mChecked = SdkCall.execute { item.id } == styleId
             wrapped.mOnClick = { onItemTapped(wrapped, it) }
             result.add(wrapped)
         }
@@ -106,12 +106,12 @@ class StylesActivity : StylesListActivity() {
 
         val selectStyle = {
             SdkCall.execute {
-                GEMApplication.getMainMapView()?.preferences()?.setMapStyleById(item.getId())
+                GEMApplication.getMainMapView()?.preferences?.setMapStyleById(item.id)
             }
             GEMApplication.postOnMain { refreshChecked() }
         }
 
-        when (SdkCall.execute { item.getStatus() }) {
+        when (SdkCall.execute { item.status }) {
             EContentStoreItemStatus.Completed -> {
                 selectStyle()
                 finish()
@@ -186,9 +186,9 @@ class StylesActivity : StylesListActivity() {
     }
 
     private fun refreshChecked() {
-        val adapter = listView.adapter as ChapterStylesAdapter? ?: return
+        val adapter = listView.adapter as? ChapterStylesAdapter?: return
         val styleId = SdkCall.execute {
-            GEMApplication.getMainMapView()?.preferences()?.getMapStyleId()
+            GEMApplication.getMainMapView()?.preferences?.mapStyleId
         } ?: return
 
         var changed = false
@@ -196,9 +196,9 @@ class StylesActivity : StylesListActivity() {
             val section = adapter.getSection(sectionIndex) as StylesViewHolder.Chapter<*>
 
             for (item in section.nItems) {
-                val casted = item as StyleItemViewModel? ?: continue
+                val casted = item as? StyleItemViewModel?: continue
                 val oldChecked = casted.mChecked
-                casted.mChecked = SdkCall.execute { casted.it.getId() } == styleId
+                casted.mChecked = SdkCall.execute { casted.it.id } == styleId
 
                 if (oldChecked != casted.mChecked) {
                     changed = true

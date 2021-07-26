@@ -244,10 +244,10 @@ object Util {
     }
 
     fun getPhonePath(context: Context?): String =
-        com.generalmagic.sdk.util.Util.getPhonePath(context)
+        com.generalmagic.sdk.util.Util.getAppDirInternalPath(context)
 
     fun getSdCardPath(context: Context?): String =
-        com.generalmagic.sdk.util.Util.getSdCardPath(context)
+        com.generalmagic.sdk.util.Util.getAppFilesDirExternalPath(context)
 
     fun getContentStoreStatusIconId(status: EContentStoreItemStatus): Int {
         return when (status) {
@@ -311,12 +311,12 @@ object Util {
     }
 
     fun getImageAspectRatio(marker: OverlayItem?): Float {
-        val image = marker?.getImage() ?: return 1.0f
+        val image = marker?.image ?: return 1.0f
         var fAspectRatio = 1.0f
 
-        val size = image.getSize()
-        if (size != null && size.height() != 0) {
-            fAspectRatio = (size.width().toFloat() / size.height().toFloat())
+        val size = image.size
+        if (size != null && size.height != 0) {
+            fAspectRatio = (size.width.toFloat() / size.height.toFloat())
         }
 
         return fAspectRatio
@@ -357,7 +357,7 @@ object Util {
                 override fun notifyComplete(reason: SdkError, hint: String) {
                     // select the downloaded style
                     val result =
-                        ContentStore().getStoreContentList(EContentType.ViewStyleHighRes.value)
+                        ContentStore().getStoreContentList(EContentType.ViewStyleHighRes)
                     result ?: return
 
                     val contentStoreStyles = result.first
@@ -367,7 +367,7 @@ object Util {
                         }
 
                         for (style in contentStoreStyles) {
-                            if (style.getName() != null && style.getName()!!
+                            if (style.name != null && style.name!!
                                     .contains("Satellite")
                             ) {
                                 style.asyncDownload(
@@ -383,7 +383,7 @@ object Util {
             }
 
             ContentStore().asyncGetStoreContentList(
-                EContentType.ViewStyleHighRes.value,
+                EContentType.ViewStyleHighRes,
                 listener
             )
         }

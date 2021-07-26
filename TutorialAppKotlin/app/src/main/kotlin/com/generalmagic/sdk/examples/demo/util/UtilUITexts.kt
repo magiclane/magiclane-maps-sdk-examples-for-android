@@ -32,7 +32,7 @@ object UtilUITexts {
     } ?: ""
 
     fun formatTrafficDelayAndLength(length: Int, delay: Int, isRoadblock: Boolean): String {
-        val distText = getDistText(length, SdkSettings().getUnitSystem())
+        val distText = getDistText(length, SdkSettings().unitSystem)
 
         return if (!isRoadblock) {
             val delayText = getTimeText(delay)
@@ -56,8 +56,8 @@ object UtilUITexts {
 
     fun formatTrafficDelayAndLength(event: RouteTrafficEvent?): String {
         return formatTrafficDelayAndLength(
-            event?.getLength() ?: 0,
-            event?.getDelay() ?: 0,
+            event?.length ?: 0,
+            event?.delay ?: 0,
             event?.isRoadblock() ?: false
         )
     }
@@ -92,7 +92,7 @@ object UtilUITexts {
     }
 
     fun getFormattedDistanceTime(distanceInMeters: Int, timeInSeconds: Int): String {
-        val dist = getDistText(distanceInMeters, SdkSettings().getUnitSystem(), true)
+        val dist = getDistText(distanceInMeters, SdkSettings().unitSystem, true)
 
         val time = formatTime(timeInSeconds)
 
@@ -128,7 +128,7 @@ object UtilUITexts {
 
     fun fillLandmarkAddressInfo(landmark: Landmark, bFillAllFields: Boolean = false) {
         SdkCall.execute {
-            val landmarkAddress = landmark.getAddress() ?: AddressInfo()
+            val landmarkAddress = landmark.addressInfo ?: AddressInfo()
 
             val street = landmarkAddress.getField(EAddressField.StreetName) ?: ""
             val city = landmarkAddress.getField(EAddressField.City) ?: ""
@@ -137,7 +137,7 @@ object UtilUITexts {
 
             if (bFillAllFields || (city.isEmpty() && settlement.isEmpty() && county.isEmpty())) {
                 var landmarkList = ArrayList<Landmark>()
-                val coords = landmark.getCoordinates()
+                val coords = landmark.coordinates
                 if (coords != null) {
                     val mainView = GEMApplication.getMainMapView()
                     landmarkList = mainView?.getNearestLocations(coords) ?: landmarkList
@@ -145,7 +145,7 @@ object UtilUITexts {
 
                 if (landmarkList.isNotEmpty()) {
                     val lmk = landmarkList[0]
-                    val lmkAddress = lmk.getAddress()
+                    val lmkAddress = lmk.addressInfo
 
                     val aStreet = lmkAddress?.getField(EAddressField.StreetName) ?: ""
                     val aCity = lmkAddress?.getField(EAddressField.City) ?: ""
@@ -217,14 +217,14 @@ object UtilUITexts {
         return SdkCall.execute {
             var name = "" // result
 
-            var str = landmark.getName() ?: ""
+            var str = landmark.name ?: ""
 
             if (str.isNotEmpty()) {
                 name = str
                 return@execute name
             }
 
-            val landmarkAddress = landmark.getAddress()
+            val landmarkAddress = landmark.addressInfo
             str = landmarkAddress?.getField(EAddressField.StreetName) ?: ""
 
             if (str.isNotEmpty()) {
@@ -240,8 +240,8 @@ object UtilUITexts {
             str = landmarkAddress?.getField(EAddressField.City) ?: ""
             if (str.isNotEmpty()) {
                 name = str
-                val image = landmark.getImage() ?: return@execute name
-                if (image.getUid() == SdkIcons.Other_UI.LocationDetails_SendDetails.value.toLong()) {
+                val image = landmark.image ?: return@execute name
+                if (image.uid == SdkIcons.Other_UI.LocationDetails_SendDetails.value.toLong()) {
                     val postalCode = landmarkAddress?.getField(EAddressField.PostalCode) ?: ""
 
                     if (postalCode.isNotEmpty()) {
@@ -288,7 +288,7 @@ object UtilUITexts {
             landmark ?: return@execute Pair("", "")
 
             var formattedDescription: String
-            val landmarkAddress = landmark.getAddress()
+            val landmarkAddress = landmark.addressInfo
 
             var formattedName = formatName(landmark)
             formattedName.trim()
@@ -382,7 +382,7 @@ object UtilUITexts {
                 }
             }
 
-            val landmarkDescrpition = landmark.getDescription() ?: ""
+            val landmarkDescrpition = landmark.description ?: ""
 
             return@execute if (formattedDescription.isEmpty() && landmarkDescrpition.isNotEmpty()) {
                 Pair(formattedName, landmarkDescrpition)

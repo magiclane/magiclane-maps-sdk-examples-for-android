@@ -14,8 +14,8 @@ import com.generalmagic.sdk.routesandnavigation.ESurfaceType
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkIcons
-import com.generalmagic.sdk.util.StringIds
 import com.generalmagic.sdk.util.SdkUtil.getUIString
+import com.generalmagic.sdk.util.StringIds
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -124,11 +124,11 @@ object GEMRouteProfileView {
         removeHighlightedSteepnessPathsFromMap()
 
         mRoute =
-            mMapView.preferences()?.routes()?.getMainRoute() ?: Route() // TODO maybe route nullable
+            mMapView.preferences?.routes?.getMainRoute() ?: Route() // TODO maybe route nullable
 
         val timeDistance = mRoute.getTimeDistance(false)
 
-        mRouteLengthInMeters = timeDistance?.getTotalDistance() ?: 0
+        mRouteLengthInMeters = timeDistance?.totalDistance ?: 0
         mCrtMaxXInUnitType = getDist(mRouteLengthInMeters)
 
         val steepnessIntervals = arrayListOf<Float>()
@@ -230,7 +230,7 @@ object GEMRouteProfileView {
         mMapView = mapView
         mAltitudeFactor = 1.0
 
-        when (SdkSettings().getUnitSystem()) {
+        when (SdkSettings().unitSystem) {
             EUnitSystem.ImperialUk,
             EUnitSystem.ImperialUs -> {
                 mAltitudeFactor = METERS_TO_FT
@@ -407,7 +407,7 @@ object GEMRouteProfileView {
 
         val timeDistance = mRoute.getTimeDistance(false)
         distInMeters = distInMeters.coerceAtMost(
-            timeDistance?.getTotalDistance()?.toDouble() ?: Double.MAX_VALUE
+            timeDistance?.totalDistance?.toDouble() ?: Double.MAX_VALUE
         )
 
         return distInMeters / distanceFactor
@@ -510,7 +510,7 @@ object GEMRouteProfileView {
 
 
     fun getElevationChartVerticalAxisUnit(): String {
-        return when (SdkSettings().getUnitSystem()) {
+        return when (SdkSettings().unitSystem) {
             EUnitSystem.ImperialUk,
             EUnitSystem.ImperialUs -> {
                 getUIString(StringIds.eStrFt)
@@ -599,17 +599,17 @@ object GEMRouteProfileView {
                 val landmark = Landmark()
                 ImageDatabase().getImageById(SdkIcons.Other_UI.Search_Results_Pin.value)
                     ?.let { image ->
-                        landmark.setImage(image)
+                        landmark.image = image
                     }
                 mHighlightedLmkList.add(landmark)
 
                 val xM = (x * getCurrentUnitToMetersDistanceFactor()).toInt().coerceIn(
                     0,
-                    mRoute.getTimeDistance(false)?.getTotalDistance()
+                    mRoute.getTimeDistance(false)?.totalDistance
                 )
 
                 mRoute.getCoordinateOnRoute(xM)?.let {
-                    mHighlightedLmkList.first().setCoordinates(it)
+                    mHighlightedLmkList.first().coordinates = it
                 }
 
                 if ((mPrevTouchXMeters == xM) && (evt == TTouchChartEvent.EDown.ordinal)) {
@@ -650,13 +650,13 @@ object GEMRouteProfileView {
 
                 mDeactivateHighlights = true
 
-                val viewport = m_mapView.getViewport()
-                val xy = mHighlightedLmkList.first().getCoordinates()?.let {
+                val viewport = m_mapView.viewport
+                val xy = mHighlightedLmkList.first().coordinates?.let {
                     m_mapView.transformWgsToScreen(it)
                 }
 
                 if (viewport != null && xy != null) {
-                    if (!pointInEnvelope(viewport, xy.x(), xy.y())) {
+                    if (!pointInEnvelope(viewport, xy.x, xy.y)) {
                         zoomRoute(mCrtMinXInUnitType, mCrtMaxXInUnitType)
                     }
                 }
@@ -665,10 +665,10 @@ object GEMRouteProfileView {
     }
 
     private fun pointInEnvelope(rect: Rect, x: Int, y: Int): Boolean {
-        return ((x >= rect.x()) &&
-            (x <= rect.right()) &&
-            (y >= rect.y()) &&
-            (y <= rect.bottom()))
+        return ((x >= rect.x) &&
+            (x <= rect.right) &&
+            (y >= rect.y) &&
+            (y <= rect.bottom))
     }
 
     private fun zoomRoute(minX: Double, maxX: Double) {
@@ -683,7 +683,7 @@ object GEMRouteProfileView {
             val distBegin = (minX * distanceFactor).toInt()
             val distEnd = (maxX * distanceFactor).toInt()
 
-            m_mapView.preferences()?.setMapViewPerspective(EMapViewPerspective.TwoDimensional)
+            m_mapView.preferences?.setMapViewPerspective(EMapViewPerspective.TwoDimensional)
 
             var bAutomaticZoomToRoute = false
             if (minX == 0.0) {
@@ -694,7 +694,7 @@ object GEMRouteProfileView {
             }
 
             if (bAutomaticZoomToRoute) {
-                val mainRoute = m_mapView.preferences()?.routes()?.getMainRoute()
+                val mainRoute = m_mapView.preferences?.routes?.getMainRoute()
                 flyToRoute(mainRoute)
             } else {
 //                setAutomaticZoomToRoute(false) TODO
@@ -707,7 +707,7 @@ object GEMRouteProfileView {
     }
 
     private fun getDist(meters: Int): Double {
-        val unitsSystem = SdkSettings().getUnitSystem()
+        val unitsSystem = SdkSettings().unitSystem
 
         var miles = 0.0
         val yardsOrFeet: Double
@@ -769,7 +769,7 @@ object GEMRouteProfileView {
     private fun removeHighlightedPathsFromMap(paths: ArrayList<Path>) {
         mMapView.let {
             if (paths.isNotEmpty()) {
-                val pathCollection = mMapView.preferences()?.paths()
+                val pathCollection = mMapView.preferences?.paths
                 pathCollection?.let {
                     for (path in paths) {
                         pathCollection.remove(path)
@@ -825,7 +825,7 @@ object GEMRouteProfileView {
                 TElevationProfileButtonType.EElevationAtDestination.ordinal -> {
                     getElevationString(
                         terrainProfile.getElevation(
-                            mRoute.getTimeDistance(false)?.getTotalDistance() ?: 0
+                            mRoute.getTimeDistance(false)?.totalDistance ?: 0
                         )
                     )
                 }
@@ -852,7 +852,7 @@ object GEMRouteProfileView {
         val routeTerrainProfile = mRoute.getTerrainProfile()
 
         routeTerrainProfile.let {
-            val unitsSystem = SdkSettings().getUnitSystem()
+            val unitsSystem = SdkSettings().unitSystem
 
             tmp = when (unitsSystem) {
                 EUnitSystem.Metric -> {
@@ -938,7 +938,7 @@ object GEMRouteProfileView {
                 TElevationProfileButtonType.EElevationAtDeparture.ordinal -> {
                 }
                 TElevationProfileButtonType.EElevationAtDestination.ordinal -> {
-                    distance = mRoute.getTimeDistance(false)?.getTotalDistance()?.toDouble() ?: 0.0
+                    distance = mRoute.getTimeDistance(false)?.totalDistance?.toDouble() ?: 0.0
                 }
 
                 TElevationProfileButtonType.EMinElevation.ordinal -> {
@@ -955,10 +955,10 @@ object GEMRouteProfileView {
 
             val image = ImageDatabase().getImageById(SdkIcons.Other_UI.Search_Results_Pin.value)
             image?.let {
-                landmark.setImage(image)
+                landmark.image = image
                 mHighlightedLmkList.add(landmark)
                 mRoute.getCoordinateOnRoute(distance.toInt())?.let {
-                    mHighlightedLmkList.first().setCoordinates(it)
+                    mHighlightedLmkList.first().coordinates = it
                     mMapView.deactivateHighlight()
                     val settings = HighlightRenderSettings()
                     settings.setOptions(
@@ -1198,7 +1198,7 @@ object GEMRouteProfileView {
                     break
                 }
 
-                val pathsCollection = mMapView.preferences()?.paths()
+                val pathsCollection = mMapView.preferences?.paths
                 for (it in item.value) {
                     val path = mRoute.getPath(it.mStartDistanceM, it.mStartDistanceM + it.mLengthM)
                     path?.let { itPath ->
@@ -1220,19 +1220,19 @@ object GEMRouteProfileView {
         return when (type) {
 
             ESurfaceType.Asphalt -> {
-                Rgba(127, 137, 149, 255).value()
+                Rgba(127, 137, 149, 255).value
             }
 
             ESurfaceType.Paved -> {
-                Rgba(212, 212, 212, 255).value()
+                Rgba(212, 212, 212, 255).value
             }
 
             ESurfaceType.Unpaved -> {
-                Rgba(157, 133, 104, 255).value()
+                Rgba(157, 133, 104, 255).value
             }
 
             ESurfaceType.Unknown -> {
-                Rgba(0, 0, 0, 255).value()
+                Rgba(0, 0, 0, 255).value
             }
 
             else -> {
@@ -1267,8 +1267,8 @@ object GEMRouteProfileView {
     }
 
     private fun zoomToRoute() {
-        mMapView.preferences()?.setMapViewPerspective(EMapViewPerspective.TwoDimensional)
-        val mainRoute = mMapView.preferences()?.routes()?.getMainRoute()
+        mMapView.preferences?.setMapViewPerspective(EMapViewPerspective.TwoDimensional)
+        val mainRoute = mMapView.preferences?.routes?.getMainRoute()
         flyToRoute(mainRoute)
     }
 
@@ -1295,31 +1295,31 @@ object GEMRouteProfileView {
     private fun getWayColor(type: ERoadType): Int {
         return when (type) {
             ERoadType.Motorways -> {
-                Rgba(242, 144, 99, 255).value()
+                Rgba(242, 144, 99, 255).value
             }
 
             ERoadType.StateRoad -> {
-                Rgba(242, 216, 99, 255).value()
+                Rgba(242, 216, 99, 255).value
             }
 
             ERoadType.Road -> {
-                Rgba(153, 163, 175, 255).value()
+                Rgba(153, 163, 175, 255).value
             }
 
             ERoadType.Street -> {
-                Rgba(175, 185, 193, 255).value()
+                Rgba(175, 185, 193, 255).value
             }
 
             ERoadType.Cycleway -> {
-                Rgba(15, 175, 135, 255).value()
+                Rgba(15, 175, 135, 255).value
             }
 
             ERoadType.Path -> {
-                Rgba(196, 200, 211, 255).value()
+                Rgba(196, 200, 211, 255).value
             }
 
             ERoadType.SingleTrack -> {
-                Rgba(166, 133, 96, 255).value()
+                Rgba(166, 133, 96, 255).value
             }
         }
     }
@@ -1444,7 +1444,7 @@ object GEMRouteProfileView {
                     break
                 }
 
-                val pathsCollection = mMapView.preferences()?.paths()
+                val pathsCollection = mMapView.preferences?.paths
                 for (it in item.value) {
                     val path = mRoute.getPath(it.mStartDistanceM, it.mStartDistanceM + it.mLengthM)
                     path?.let { itPath ->
@@ -1477,47 +1477,47 @@ object GEMRouteProfileView {
                 if (auxIndex < 0) {
                     return when (item.key) {
                         0 -> { // < -16
-                            Rgba(4, 120, 8, 255).value()
+                            Rgba(4, 120, 8, 255).value
                         }
 
                         1 -> { // [-16, -10]
-                            Rgba(38, 151, 41, 255).value()
+                            Rgba(38, 151, 41, 255).value
                         }
 
                         2 -> { // [-10, -7]
-                            Rgba(73, 183, 76, 255).value()
+                            Rgba(73, 183, 76, 255).value
                         }
 
                         3 -> { // [-7, -4]
-                            Rgba(112, 216, 115, 255).value()
+                            Rgba(112, 216, 115, 255).value
                         }
 
                         4 -> { // [-4, -1]
-                            Rgba(154, 250, 156, 255).value()
+                            Rgba(154, 250, 156, 255).value
                         }
 
                         5 -> { // [-1, 1]
-                            Rgba(255, 197, 142, 255).value()
+                            Rgba(255, 197, 142, 255).value
                         }
 
                         6 -> { // [1, 4]
-                            Rgba(240, 141, 141, 255).value()
+                            Rgba(240, 141, 141, 255).value
                         }
 
                         7 -> { // [4, 7]
-                            Rgba(220, 105, 106, 255).value()
+                            Rgba(220, 105, 106, 255).value
                         }
 
                         8 -> { // [7, 10]
-                            Rgba(201, 73, 72, 255).value()
+                            Rgba(201, 73, 72, 255).value
                         }
 
                         9 -> { // [10, 16]
-                            Rgba(182, 43, 42, 255).value()
+                            Rgba(182, 43, 42, 255).value
                         }
 
                         10 -> { // > 16
-                            Rgba(164, 16, 15, 255).value()
+                            Rgba(164, 16, 15, 255).value
                         }
 
                         else -> {
@@ -1530,7 +1530,6 @@ object GEMRouteProfileView {
 
         return 0
     }
-
 
     fun getSteepnessText(index: Int): String {
         if (indexIsValid(index, mRoadsTypes.size)) {
@@ -1719,7 +1718,7 @@ object GEMRouteProfileView {
                     break
                 }
 
-                val pathsCollection = mMapView.preferences()?.paths()
+                val pathsCollection = mMapView.preferences?.paths
                 for (it in item.value) {
                     val path = mRoute.getPath(it.mStartDistanceM, it.mStartDistanceM + it.mLengthM)
                     path?.let { itPath ->

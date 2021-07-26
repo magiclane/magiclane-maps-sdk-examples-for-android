@@ -245,7 +245,7 @@ open class RouteCustom(context: Context, attrs: AttributeSet?) :
             }
             it.onIntermediatePicked = { landmark ->
                 landmarks.add(landmark)
-                SdkCall.execute { landmark.setName("Intermediate") }
+                SdkCall.execute { landmark.name = "Intermediate" }
             }
 
             it.onDestinationPicked = { landmark ->

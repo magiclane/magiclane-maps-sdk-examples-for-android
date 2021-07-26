@@ -140,13 +140,13 @@ class SearchAddressActivity : BaseActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         SdkCall.execute {
-            val position = PositionService().getPosition()
+            val position = PositionService().position
             var countryISOCode = ""
             if (position != null) {
                 countryISOCode = MapDetails().getCountryCode(
                     Coordinates(
-                        position.getLatitude(),
-                        position.getLongitude()
+                        position.latitude,
+                        position.longitude
                     )
                 ) ?: ""
             }

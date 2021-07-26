@@ -71,7 +71,10 @@ open class BaseActivity : AppCompatActivity(), TutorialsOpener.ITutorialControll
 
     final override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>, grantResults: IntArray
-    ) = GEMApplication.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        GEMApplication.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+    }
 
     // APP METHODS
 

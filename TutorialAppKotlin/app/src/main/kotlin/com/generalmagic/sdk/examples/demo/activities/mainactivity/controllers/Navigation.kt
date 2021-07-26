@@ -245,13 +245,13 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
     init {
         SdkCall.execute {
             alarmService = AlarmService.produce(alarmListener)
-            alarmService?.setAlarmDistance(nAlarmDistanceMeters)
+            alarmService?.alarmDistance = nAlarmDistanceMeters
 
             val availableOverlays = OverlayService().getAvailableOverlays(null)?.first
             if (availableOverlays != null) {
                 for (item in availableOverlays) {
-                    if (item.getUid() == ECommonOverlayId.Safety.value) {
-                        alarmService?.overlays()?.add(item)
+                    if (item.uid == ECommonOverlayId.Safety.value) {
+                        alarmService?.overlays?.add(item.uid)
                     }
                 }
             }
@@ -286,11 +286,11 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
         val mainMap = GEMApplication.getMainMapView() ?: return
 
         SdkCall.execute {
-            mainMap.preferences()?.enableCursor(false)
+            mainMap.preferences?.enableCursor = false
 
             val route = getRoute()
             if (route != null) {
-                mainMap.preferences()?.routes()?.add(route, true)
+                mainMap.preferences?.routes?.add(route, true)
             }
 
             PositionService().addListener(positionListener, EDataType.Position)
@@ -310,7 +310,7 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
 
         SdkCall.execute {
             PositionService().removeListener(positionListener)
-            mainMap.preferences()?.routes()?.clear()
+            mainMap.preferences?.routes?.clear()
 // 			MainMapStatusFollowingProvider.getInstance().doUnFollow()
         }
         Tutorials.openHelloWorldTutorial()
@@ -469,7 +469,6 @@ open class SimRouteController(context: Context, attrs: AttributeSet?) :
 open class PredefNavController(context: Context, attrs: AttributeSet?) :
     BaseNavigationController(context, attrs) {
 
-    private val positionService = PositionService()
     private val searchService = SearchService()
 
     override fun doStart() {
@@ -531,7 +530,7 @@ class CustomSimController(context: Context, attrs: AttributeSet?) :
 
             it.onIntermediatePicked = { landmark ->
                 landmarks.add(landmark)
-                SdkCall.execute { landmark.setName("Intermediate") }
+                SdkCall.execute { landmark.name = "Intermediate" }
             }
 
             it.onDestinationPicked = { landmark ->
@@ -581,7 +580,7 @@ class CustomNavController(context: Context, attrs: AttributeSet?) :
             }
             it.onIntermediatePicked = { landmark ->
                 landmarks.add(landmark)
-                SdkCall.execute { landmark.setName("Intermediate") }
+                SdkCall.execute { landmark.name = "Intermediate" }
             }
 
             it.onDestinationPicked = { landmark ->

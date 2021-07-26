@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
 
             if (reason == SdkError.NoError) {
                 if (results.isNotEmpty()) {
-                    val name = SdkCall.execute { results[0].getName() }
+                    val name = SdkCall.execute { results[0].name }
                     locationName?.text = name
                     requestWiki(results[0])
                 } else {
@@ -136,13 +136,13 @@ class MainActivity : AppCompatActivity() {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private fun getWikiPageDescription(): String {
-        return SdkCall.execute { externalInfoService.getWikiPageDescription() } ?: ""
+        return SdkCall.execute { externalInfoService.wikiPageDescription } ?: ""
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private fun getWikiPageURL(): String {
-        return SdkCall.execute { externalInfoService.getWikiPageURL() } ?: ""
+        return SdkCall.execute { externalInfoService.wikiPageURL } ?: ""
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

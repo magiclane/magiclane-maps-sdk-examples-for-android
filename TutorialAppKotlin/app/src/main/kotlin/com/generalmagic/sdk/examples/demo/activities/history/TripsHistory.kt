@@ -58,12 +58,12 @@ class TripsHistory {
     private var mRouteBookmarks = RouteBookmarks.produce("Trips")
 
     fun getTripsCount(): Int {
-        return mRouteBookmarks?.size() ?: 0
+        return mRouteBookmarks?.size ?: 0
     }
 
     fun saveTrip(trip: Trip) {
         mRouteBookmarks.let { routeBookmarks ->
-            val nTrips = routeBookmarks?.size() ?: 0
+            val nTrips = routeBookmarks?.size ?: 0
             var tmpRoute: Trip?
             var filledIndexes = IntArray(nTrips) { Int.MAX_VALUE }
 
@@ -136,7 +136,7 @@ class TripsHistory {
             }
 
             trip.mWaypoints = lmkList
-            trip.mTimeStamp = routeBookmarks?.getTimestamp(index)?.asInt() ?: 0L
+            trip.mTimeStamp = routeBookmarks?.getTimestamp(index)?.longValue ?: 0L
 
             var fromAToB = false
             val name = routeBookmarks?.getName(index)
@@ -163,7 +163,7 @@ class TripsHistory {
 
     fun removeTrip(index: Int): Boolean {
         mRouteBookmarks.let { routeBookmarks ->
-            val nTrips = routeBookmarks?.size() ?: 0
+            val nTrips = routeBookmarks?.size ?: 0
             if (index in 0 until nTrips) {
                 routeBookmarks?.remove(index)
                 return true
@@ -196,13 +196,13 @@ class TripsHistory {
         var bEquals: Boolean
         for (index in 0 until nCnt1) {
             val trip1Lat =
-                trip1.mWaypoints?.elementAt(index)?.getCoordinates()?.getLatitude() ?: 0.0
+                trip1.mWaypoints?.elementAt(index)?.coordinates?.latitude ?: 0.0
             val trip1Lon =
-                trip1.mWaypoints?.elementAt(index)?.getCoordinates()?.getLongitude() ?: 0.0
+                trip1.mWaypoints?.elementAt(index)?.coordinates?.longitude ?: 0.0
             val trip2Lat =
-                trip2.mWaypoints?.elementAt(index)?.getCoordinates()?.getLatitude() ?: 0.0
+                trip2.mWaypoints?.elementAt(index)?.coordinates?.latitude ?: 0.0
             val trip2Lon =
-                trip2.mWaypoints?.elementAt(index)?.getCoordinates()?.getLongitude() ?: 0.0
+                trip2.mWaypoints?.elementAt(index)?.coordinates?.longitude ?: 0.0
             bEquals = equal(trip1Lat, trip2Lat) && equal(trip1Lon, trip2Lon)
 
             if (!bEquals) {

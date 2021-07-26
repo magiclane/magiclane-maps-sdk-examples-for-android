@@ -35,7 +35,7 @@ class OnlineMapsActivity : MapsListActivity() {
             models.clear()
 
             // get call result
-            val result = ContentStore().getStoreContentList(EContentType.RoadMap.value)
+            val result = ContentStore().getStoreContentList(EContentType.RoadMap)
             if (result != null) models = result.first
 
             GEMApplication.postOnMain {
@@ -53,7 +53,7 @@ class OnlineMapsActivity : MapsListActivity() {
         super.onCreate(savedInstanceState)
 
         SdkCall.execute {
-            contentStore.asyncGetStoreContentList(EContentType.RoadMap.value, progressListener)
+            contentStore.asyncGetStoreContentList(EContentType.RoadMap, progressListener)
         }
     }
 
@@ -64,7 +64,7 @@ class OnlineMapsActivity : MapsListActivity() {
         var lastName = ""
         var sameInRow = false
         for (i in 0 until storeItems.size) {
-            val crtName = SdkCall.execute { storeItems[i].getChapterName() } ?: ""
+            val crtName = SdkCall.execute { storeItems[i].chapterName } ?: ""
 
             if (crtName == lastName) {
                 if (!sameInRow) {
@@ -103,7 +103,7 @@ class OnlineMapsActivity : MapsListActivity() {
                         holder.updateViews(wrapped)
                     }
                 }
-                when (SdkCall.execute { item.getStatus() }) {
+                when (SdkCall.execute { item.status }) {
                     EContentStoreItemStatus.Paused,
                     EContentStoreItemStatus.Completed -> {
                         val menu = PopupMenu(parent.context, parent)
@@ -151,7 +151,7 @@ class OnlineMapsActivity : MapsListActivity() {
 
             ArrayList(
                 models.filter {
-                    val arg = SdkCall.execute { it.getName() }
+                    val arg = SdkCall.execute { it.name }
                     val lowerArg = arg?.lowercase(Locale.getDefault()) ?: ""
                     val argTokens = lowerArg.split(' ', '-')
 
@@ -201,7 +201,7 @@ class OnlineMapsActivity : MapsListActivity() {
 // 			
 // 		}
 // 		else{
-        when (SdkCall.execute { item.getStatus() }) {
+        when (SdkCall.execute { item.status }) {
             EContentStoreItemStatus.Paused, EContentStoreItemStatus.Unavailable -> {
                 val taskRefresh = {
                     GEMApplication.postOnMain {

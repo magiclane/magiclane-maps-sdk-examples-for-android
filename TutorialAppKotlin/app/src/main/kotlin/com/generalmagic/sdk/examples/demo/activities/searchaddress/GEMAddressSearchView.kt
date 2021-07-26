@@ -232,9 +232,9 @@ object GEMAddressSearchView {
     private fun showOnMap(viewId: Long, landmark: Landmark?) {
         if (landmark == null) return
 
-        var name = landmark.getName() ?: ""
+        var name = landmark.name ?: ""
         name = name.replace("<", "").replace(">", "")
-        landmark.setName(name)
+        landmark.name = name
 
         GEMApplication.postOnMain {
             Tutorials.openWikiTutorial(landmark)
@@ -351,8 +351,8 @@ object GEMAddressSearchView {
     fun onCountrySelected(country: Landmark) {
         SdkCall.checkCurrentThread()
 
-        val isoCodeOld = mCountry?.getAddress()?.getField(EAddressField.CountryCode)
-        val isoCodeNew = country.getAddress()?.getField(EAddressField.CountryCode)
+        val isoCodeOld = mCountry?.addressInfo?.getField(EAddressField.CountryCode)
+        val isoCodeNew = country.addressInfo?.getField(EAddressField.CountryCode)
 
         if (isoCodeOld != isoCodeNew) {
             mCountry = country
@@ -372,7 +372,7 @@ object GEMAddressSearchView {
 
     fun getCountryFlag(width: Int, height: Int): Bitmap? {
         SdkCall.checkCurrentThread()
-        val isoCode = mCountry?.getAddress()?.getField(EAddressField.CountryCode)
+        val isoCode = mCountry?.addressInfo?.getField(EAddressField.CountryCode)
         if (isoCode?.isNotEmpty() == true) {
             val image = MapDetails().getCountryFlag(isoCode)
             return Utils.getImageAsBitmap(image, width, height)
@@ -418,9 +418,9 @@ object GEMAddressSearchView {
 
         if (detailLevel == EAddressDetailLevel.State) {
             text =
-                landmark?.getAddress()?.getField(EAddressField.StateCode)
+                landmark?.addressInfo?.getField(EAddressField.StateCode)
         } else if (detailLevel == EAddressDetailLevel.HouseNumber) {
-            text = SdkCall.execute { landmark?.getName() } ?: ""
+            text = SdkCall.execute { landmark?.name } ?: ""
 
             var pos: Int = text.indexOf(">")
             if (pos > 0) {
@@ -434,7 +434,7 @@ object GEMAddressSearchView {
         } else if (detailLevel == EAddressDetailLevel.Crossing && item.anywhere) {
             text = getUIString(StringIds.eStrTempAnywhere)
         } else {
-            text = SdkCall.execute { landmark?.getName() }
+            text = SdkCall.execute { landmark?.name }
         }
 
         return text ?: ""
@@ -449,7 +449,7 @@ object GEMAddressSearchView {
         var description: String? = null
 
         if (detailLevel == EAddressDetailLevel.State) {
-            description = SdkCall.execute { landmark?.getName() }
+            description = SdkCall.execute { landmark?.name }
         }
 
         return description ?: ""
@@ -462,7 +462,7 @@ object GEMAddressSearchView {
         val landmark = item.mLandmark
         if (item.mAddressDetailLevel == EAddressDetailLevel.City) {
             return SdkCall.execute {
-                return@execute Utils.getImageAsBitmap(landmark?.getImage(), width, height)
+                return@execute Utils.getImageAsBitmap(landmark?.image, width, height)
             }
         }
 

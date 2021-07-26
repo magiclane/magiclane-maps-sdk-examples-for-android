@@ -241,7 +241,7 @@ class CustomAdapter(private val dataSet: ArrayList<Landmark>) :
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
 
-        viewHolder.textView.text = SdkCall.execute { dataSet[position].getName() }
+        viewHolder.textView.text = SdkCall.execute { dataSet[position].name }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

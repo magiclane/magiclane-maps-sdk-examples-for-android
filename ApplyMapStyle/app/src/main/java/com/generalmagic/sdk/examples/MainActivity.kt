@@ -115,11 +115,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyStyle(style: ContentStoreItem) = SdkCall.execute {
         // Apply the style to the main map view.
-        gemSurfaceView.getDefaultMapView()?.preferences()?.setMapStyleById(style.getId())
+        gemSurfaceView.getDefaultMapView()?.preferences?.setMapStyleById(style.id)
     }
 
     private fun startDownloadingStyle(style: ContentStoreItem) = SdkCall.execute {
-        val styleName = style.getName() ?: "NO_NAME"
+        val styleName = style.name ?: "NO_NAME"
 
         // Start downloading a map style item.
         style.asyncDownload(

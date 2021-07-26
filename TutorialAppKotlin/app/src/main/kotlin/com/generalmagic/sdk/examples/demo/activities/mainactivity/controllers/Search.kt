@@ -155,12 +155,12 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
 
             if (!itTrip.mIsFromAToB) {
                 val list = arrayListOf<Landmark>()
-                val position = PositionService().getPosition()
+                val position = PositionService().position
                 if (position != null) {
                     list.add(
                         Landmark(
                             "",
-                            Coordinates(position.getLatitude(), position.getLongitude())
+                            Coordinates(position.latitude, position.longitude)
                         )
                     )
                 }
@@ -179,7 +179,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
     }
 
     protected fun getCurrentCoords(): Coordinates? = SdkCall.execute {
-        GEMApplication.getMainMapView()?.getCursorWgsPosition() ?: return@execute null
+        GEMApplication.getMainMapView()?.cursorWgsPosition ?: return@execute null
     }
 }
 
@@ -218,8 +218,8 @@ class SearchTextActivity : BaseSearchTutorialActivity() {
         SdkCall.execute {
             val reference = getCurrentCoords() ?: return@execute
 
-            searchService.preferences.setSearchAddresses(true)
-            searchService.preferences.setSearchMapPOIs(true)
+            searchService.preferences.searchAddressesEnabled = true
+            searchService.preferences.searchMapPOIsEnabled = true
 
             referencePoint = reference
             searchService.searchByFilter(text, reference)
@@ -240,7 +240,7 @@ class SearchNearbyActivity : BaseSearchTutorialActivity() {
         SdkCall.execute {
             val reference = getCurrentCoords() ?: return@execute
 
-            searchService.preferences.setSearchMapPOIs(true)
+            searchService.preferences.searchMapPOIsEnabled = true
 
             referencePoint = reference
             searchService.searchAroundPosition(reference, "")
@@ -280,7 +280,7 @@ class SearchHistoryActivity : BaseSearchTutorialActivity() {
         SdkCall.execute {
             val reference = getCurrentCoords() ?: return@execute
 
-            searchService.preferences.setSearchMapPOIs(true)
+            searchService.preferences.searchMapPOIsEnabled = true
 
             listToDisplay = arrayListOf()
             GEMApplication.getHistoryLandmarkStore()?.getLandmarks()?.let { list ->
@@ -382,7 +382,7 @@ class SearchFavouritesActivity : BaseSearchTutorialActivity() {
         SdkCall.execute {
             val reference = getCurrentCoords() ?: return@execute
 
-            searchService.preferences.setSearchMapPOIs(true)
+            searchService.preferences.searchMapPOIsEnabled = true
 
             listToDisplay = arrayListOf()
             GEMApplication.getFavouritesLandmarkStore()?.getLandmarks()?.let { list ->
@@ -445,7 +445,7 @@ class SearchPoiActivity : BaseSearchTutorialActivity() {
     }
 
     private fun getGasCategory(): LandmarkCategory? = SdkCall.execute {
-        val categoriesList = GenericCategories().getCategories() ?: return@execute null
+        val categoriesList = GenericCategories().categories ?: return@execute null
 
         var category: LandmarkCategory? = null
         if (categoriesList.size > 0) {
@@ -464,8 +464,8 @@ class SearchPoiActivity : BaseSearchTutorialActivity() {
             val category = getGasCategory()
 
             category?.let {
-                searchService.preferences.lmks()
-                    ?.addStoreCategoryId(it.getLandmarkStoreId(), it.getId())
+                searchService.preferences.landmarkStores
+                    ?.addStoreCategoryId(it.landmarkStoreId, it.id)
             }
 
             referencePoint = reference

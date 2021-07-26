@@ -57,7 +57,7 @@ class RouteProfileView(val parent: IMapControllerActivity) {
             GEMApplication.getMainMapView().let { mapView ->
                 SdkCall.execute {
                     mapView?.resize(fullMapViewCoords)
-                    GEMRouteProfileView.flyToRoute(mapView?.preferences()?.routes()?.getMainRoute())
+                    GEMRouteProfileView.flyToRoute(mapView?.preferences?.routes?.getMainRoute())
                 }
             }
             GEMApplication.postOnMainDelayed({
@@ -117,7 +117,7 @@ class RouteProfileView(val parent: IMapControllerActivity) {
                                 SdkCall.execute {
                                     mapView?.resize(rightMapViewCoords)
                                     GEMRouteProfileView.flyToRoute(
-                                        GEMApplication.getMainMapView()?.preferences()?.routes()
+                                        GEMApplication.getMainMapView()?.preferences?.routes
                                             ?.getMainRoute()
                                     )
                                 }
@@ -136,7 +136,7 @@ class RouteProfileView(val parent: IMapControllerActivity) {
                                 SdkCall.execute {
                                     mapView?.resize(topUpMapViewCoords)
                                     GEMRouteProfileView.flyToRoute(
-                                        GEMApplication.getMainMapView()?.preferences()?.routes()
+                                        GEMApplication.getMainMapView()?.preferences?.routes
                                             ?.getMainRoute()
                                     )
                                 }

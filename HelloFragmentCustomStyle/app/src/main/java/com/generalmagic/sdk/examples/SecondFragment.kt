@@ -62,6 +62,6 @@ class SecondFragment : Fragment() {
         if (data.isEmpty()) return@execute
 
         // Apply style.
-        mapView?.preferences()?.setMapStyleByDataBuffer(DataBuffer(data))
+        mapView?.preferences?.setMapStyleByDataBuffer(DataBuffer(data))
     }
 }

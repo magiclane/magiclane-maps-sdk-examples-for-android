@@ -191,9 +191,9 @@ class CustomAdapter(private val dataSet: ArrayList<RouteInstruction>) :
                 }
 
                 val distance =
-                    instruction.getTraveledTimeDistance()?.getTotalDistance()?.toDouble() ?: 0.0
+                    instruction.getTraveledTimeDistance()?.totalDistance?.toDouble() ?: 0.0
 
-                val distText = SdkUtil.getDistText(distance.toInt(), SdkSettings().getUnitSystem())
+                val distText = SdkUtil.getDistText(distance.toInt(), SdkSettings().unitSystem)
                 status = distText.first
                 description = distText.second
                 if (status == "0.00") {

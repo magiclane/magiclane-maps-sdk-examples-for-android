@@ -52,13 +52,13 @@ class MainActivity : AppCompatActivity() {
                         // No error encountered, we can handle the results.
                         var models: ArrayList<ContentStoreItem>? = null
                         // Get the list of maps that was retrieved in the content store.
-                        val result = contentStore.getStoreContentList(EContentType.RoadMap.value)
+                        val result = contentStore.getStoreContentList(EContentType.RoadMap)
                         if (result != null) models = result.first
 
                         if (!models.isNullOrEmpty()) {
                             // The map items list is not empty or null.
                             val mapItem = models[0]
-                            val itemName = mapItem.getName()
+                            val itemName = mapItem.name
 
                             // Define a listener to the progress of the map download action.
                             val downloadProgressListener = ProgressListener.create(
@@ -128,7 +128,7 @@ class MainActivity : AppCompatActivity() {
             SdkCall.execute {
                 // Defines an action that should be done after the network is connected.
                 // Call to the content store to asynchronously retrieve the list of maps.
-                contentStore.asyncGetStoreContentList(EContentType.RoadMap.value, progressListener)
+                contentStore.asyncGetStoreContentList(EContentType.RoadMap, progressListener)
             }
         }
 
@@ -210,7 +210,7 @@ class CustomAdapter(private val dataSet: ArrayList<ContentStoreItem>) :
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         viewHolder.text.text =
-            SdkCall.execute { dataSet[position].getName() + " (" + SdkUtil.formatSizeAsText(dataSet[position].getTotalSize()) + ")" }
+            SdkCall.execute { dataSet[position].name + " (" + SdkUtil.formatSizeAsText(dataSet[position].totalSize) + ")" }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

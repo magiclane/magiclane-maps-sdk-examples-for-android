@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         override fun onNavigationStarted() {
             SdkCall.execute {
                 gemSurfaceView.getDefaultMapView()?.let { mapView ->
-                    mapView.preferences()?.enableCursor(false)
+                    mapView.preferences?.enableCursor = false
                     navigationService.getNavigationRoute(this)?.let { route ->
                         mapView.presentRoute(route)
                     }

@@ -250,10 +250,10 @@ class CustomAdapter(private val reference: Coordinates, private val dataSet: Arr
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) = SdkCall.execute {
-        val meters = dataSet[position].getCoordinates()?.getDistance(reference)?.toInt() ?: 0
+        val meters = dataSet[position].coordinates?.getDistance(reference)?.toInt() ?: 0
         val dist = getDistText(meters, EUnitSystem.Metric, true)
 
-        viewHolder.text.text = dataSet[position].getName()
+        viewHolder.text.text = dataSet[position].name
         viewHolder.status.text = dist.first
         viewHolder.description.text = dist.second
     } ?: Unit

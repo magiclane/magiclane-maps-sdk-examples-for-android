@@ -668,7 +668,7 @@ open class SLIViewHolder(val parent: View, private val isHistory: Boolean = fals
 
 open class ContentStoreItemViewModel(val it: ContentStoreItem) : ListItemStatusImage() {
     override fun getIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
-        val countryCodes = it.getCountryCodes() ?: return@execute null
+        val countryCodes = it.countryCodes ?: return@execute null
 
         var countryFlagImage: Image? = null
         if (countryCodes.size > 0) {
@@ -682,23 +682,23 @@ open class ContentStoreItemViewModel(val it: ContentStoreItem) : ListItemStatusI
     }
 
     override fun getStatusIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
-        return@execute Util.getContentStoreStatusAsBitmap(it.getStatus(), width, height)
+        return@execute Util.getContentStoreStatusAsBitmap(it.status, width, height)
     }
 
     override fun getText(): String = SdkCall.execute {
-        return@execute it.getName()
+        return@execute it.name
     } ?: ""
 
     override fun getDescription(): String =
-        UtilUITexts.formatSizeAsText(SdkCall.execute { it.getTotalSize() } ?: 0)
+        UtilUITexts.formatSizeAsText(SdkCall.execute { it.totalSize } ?: 0)
 
     override fun getStatusIconColor(): Int = SdkCall.execute {
         return@execute Util.getColor(
-            when (it.getStatus()) {
+            when (it.status) {
                 EContentStoreItemStatus.Completed -> 0
                 EContentStoreItemStatus.DownloadQueued -> 0
                 else -> {
-                    Rgba(0, 0, 255, 255).value()
+                    Rgba(0, 0, 255, 255).value
                 }
             }
         )
@@ -707,7 +707,7 @@ open class ContentStoreItemViewModel(val it: ContentStoreItem) : ListItemStatusI
 
 open class StylesContentStoreItemViewModel(val it: ContentStoreItem) : StylesListItem() {
     override fun getIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
-        val countryCodes = it.getCountryCodes()
+        val countryCodes = it.countryCodes
 
         var countryFlagImage: Image? = null
         if (countryCodes != null && countryCodes.size > 0) {
@@ -721,31 +721,31 @@ open class StylesContentStoreItemViewModel(val it: ContentStoreItem) : StylesLis
     }
 
     override fun getStatusIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
-        return@execute Util.getContentStoreStatusAsBitmap(it.getStatus(), width, height)
+        return@execute Util.getContentStoreStatusAsBitmap(it.status, width, height)
     }
 
 
     override fun getText(): String = SdkCall.execute {
-        return@execute it.getName()
+        return@execute it.name
     } ?: ""
 
 
     override fun getStatusIconColor(): Int = SdkCall.execute {
         return@execute Util.getColor(
-            when (it.getStatus()) {
+            when (it.status) {
                 EContentStoreItemStatus.Completed -> 0
                 EContentStoreItemStatus.DownloadQueued -> 0
                 else -> {
-                    Rgba(0, 0, 255, 255).value()
+                    Rgba(0, 0, 255, 255).value
                 }
             }
         )
     } ?: 0
 
     override fun getImagePreview(): Bitmap? = SdkCall.execute {
-        val previewImage = it.getImagePreview()
-        val height = previewImage?.getSize()?.height() ?: 0
-        val width = previewImage?.getSize()?.width() ?: 0
+        val previewImage = it.imagePreview
+        val height = previewImage?.size?.height ?: 0
+        val width = previewImage?.size?.width ?: 0
         return@execute Util.createBitmap(previewImage, width, height)
     }
 
@@ -756,7 +756,7 @@ open class StylesContentStoreItemViewModel(val it: ContentStoreItem) : StylesLis
 
 
     override fun isSelectedStyle(): Boolean = SdkCall.execute {
-        return@execute it.getId() == GEMApplication.getMainMapView()?.preferences()?.getMapStyleId()
+        return@execute it.id == GEMApplication.getMainMapView()?.preferences?.mapStyleId
     } ?: false
 }
 
@@ -766,7 +766,7 @@ open class LandmarkViewModel(val it: Landmark?, reference: Coordinates?) : Searc
     init {
         val meters = SdkCall.execute {
             reference ?: return@execute 0
-            return@execute it?.getCoordinates()?.getDistance(reference)?.toInt()
+            return@execute it?.coordinates?.getDistance(reference)?.toInt()
         } ?: 0
 
         dist = SdkCall.execute { getDistText(meters, EUnitSystem.Metric, true) } ?: Pair("", "")
@@ -788,18 +788,16 @@ open class LandmarkViewModel(val it: Landmark?, reference: Coordinates?) : Searc
     }
 
     override fun getText(): String = SdkCall.execute {
-        return@execute it?.getName()
+        return@execute it?.name
     } ?: ""
-
-
+    
     override fun getDescription(): String = SdkCall.execute {
         return@execute UtilUITexts.pairFormatLandmarkDetails(it).second
     } ?: ""
 
     override fun getId(): Long = SdkCall.execute {
-        return@execute it?.getTimestamp()?.asInt()
+        return@execute it?.timestamp?.longValue
     } ?: 0
-
 }
 
 class HistoryLandmarkViewModel(it: Landmark?, reference: Coordinates?) :
@@ -883,7 +881,7 @@ open class StyleItemViewModel(item: ContentStoreItem) : StylesContentStoreItemVi
     var mChecked = false
 
     override fun getIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
-        val mText = it.getName() ?: ""
+        val mText = it.name ?: ""
         var iconId = SdkIcons.Other_UI.ShowMapStandard
         if ((mText.indexOf("Cloud") >= 0) ||
             (mText.indexOf("Temperature") >= 0) ||
@@ -912,21 +910,21 @@ open class StyleItemViewModel(item: ContentStoreItem) : StylesContentStoreItemVi
                 SdkIcons.Other_UI.Button_DownloadCheckmark.value, width, height
             )
         } else {
-            Util.getContentStoreStatusAsBitmap(it.getStatus(), width, height)
+            Util.getContentStoreStatusAsBitmap(it.status, width, height)
         }
     }
 
     override fun getText(): String = SdkCall.execute {
-        return@execute it.getName()
+        return@execute it.name
     } ?: ""
 
     override fun getStatusIconColor(): Int = SdkCall.execute {
         return@execute Util.getColor(
-            when (it.getStatus()) {
+            when (it.status) {
                 EContentStoreItemStatus.Completed -> 0
                 EContentStoreItemStatus.DownloadQueued -> 0
                 else -> {
-                    Rgba(0, 0, 255, 255).value()
+                    Rgba(0, 0, 255, 255).value
                 }
             }
         )

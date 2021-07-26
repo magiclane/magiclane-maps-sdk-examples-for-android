@@ -84,10 +84,10 @@ class MainActivity : AppCompatActivity() {
             val settings = MarkerCollectionDisplaySettings(image = Image())
 
             // Add the collection to the desired map view so it can be displayed.
-            mapView.preferences()?.markers()?.add(markerCollection, settings)
+            mapView.preferences?.markers?.add(markerCollection, settings)
 
             // Center the map on this marker collection's area.
-            markerCollection.getArea()?.let { mapView.centerOnArea(it) }
+            markerCollection.area?.let { mapView.centerOnArea(it) }
         }
     }
 

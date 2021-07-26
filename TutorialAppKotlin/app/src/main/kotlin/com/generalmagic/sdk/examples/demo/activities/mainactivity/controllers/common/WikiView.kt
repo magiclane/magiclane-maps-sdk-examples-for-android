@@ -79,15 +79,15 @@ open class WikiServiceController {
     }
 
     fun getWikiPageDescription(): String {
-        return SdkCall.execute { infoService.getWikiPageDescription() } ?: ""
+        return SdkCall.execute { infoService.wikiPageDescription } ?: ""
     }
 
     fun getWikiPageURL(): String {
-        return SdkCall.execute { infoService.getWikiPageURL() } ?: ""
+        return SdkCall.execute { infoService.wikiPageURL } ?: ""
     }
 
     fun getWikiImagesCount(): Int {
-        return SdkCall.execute { infoService.getWikiImagesCount() } ?: 0
+        return SdkCall.execute { infoService.wikiImagesCount } ?: 0
     }
 
     fun startFetchingImages(): Boolean {
@@ -107,7 +107,7 @@ open class WikiServiceController {
 
     fun getDescriptionAt(index: Int): String {
         val gemString = holders[index].description
-        return SdkCall.execute { gemString?.asKotlinString() } ?: ""
+        return SdkCall.execute { gemString?.value } ?: ""
     }
 
     @Suppress("unused")
@@ -361,7 +361,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         val imgSizes = context.resources.getDimension(R.dimen.navigationImageSize).toInt()
 
         SdkCall.execute {
-            locationDetails.text = value.getName()
+            locationDetails.text = value.name
             locationDetails.description = UtilUITexts.getLandmarkDescription(value)
 
             val icon = Utils.getLandmarkIcon(value, imgSizes)
@@ -392,7 +392,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
             var bCalculateRoute = false
 
             mButtons.add(TLocationDetailsButtonType.EDriveTo.ordinal)
-            val position = PositionService().getPosition()
+            val position = PositionService().position
             if (position != null) {
                 bCalculateRoute = true
             }
@@ -609,7 +609,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
             }
 
             if (route != null) {
-                val time = SdkCall.execute { route.getTimeDistance()?.getTotalTime() } ?: 0
+                val time = SdkCall.execute { route.getTimeDistance()?.totalTime } ?: 0
                 if (time > 0) {
                     val rtt = UtilUITexts.getTimeTextWithDays(time)
                     return String.format("%s %s", rtt.first, rtt.second)
@@ -717,12 +717,12 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
     @Suppress("SameParameterValue")
     private fun calculateRoute(type: ERouteTransportMode, landmark: Landmark) {
         SdkCall.execute {
-            val position = PositionService().getPosition()
+            val position = PositionService().position
             if (position != null) {
                 val waypoints = arrayListOf<Landmark>()
 
-                val latitude = position.getLatitude()
-                val longitude = position.getLongitude()
+                val latitude = position.latitude
+                val longitude = position.longitude
                 waypoints.add(Landmark("", Coordinates(latitude, longitude)))
                 waypoints.add(landmark)
 
@@ -795,12 +795,12 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         if (isValidButtonIndex(index)) {
             when (mButtons[index]) {
                 TLocationDetailsButtonType.EDriveTo.ordinal -> {
-                    val position = SdkCall.execute { PositionService().getPosition() }
+                    val position = SdkCall.execute { PositionService().position }
                     if (position != null) {
                         val waypoints = arrayListOf<Landmark>()
                         SdkCall.execute {
-                            val latitude = position.getLatitude()
-                            val longitude = position.getLongitude()
+                            val latitude = position.latitude
+                            val longitude = position.longitude
                             waypoints.add(Landmark("", Coordinates(latitude, longitude)))
                         }
 
@@ -933,8 +933,8 @@ class WikiImagesListAdapter(
 
         imagesExecutor.submit {
             val bitmap = SdkCall.execute {
-                val size = image.getSize() ?: return@execute null
-                val widthImage = ((size.width().toFloat() / size.height()) * standardHeight).toInt()
+                val size = image.size ?: return@execute null
+                val widthImage = ((size.width.toFloat() / size.height) * standardHeight).toInt()
                 Util.createBitmap(image, widthImage, standardHeight)
             } ?: return@submit
 

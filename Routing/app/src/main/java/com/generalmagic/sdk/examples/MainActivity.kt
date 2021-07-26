@@ -130,12 +130,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun formatRouteName(route: Route): String = SdkCall.execute {
         val timeDistance = route.getTimeDistance() ?: return@execute ""
-        val distInMeters = timeDistance.getTotalDistance()
-        val timeInSeconds = timeDistance.getTotalTime()
+        val distInMeters = timeDistance.totalDistance
+        val timeInSeconds = timeDistance.totalTime
 
         val distTextPair = SdkUtil.getDistText(
             distInMeters,
-            SdkSettings().getUnitSystem(),
+            SdkSettings().unitSystem,
             bHighResolution = true
         )
 
@@ -144,7 +144,7 @@ class MainActivity : AppCompatActivity() {
         var wayPointsText = ""
         route.getWaypoints()?.let { wayPoints ->
             for (point in wayPoints) {
-                wayPointsText += (point.getName() + "\n")
+                wayPointsText += (point.name + "\n")
             }
         }
 

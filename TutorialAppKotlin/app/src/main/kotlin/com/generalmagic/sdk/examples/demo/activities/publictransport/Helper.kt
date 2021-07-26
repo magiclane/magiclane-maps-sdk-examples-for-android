@@ -63,8 +63,8 @@ class TRouteSegmentItem {
     var mType: ETransitType = ETransitType.Unknown
     var mIconId = 0
     var mRealTimeStatus = ERealtimeStatus.NotAvailable
-    var mBackgroundColor = SdkCall.execute { Rgba(255, 255, 255, 255) }?.value() ?: 0
-    var mForegroundColor = SdkCall.execute { Rgba(0, 0, 0, 255) }?.value() ?: 0
+    var mBackgroundColor = SdkCall.execute { Rgba(255, 255, 255, 255) }?.value ?: 0
+    var mForegroundColor = SdkCall.execute { Rgba(0, 0, 0, 255) }?.value ?: 0
     var mName = ""
     var mTravelTimeValue = ""
     var mTravelTimeUnit = ""
@@ -134,10 +134,10 @@ class Helper {
                     val ptRouteSegment = routeSegment.toPTRouteSegment()
                     departureTime = ptRouteSegment?.getDepartureTime() ?: Time()
                     arrivalTime = ptRouteSegment?.getArrivalTime() ?: Time()
-                    var departureTimeHour = departureTime.getHour()
-                    val departureTimeMinute = departureTime.getMinute()
-                    var arrivalTimeHour = arrivalTime.getHour()
-                    val arrivalTimeMinute = arrivalTime.getMinute()
+                    var departureTimeHour = departureTime.hour
+                    val departureTimeMinute = departureTime.minute
+                    var arrivalTimeHour = arrivalTime.hour
+                    val arrivalTimeMinute = arrivalTime.minute
                     var departureTimeUnit = ""
                     var arrivalTimeUnit = ""
 
@@ -202,7 +202,7 @@ class Helper {
 
                     routeDescriptionItem.mIsWalk = false
 
-                    val nTravelTime = (arrivalTime.asInt() - departureTime.asInt()) / 1000
+                    val nTravelTime = (arrivalTime.longValue - departureTime.longValue) / 1000
 
                     var timeText = getTimeText(nTravelTime.toInt())
                     routeDescriptionItem.mTimeToNextStation = String.format(
@@ -366,7 +366,7 @@ class Helper {
 
                     if (nSegmentsCount > 1) {
                         val timeText = getTimeText(
-                            routeSegment.getTimeDistance()?.getTotalTime() ?: 0
+                            routeSegment.getTimeDistance()?.totalTime ?: 0
                         )
                         routeDescriptionItem.mTimeToNextStation =
                             "${timeText.first} ${timeText.second}"
@@ -375,8 +375,8 @@ class Helper {
                     }
 
                     val distanceText = getDistText(
-                        routeSegment.getTimeDistance()?.getTotalDistance() ?: 0,
-                        SdkSettings().getUnitSystem(),
+                        routeSegment.getTimeDistance()?.totalDistance ?: 0,
+                        SdkSettings().unitSystem,
                         true
                     )
 
@@ -458,7 +458,7 @@ class Helper {
                     return
                 }
 
-                val distance = instructionList[0].getTraveledTimeDistance()?.getTotalDistance() ?: 0
+                val distance = instructionList[0].getTraveledTimeDistance()?.totalDistance ?: 0
 
                 for (a in instructionList) {
                     routeInstructionsList.add(RouteInstructionItem(a, distance.toDouble()))

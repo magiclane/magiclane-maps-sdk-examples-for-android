@@ -24,18 +24,17 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
-import androidx.core.view.marginStart
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.Rgba
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.Time
-import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.Util
 import com.generalmagic.sdk.examples.demo.util.Util.setPanelBackground
 import com.generalmagic.sdk.examples.demo.util.UtilUITexts
 import com.generalmagic.sdk.routesandnavigation.AlarmService
+import com.generalmagic.sdk.routesandnavigation.ENavigationStatus
 import com.generalmagic.sdk.routesandnavigation.NavigationInstruction
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.sensordatasource.PositionData
@@ -127,8 +126,8 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
         var surfaceWidth = 0
         var surfaceHeight = 0
         SdkCall.execute {
-            surfaceWidth = screen?.getViewPort()?.width() ?: 0
-            surfaceHeight = screen?.getViewPort()?.height() ?: 0
+            surfaceWidth = screen?.viewport?.width ?: 0
+            surfaceHeight = screen?.viewport?.height ?: 0
         }
 
         val panelWidth = if (surfaceWidth <= surfaceHeight) {
@@ -166,7 +165,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
         navigationDemoText = findViewById(R.id.navigationDemoText)
         navigationSpeedPanel = findViewById(R.id.navigationSpeedPanel)
         navigationLanePanel = findViewById(R.id.navigationLanePanel)
-        
+
         allowRefresh = true
         updateDemoPanel(navDataProvider.info)
         adjustNavInfoTextSize()
@@ -463,7 +462,7 @@ class NavPanelsController(context: Context, attrs: AttributeSet?) :
     private fun updateNavigationBottomPanel(navInfo: UINavDataProvider.NavInfo) {
         navigationBottomPanel.visibility = View.VISIBLE
 
-        val color = SdkCall.execute { navInfo.rttColor?.value()?.let { Util.getColor(it) } } ?: 0
+        val color = SdkCall.execute { navInfo.rttColor?.value?.let { Util.getColor(it) } } ?: 0
 
         findViewById<TextView>(R.id.navMenuETAText).text = navInfo.eta
         findViewById<TextView>(R.id.navMenuETAUnit).text = navInfo.etaUnit
@@ -588,7 +587,7 @@ class UINavDataProvider {
                 val activeColor = Rgba(255, 255, 255, 255)
                 val inactiveColor = Rgba(100, 100, 100, 255)
 
-                val image = navInstr.getLaneImage()
+                val image = navInstr.laneImage
 
                 val resultPair = Util.createBitmap(
                     image,
@@ -617,15 +616,15 @@ class UINavDataProvider {
         if (!value.hasSpeed()) return
 
         var speedLimit = 0.0
-        if (navInstr != null && navInstr.getNavigationStatus() == SdkError.NoError.value) {
-            speedLimit = navInstr.getCurrentStreetSpeedLimit()
+        if (navInstr != null && navInstr.navigationStatus == ENavigationStatus.Running) {
+            speedLimit = navInstr.currentStreetSpeedLimit
         }
 
-        val speed = value.getSpeed()
+        val speed = value.speed
         info.isOverspeeding = (speedLimit > 0.0) && (speed > speedLimit)
 
         val speedTextPair = getSpeedText(
-            speed, SdkSettings().getUnitSystem()
+            speed, SdkSettings().unitSystem
         )
 
         info.currentSpeed = speedTextPair.first
@@ -634,7 +633,7 @@ class UINavDataProvider {
         if (speedLimit > 0.0) {
             info.currentSpeedLimit = getSpeedText(
                 speedLimit,
-                SdkSettings().getUnitSystem()
+                SdkSettings().unitSystem
             ).first
         }
     }
@@ -651,34 +650,34 @@ class UINavDataProvider {
         if (navInstr == null || route == null) return
 
         val getRemainingTravelTime: () -> Int = {
-            val totalTime = if (navInstr.getNavigationStatus() == SdkError.NoError.value) {
-                navInstr.getRemainingTravelTimeDistance()?.getTotalTime() ?: 0
+            val totalTime = if (navInstr.navigationStatus == ENavigationStatus.Running) {
+                navInstr.remainingTravelTimeDistance?.totalTime ?: 0
             } else {
-                route.getTimeDistance()?.getTotalTime() ?: 0
+                route.getTimeDistance()?.totalTime ?: 0
             }
 
             totalTime + SdkUtil.getTrafficEventsDelay(route, true)
         }
 
         val getRemainingTravelDistance: () -> Int = {
-            if (navInstr.getNavigationStatus() == SdkError.NoError.value) {
-                navInstr.getRemainingTravelTimeDistance()?.getTotalDistance() ?: 0
+            if (navInstr.navigationStatus == ENavigationStatus.Running) {
+                navInstr.remainingTravelTimeDistance?.totalDistance ?: 0
             } else {
-                route.getTimeDistance()?.getTotalDistance() ?: 0
+                route.getTimeDistance()?.totalDistance ?: 0
             }
         }
 
         val arrivalTime = Time()
 
         arrivalTime.setLocalTime()
-        arrivalTime.fromInt(arrivalTime.asInt() + getRemainingTravelTime() * 1000)
+        arrivalTime.longValue = arrivalTime.longValue + getRemainingTravelTime() * 1000
 
-        info.eta = String.format("%d:%02d", arrivalTime.getHour(), arrivalTime.getMinute())
+        info.eta = String.format("%d:%02d", arrivalTime.hour, arrivalTime.minute)
         info.etaUnit = null
 
         val pairRemainingTravelText = getDistText(
             getRemainingTravelDistance(),
-            SdkSettings().getUnitSystem(),
+            SdkSettings().unitSystem,
             true
         )
 

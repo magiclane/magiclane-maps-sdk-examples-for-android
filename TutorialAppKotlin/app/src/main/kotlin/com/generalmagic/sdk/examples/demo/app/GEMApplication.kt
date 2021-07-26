@@ -78,7 +78,7 @@ object GEMApplication {
         SdkSettings.onConnected = {
             SdkCall.execute {
                 val styles =
-                    ContentStore().getLocalContentList(EContentType.ViewStyleHighRes.value)
+                    ContentStore().getLocalContentList(EContentType.ViewStyleHighRes)
                 styles?.let {
                     if (styles.size < 2) {
                         Util.downloadSecondStyle()
@@ -134,7 +134,7 @@ object GEMApplication {
         // styles
 
         if (defaultMapStyle == null) {
-            val styles = ContentStore().getLocalContentList(EContentType.ViewStyleHighRes.value)
+            val styles = ContentStore().getLocalContentList(EContentType.ViewStyleHighRes)
             if (styles != null && styles.size > 0) {
                 defaultMapStyle = styles[0]
             }
@@ -202,7 +202,7 @@ object GEMApplication {
 
     fun clearMapVisibleRoutes(): Boolean {
         return SdkCall.execute {
-            val routes = getMainMapView()?.preferences()?.routes() ?: return@execute false
+            val routes = getMainMapView()?.preferences?.routes ?: return@execute false
             if (routes.size() == 0) {
                 return@execute false
             }
@@ -330,7 +330,7 @@ object GEMApplication {
         }
 
         val routesCount = SdkCall.execute {
-            getMainMapView()?.preferences()?.routes()?.size()
+            getMainMapView()?.preferences?.routes?.size()
         } ?: 0
 
         if (activity == topActivity() && activityStack.size == 1 && routesCount == 0) {
@@ -475,7 +475,7 @@ object GEMApplication {
             val id = getLandmarkStoreLandmarkId(landmarkStore, landmark)
             val time = Time()
             time.setLocalTime()
-            landmark.setTimeStamp(time)
+            landmark.timestamp = time
             if (id > 0) {
                 landmarkStore?.updateLandmark(landmark)
             } else {
@@ -497,18 +497,18 @@ object GEMApplication {
         SdkCall.execute {
             val treshold = 0.00001
             val landmarks = landmarkStore?.getLandmarks() ?: arrayListOf()
-            val name = landmark.getName() ?: ""
-            val lat = landmark.getCoordinates()?.getLatitude() ?: 0.0
-            val lon = landmark.getCoordinates()?.getLongitude() ?: 0.0
+            val name = landmark.name ?: ""
+            val lat = landmark.coordinates?.latitude ?: 0.0
+            val lon = landmark.coordinates?.longitude ?: 0.0
 
             for (item in landmarks) {
-                val itemLatitude = item.getCoordinates()?.getLatitude() ?: 0.0
-                val itemLongitude = item.getCoordinates()?.getLongitude() ?: 0.0
-                if ((item.getName() == name) &&
+                val itemLatitude = item.coordinates?.latitude ?: 0.0
+                val itemLongitude = item.coordinates?.longitude ?: 0.0
+                if ((item.name == name) &&
                     (abs(itemLatitude - lat) < treshold) &&
                     (abs(itemLongitude - lon) < treshold)
                 ) {
-                    return@execute item.getLandmarkId()
+                    return@execute item.landmarkId
                 }
             }
             return@execute 0
@@ -533,16 +533,16 @@ object GEMApplication {
 
     fun addFavourite(landmark: Landmark, checkIfIsFavourite: Boolean = true): Boolean {
         mFavouritesLandmarkStore.let { landmarkStore ->
-            val lmk = Landmark("", landmark.getCoordinates() ?: Coordinates())
+            val lmk = Landmark("", landmark.coordinates ?: Coordinates())
             lmk.assign(landmark)
             if (!checkIfIsFavourite || !isFavourite(landmark)) {
                 ImageDatabase().getImageById(SdkIcons.Other_Engine.LocationDetailsFavouritePushPin.value)
-                    ?.let { lmk.setImage(it) }
+                    ?.let { lmk.image = it }
 
-                val tmp = String.format("original_icon_id=%d", landmark.getImage()?.getUid())
+                val tmp = String.format("original_icon_id=%d", landmark.image?.uid)
                 val extra = arrayListOf(tmp)
 
-                lmk.setExtraInfo(extra)
+                lmk.extraInfo = extra
 
                 landmarkStore?.addLandmark(lmk)
                 return true

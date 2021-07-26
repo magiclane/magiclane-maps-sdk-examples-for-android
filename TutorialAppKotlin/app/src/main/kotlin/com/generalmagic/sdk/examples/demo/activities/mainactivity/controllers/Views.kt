@@ -41,7 +41,7 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
         super.onCreated()
 
         mapStyles = SdkCall.execute {
-            contentStore.getLocalContentList(EContentType.ViewStyleHighRes.value)
+            contentStore.getLocalContentList(EContentType.ViewStyleHighRes)
         } ?: ArrayList()
 
         defaultStyle = if (mapStyles.size > 0) {
@@ -60,11 +60,11 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
 
             val screen = GEMApplication.gemMapScreen() ?: return@execute false
 
-            val subview = GEMApplication.getMainMapView()?.getCamera()?.let {
+            val subview = GEMApplication.getMainMapView()?.camera?.let {
                 MapView.produce(screen, rect, null, it)
             } ?: return@execute false
 
-            subview.preferences()?.setMapStyleById(styleId)
+            subview.preferences?.setMapStyleById(styleId)
             mapViews.add(subview)
             return@execute true
         } ?: false
@@ -101,22 +101,22 @@ class TwoTiledViewsController(context: Context, attrs: AttributeSet?) :
 
         SdkCall.execute {
             val mainView = GEMApplication.getMainMapView() ?: return@execute
-            val mainViewStyle = mainView.preferences()?.getMapStyleId()
+            val mainViewStyle = mainView.preferences?.mapStyleId
             mainViewCoords?.let { mainView.resize(it) }
 
             var style = defaultStyle
             for (value in mapStyles) {
-                if (value.getStatus() != EContentStoreItemStatus.Completed) {
+                if (value.status != EContentStoreItemStatus.Completed) {
                     continue
                 }
-                if (value.getId() != mainViewStyle) {
+                if (value.id != mainViewStyle) {
                     style = value
                     break
                 }
             }
 
             if (style != null) {
-                subViewCoords?.let { addMapView(it, style.getId()) }
+                subViewCoords?.let { addMapView(it, style.id) }
             }
         }
     }
@@ -178,11 +178,11 @@ class MultipleViewsController(context: Context, attrs: AttributeSet?) :
                     defaultStyle ?: return@execute false
                 }
 
-            if (style?.getStatus() != EContentStoreItemStatus.Completed) {
+            if (style?.status != EContentStoreItemStatus.Completed) {
                 style = defaultStyle
             }
 
-            style?.let { return@execute rectf?.let { it1 -> addMapView(it1, it.getId()) } }
+            style?.let { return@execute rectf?.let { it1 -> addMapView(it1, it.id) } }
 
             return@execute false
         } ?: false

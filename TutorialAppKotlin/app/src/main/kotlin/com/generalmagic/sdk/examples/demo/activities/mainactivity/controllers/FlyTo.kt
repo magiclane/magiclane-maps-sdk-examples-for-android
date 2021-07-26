@@ -103,7 +103,7 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
                 val mainMap = GEMApplication.getMainMapView() ?: return@onCompleted
 
                 val value = results[0]
-                val area = SdkCall.execute { value.getContourGeograficArea() } ?: return@onCompleted
+                val area = SdkCall.execute { value.geographicArea } ?: return@onCompleted
 
                 wikiView.onWikiFetchCompleteCallback = { _, _ ->
                     GEMApplication.postOnMain {
@@ -126,7 +126,7 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
                 }
             }
 
-            searchService.preferences.setSearchMapPOIs(true)
+            searchService.preferences.searchMapPOIsEnabled = true
 
             searchService.searchByFilter(text, coords)
         }
@@ -221,7 +221,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
                 }
 
                 if (isFlyToRoute) {
-                    mainMap.preferences()?.routes()?.add(route, true)
+                    mainMap.preferences?.routes?.add(route, true)
 
                     mainMap.centerOnRoute(route)
                 } else {
@@ -236,7 +236,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
                         topPanelController.update(instruction)
                     }
 
-                    mainMap.preferences()?.routes()?.add(route, true)
+                    mainMap.preferences?.routes?.add(route, true)
                     GEMApplication.focusOnRouteInstructionItem(instruction)
                 }
             }
@@ -332,13 +332,13 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
                     return@execute
                 }
 
-                val totalRouteLength = route.getTimeDistance()?.getTotalDistance() ?: 0
+                val totalRouteLength = route.getTimeDistance()?.totalDistance ?: 0
 
                 GEMApplication.postOnMain {
                     topPanelController.update(trafficEvent, totalRouteLength)
                 }
 
-                mainMap.preferences()?.routes()?.add(route, true)
+                mainMap.preferences?.routes?.add(route, true)
                 GEMApplication.focusOnRouteTrafficItem(trafficEvent)
             }
         }
@@ -389,9 +389,9 @@ class FlyToLine(context: Context, attrs: AttributeSet?) : FlyController(context,
             marker.add(Coordinates(52.361593, 4.883986))
 
             vector.add(marker)
-            mainMap.preferences()?.markers()?.add(vector)
+            mainMap.preferences?.markers?.add(vector)
 
-            vector.getArea()?.let { mainMap.centerOnArea(it) }
+            vector.area?.let { mainMap.centerOnArea(it) }
         }
     }
 
@@ -401,7 +401,7 @@ class FlyToLine(context: Context, attrs: AttributeSet?) : FlyController(context,
 
     override fun doBackPressed(): Boolean {
         val mainMap = GEMApplication.getMainMapView() ?: return false
-        SdkCall.execute { mainMap.preferences()?.markers()?.clear() }
+        SdkCall.execute { mainMap.preferences?.markers?.clear() }
         setFollowGpsButtonVisible(true)
         setStopButtonVisible(false)
         return true

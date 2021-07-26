@@ -115,7 +115,7 @@ class MainActivity : AppCompatActivity() {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private fun flyTo(landmark: Landmark) = SdkCall.execute {
-        landmark.getContourGeograficArea()?.let { area ->
+        landmark.geographicArea?.let { area ->
             gemSurfaceView.getDefaultMapView()?.let { mainMapView ->
                 // Define highlight settings for displaying the area contour on map. 
                 val settings = HighlightRenderSettings(EHighlightOptions.ShowContour)

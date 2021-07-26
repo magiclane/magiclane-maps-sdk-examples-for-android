@@ -42,10 +42,10 @@ object Utils {
             var fAspectRatio = 1.0f
             val icon = ImageDatabase().getImageById(nImageId)
             if (icon != null) {
-                val size = icon.getSize()
+                val size = icon.size
 
-                if (size != null && size.height() != 0) {
-                    fAspectRatio = (size.width().toFloat() / size.height())
+                if (size != null && size.height != 0) {
+                    fAspectRatio = (size.width.toFloat() / size.height)
                 }
             }
 
@@ -64,9 +64,9 @@ object Utils {
 
             var text = "" // result
 
-            val landmarkAddress = landmark.getAddress() ?: return@execute ""
+            val landmarkAddress = landmark.addressInfo ?: return@execute ""
 
-            var name = landmark.getName() ?: ""
+            var name = landmark.name ?: ""
             val streetName = landmarkAddress.getField(EAddressField.StreetName) ?: ""
             val streetNumber = landmarkAddress.getField(EAddressField.StreetNumber) ?: ""
             val settlement = landmarkAddress.getField(EAddressField.Settlement) ?: ""
@@ -113,7 +113,7 @@ object Utils {
             val bNameEmpty = name.isEmpty()
             var bRestoreStreetName = false
 
-            landmark.setName("")
+            landmark.name = ""
             if ((streetName.isEmpty()) && !bNameEmpty) {
                 landmarkAddress.setField(unknownXYZ, EAddressField.StreetName)
                 bRestoreStreetName = true
@@ -130,7 +130,7 @@ object Utils {
                 landmarkName = ""
             }
 
-            landmark.setName(name)
+            landmark.name = name
             if (bRestoreStreetName) {
                 landmarkAddress.setField(streetName, EAddressField.StreetName)
             }
@@ -304,9 +304,9 @@ object Utils {
     }
 
     fun getLandmarkIcon(value: Landmark, imgSizes: Int): Bitmap? {
-        var iconId = value.getImage()?.getUid()?.toInt()
+        var iconId = value.image?.uid?.toInt()
         if (iconId == SdkIcons.Other_Engine.LocationDetailsFavouritePushPin.value) {
-            val extraInfo = value.getExtraInfo() ?: arrayListOf()
+            val extraInfo = value.extraInfo ?: arrayListOf()
             var originalIconId = "original_icon_id="
             for (info in extraInfo) {
                 if (info.startsWith(originalIconId)) {
@@ -319,7 +319,7 @@ object Utils {
             }
         }
 
-        return Util.createBitmap(value.getImage(), imgSizes, imgSizes)
+        return Util.createBitmap(value.image, imgSizes, imgSizes)
     }
 }
 

@@ -136,12 +136,12 @@ object GEMPublicTransportRouteDescriptionView {
                     if (lineColor != null) {
                         bgColor = lineColor
                     }
-                    routeSegmentItem.mBackgroundColor = bgColor.value()
-                    routeSegmentItem.mForegroundColor = it.getLineTextColor()?.value() ?: 0
+                    routeSegmentItem.mBackgroundColor = bgColor.value
+                    routeSegmentItem.mForegroundColor = it.getLineTextColor()?.value ?: 0
                 }
 
-                if ((bgColor.red() == 255) && (bgColor.green() == 255) && (bgColor.blue() == 255)) {
-                    routeSegmentItem.mBackgroundColor = Rgba(228, 228, 228, 255).value()
+                if ((bgColor.red == 255) && (bgColor.green == 255) && (bgColor.blue == 255)) {
+                    routeSegmentItem.mBackgroundColor = Rgba(228, 228, 228, 255).value
                 }
 
                 routeSegmentItem.mRealTimeStatus =
@@ -163,15 +163,15 @@ object GEMPublicTransportRouteDescriptionView {
                     }
                 }
             } else {
-                nWalkingTime += routeSegment.getTimeDistance()?.getTotalTime() ?: 0
-                nWalkingDistance += routeSegment.getTimeDistance()?.getTotalDistance() ?: 0
+                nWalkingTime += routeSegment.getTimeDistance()?.totalTime ?: 0
+                nWalkingDistance += routeSegment.getTimeDistance()?.totalDistance ?: 0
                 routeSegmentItem.mType = ETransitType.Walk
                 routeSegmentItem.mIconId = Helper.getIconId(routeSegmentItem.mType)
 
                 routeSegmentItem.mVisible = true//routeSegment.isSignificant()
 
                 val timeText =
-                    getTimeText(routeSegment.getTimeDistance()?.getTotalTime() ?: 0)
+                    getTimeText(routeSegment.getTimeDistance()?.totalTime ?: 0)
                 routeSegmentItem.mTravelTimeValue = timeText.first
                 routeSegmentItem.mTravelTimeUnit = timeText.second
             }
@@ -186,7 +186,7 @@ object GEMPublicTransportRouteDescriptionView {
             mHeader.mTripSegments.add(routeSegmentItem)
         }
 
-        val travelTime = mRoute.getTimeDistance()?.getTotalTime() ?: 0
+        val travelTime = mRoute.getTimeDistance()?.totalTime ?: 0
 
         if (bLookForPTSegment) {
             nWalkingTime = travelTime
@@ -202,7 +202,7 @@ object GEMPublicTransportRouteDescriptionView {
 
         if (nWalkingDistance > 0) {
             val distText =
-                getDistText(nWalkingDistance, SdkSettings().getUnitSystem(), true)
+                getDistText(nWalkingDistance, SdkSettings().unitSystem, true)
             walkingDistance = String.format("%s %s", distText.first, distText.second)
         }
 
@@ -215,10 +215,10 @@ object GEMPublicTransportRouteDescriptionView {
         val bUse24HourNotation = true
         var departureTimeUnit = ""
         var arrivalTimeUnit = ""
-        var departureTimeHour = departureTime.getHour()
-        val departureTimeMinute = departureTime.getMinute()
-        var arrivalTimeHour = arrivalTime.getHour()
-        val arrivalTimeMinute = arrivalTime.getMinute()
+        var departureTimeHour = departureTime.hour
+        val departureTimeMinute = departureTime.minute
+        var arrivalTimeHour = arrivalTime.hour
+        val arrivalTimeMinute = arrivalTime.minute
 
         if (!bUse24HourNotation) {
             if ((departureTimeHour >= 12) && (departureTimeHour < 24)) {
@@ -576,13 +576,13 @@ object GEMPublicTransportRouteDescriptionView {
         val itemIndex = index - 1
         if ((itemIndex >= 0) && (itemIndex < mRouteDescriptionItems.size)) {
             if (mRouteDescriptionItems[itemIndex].mStationEarlyTime.isNotEmpty()) {
-                return Rgba(58, 145, 86, 255).value()
+                return Rgba(58, 145, 86, 255).value
             }
             if (mRouteDescriptionItems[itemIndex].mStationLaterTime.isEmpty()) {
-                return Rgba(242, 46, 59, 255).value()
+                return Rgba(242, 46, 59, 255).value
             }
         }
-        return Rgba(0, 0, 0, 255).value()
+        return Rgba(0, 0, 0, 255).value
     }
 
     private fun getStationPlatform(index: Int): String {

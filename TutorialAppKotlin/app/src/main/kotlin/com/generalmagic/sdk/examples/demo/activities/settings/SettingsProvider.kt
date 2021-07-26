@@ -373,7 +373,7 @@ object SettingsProvider {
 
         val unitsSystem = { value: Int ->
             if (mService != null) {
-                SdkSettings().setUnitSystem(EnumHelp.fromInt(value))
+                SdkSettings().unitSystem = EnumHelp.fromInt(value)
             }
         }
         mIntCallbacks[TIntSettings.EUnitsSystem.value - TIntSettings.EIntSettingsBase.value] =

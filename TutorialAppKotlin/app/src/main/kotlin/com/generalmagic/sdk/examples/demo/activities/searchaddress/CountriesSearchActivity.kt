@@ -111,10 +111,10 @@ class CountriesSearchActivity : SearchListActivity() {
 }
 
 class CountryModelItem(val m_landmark: Landmark) : SearchListItem() {
-    private val mText: String = SdkCall.execute { m_landmark.getName() } ?: ""
+    private val mText: String = SdkCall.execute { m_landmark.name } ?: ""
 
     override fun getIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
-        val isoCode = m_landmark.getAddress()?.getField(EAddressField.CountryCode)
+        val isoCode = m_landmark.addressInfo?.getField(EAddressField.CountryCode)
         if (isoCode?.isNotEmpty() == true) {
             val image = MapDetails().getCountryFlag(isoCode)
             return@execute Utils.getImageAsBitmap(image, width, height)
