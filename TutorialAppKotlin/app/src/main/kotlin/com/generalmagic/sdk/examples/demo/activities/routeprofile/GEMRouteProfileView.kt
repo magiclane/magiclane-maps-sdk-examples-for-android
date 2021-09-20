@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2019-2021, General Magic B.V.
+ * All rights reserved.
+ *
+ * This software is confidential and proprietary information of General Magic
+ * ("Confidential Information"). You shall not disclose such Confidential
+ * Information and shall use it only in accordance with the terms of the
+ * license agreement you entered into with General Magic.
+ */
+
 package com.generalmagic.sdk.examples.demo.activities.routeprofile
 
 import android.graphics.Bitmap
@@ -7,15 +17,15 @@ import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.Ba
 import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.PickLocationController
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.app.TutorialsOpener
-import com.generalmagic.sdk.examples.demo.util.Utils
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.ERoadType
 import com.generalmagic.sdk.routesandnavigation.ESurfaceType
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkIcons
+import com.generalmagic.sdk.util.SdkImages
 import com.generalmagic.sdk.util.SdkUtil.getUIString
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilGemImages
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -123,8 +133,7 @@ object GEMRouteProfileView {
         removeHighlightedWayPathsFromMap()
         removeHighlightedSteepnessPathsFromMap()
 
-        mRoute =
-            mMapView.preferences?.routes?.getMainRoute() ?: Route() // TODO maybe route nullable
+        mRoute = mMapView.preferences?.routes?.mainRoute ?: Route() // TODO maybe route nullable
 
         val timeDistance = mRoute.getTimeDistance(false)
 
@@ -132,34 +141,34 @@ object GEMRouteProfileView {
         mCrtMaxXInUnitType = getDist(mRouteLengthInMeters)
 
         val steepnessIntervals = arrayListOf<Float>()
-        mRoute.getTerrainProfile().let { routeTerrainProfile ->
+        mRoute.terrainProfile.let { routeTerrainProfile ->
             val values = arrayListOf(-16f, -10f, -7f, -4f, -1f, 1f, 4f, 7f, 10f, 16f)
 
             for (i in values) {
                 steepnessIntervals.add(i)
             }
 
-            routeTerrainProfile?.getSurfaceSections()?.let { surfaceSectionList ->
+            routeTerrainProfile?.surfaceSections?.let { surfaceSectionList ->
                 var nLength: Int
 
                 for ((i, item) in surfaceSectionList.withIndex()) {
                     nLength = if (i < surfaceSectionList.size - 1) {
-                        surfaceSectionList[i + 1].getStartDistanceM() - item.getStartDistanceM()
+                        surfaceSectionList[i + 1].startDistanceM - item.startDistanceM
                     } else {
-                        mRouteLengthInMeters - item.getStartDistanceM()
+                        mRouteLengthInMeters - item.startDistanceM
                     }
 
-                    if (mSurfacesTypes.containsKey(item.getType())) {
-                        mSurfacesTypes[item.getType()]?.add(
+                    if (mSurfacesTypes.containsKey(item.type)) {
+                        mSurfacesTypes[item.type]?.add(
                             CSectionItem(
-                                item.getStartDistanceM(),
+                                item.startDistanceM,
                                 nLength
                             )
                         )
                     } else {
-                        mSurfacesTypes[item.getType()] = arrayListOf(
+                        mSurfacesTypes[item.type] = arrayListOf(
                             CSectionItem(
-                                item.getStartDistanceM(),
+                                item.startDistanceM,
                                 nLength
                             )
                         )
@@ -167,27 +176,27 @@ object GEMRouteProfileView {
                 }
             }
 
-            routeTerrainProfile?.getRoadTypeSections()?.let { roadTypeSectionList ->
+            routeTerrainProfile?.roadTypeSections?.let { roadTypeSectionList ->
                 var nLength: Int
 
                 for ((i, item) in roadTypeSectionList.withIndex()) {
                     nLength = if (i < roadTypeSectionList.size - 1) {
-                        roadTypeSectionList[i + 1].getStartDistanceM() - item.getStartDistanceM()
+                        roadTypeSectionList[i + 1].startDistanceM - item.startDistanceM
                     } else {
-                        mRouteLengthInMeters - item.getStartDistanceM()
+                        mRouteLengthInMeters - item.startDistanceM
                     }
 
-                    if (mRoadsTypes.containsKey(item.getType())) {
-                        mRoadsTypes[item.getType()]?.add(
+                    if (mRoadsTypes.containsKey(item.type)) {
+                        mRoadsTypes[item.type]?.add(
                             CSectionItem(
-                                item.getStartDistanceM(),
+                                item.startDistanceM,
                                 nLength
                             )
                         )
                     } else {
-                        mRoadsTypes[item.getType()] = arrayListOf(
+                        mRoadsTypes[item.type] = arrayListOf(
                             CSectionItem(
-                                item.getStartDistanceM(),
+                                item.startDistanceM,
                                 nLength
                             )
                         )
@@ -200,22 +209,22 @@ object GEMRouteProfileView {
 
                 for ((i, item) in steepnessSectionList.withIndex()) {
                     nLength = if (i < steepnessSectionList.size - 1) {
-                        steepnessSectionList[i + 1].getStartDistanceM() - item.getStartDistanceM()
+                        steepnessSectionList[i + 1].startDistanceM - item.startDistanceM
                     } else {
-                        mRouteLengthInMeters - item.getStartDistanceM()
+                        mRouteLengthInMeters - item.startDistanceM
                     }
 
-                    if (mSteepnessTypes.containsKey(item.getCategory())) {
-                        mSteepnessTypes[item.getCategory()]?.add(
+                    if (mSteepnessTypes.containsKey(item.category)) {
+                        mSteepnessTypes[item.category]?.add(
                             CSectionItem(
-                                item.getStartDistanceM(),
+                                item.startDistanceM,
                                 nLength
                             )
                         )
                     } else {
-                        mSteepnessTypes[item.getCategory()] = arrayListOf(
+                        mSteepnessTypes[item.category] = arrayListOf(
                             CSectionItem(
-                                item.getStartDistanceM(),
+                                item.startDistanceM,
                                 nLength
                             )
                         )
@@ -335,27 +344,27 @@ object GEMRouteProfileView {
 
 
     fun getElevationChartMinValueY(): Int {
-        val routeTerrainProfile = mRoute.getTerrainProfile()
+        val routeTerrainProfile = mRoute.terrainProfile
         routeTerrainProfile?.let { terrainProfile ->
 
-            var diff = terrainProfile.getMaxElevation() - terrainProfile.getMinElevation()
+            var diff = terrainProfile.maxElevation - terrainProfile.minElevation
             diff = 0.1f * abs(diff)
 
             val nRound = if (diff <= 5) 2 else (if (diff <= 25) 10 else 50)
             var nDiff = 1f.coerceAtLeast(diff).toInt()
-            val elevation = (terrainProfile.getMinElevation() - nDiff).toDouble() * mAltitudeFactor
+            val elevation = (terrainProfile.minElevation - nDiff).toDouble() * mAltitudeFactor
             var result = round(elevation).toInt()
 
             if (result < 0) {
-                if (terrainProfile.getMinElevation() >= 0) {
+                if (terrainProfile.minElevation >= 0) {
                     result = 0
                 } else {
-                    diff = terrainProfile.getMinElevation()
+                    diff = terrainProfile.minElevation
                     diff = 0.1f * abs(diff)
                     nDiff = diff.coerceIn(1f, 100f).toInt()
 
                     result =
-                        ((terrainProfile.getMinElevation() - nDiff).toInt() * mAltitudeFactor).toInt()
+                        ((terrainProfile.minElevation - nDiff).toInt() * mAltitudeFactor).toInt()
                 }
             }
 
@@ -376,14 +385,14 @@ object GEMRouteProfileView {
 
 
     fun getElevationChartMaxValueY(): Int {
-        val routeTerrainProfile = mRoute.getTerrainProfile()
+        val routeTerrainProfile = mRoute.terrainProfile
         routeTerrainProfile?.let { terrainProfile ->
-            var diff = terrainProfile.getMaxElevation() - terrainProfile.getMinElevation()
+            var diff = terrainProfile.maxElevation - terrainProfile.minElevation
             diff = 0.1f * abs(diff)
 
             val nRound = if (diff <= 5) 2 else (if (diff <= 25) 10 else 50)
             val nDiff = 1f.coerceAtLeast(diff).toInt()
-            val elevation = (terrainProfile.getMaxElevation() + nDiff) * mAltitudeFactor
+            val elevation = (terrainProfile.maxElevation + nDiff) * mAltitudeFactor
             var result = round(elevation).toInt()
 
             if ((result % nRound) != 0) {
@@ -439,7 +448,7 @@ object GEMRouteProfileView {
 
 
     fun getElevationChartYValues(nValues: Int): IntArray {
-        val routeTerrainProfile = mRoute.getTerrainProfile()
+        val routeTerrainProfile = mRoute.terrainProfile
         val yValuesArray = IntArray(nValues)
         routeTerrainProfile.let { terrainProfile ->
             val distanceFactor = getCurrentUnitToMetersDistanceFactor()
@@ -470,7 +479,7 @@ object GEMRouteProfileView {
 
 
     fun getElevationChartYValue(dist: Double): Int {
-        val routeTerrainProfile = mRoute.getTerrainProfile()
+        val routeTerrainProfile = mRoute.terrainProfile
         routeTerrainProfile?.let { terrainProfile ->
             val distanceFactor = getCurrentUnitToMetersDistanceFactor()
 
@@ -524,9 +533,9 @@ object GEMRouteProfileView {
 
 
     fun getElevationChartVerticalBandsCount(): Int {
-        val routeTerrainProfile = mRoute.getTerrainProfile()
+        val routeTerrainProfile = mRoute.terrainProfile
         routeTerrainProfile?.let { terrainProfile ->
-            val list = terrainProfile.getClimbSections()
+            val list = terrainProfile.climbSections
             return list?.size ?: 0
         }
 
@@ -535,12 +544,12 @@ object GEMRouteProfileView {
 
 
     fun getElevationChartVerticalBandMinX(index: Int): Double {
-        val routeTerrainProfile = mRoute.getTerrainProfile()
+        val routeTerrainProfile = mRoute.terrainProfile
         routeTerrainProfile?.let { terrainProfile ->
-            val list = terrainProfile.getClimbSections()
+            val list = terrainProfile.climbSections
             list?.let {
                 if (indexIsValid(index, list.size)) {
-                    return (list[index].getStartDistanceM() * (1.0 / getCurrentUnitToMetersDistanceFactor()))
+                    return (list[index].startDistanceM * (1.0 / getCurrentUnitToMetersDistanceFactor()))
                 }
             }
         }
@@ -550,12 +559,12 @@ object GEMRouteProfileView {
 
 
     fun getElevationChartVerticalBandMaxX(index: Int): Double {
-        val routeTerrainProfile = mRoute.getTerrainProfile()
+        val routeTerrainProfile = mRoute.terrainProfile
         routeTerrainProfile?.let { terrainProfile ->
-            val list = terrainProfile.getClimbSections()
+            val list = terrainProfile.climbSections
             list?.let {
                 if (indexIsValid(index, list.size)) {
-                    return (list[index].getEndDistanceM() * (1.0 / getCurrentUnitToMetersDistanceFactor()))
+                    return (list[index].endDistanceM * (1.0 / getCurrentUnitToMetersDistanceFactor()))
                 }
             }
         }
@@ -563,14 +572,13 @@ object GEMRouteProfileView {
         return 0.0
     }
 
-
     fun getElevationChartVerticalBandText(index: Int): String {
-        val routeTerrainProfile = mRoute.getTerrainProfile()
+        val routeTerrainProfile = mRoute.terrainProfile
         routeTerrainProfile?.let { terrainProfile ->
-            val list = terrainProfile.getClimbSections()
+            val list = terrainProfile.climbSections
             list?.let {
                 if (indexIsValid(index, list.size)) {
-                    return String.format("%d", list[index].getGrade().value)
+                    return String.format("%d", list[index].grade.value)
                 }
             }
         }
@@ -578,11 +586,13 @@ object GEMRouteProfileView {
         return String()
     }
 
-
-    fun getElevationChartPinImage(width: Int, height: Int): Bitmap? {
-        return Utils.getImageAsBitmap(SdkIcons.Other_UI.Search_Results_Pin.value, width, height)
+    fun getElevationChartPinImage(width: Int, height: Int): Bitmap? = SdkCall.execute {
+        return@execute UtilGemImages.asBitmap(
+            SdkImages.Engine_Misc.LocationDetails_PlacePushpin.value,
+            width,
+            height
+        )
     }
-
 
     fun onTouchElevationChart(evt: Int, x: Double) {
         mMapView.let { m_mapView ->
@@ -597,7 +607,7 @@ object GEMRouteProfileView {
                 mHighlightedLmkList.clear()
 
                 val landmark = Landmark()
-                ImageDatabase().getImageById(SdkIcons.Other_UI.Search_Results_Pin.value)
+                ImageDatabase().getImageById(SdkImages.Engine_Misc.LocationDetails_PlacePushpin.value)
                     ?.let { image ->
                         landmark.image = image
                     }
@@ -694,7 +704,7 @@ object GEMRouteProfileView {
             }
 
             if (bAutomaticZoomToRoute) {
-                val mainRoute = m_mapView.preferences?.routes?.getMainRoute()
+                val mainRoute = m_mapView.preferences?.routes?.mainRoute
                 flyToRoute(mainRoute)
             } else {
 //                setAutomaticZoomToRoute(false) TODO
@@ -813,7 +823,7 @@ object GEMRouteProfileView {
 
 
     fun getElevationProfileButtonText(buttonType: Int): String {
-        val routeTerrainProfile = mRoute.getTerrainProfile()
+        val routeTerrainProfile = mRoute.terrainProfile
 
         routeTerrainProfile?.let { terrainProfile ->
             return when (buttonType) {
@@ -831,11 +841,11 @@ object GEMRouteProfileView {
                 }
 
                 TElevationProfileButtonType.EMinElevation.ordinal -> {
-                    getElevationString(terrainProfile.getMinElevation())
+                    getElevationString(terrainProfile.minElevation)
                 }
 
                 TElevationProfileButtonType.EMaxElevation.ordinal -> {
-                    getElevationString(terrainProfile.getMaxElevation())
+                    getElevationString(terrainProfile.maxElevation)
                 }
 
                 else -> {
@@ -849,7 +859,7 @@ object GEMRouteProfileView {
 
     private fun getElevationString(elevation: Float): String {
         var tmp: String
-        val routeTerrainProfile = mRoute.getTerrainProfile()
+        val routeTerrainProfile = mRoute.terrainProfile
 
         routeTerrainProfile.let {
             val unitsSystem = SdkSettings().unitSystem
@@ -881,39 +891,39 @@ object GEMRouteProfileView {
         buttonType: Int,
         width: Int,
         height: Int
-    ): Bitmap? {
-        val routeTerrainProfile = mRoute.getTerrainProfile()
+    ): Bitmap? = SdkCall.execute {
+        val routeTerrainProfile = mRoute.terrainProfile
 
-        routeTerrainProfile?.let {
-            return when (buttonType) {
+        return@execute routeTerrainProfile?.let {
+            return@let when (buttonType) {
 
                 TElevationProfileButtonType.EElevationAtDeparture.ordinal -> {
-                    Utils.getImageAsBitmap(
-                        SdkIcons.Other_Engine.WaypointFlag_PointStart.value,
+                    UtilGemImages.asBitmap(
+                        SdkImages.Engine_Misc.WaypointFlag_PointStart.value,
                         width,
                         height
                     )
                 }
 
                 TElevationProfileButtonType.EElevationAtDestination.ordinal -> {
-                    Utils.getImageAsBitmap(
-                        SdkIcons.Other_Engine.WaypointFlag_PointFinish.value,
+                    UtilGemImages.asBitmap(
+                        SdkImages.Engine_Misc.WaypointFlag_PointFinish.value,
                         width,
                         height
                     )
                 }
 
                 TElevationProfileButtonType.EMinElevation.ordinal -> {
-                    Utils.getImageAsBitmap(
-                        SdkIcons.Other_UI.HeightProfile_Lowest_Point.value,
+                    UtilGemImages.asBitmap(
+                        SdkImages.UI.HeightProfile_Lowest_Point.value,
                         width,
                         height
                     )
                 }
 
                 TElevationProfileButtonType.EMaxElevation.ordinal -> {
-                    Utils.getImageAsBitmap(
-                        SdkIcons.Other_UI.HeightProfile_Highest_Point.value,
+                    UtilGemImages.asBitmap(
+                        SdkImages.UI.HeightProfile_Highest_Point.value,
                         width,
                         height
                     )
@@ -924,13 +934,11 @@ object GEMRouteProfileView {
                 }
             }
         }
-
-        return null
     }
 
 
     fun onPushButton(buttonType: Int) {
-        val routeTerrainProfile = mRoute.getTerrainProfile()
+        val routeTerrainProfile = mRoute.terrainProfile
 //        if (m_view && m_mapView && routeTerrainProfile)
         routeTerrainProfile?.let { terrainProfile ->
             var distance = 0.0
@@ -942,18 +950,18 @@ object GEMRouteProfileView {
                 }
 
                 TElevationProfileButtonType.EMinElevation.ordinal -> {
-                    distance = terrainProfile.getMinElevationDistance().toDouble()
+                    distance = terrainProfile.minElevationDistance.toDouble()
                 }
 
                 TElevationProfileButtonType.EMaxElevation.ordinal -> {
-                    distance = terrainProfile.getMaxElevationDistance().toDouble()
+                    distance = terrainProfile.maxElevationDistance.toDouble()
                 }
             }
 
             val landmark = Landmark()
             val lmkList = arrayListOf<Landmark>()
 
-            val image = ImageDatabase().getImageById(SdkIcons.Other_UI.Search_Results_Pin.value)
+            val image = ImageDatabase().getImageById(SdkImages.Engine_Misc.LocationDetails_PlacePushpin.value)
             image?.let {
                 landmark.image = image
                 mHighlightedLmkList.add(landmark)
@@ -1013,8 +1021,8 @@ object GEMRouteProfileView {
 
 
     fun getClimbDetailsRowsCount(): Int {
-        val routeTerrainProfile = mRoute.getTerrainProfile()
-        return routeTerrainProfile?.getClimbSections()?.size ?: 0
+        val routeTerrainProfile = mRoute.terrainProfile
+        return routeTerrainProfile?.climbSections?.size ?: 0
     }
 
 
@@ -1077,10 +1085,10 @@ object GEMRouteProfileView {
 
                 TClimbDetailsInfoType.EAvgGrade.ordinal -> // Avg Grade
                 {
-                    val routeTerrainProfile = mRoute.getTerrainProfile()
+                    val routeTerrainProfile = mRoute.terrainProfile
                     if (routeTerrainProfile != null) {
-                        val list = routeTerrainProfile.getClimbSections()
-                        String.format("%.1f%%", list?.get(row)?.getSlope())
+                        val list = routeTerrainProfile.climbSections
+                        String.format("%.1f%%", list?.get(row)?.slope)
                     } else {
                         String()
                     }
@@ -1268,7 +1276,7 @@ object GEMRouteProfileView {
 
     private fun zoomToRoute() {
         mMapView.preferences?.setMapViewPerspective(EMapViewPerspective.TwoDimensional)
-        val mainRoute = mMapView.preferences?.routes?.getMainRoute()
+        val mainRoute = mMapView.preferences?.routes?.mainRoute
         flyToRoute(mainRoute)
     }
 
@@ -1655,21 +1663,23 @@ object GEMRouteProfileView {
             }
         }
 
-        return when (imageType) {
-            TSteepnessImageType.EUp -> {
-                Utils.getImageAsBitmap(SdkIcons.Other_UI.SteepnessUp.value, width, height)
-            }
+        return SdkCall.execute {
+            when (imageType) {
+                TSteepnessImageType.EUp -> {
+                    UtilGemImages.asBitmap(SdkImages.UI.SteepnessUp.value, width, height)
+                }
 
-            TSteepnessImageType.EDown -> {
-                Utils.getImageAsBitmap(SdkIcons.Other_UI.SteepnessDown.value, width, height)
-            }
+                TSteepnessImageType.EDown -> {
+                    UtilGemImages.asBitmap(SdkImages.UI.SteepnessDown.value, width, height)
+                }
 
-            TSteepnessImageType.EPlain -> {
-                Utils.getImageAsBitmap(SdkIcons.Other_UI.SteepnessPlain.value, width, height)
-            }
+                TSteepnessImageType.EPlain -> {
+                    UtilGemImages.asBitmap(SdkImages.UI.SteepnessPlain.value, width, height)
+                }
 
-            TSteepnessImageType.EUnknown -> {
-                null
+                TSteepnessImageType.EUnknown -> {
+                    null
+                }
             }
         }
     }

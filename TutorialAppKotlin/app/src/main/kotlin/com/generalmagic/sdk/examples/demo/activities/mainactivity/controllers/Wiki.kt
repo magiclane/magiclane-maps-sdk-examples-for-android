@@ -29,7 +29,7 @@ import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkIcons
+import com.generalmagic.sdk.util.SdkImages
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class WikiController(context: Context, attrs: AttributeSet?) :
@@ -114,7 +114,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
             if (areaIsEmpty) {
                 val simplePinLandmark = SdkCall.execute { Landmark("", coords) }
                 simplePinLandmark?.run {
-                    ImageDatabase().getImageById(SdkIcons.Other_UI.Search_Results_Pin.value)?.let {
+                    ImageDatabase().getImageById(SdkImages.Engine_Misc.LocationDetails_PlacePushpin.value)?.let {
                         image = it
                     }
                     mainMap?.activateHighlightLandmarks(arrayListOf(simplePinLandmark))

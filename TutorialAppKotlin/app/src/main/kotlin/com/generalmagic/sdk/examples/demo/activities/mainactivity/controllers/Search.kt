@@ -170,7 +170,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
                 return@let
             }
 
-            if (itTrip.mPreferences?.getTransportMode() != ERouteTransportMode.Public) {
+            if (itTrip.mPreferences?.transportMode != ERouteTransportMode.Public) {
                 Tutorials.openCustomRouteTutorial(waypoints)
             } else {
                 Tutorials.openCustomPublicNavTutorial(waypoints)

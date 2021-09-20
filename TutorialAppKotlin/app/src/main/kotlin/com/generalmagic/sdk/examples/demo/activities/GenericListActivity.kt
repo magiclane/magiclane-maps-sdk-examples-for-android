@@ -32,13 +32,13 @@ import com.generalmagic.sdk.examples.demo.app.BaseActivity
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.Util
 import com.generalmagic.sdk.examples.demo.util.UtilUITexts
-import com.generalmagic.sdk.examples.demo.util.Utils
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkIcons
+import com.generalmagic.sdk.util.SdkImages
 import com.generalmagic.sdk.util.SdkUtil.getDistText
+import com.generalmagic.sdk.util.UtilGemImages
 import io.github.luizgrp.sectionedrecyclerviewadapter.Section
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionParameters
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionedRecyclerViewAdapter
@@ -678,7 +678,7 @@ open class ContentStoreItemViewModel(val it: ContentStoreItem) : ListItemStatusI
             }
         }
 
-        return@execute Util.createBitmap(countryFlagImage, width, height)
+        return@execute UtilGemImages.asBitmap(countryFlagImage, width, height)
     }
 
     override fun getStatusIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
@@ -717,7 +717,7 @@ open class StylesContentStoreItemViewModel(val it: ContentStoreItem) : StylesLis
             }
         }
 
-        return@execute Util.createBitmap(countryFlagImage, width, height)
+        return@execute UtilGemImages.asBitmap(countryFlagImage, width, height)
     }
 
     override fun getStatusIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
@@ -746,7 +746,7 @@ open class StylesContentStoreItemViewModel(val it: ContentStoreItem) : StylesLis
         val previewImage = it.imagePreview
         val height = previewImage?.size?.height ?: 0
         val width = previewImage?.size?.width ?: 0
-        return@execute Util.createBitmap(previewImage, width, height)
+        return@execute UtilGemImages.asBitmap(previewImage, width, height)
     }
 
 
@@ -774,7 +774,7 @@ open class LandmarkViewModel(val it: Landmark?, reference: Coordinates?) : Searc
 
     override fun getIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
         if (it != null) {
-            return@execute Utils.getLandmarkIcon(it, width)
+            return@execute it.imageAsBitmap(width)
         }
         return@execute null
     }
@@ -790,7 +790,7 @@ open class LandmarkViewModel(val it: Landmark?, reference: Coordinates?) : Searc
     override fun getText(): String = SdkCall.execute {
         return@execute it?.name
     } ?: ""
-    
+
     override fun getDescription(): String = SdkCall.execute {
         return@execute UtilUITexts.pairFormatLandmarkDetails(it).second
     } ?: ""
@@ -830,22 +830,22 @@ class FavouritesLandmarkViewModel(it: Landmark?, reference: Coordinates?) :
 
 open class TripViewModel(val it: Trip, private val tripIndex: Int) : SearchListItem() {
     override fun getIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
-        return@execute it.mPreferences?.getTransportMode().let { transportMode ->
+        return@execute it.mPreferences?.transportMode.let { transportMode ->
             return@let when (transportMode) {
                 ERouteTransportMode.Car -> {
-                    Utils.getImageAsBitmap(SdkIcons.Other_UI.DriveTo_v2.value, width, height)
+                    UtilGemImages.asBitmap(SdkImages.UI.DriveTo_v2.value, width, height)
                 }
 
                 ERouteTransportMode.Pedestrian -> {
-                    Utils.getImageAsBitmap(SdkIcons.Other_UI.WalkTo.value, width, height)
+                    UtilGemImages.asBitmap(SdkImages.UI.WalkTo.value, width, height)
                 }
 
                 ERouteTransportMode.Bicycle -> {
-                    Utils.getImageAsBitmap(SdkIcons.Other_UI.BikeTo.value, width, height)
+                    UtilGemImages.asBitmap(SdkImages.UI.BikeTo.value, width, height)
                 }
 
                 ERouteTransportMode.Public -> {
-                    Utils.getImageAsBitmap(SdkIcons.Other_UI.PublicTransportTo.value, width, height)
+                    UtilGemImages.asBitmap(SdkImages.UI.PublicTransportTo.value, width, height)
                 }
 
                 else -> {
@@ -882,7 +882,7 @@ open class StyleItemViewModel(item: ContentStoreItem) : StylesContentStoreItemVi
 
     override fun getIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
         val mText = it.name ?: ""
-        var iconId = SdkIcons.Other_UI.ShowMapStandard
+        var iconId = SdkImages.UI.ShowMapStandard
         if ((mText.indexOf("Cloud") >= 0) ||
             (mText.indexOf("Temperature") >= 0) ||
             (mText.indexOf("Wind") >= 0) ||
@@ -890,24 +890,24 @@ open class StyleItemViewModel(item: ContentStoreItem) : StylesContentStoreItemVi
             (mText.indexOf("Humidity") >= 0) ||
             (mText.indexOf("Pressure") >= 0)
         ) {
-            iconId = SdkIcons.Other_UI.ShowWeather
+            iconId = SdkImages.UI.ShowWeather
         } else if (mText.indexOf("Terrain") >= 0) {
             iconId = if (mText.indexOf("Satellite") >= 0) {
-                SdkIcons.Other_UI.ShowMapTerrainAndSatellite
+                SdkImages.UI.ShowMapTerrainAndSatellite
             } else {
-                SdkIcons.Other_UI.ShowMapTerrain
+                SdkImages.UI.ShowMapTerrain
             }
         } else if (mText.indexOf("Satellite") >= 0) {
-            iconId = SdkIcons.Other_UI.ShowMapTerrainAndSatellite
+            iconId = SdkImages.UI.ShowMapTerrainAndSatellite
         }
 
-        return@execute Util.getImageIdAsBitmap(iconId.value, width, height)
+        return@execute UtilGemImages.asBitmap(iconId.value, width, height)
     }
 
     override fun getStatusIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
         return@execute if (mChecked) {
-            Util.getImageIdAsBitmap(
-                SdkIcons.Other_UI.Button_DownloadCheckmark.value, width, height
+            UtilGemImages.asBitmap(
+                SdkImages.UI.Button_DownloadCheckmark.value, width, height
             )
         } else {
             Util.getContentStoreStatusAsBitmap(it.status, width, height)

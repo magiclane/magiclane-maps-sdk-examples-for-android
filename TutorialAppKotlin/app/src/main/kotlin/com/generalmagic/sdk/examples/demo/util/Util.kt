@@ -14,30 +14,25 @@ package com.generalmagic.sdk.examples.demo.util
 
 import android.content.Context
 import android.graphics.*
-import android.graphics.Rect
 import android.graphics.drawable.*
 import android.os.Build
 import android.util.DisplayMetrics
 import android.util.TypedValue
 import android.view.View
 import android.widget.TextView
-import com.generalmagic.sdk.*
 import com.generalmagic.sdk.content.ContentStore
 import com.generalmagic.sdk.content.EContentStoreItemStatus
 import com.generalmagic.sdk.content.EContentType
-import com.generalmagic.sdk.core.*
+import com.generalmagic.sdk.core.GemSdk
+import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.OverlayItem
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
-import com.generalmagic.sdk.routesandnavigation.*
-import com.generalmagic.sdk.util.*
+import com.generalmagic.sdk.util.SdkCall
+import com.generalmagic.sdk.util.SdkImages
 import com.generalmagic.sdk.util.Util.moveFile
-import com.generalmagic.sdk.util.UtilToBitmap.imageToBitmap
-import java.io.ByteArrayOutputStream
+import com.generalmagic.sdk.util.UtilGemImages
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.IntBuffer
 import java.util.*
 
 object Util {
@@ -114,135 +109,6 @@ object Util {
         return Color.argb(a, r, g, b)
     }
 
-    fun createBitmap(img: RoadInfoImage?, width: Int, height: Int): Pair<Int, Bitmap?> {
-        img ?: return Pair(0, null)
-
-        return SdkCall.execute {
-            val resultPair = imageToBitmap(img, width, height)
-            val bmp = createBitmap(resultPair?.second, resultPair?.first ?: 0, height)
-
-            return@execute Pair(resultPair?.first ?: 0, bmp)
-        } ?: Pair(0, null)
-    }
-
-    fun createBitmap(
-        img: LaneImage?,
-        width: Int,
-        height: Int,
-        bkColor: Rgba? = null,
-        activeColor: Rgba? = null,
-        inactiveColor: Rgba? = null
-    ): Pair<Int, Bitmap?> {
-        img ?: return Pair(0, null)
-
-        return SdkCall.execute {
-            val resultPair =
-                imageToBitmap(
-                    img,
-                    width,
-                    height,
-                    bkColor,
-                    activeColor,
-                    inactiveColor
-                )
-            val bmp = createBitmap(resultPair?.second, resultPair?.first ?: 0, height)
-
-            return@execute Pair(resultPair?.first ?: 0, bmp)
-        } ?: Pair(0, null)
-    }
-
-    fun createBitmap(img: SignpostImage?, width: Int, height: Int): Pair<Int, Bitmap?> {
-        img ?: return Pair(0, null)
-
-        return SdkCall.execute {
-            val resultPair = imageToBitmap(img, width, height)
-            val bmp = createBitmap(resultPair?.second, resultPair?.first ?: 0, height)
-
-            return@execute Pair(resultPair?.first ?: 0, bmp)
-        } ?: Pair(0, null)
-    }
-
-    fun createBitmap(
-        img: AbstractGeometryImage?,
-        width: Int,
-        height: Int,
-        activeInnerColor: Rgba? = null,
-        activeOuterColor: Rgba? = null,
-        inactiveInnerColor: Rgba? = null,
-        inactiveOuterColor: Rgba? = null
-    ): Bitmap? {
-        img ?: return null
-
-        return SdkCall.execute {
-            val byteArray = imageToBitmap(
-                img,
-                width,
-                height,
-                activeInnerColor,
-                activeOuterColor,
-                inactiveInnerColor,
-                inactiveOuterColor
-            )
-            return@execute createBitmap(byteArray, width, height)
-        }
-    }
-
-    fun createBitmap(img: Image?, width: Int, height: Int): Bitmap? {
-        img ?: return null
-        return SdkCall.execute {
-            val byteArray = imageToBitmap(img, width, height)
-            return@execute createBitmap(byteArray, width, height)
-        }
-    }
-
-    fun createBitmapFromNV21(data: ByteArray?, width: Int, height: Int): Bitmap? {
-        data ?: return null
-
-        val out = ByteArrayOutputStream()
-        val yuvImage = YuvImage(data, ImageFormat.NV21, width, height, null)
-        yuvImage.compressToJpeg(Rect(0, 0, width, height), 50, out)
-        val imageBytes: ByteArray = out.toByteArray()
-
-        return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-    }
-
-    fun createBitmap(byteArray: ByteArray?, width: Int, height: Int): Bitmap? {
-        if (byteArray == null || width <= 0 || height <= 0) {
-            return null
-        }
-
-        val byteBuffer: ByteBuffer = ByteBuffer.wrap(byteArray)
-        byteBuffer.order(ByteOrder.nativeOrder())
-        val buffer: IntBuffer = byteBuffer.asIntBuffer()
-        val imgArray = IntArray(buffer.remaining())
-        buffer.get(imgArray)
-        val result = Bitmap.createBitmap(imgArray, width, height, Bitmap.Config.ARGB_8888)
-        result.density = DisplayMetrics.DENSITY_MEDIUM
-        return result
-    }
-
-    fun createBitmap(byteBuffer: ByteBuffer?, width: Int, height: Int): Bitmap? {
-        if (byteBuffer == null || width <= 0 || height <= 0) {
-            return null
-        }
-
-        val result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        result.copyPixelsFromBuffer(byteBuffer)
-        result.density = DisplayMetrics.DENSITY_MEDIUM
-        return result
-    }
-
-    fun getImageIdAsImage(id: Int): Image? {
-        return SdkCall.execute { ImageDatabase().getImageById(id) }
-    }
-
-    fun getImageIdAsBitmap(id: Int, width: Int, height: Int): Bitmap? {
-        return SdkCall.execute {
-            val image = getImageIdAsImage(id)
-            return@execute createBitmap(image, width, height)
-        }
-    }
-
     fun getPhonePath(context: Context?): String =
         com.generalmagic.sdk.util.Util.getAppDirInternalPath(context)
 
@@ -252,29 +118,29 @@ object Util {
     fun getContentStoreStatusIconId(status: EContentStoreItemStatus): Int {
         return when (status) {
             EContentStoreItemStatus.Unavailable -> {
-                SdkIcons.Other_UI.Button_DownloadOnServer_v2.value
+                SdkImages.UI.Button_DownloadOnServer_v2.value
             }
 
             EContentStoreItemStatus.Completed -> {
-                SdkIcons.Other_UI.Button_DownloadOnDevice_v2.value
+                SdkImages.UI.Button_DownloadOnDevice_v2.value
             }
 
             EContentStoreItemStatus.DownloadRunning -> {
-                SdkIcons.Other_UI.Button_DownloadPause.value
+                SdkImages.UI.Button_DownloadPause.value
             }
 
             EContentStoreItemStatus.DownloadQueued,
             EContentStoreItemStatus.DownloadWaitingFreeNetwork -> {
-                SdkIcons.Other_UI.Button_DownloadQueue.value
+                SdkImages.UI.Button_DownloadQueue.value
             }
 
             EContentStoreItemStatus.DownloadWaiting,
             EContentStoreItemStatus.Paused -> {
-                SdkIcons.Other_UI.Button_DownloadRefresh_v2.value
+                SdkImages.UI.Button_DownloadRefresh_v2.value
             }
 
             else -> {
-                SdkIcons.E.InvalidId.value
+                SdkImages.InvalidId
             }
         }
     }
@@ -284,7 +150,7 @@ object Util {
         width: Int,
         height: Int
     ): Bitmap? {
-        return getImageIdAsBitmap(getContentStoreStatusIconId(status), width, height)
+        return UtilGemImages.asBitmap(getContentStoreStatusIconId(status), width, height)
     }
 
     fun getTextWidth(textView: TextView?, maxWidth: Int): Int {

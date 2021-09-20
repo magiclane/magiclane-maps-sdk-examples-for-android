@@ -51,7 +51,7 @@ class FlyToCoords(context: Context, attrs: AttributeSet?) : FlyController(contex
 
 class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context, attrs) {
     private val searchService = SearchService()
-    
+
     private lateinit var wikiView: WikiView
     private lateinit var closeButton: FloatingActionButton
 
@@ -166,7 +166,7 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
 open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(context, attrs) {
     protected var isFlyToRoute = false
     private val routingService = RoutingService()
-    
+
     lateinit var topPanelController: NavTopPanelController
 
     override fun onFinishInflate() {
@@ -205,7 +205,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
                     if (resultsList.size == 0) return@segment null
                     val mSelectedRoute = resultsList[0]
 
-                    val segmentsList = mSelectedRoute.getSegments() ?: return@segment null
+                    val segmentsList = mSelectedRoute.segments ?: return@segment null
                     if (segmentsList.size == 0) return@segment null
 
                     selectedRoute = mSelectedRoute
@@ -225,7 +225,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
 
                     mainMap.centerOnRoute(route)
                 } else {
-                    val instructionsList = segment.getInstructions() ?: return@execute
+                    val instructionsList = segment.instructions ?: return@execute
                     val instruction =
                         if (instructionsList.size > 2) instructionsList[2] else return@execute
 
@@ -246,9 +246,9 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
             val from = Landmark("Gheorghe Lazar", Coordinates(45.65131, 25.60493))
             val to = Landmark("Bulevardul Grivitei", Coordinates(45.65272, 25.60674))
 
-            routingService.preferences.setTransportMode(ERouteTransportMode.Car)
-            routingService.preferences.setRouteType(ERouteType.Fastest)
-            routingService.preferences.setAvoidTraffic(true)
+            routingService.preferences.transportMode = ERouteTransportMode.Car
+            routingService.preferences.routeType = ERouteType.Fastest
+            routingService.preferences.avoidTraffic = true
 
             routingService.calculateRoute(arrayListOf(from, to))
         }
@@ -281,7 +281,7 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
         topPanelController = findViewById(R.id.topPanelController)
         super.onCreated()
     }
-    
+
     override fun doStart() {
         routingService.onStarted = {
             showProgress()
@@ -315,7 +315,7 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
                     if (resultsList.size == 0) return@trafficEvent null
                     val mSelectedRoute = resultsList[0]
 
-                    val trafficEventsLists = mSelectedRoute.getTrafficEvents() ?: ArrayList()
+                    val trafficEventsLists = mSelectedRoute.trafficEvents ?: ArrayList()
                     if (trafficEventsLists.size == 0) {
                         return@trafficEvent null
                     }
@@ -332,7 +332,7 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
                     return@execute
                 }
 
-                val totalRouteLength = route.getTimeDistance()?.totalDistance ?: 0
+                val totalRouteLength = route.timeDistance?.totalDistance ?: 0
 
                 GEMApplication.postOnMain {
                     topPanelController.update(trafficEvent, totalRouteLength)
@@ -347,9 +347,9 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
             val from = Landmark("London", Coordinates(51.50732, -0.12765))
             val to = Landmark("Maidstone", Coordinates(51.27483, 0.52316))
 
-            routingService.preferences.setTransportMode(ERouteTransportMode.Car)
-            routingService.preferences.setRouteType(ERouteType.Fastest)
-            routingService.preferences.setAvoidTraffic(true)
+            routingService.preferences.transportMode = ERouteTransportMode.Car
+            routingService.preferences.routeType = ERouteType.Fastest
+            routingService.preferences.avoidTraffic = true
 
             routingService.calculateRoute(arrayListOf(from, to))
         }

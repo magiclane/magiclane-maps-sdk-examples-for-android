@@ -21,7 +21,6 @@ import androidx.core.content.ContextCompat
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.Rgba
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.OverlayItem
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
@@ -30,11 +29,12 @@ import com.generalmagic.sdk.examples.demo.util.Util.setPanelBackground
 import com.generalmagic.sdk.examples.demo.util.UtilUITexts
 import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkIcons
+import com.generalmagic.sdk.util.SdkImages
 import com.generalmagic.sdk.util.SdkUtil.getDistText
 import com.generalmagic.sdk.util.SdkUtil.getTimeText
 import com.generalmagic.sdk.util.SdkUtil.getUIString
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilGemImages
 
 
 class NavTopPanelController(context: Context, attrs: AttributeSet?) :
@@ -268,7 +268,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         SdkCall.checkCurrentThread()
 
         val distanceToNextTurnTexts = getDistText(
-            event?.getTraveledTimeDistance()?.totalDistance ?: 0,
+            event?.traveledTimeDistance?.totalDistance ?: 0,
             SdkSettings().unitSystem,
             true
         )
@@ -282,7 +282,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
             bSameTurnImage = true
         }
 
-        turnInstruction = event?.getTurnInstruction() ?: ""
+        turnInstruction = event?.turnInstruction ?: ""
         distanceToNextTurn = distanceToNextTurnTexts.first
         distanceToNextTurnUnit = distanceToNextTurnTexts.second
     }
@@ -367,7 +367,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         if (navInstr == null || route == null) return null
 
         if (navInstr.navigationStatus != ENavigationStatus.Running) return null
-        val trafficEventsList = route.getTrafficEvents() ?: return null
+        val trafficEventsList = route.trafficEvents ?: return null
 
         val remainingTravelDistance =
             navInstr.remainingTravelTimeDistance?.totalDistance ?: 0
@@ -694,8 +694,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
 
             val image = SdkCall.execute { navInstr.getRoadInfoImage(roadsInfo) }
 
-            val resultPair =
-                Util.createBitmap(image, resultWidth, height)
+            val resultPair = UtilGemImages.asBitmap(image, resultWidth, height)
 
             resultWidth = resultPair.first
             return@execute Pair(resultWidth, resultPair.second)
@@ -722,14 +721,14 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
                 mLastAlarmImageId = image.uid
             }
 
-            return@execute Pair(actualWidth, Util.createBitmap(image, actualWidth, height))
+            return@execute Pair(actualWidth, UtilGemImages.asBitmap(image, actualWidth, height))
         } ?: Pair(0, null)
     }
 
     private fun getTrafficEndOfSectionIcon(width: Int, height: Int): Bitmap? {
         return SdkCall.execute {
-            return@execute Util.getImageIdAsBitmap(
-                SdkIcons.Other_UI.Traffic_EndOfSection_Square.value, width, height
+            return@execute UtilGemImages.asBitmap(
+                SdkImages.UI.Traffic_EndOfSection_Square.value, width, height
             )
         }
     }
@@ -760,7 +759,15 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
             val iInner = Rgba(128, 128, 128, 255)
             val iOuter = Rgba(128, 128, 128, 255)
 
-            return@execute Util.createBitmap(image, width, height, aInner, aOuter, iInner, iOuter)
+            return@execute UtilGemImages.asBitmap(
+                image,
+                width,
+                height,
+                aInner,
+                aOuter,
+                iInner,
+                iOuter
+            )
         }
     }
 
@@ -773,16 +780,16 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         return SdkCall.execute {
             val navInstr = from ?: return@execute null
             if (!navInstr.hasTurnInfo()) return@execute null
-            if (navInstr.getTurnDetails()?.abstractGeometryImage
+            if (navInstr.turnDetails?.abstractGeometryImage
                     ?.uid ?: 0 == mLastTurnImageId
             ) {
                 bSameImage.value = true
                 return@execute null
             }
 
-            val image = navInstr.getTurnDetails()?.abstractGeometryImage
+            val image = navInstr.turnDetails?.abstractGeometryImage
             if (image != null) {
-                val details = navInstr.getTurnDetails()
+                val details = navInstr.turnDetails
                 mLastTurnImageId = details?.abstractGeometryImage?.uid ?: 0
             }
 
@@ -791,7 +798,15 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
             val iInner = Rgba(128, 128, 128, 255)
             val iOuter = Rgba(128, 128, 128, 255)
 
-            return@execute Util.createBitmap(image, width, height, aInner, aOuter, iInner, iOuter)
+            return@execute UtilGemImages.asBitmap(
+                image,
+                width,
+                height,
+                aInner,
+                aOuter,
+                iInner,
+                iOuter
+            )
         }
     }
 
@@ -801,18 +816,9 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
         return SdkCall.execute {
             val navInstr = from ?: return@execute Pair(0, null)
             if (!navInstr.hasSignpostInfo()) return@execute Pair(0, null)
+            val image = navInstr.signpostDetails?.image ?: return@execute Pair(0, null)
 
-            var resultWidth = width
-            if (resultWidth == 0) {
-                resultWidth = (2.5 * height).toInt()
-            }
-
-            val image = navInstr.signpostDetails?.image
-
-            val resultPair = Util.createBitmap(image, resultWidth, height)
-            resultWidth = resultPair.first
-
-            return@execute Pair(resultWidth, resultPair.second)
+            return@execute UtilGemImages.asBitmap(image, width, height)
         } ?: Pair(0, null)
     }
 
@@ -833,7 +839,7 @@ class NavTopPanelController(context: Context, attrs: AttributeSet?) :
                 mLastTrafficImageId = image.uid
             }
 
-            Util.createBitmap(image, width, height)
+            UtilGemImages.asBitmap(image, width, height)
         }
     }
 }

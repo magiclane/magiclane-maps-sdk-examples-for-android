@@ -374,8 +374,8 @@ open class BaseSimulationController(context: Context, attrs: AttributeSet?) :
             }
 
             val preferences = SettingsProvider.loadRoutePreferences()
-            preferences.setTransportMode(ERouteTransportMode.Car)
-            preferences.setAvoidTraffic(true)
+            preferences.transportMode = ERouteTransportMode.Car
+            preferences.avoidTraffic = true
 
             navigationService.startSimulation(
                 waypoints,
@@ -403,8 +403,8 @@ open class BaseSimulationController(context: Context, attrs: AttributeSet?) :
             }
 
             val preferences = SettingsProvider.loadRoutePreferences()
-            preferences.setTransportMode(ERouteTransportMode.Car)
-            preferences.setAvoidTraffic(true)
+            preferences.transportMode = ERouteTransportMode.Car
+            preferences.avoidTraffic = true
 
             navigationService.startSimulationWithRoute(
                 route,
@@ -425,8 +425,8 @@ open class BaseNavigationController(context: Context, attrs: AttributeSet?) :
 
         SdkCall.execute {
             val preferences = SettingsProvider.loadRoutePreferences()
-            preferences.setTransportMode(ERouteTransportMode.Car)
-            preferences.setAvoidTraffic(true)
+            preferences.transportMode = ERouteTransportMode.Car
+            preferences.avoidTraffic = true
 
             navigationService.startNavigation(
                 waypoints, navigationListener, routeCalcListener, preferences

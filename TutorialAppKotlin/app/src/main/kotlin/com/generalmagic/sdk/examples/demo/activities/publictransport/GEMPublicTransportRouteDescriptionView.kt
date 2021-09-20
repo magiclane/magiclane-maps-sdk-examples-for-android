@@ -20,11 +20,12 @@ import com.generalmagic.sdk.routesandnavigation.ERealtimeStatus
 import com.generalmagic.sdk.routesandnavigation.ETransitType
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkIcons
+import com.generalmagic.sdk.util.SdkImages
 import com.generalmagic.sdk.util.SdkUtil.getDistText
 import com.generalmagic.sdk.util.SdkUtil.getTimeText
 import com.generalmagic.sdk.util.SdkUtil.getUIString
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilGemImages
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -98,7 +99,7 @@ object GEMPublicTransportRouteDescriptionView {
     private fun setHeader(mRoute: Route) {
         SdkCall.checkCurrentThread()
 
-        val routeSegmentsList = mRoute.getSegments() ?: ArrayList()
+        val routeSegmentsList = mRoute.segments ?: ArrayList()
         val nSegmentsCount = routeSegmentsList.size
         var nWalkingTime = 0
         var nWalkingDistance = 0
@@ -109,12 +110,12 @@ object GEMPublicTransportRouteDescriptionView {
 
         mHeader.mTripSegments.clear()
 
-        if (mRoute.toPTRoute()?.getPTFrequency() ?: 0 > 0) {
-            val timeText = getTimeText(mRoute.toPTRoute()?.getPTFrequency() ?: 0)
+        if (mRoute.toPTRoute()?.ptFrequency ?: 0 > 0) {
+            val timeText = getTimeText(mRoute.toPTRoute()?.ptFrequency ?: 0)
             val tmp = String.format("%s %s", timeText.first, timeText.second)
             mHeader.mFrequency = String.format(getUIString(StringIds.eStrEveryXTime), tmp)
         }
-        mHeader.mFare = mRoute.toPTRoute()?.getPTFare() ?: ""
+        mHeader.mFare = mRoute.toPTRoute()?.ptFare ?: ""
 
         for (nSegmentIndex in 0 until nSegmentsCount) {
             val routeSegment = routeSegmentsList[nSegmentIndex]
@@ -127,17 +128,17 @@ object GEMPublicTransportRouteDescriptionView {
                 val ptRouteSegment = routeSegment.toPTRouteSegment()
                 var bgColor = Rgba()
                 ptRouteSegment?.let {
-                    routeSegmentItem.mType = it.getTransitType()
-                    routeSegmentItem.mName = it.getShortName() ?: ""
+                    routeSegmentItem.mType = it.transitType
+                    routeSegmentItem.mName = it.shortName ?: ""
 
                     routeSegmentItem.mVisible = ptRouteSegment.isSignificant()
 
-                    val lineColor = it.getLineColor()
+                    val lineColor = it.lineColor
                     if (lineColor != null) {
                         bgColor = lineColor
                     }
                     routeSegmentItem.mBackgroundColor = bgColor.value
-                    routeSegmentItem.mForegroundColor = it.getLineTextColor()?.value ?: 0
+                    routeSegmentItem.mForegroundColor = it.lineTextColor?.value ?: 0
                 }
 
                 if ((bgColor.red == 255) && (bgColor.green == 255) && (bgColor.blue == 255)) {
@@ -145,11 +146,11 @@ object GEMPublicTransportRouteDescriptionView {
                 }
 
                 routeSegmentItem.mRealTimeStatus =
-                    ptRouteSegment?.getRealtimeStatus() ?: ERealtimeStatus.NotAvailable
+                    ptRouteSegment?.realtimeStatus ?: ERealtimeStatus.NotAvailable
                 routeSegmentItem.mHasWheelChairSupport =
-                    ptRouteSegment?.getHasWheelchairSupport() ?: false
+                    ptRouteSegment?.hasWheelchairSupport() ?: false
                 routeSegmentItem.mHasBicycleSupport =
-                    ptRouteSegment?.getHasBicycleSupport() ?: false
+                    ptRouteSegment?.hasBicycleSupport() ?: false
                 routeSegmentItem.mIconId = Helper.getIconId(routeSegmentItem.mType)
 
                 if (bLookForPTSegment) {
@@ -157,36 +158,36 @@ object GEMPublicTransportRouteDescriptionView {
 
                     mHeader.mNLeftImageId = routeSegmentItem.mIconId
 
-                    val from = ptRouteSegment?.getLineFrom() ?: ""
+                    val from = ptRouteSegment?.lineFrom ?: ""
                     if (from.isNotEmpty()) {
                         mHeader.mFrom = String.format("from %s", from)
                     }
                 }
             } else {
-                nWalkingTime += routeSegment.getTimeDistance()?.totalTime ?: 0
-                nWalkingDistance += routeSegment.getTimeDistance()?.totalDistance ?: 0
+                nWalkingTime += routeSegment.timeDistance?.totalTime ?: 0
+                nWalkingDistance += routeSegment.timeDistance?.totalDistance ?: 0
                 routeSegmentItem.mType = ETransitType.Walk
                 routeSegmentItem.mIconId = Helper.getIconId(routeSegmentItem.mType)
 
                 routeSegmentItem.mVisible = true//routeSegment.isSignificant()
 
                 val timeText =
-                    getTimeText(routeSegment.getTimeDistance()?.totalTime ?: 0)
+                    getTimeText(routeSegment.timeDistance?.totalTime ?: 0)
                 routeSegmentItem.mTravelTimeValue = timeText.first
                 routeSegmentItem.mTravelTimeUnit = timeText.second
             }
 
             if (nSegmentIndex == 0) {
-                departureTime = routeSegment.toPTRouteSegment()?.getDepartureTime() ?: Time()
+                departureTime = routeSegment.toPTRouteSegment()?.departureTime ?: Time()
             }
             if (nSegmentIndex == (nSegmentsCount - 1)) {
-                arrivalTime = routeSegment.toPTRouteSegment()?.getArrivalTime() ?: Time()
+                arrivalTime = routeSegment.toPTRouteSegment()?.arrivalTime ?: Time()
             }
 
             mHeader.mTripSegments.add(routeSegmentItem)
         }
 
-        val travelTime = mRoute.getTimeDistance()?.totalTime ?: 0
+        val travelTime = mRoute.timeDistance?.totalTime ?: 0
 
         if (bLookForPTSegment) {
             nWalkingTime = travelTime
@@ -278,7 +279,7 @@ object GEMPublicTransportRouteDescriptionView {
             }
         }
 
-        if (mRoute.toPTRoute()?.getPTRespectsAllConditions() == false) {
+        if (mRoute.toPTRoute()?.ptRespectsAllConditions() == false) {
             mHeader.mWarning = getUIString(StringIds.eStrNotAllPreferencesMet)
         }
     }
@@ -472,7 +473,7 @@ object GEMPublicTransportRouteDescriptionView {
             val iconId = mHeader.mTripSegments[segmentIndex].mIconId
             width.width = (height * Utils.getImageAspectRatio(iconId)).toInt()
 
-            return Utils.getImageAsBitmap(iconId, width.width, height)
+            return SdkCall.execute{ UtilGemImages.asBitmap(iconId, width.width, height) }
         }
 
         return null
@@ -515,14 +516,16 @@ object GEMPublicTransportRouteDescriptionView {
 
     @Suppress("SameParameterValue")
     private fun getSeparatorImage(width: TImageWidth, height: Int): Bitmap? {
-        val iconId = SdkIcons.PublicTransport.PublicTransport_Arrow.value
+        val iconId = SdkImages.PublicTransport.PublicTransport_Arrow.value
         width.width = (height * Utils.getImageAspectRatio(iconId)).toInt()
 
-        return Utils.getImageAsBitmap(
-            SdkIcons.PublicTransport.PublicTransport_Arrow.value,
+        return SdkCall.execute{
+UtilGemImages.asBitmap(
+            SdkImages.PublicTransport.PublicTransport_Arrow.value,
             width.width,
             height
         )
+        }
     }
 
     private fun getWalkingInfo(): String {
@@ -793,14 +796,14 @@ object GEMPublicTransportRouteDescriptionView {
     }
 
     fun getAgencyURLImage(): Image? {
-        return ImageDatabase().getImageById(SdkIcons.Other_UI.LocationDetails_OpenWebsite.value)
+        return ImageDatabase().getImageById(SdkImages.UI.LocationDetails_OpenWebsite.value)
     }
 
     fun getAgencyFareImage(): Image? {
-        return ImageDatabase().getImageById(SdkIcons.Other_UI.LocationDetails_BuyTickets.value)
+        return ImageDatabase().getImageById(SdkImages.UI.LocationDetails_BuyTickets.value)
     }
 
     fun getAgencyPhoneImage(): Image? {
-        return ImageDatabase().getImageById(SdkIcons.Other_UI.LocationDetails_PhoneCall.value)
+        return ImageDatabase().getImageById(SdkImages.UI.LocationDetails_PhoneCall.value)
     }
 }

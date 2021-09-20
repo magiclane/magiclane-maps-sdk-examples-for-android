@@ -43,6 +43,7 @@ import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkUtil
 import com.generalmagic.sdk.util.SdkUtil.getDistText
 import com.generalmagic.sdk.util.SdkUtil.getSpeedText
+import com.generalmagic.sdk.util.UtilGemImages
 import kotlin.math.roundToInt
 
 class NavPanelsController(context: Context, attrs: AttributeSet?) :
@@ -589,7 +590,7 @@ class UINavDataProvider {
 
                 val image = navInstr.laneImage
 
-                val resultPair = Util.createBitmap(
+                val resultPair = UtilGemImages.asBitmap(
                     image,
                     resultWidth,
                     height,
@@ -653,7 +654,7 @@ class UINavDataProvider {
             val totalTime = if (navInstr.navigationStatus == ENavigationStatus.Running) {
                 navInstr.remainingTravelTimeDistance?.totalTime ?: 0
             } else {
-                route.getTimeDistance()?.totalTime ?: 0
+                route.timeDistance?.totalTime ?: 0
             }
 
             totalTime + SdkUtil.getTrafficEventsDelay(route, true)
@@ -663,7 +664,7 @@ class UINavDataProvider {
             if (navInstr.navigationStatus == ENavigationStatus.Running) {
                 navInstr.remainingTravelTimeDistance?.totalDistance ?: 0
             } else {
-                route.getTimeDistance()?.totalDistance ?: 0
+                route.timeDistance?.totalDistance ?: 0
             }
         }
 

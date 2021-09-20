@@ -166,8 +166,8 @@ object GEMApplication {
     fun getExternalRecordsPath() = eRecordsPath
 
     fun getMainMapView() = SdkCall.execute { mainMapView }
-    fun gemMapScreen() = mapSurface?.getScreen()
-    fun getGlContext() = mapSurface?.getGlContext()
+    fun gemMapScreen() = mapSurface?.gemScreen
+    fun getGlContext() = mapSurface?.gemGlContext
 
     fun onFollowGpsPressed() {
         doMapFollow()
@@ -203,7 +203,7 @@ object GEMApplication {
     fun clearMapVisibleRoutes(): Boolean {
         return SdkCall.execute {
             val routes = getMainMapView()?.preferences?.routes ?: return@execute false
-            if (routes.size() == 0) {
+            if (routes.size == 0) {
                 return@execute false
             }
             routes.clear()
@@ -330,7 +330,7 @@ object GEMApplication {
         }
 
         val routesCount = SdkCall.execute {
-            getMainMapView()?.preferences?.routes?.size()
+            getMainMapView()?.preferences?.routes?.size
         } ?: 0
 
         if (activity == topActivity() && activityStack.size == 1 && routesCount == 0) {
@@ -536,7 +536,7 @@ object GEMApplication {
             val lmk = Landmark("", landmark.coordinates ?: Coordinates())
             lmk.assign(landmark)
             if (!checkIfIsFavourite || !isFavourite(landmark)) {
-                ImageDatabase().getImageById(SdkIcons.Other_Engine.LocationDetailsFavouritePushPin.value)
+                ImageDatabase().getImageById(SdkImages.Engine_Misc.LocationDetails_FavouritePushPin.value)
                     ?.let { lmk.image = it }
 
                 val tmp = String.format("original_icon_id=%d", landmark.image?.uid)

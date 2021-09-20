@@ -33,8 +33,8 @@ class Trip {
         mIsFromAToB = isFromAToB
 
         route.let {
-            mWaypoints = it?.getWaypoints()
-            val preferences = it?.preferences()
+            mWaypoints = it?.waypoints
+            val preferences = it?.preferences
             val waypointsSize = mWaypoints?.size ?: 0
             if (!mIsFromAToB && waypointsSize > 1) {
                 mWaypoints?.remove(mWaypoints?.first())
@@ -178,7 +178,7 @@ class TripsHistory {
             return false
         }
 
-        if (trip1.mPreferences?.getTransportMode() != trip1.mPreferences?.getTransportMode()) {
+        if (trip1.mPreferences?.transportMode != trip1.mPreferences?.transportMode) {
             return false
         }
 

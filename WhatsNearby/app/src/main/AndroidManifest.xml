@@ -20,8 +20,9 @@
             android:value="YOUR_TOKEN" />
 
         <activity
-            android:name="com.generalmagic.sdk.examples.MainActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize|fontScale">
+            android:name="com.generalmagic.sdk.examples.whatsnearby.MainActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale"
+            android:exported="true">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="@dimen/smallPadding"
-    tools:context="com.generalmagic.sdk.examples.MainActivity">
+    tools:context="com.generalmagic.sdk.examples.locationwikipedia.MainActivity">
 
     <TextView
         android:id="@+id/locationName"

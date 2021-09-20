@@ -111,18 +111,18 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
         SdkCall.execute {
             val savedPrefs = SettingsProvider.loadRoutePreferences()
 
-            routingService.preferences.setRouteType(savedPrefs.getRouteType())
-            routingService.preferences.setAvoidTollRoads(savedPrefs.getAvoidTollRoads())
-            routingService.preferences.setAvoidMotorways(savedPrefs.getAvoidMotorways())
-            routingService.preferences.setAvoidFerries(savedPrefs.getAvoidFerries())
-            routingService.preferences.setAvoidUnpavedRoads(savedPrefs.getAvoidUnpavedRoads())
+            routingService.preferences.routeType = savedPrefs.routeType
+            routingService.preferences.avoidTollRoads = savedPrefs.avoidTollRoads
+            routingService.preferences.avoidMotorways = savedPrefs.avoidMotorways
+            routingService.preferences.avoidFerries = savedPrefs.avoidFerries
+            routingService.preferences.avoidUnpavedRoads = savedPrefs.avoidUnpavedRoads
 
-            routingService.preferences.setTransportMode(mode)
-            routingService.preferences.setAvoidTraffic(true)
-            routingService.preferences.setBuildTerrainProfile(true)
+            routingService.preferences.transportMode = mode
+            routingService.preferences.avoidTraffic = true
+            routingService.preferences.buildTerrainProfile = true
             val time = Time()
             time.setLocalTime()
-            routingService.preferences.setTimestamp(time)
+            routingService.preferences.timestamp = time
 
             routingService.calculateRoute(waypoints)
         }

@@ -13,11 +13,9 @@
 package com.generalmagic.sdk.examples.demo.util
 
 import android.app.Activity
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Insets
 import android.os.Build
-import android.util.DisplayMetrics
 import android.util.TypedValue
 import android.view.WindowInsets
 import com.generalmagic.sdk.core.*
@@ -26,12 +24,8 @@ import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.places.EAddressField
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkIcons
-import com.generalmagic.sdk.util.StringIds
 import com.generalmagic.sdk.util.SdkUtil.getUIString
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.IntBuffer
+import com.generalmagic.sdk.util.StringIds
 import java.util.*
 
 
@@ -210,30 +204,6 @@ object Utils {
         } ?: ""
     }
 
-    fun getImageAsBitmap(
-        iconId: Int,
-        width: Int,
-        height: Int
-    ): Bitmap? {
-        return SdkCall.execute { Util.getImageIdAsBitmap(iconId, width, height) }
-    }
-
-    fun getImageAsBitmap(
-        icon: Image?,
-        width: Int,
-        height: Int
-    ): Bitmap? {
-        return SdkCall.execute { Util.createBitmap(icon, width, height) }
-    }
-
-    fun getImageIdAsBitmap(
-        iconId: Int,
-        width: Int,
-        height: Int
-    ): Bitmap? {
-        return SdkCall.execute { Util.getImageIdAsBitmap(iconId, width, height) }
-    }
-
     fun getErrorMessage(nError: SdkError): String {
         return when (nError) {
             SdkError.General -> return getUIString(StringIds.eStrErrMsgKGeneral)
@@ -302,25 +272,6 @@ object Utils {
             displayMetrics.heightPixels
         }
     }
-
-    fun getLandmarkIcon(value: Landmark, imgSizes: Int): Bitmap? {
-        var iconId = value.image?.uid?.toInt()
-        if (iconId == SdkIcons.Other_Engine.LocationDetailsFavouritePushPin.value) {
-            val extraInfo = value.extraInfo ?: arrayListOf()
-            var originalIconId = "original_icon_id="
-            for (info in extraInfo) {
-                if (info.startsWith(originalIconId)) {
-                    originalIconId = info.substring(originalIconId.length)
-                    iconId = originalIconId.toInt()
-                    if (iconId > 0) {
-                        return getImageAsBitmap(iconId, imgSizes, imgSizes)
-                    }
-                }
-            }
-        }
-
-        return Util.createBitmap(value.image, imgSizes, imgSizes)
-    }
 }
 
 
@@ -344,21 +295,6 @@ object AppUtils {
         val metrics = GEMApplication.applicationContext().resources.displayMetrics
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, mm.toFloat(), metrics)
             .toInt()
-    }
-
-    fun createBitmap(img: ByteArray?, width: Int, height: Int): Bitmap? {
-        if (img == null || width <= 0 || height <= 0) {
-            return null
-        }
-
-        val byteBuffer: ByteBuffer = ByteBuffer.wrap(img)
-        byteBuffer.order(ByteOrder.nativeOrder())
-        val buffer: IntBuffer = byteBuffer.asIntBuffer()
-        val imgArray = IntArray(width * height)
-        buffer.get(imgArray)
-        val result = Bitmap.createBitmap(imgArray, width, height, Bitmap.Config.ARGB_8888)
-        result.density = DisplayMetrics.DENSITY_MEDIUM
-        return result
     }
 }
 

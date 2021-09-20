@@ -392,12 +392,12 @@ object SettingsProvider {
         val avoidUnpavedSetting = getBooleanValue(TBoolSettings.EAvoidUnpavedRoadsCar.value)
 
         val preferences = RoutePreferences()
-        preferences.setTransportMode(ERouteTransportMode.Car)
-        preferences.setRouteType(EnumHelp.fromInt(routeTypeSetting.second))
-        preferences.setAvoidTollRoads(avoidTollSetting.second)
-        preferences.setAvoidMotorways(avoidMotorwaysSetting.second)
-        preferences.setAvoidFerries(avoidFerriesSetting.second)
-        preferences.setAvoidUnpavedRoads(avoidUnpavedSetting.second)
+        preferences.transportMode = ERouteTransportMode.Car
+        preferences.routeType = EnumHelp.fromInt(routeTypeSetting.second)
+        preferences.avoidTollRoads = avoidTollSetting.second
+        preferences.avoidMotorways = avoidMotorwaysSetting.second
+        preferences.avoidFerries = avoidFerriesSetting.second
+        preferences.avoidUnpavedRoads = avoidUnpavedSetting.second
 
         return preferences
     }

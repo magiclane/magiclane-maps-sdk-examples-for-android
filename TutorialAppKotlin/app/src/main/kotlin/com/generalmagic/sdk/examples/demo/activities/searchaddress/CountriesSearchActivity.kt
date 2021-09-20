@@ -27,6 +27,7 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.StringIds
 import com.generalmagic.sdk.util.SdkUtil.getUIString
+import com.generalmagic.sdk.util.UtilGemImages
 
 class CountriesSearchActivity : SearchListActivity() {
     private var mFilter = ""
@@ -117,7 +118,7 @@ class CountryModelItem(val m_landmark: Landmark) : SearchListItem() {
         val isoCode = m_landmark.addressInfo?.getField(EAddressField.CountryCode)
         if (isoCode?.isNotEmpty() == true) {
             val image = MapDetails().getCountryFlag(isoCode)
-            return@execute Utils.getImageAsBitmap(image, width, height)
+            return@execute UtilGemImages.asBitmap(image, width, height)
         }
 
         return@execute null

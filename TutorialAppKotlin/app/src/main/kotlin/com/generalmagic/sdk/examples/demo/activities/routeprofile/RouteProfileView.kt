@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2019-2021, General Magic B.V.
+ * All rights reserved.
+ *
+ * This software is confidential and proprietary information of General Magic
+ * ("Confidential Information"). You shall not disclose such Confidential
+ * Information and shall use it only in accordance with the terms of the
+ * license agreement you entered into with General Magic.
+ */
+
 package com.generalmagic.sdk.examples.demo.activities.routeprofile
 
 import android.content.res.Configuration
@@ -33,7 +43,7 @@ class RouteProfileView(val parent: IMapControllerActivity) {
             rightMapViewCoords = RectF(0.5f, 0.0f, 1.0f, 1.0f)
         }
     }
-    
+
     fun showRouteProfile() {
         parent.run {
             getRouteProfileView()?.let { routeProfileView ->
@@ -57,7 +67,7 @@ class RouteProfileView(val parent: IMapControllerActivity) {
             GEMApplication.getMainMapView().let { mapView ->
                 SdkCall.execute {
                     mapView?.resize(fullMapViewCoords)
-                    GEMRouteProfileView.flyToRoute(mapView?.preferences?.routes?.getMainRoute())
+                    GEMRouteProfileView.flyToRoute(mapView?.preferences?.routes?.mainRoute)
                 }
             }
             GEMApplication.postOnMainDelayed({
@@ -118,7 +128,7 @@ class RouteProfileView(val parent: IMapControllerActivity) {
                                     mapView?.resize(rightMapViewCoords)
                                     GEMRouteProfileView.flyToRoute(
                                         GEMApplication.getMainMapView()?.preferences?.routes
-                                            ?.getMainRoute()
+                                            ?.mainRoute
                                     )
                                 }
                             }
@@ -137,7 +147,7 @@ class RouteProfileView(val parent: IMapControllerActivity) {
                                     mapView?.resize(topUpMapViewCoords)
                                     GEMRouteProfileView.flyToRoute(
                                         GEMApplication.getMainMapView()?.preferences?.routes
-                                            ?.getMainRoute()
+                                            ?.mainRoute
                                     )
                                 }
                             }

@@ -42,10 +42,11 @@ import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteInstruction
 import com.generalmagic.sdk.routesandnavigation.RouteTrafficEvent
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkIcons
+import com.generalmagic.sdk.util.SdkImages
 import com.generalmagic.sdk.util.SdkUtil.getDistText
 import com.generalmagic.sdk.util.SdkUtil.getUIString
 import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.UtilGemImages
 
 class RouteDescriptionActivity : AppCompatActivity() {
     private lateinit var route: Route
@@ -126,7 +127,7 @@ class RouteDescriptionActivity : AppCompatActivity() {
             }
 
             // add restricted area item
-            val timeDistance = route.getTimeDistance()
+            val timeDistance = route.timeDistance
             val distanceInMeters = timeDistance?.restrictedDistance ?: 0
             val timeInSeconds = timeDistance?.restrictedTime ?: 0
 
@@ -140,10 +141,10 @@ class RouteDescriptionActivity : AppCompatActivity() {
             }
 
             // add route instructions
-            val segmentList = route.getSegments()
+            val segmentList = route.segments
             if (segmentList != null) {
                 for (segment in segmentList) {
-                    val instructionList = segment.getInstructions() ?: continue
+                    val instructionList = segment.instructions ?: continue
                     for (instruction in instructionList) {
                         result.add(RouteInstructionItem(instruction))
                     }
@@ -152,7 +153,7 @@ class RouteDescriptionActivity : AppCompatActivity() {
 
             // add traffic events
             val routeLength = timeDistance?.totalDistance ?: 0
-            val trafficEventsList = route.getTrafficEvents()
+            val trafficEventsList = route.trafficEvents
             if (trafficEventsList != null) {
                 for (event in trafficEventsList) {
                     result.add(TrafficEventItem(event, routeLength))
@@ -255,12 +256,12 @@ class RouteTitleItem(route: Route, sortKey: Int) : ListViewItem() {
     init {
         SdkCall.checkCurrentThread()
 
-        val timeDistance = route.getTimeDistance()
+        val timeDistance = route.timeDistance
         val distanceInMeters = timeDistance?.totalDistance ?: 0
         val timeInSeconds = timeDistance?.totalTime ?: 0
 
         description = UtilUITexts.getFormattedDistanceTime(distanceInMeters, timeInSeconds)
-        val waypoints = route.getWaypoints()
+        val waypoints = route.waypoints
         if (waypoints != null && waypoints.size > 0) {
             var departureName = waypoints[0].name ?: ""
             var destinationName = waypoints.last().name ?: ""
@@ -294,7 +295,7 @@ class RouteTitleItem(route: Route, sortKey: Int) : ListViewItem() {
     }
 
     override fun getBitmap(width: Int, height: Int): Bitmap? = SdkCall.execute {
-        return@execute Util.getImageIdAsBitmap(SdkIcons.Other_UI.RouteOverview.value, width, height)
+        return@execute UtilGemImages.asBitmap(SdkImages.UI.RouteOverview.value, width, height)
     }
 }
 
@@ -320,7 +321,7 @@ class RouteWarningItem(val route: Route, private val type: TRouteWarningType, so
         }
 
         if (type == TRouteWarningType.RestrictedAreas) {
-            val timeDistance = route.getTimeDistance()
+            val timeDistance = route.timeDistance
             val distanceInMeters = timeDistance?.restrictedDistance ?: 0
             val timeInSeconds = timeDistance?.restrictedTime ?: 0
 
@@ -341,17 +342,17 @@ class RouteWarningItem(val route: Route, private val type: TRouteWarningType, so
     override fun getBitmap(width: Int, height: Int): Bitmap? = SdkCall.execute {
         val iconId = when (type) {
             TRouteWarningType.RequireToll -> {
-                SdkIcons.Other_UI.LocationDetails_TollStation.value
+                SdkImages.UI.LocationDetails_TollStation.value
             }
             TRouteWarningType.RequireFerry -> {
-                SdkIcons.Other_UI.LocationDetails_FerryTerminal.value
+                SdkImages.UI.LocationDetails_FerryTerminal.value
             }
             TRouteWarningType.RestrictedAreas -> {
-                SdkIcons.Other_UI.DefineRoadblock.value
+                SdkImages.UI.DefineRoadblock.value
             }
         }
 
-        return@execute Util.getImageIdAsBitmap(iconId, width, height)
+        return@execute UtilGemImages.asBitmap(iconId, width, height)
     }
 }
 
@@ -363,20 +364,20 @@ class RouteInstructionItem(val instruction: RouteInstruction, distOffset: Double
         SdkCall.checkCurrentThread()
 
         if (instruction.hasTurnInfo()) {
-            text = instruction.getTurnInstruction() ?: ""
+            text = instruction.turnInstruction ?: ""
             if (text.isNotEmpty() && text.last() == '.') {
                 text.removeSuffix(".")
             }
 
             if (instruction.hasFollowRoadInfo()) {
-                description = instruction.getFollowRoadInstruction() ?: ""
+                description = instruction.followRoadInstruction ?: ""
                 if (description.isNotEmpty() && description.last() == '.') {
                     description.removeSuffix(".")
                 }
             }
 
             var distance =
-                instruction.getTraveledTimeDistance()?.totalDistance?.toDouble() ?: 0.0
+                instruction.traveledTimeDistance?.totalDistance?.toDouble() ?: 0.0
             if ((distOffset > 0.0) && (distance >= distOffset)) {
                 distance -= distOffset
             }
@@ -390,7 +391,7 @@ class RouteInstructionItem(val instruction: RouteInstruction, distOffset: Double
                 statusText = "0"
             }
 
-            val timeDistToNextTurn = instruction.getTimeDistanceToNextTurn()
+            val timeDistToNextTurn = instruction.timeDistanceToNextTurn
             if (timeDistToNextTurn != null) {
                 if (timeDistToNextTurn.restrictedTime > 0 || timeDistToNextTurn.restrictedDistance > 0) {
                     mCrossesRestrictedArea = true
@@ -406,8 +407,8 @@ class RouteInstructionItem(val instruction: RouteInstruction, distOffset: Double
         val iInner = Rgba(128, 128, 128, 255)
         val iOuter = Rgba(128, 128, 128, 255)
 
-        val image = instruction.getTurnDetails()?.abstractGeometryImage
-        return@execute Util.createBitmap(image, width, height, aInner, aOuter, iInner, iOuter)
+        val image = instruction.turnDetails?.abstractGeometryImage
+        return@execute UtilGemImages.asBitmap(image, width, height, aInner, aOuter, iInner, iOuter)
     }
 }
 
@@ -466,6 +467,6 @@ class TrafficEventItem(val event: RouteTrafficEvent, totalRouteLength: Int) :
     }
 
     override fun getBitmap(width: Int, height: Int): Bitmap? = SdkCall.execute {
-        return@execute Util.createBitmap(event.image, width, height)
+        return@execute UtilGemImages.asBitmap(event.image, width, height)
     }
 }

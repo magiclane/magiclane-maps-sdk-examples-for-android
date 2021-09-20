@@ -129,7 +129,12 @@ open class BasicSensorsActivity : GenericListActivity() {
                     val data = CameraData(SenseData)
 
                     val config = data.cameraConfiguration ?: return ""
-// 				val bmp = Util.createBitmapFromNV21(data.getBuffer(), 1280, 720)
+//                    val bmp = ImageConverter.toBitmap(
+//                        EImagePixelFormat.NV21,
+//                        data.directBuffer,
+//                        1280,
+//                        720
+//                    )
 
                     val x = 0//data.getAcquisitionTimestamp()
                     val y = config.frameWidth
@@ -392,18 +397,7 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
     private var drawer: CanvasBufferRenderer? = null
 
     private val canvasListener = object : CanvasListener() {
-        var camData: CameraData? = null
         override fun onRender() {
-            val buffer = camData?.directBuffer ?: return
-//            val bufferType = EDirectBufferType.EByteBuffer
-            val configs = camData?.cameraConfiguration ?: return
-
-            val width = configs.frameWidth
-            val height = configs.frameHeight
-            val rotation = configs.rotationAngle
-            val format = configs.pixelFormat
-
-            drawer?.uploadFrame(buffer, width, height, format, rotation)
             drawer?.renderFrame()
         }
     }
@@ -415,7 +409,7 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
             SdkCall.execute {
                 when (data.type) {
                     EDataType.Camera -> {
-                        canvasListener.camData = CameraData(data)
+                        drawer?.updateCameraData(CameraData(data))
                         GEMApplication.getGlContext()?.needsRender()
                     }
                     else -> {
@@ -447,7 +441,7 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
 
         this.canvas = Canvas.produce(screen, subViewCoords, canvasListener) ?: return@execute
         this.drawer = CanvasBufferRenderer.produce(canvas)
-        this.drawer?.setFrameFit(EFrameFit.FitInside)
+        this.drawer?.frameFit = EFrameFit.FitInside
 //        this.drawer?.setFrameFit(EFrameFit.Stretch)
 
         val cameraType = EDataType.Camera

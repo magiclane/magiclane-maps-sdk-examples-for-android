@@ -19,7 +19,7 @@ import com.generalmagic.sdk.places.EAddressField
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.RouteTrafficEvent
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkIcons
+import com.generalmagic.sdk.util.SdkImages
 import com.generalmagic.sdk.util.SdkUtil
 import com.generalmagic.sdk.util.SdkUtil.getDistText
 import com.generalmagic.sdk.util.SdkUtil.getTimeText
@@ -241,7 +241,7 @@ object UtilUITexts {
             if (str.isNotEmpty()) {
                 name = str
                 val image = landmark.image ?: return@execute name
-                if (image.uid == SdkIcons.Other_UI.LocationDetails_SendDetails.value.toLong()) {
+                if (image.uid == SdkImages.Engine_Misc.LocationDetails_SendDetails.value.toLong()) {
                     val postalCode = landmarkAddress?.getField(EAddressField.PostalCode) ?: ""
 
                     if (postalCode.isNotEmpty()) {

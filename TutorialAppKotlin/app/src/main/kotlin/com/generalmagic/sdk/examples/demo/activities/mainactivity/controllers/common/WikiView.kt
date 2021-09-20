@@ -31,13 +31,13 @@ import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.app.Tutorials
 import com.generalmagic.sdk.examples.demo.util.Util
 import com.generalmagic.sdk.examples.demo.util.UtilUITexts
-import com.generalmagic.sdk.examples.demo.util.Utils
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkIcons
+import com.generalmagic.sdk.util.SdkImages
+import com.generalmagic.sdk.util.UtilGemImages
 import java.util.concurrent.Executors
 
 open class WikiServiceController {
@@ -364,7 +364,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
             locationDetails.text = value.name
             locationDetails.description = UtilUITexts.getLandmarkDescription(value)
 
-            val icon = Utils.getLandmarkIcon(value, imgSizes)
+            val icon = value.imageAsBitmap(imgSizes)
             if (icon != null) {
                 locationDetails.image = icon
             }
@@ -511,18 +511,20 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
 
     private fun getFavouritesIcon(landmark: Landmark): Bitmap? {
         val imgSizes = context.resources.getDimension(R.dimen.small_icon_size).toInt()
-        return if (GEMApplication.isFavourite(landmark)) {
-            Utils.getImageAsBitmap(
-                SdkIcons.Other_UI.LocationDetails_AddToFavourites.value,
-                imgSizes,
-                imgSizes
-            )
-        } else {
-            Utils.getImageAsBitmap(
-                SdkIcons.Other_UI.LocationDetails_RemoveFromFavourites.value,
-                imgSizes,
-                imgSizes
-            )
+        return SdkCall.execute {
+            if (GEMApplication.isFavourite(landmark)) {
+                UtilGemImages.asBitmap(
+                    SdkImages.UI.LocationDetails_AddToFavourites.value,
+                    imgSizes,
+                    imgSizes
+                )
+            } else {
+                UtilGemImages.asBitmap(
+                    SdkImages.UI.LocationDetails_RemoveFromFavourites.value,
+                    imgSizes,
+                    imgSizes
+                )
+            }
         }
     }
 
@@ -530,58 +532,63 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
         return mButtons.size
     }
 
-    private fun getButtonImage(index: Int, width: Int, height: Int, landmark: Landmark): Bitmap? {
-        if (isValidButtonIndex(index)) {
-            return when (mButtons[index]) {
-                TLocationDetailsButtonType.EDriveTo.ordinal -> {
-                    Utils.getImageAsBitmap(SdkIcons.Other_UI.DriveTo.value, width, height)
-                }
+    private fun getButtonImage(index: Int, width: Int, height: Int, landmark: Landmark): Bitmap? =
+        SdkCall.execute {
+            if (isValidButtonIndex(index)) {
+                return@execute when (mButtons[index]) {
+                    TLocationDetailsButtonType.EDriveTo.ordinal -> {
+                        UtilGemImages.asBitmap(SdkImages.UI.DriveTo.value, width, height)
+                    }
 
-                TLocationDetailsButtonType.EPublicTransportTo.ordinal -> {
-                    Utils.getImageAsBitmap(SdkIcons.Other_UI.PublicTransportTo.value, width, height)
-                }
-
-                TLocationDetailsButtonType.EWalkTo.ordinal -> {
-                    Utils.getImageAsBitmap(SdkIcons.Other_UI.WalkTo.value, width, height)
-                }
-
-                TLocationDetailsButtonType.EBikeTo.ordinal -> {
-                    Utils.getImageAsBitmap(SdkIcons.Other_UI.BikeTo.value, width, height)
-                }
-
-                TLocationDetailsButtonType.EAddWaypoint.ordinal -> {
-                    Utils.getImageAsBitmap(
-                        SdkIcons.Other_UI.LocationDetails_Via.value,
-                        width,
-                        height
-                    )
-                }
-
-                TLocationDetailsButtonType.EFavourite.ordinal -> {
-//                    val imgSizes = context.resources.getDimension(R.dimen.small_icon_size).toInt()
-                    return if (GEMApplication.isFavourite(landmark)) {
-                        Utils.getImageAsBitmap(
-                            SdkIcons.Other_UI.LocationDetails_AddToFavourites.value,
-                            width,
-                            height
-                        )
-                    } else {
-                        Utils.getImageAsBitmap(
-                            SdkIcons.Other_UI.LocationDetails_RemoveFromFavourites.value,
+                    TLocationDetailsButtonType.EPublicTransportTo.ordinal -> {
+                        UtilGemImages.asBitmap(
+                            SdkImages.UI.PublicTransportTo.value,
                             width,
                             height
                         )
                     }
-                }
 
-                else -> {
-                    null
+                    TLocationDetailsButtonType.EWalkTo.ordinal -> {
+                        UtilGemImages.asBitmap(SdkImages.UI.WalkTo.value, width, height)
+                    }
+
+                    TLocationDetailsButtonType.EBikeTo.ordinal -> {
+                        UtilGemImages.asBitmap(SdkImages.UI.BikeTo.value, width, height)
+                    }
+
+                    TLocationDetailsButtonType.EAddWaypoint.ordinal -> {
+                        UtilGemImages.asBitmap(
+                            SdkImages.UI.LocationDetails_Via.value,
+                            width,
+                            height
+                        )
+                    }
+
+                    TLocationDetailsButtonType.EFavourite.ordinal -> {
+//                    val imgSizes = context.resources.getDimension(R.dimen.small_icon_size).toInt()
+                        return@execute if (GEMApplication.isFavourite(landmark)) {
+                            UtilGemImages.asBitmap(
+                                SdkImages.UI.LocationDetails_AddToFavourites.value,
+                                width,
+                                height
+                            )
+                        } else {
+                            UtilGemImages.asBitmap(
+                                SdkImages.UI.LocationDetails_RemoveFromFavourites.value,
+                                width,
+                                height
+                            )
+                        }
+                    }
+
+                    else -> {
+                        null
+                    }
                 }
             }
-        }
 
-        return null
-    }
+            return@execute null
+        }
 
     private fun getButtonType(index: Int): Int {
         if (isValidButtonIndex(index)) {
@@ -609,7 +616,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
             }
 
             if (route != null) {
-                val time = SdkCall.execute { route.getTimeDistance()?.totalTime } ?: 0
+                val time = SdkCall.execute { route.timeDistance?.totalTime } ?: 0
                 if (time > 0) {
                     val rtt = UtilUITexts.getTimeTextWithDays(time)
                     return String.format("%s %s", rtt.first, rtt.second)
@@ -726,10 +733,10 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
                 waypoints.add(Landmark("", Coordinates(latitude, longitude)))
                 waypoints.add(landmark)
 
-                service.preferences.setTransportMode(type)
-                service.preferences.setTimestamp(Time())
-                service.preferences.setRouteType(ERouteType.Fastest)
-                service.preferences.setResultDetails(ERouteResultDetails.TimeDistance)
+                service.preferences.transportMode = type
+                service.preferences.timestamp = Time()
+                service.preferences.routeType = ERouteType.Fastest
+                service.preferences.resultDetails = ERouteResultDetails.TimeDistance
 
                 service.onCompleted = { routes, reason, _ ->
                     resultRoutes = routes
@@ -935,7 +942,7 @@ class WikiImagesListAdapter(
             val bitmap = SdkCall.execute {
                 val size = image.size ?: return@execute null
                 val widthImage = ((size.width.toFloat() / size.height) * standardHeight).toInt()
-                Util.createBitmap(image, widthImage, standardHeight)
+                UtilGemImages.asBitmap(image, widthImage, standardHeight)
             } ?: return@submit
 
             nImagesHeight = bitmap.height

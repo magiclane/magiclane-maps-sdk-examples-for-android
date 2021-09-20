@@ -27,6 +27,7 @@ import com.generalmagic.sdk.examples.demo.app.BaseActivity
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.Util
 import com.generalmagic.sdk.util.SdkCall
+import com.generalmagic.sdk.util.UtilGemImages
 import io.github.luizgrp.sectionedrecyclerviewadapter.Section
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionParameters
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionedRecyclerViewAdapter
@@ -157,13 +158,13 @@ class PublicTransportAgenciesActivity : BaseActivity() {
         private fun load() {
             SdkCall.execute {
                 var data = GEMPublicTransportRouteDescriptionView.getAgencyURLImage()
-                urlBmp = Util.createBitmap(data, iconSize, iconSize)
+                urlBmp = UtilGemImages.asBitmap(data, iconSize, iconSize)
 
                 data = GEMPublicTransportRouteDescriptionView.getAgencyFareImage()
-                fareBmp = Util.createBitmap(data, iconSize, iconSize)
+                fareBmp = UtilGemImages.asBitmap(data, iconSize, iconSize)
 
                 data = GEMPublicTransportRouteDescriptionView.getAgencyPhoneImage()
-                phoneBmp = Util.createBitmap(data, iconSize, iconSize)
+                phoneBmp = UtilGemImages.asBitmap(data, iconSize, iconSize)
 
                 val chaptersCount = GEMPublicTransportRouteDescriptionView.getAgenciesCount()
                 if (chaptersCount > 0) {

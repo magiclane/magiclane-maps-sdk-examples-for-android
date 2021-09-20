@@ -28,6 +28,7 @@ import com.generalmagic.sdk.util.EnumHelp
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.StringIds
 import com.generalmagic.sdk.util.SdkUtil.getUIString
+import com.generalmagic.sdk.util.UtilGemImages
 
 object GEMAddressSearchView {
 
@@ -375,7 +376,7 @@ object GEMAddressSearchView {
         val isoCode = mCountry?.addressInfo?.getField(EAddressField.CountryCode)
         if (isoCode?.isNotEmpty() == true) {
             val image = MapDetails().getCountryFlag(isoCode)
-            return Utils.getImageAsBitmap(image, width, height)
+            return UtilGemImages.asBitmap(image, width, height)
         }
 
         return null
@@ -462,7 +463,7 @@ object GEMAddressSearchView {
         val landmark = item.mLandmark
         if (item.mAddressDetailLevel == EAddressDetailLevel.City) {
             return SdkCall.execute {
-                return@execute Utils.getImageAsBitmap(landmark?.image, width, height)
+                return@execute UtilGemImages.asBitmap(landmark?.image, width, height)
             }
         }
 
