@@ -18,7 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.d3scene.EHighlightOptions
 import com.generalmagic.sdk.d3scene.HighlightRenderSettings
 import com.generalmagic.sdk.examples.R
@@ -40,11 +40,11 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { results, reason, _ ->
+        onCompleted = { results, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (reason) {
-                SdkError.NoError -> {
+            when (errorCode) {
+                GemError.NoError -> {
                     if (results.isNotEmpty()) {
                         val landmark = results[0]
                         flyTo(landmark)
@@ -54,13 +54,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                SdkError.Cancel -> {
+                GemError.Cancel -> {
                     // The search action was cancelled.
                 }
 
                 else -> {
                     // There was a problem at computing the search operation.
-                    showToast("Search service error: ${reason.name}")
+                    showToast("Search service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }

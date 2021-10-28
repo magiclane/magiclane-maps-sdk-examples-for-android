@@ -23,7 +23,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
@@ -45,25 +45,25 @@ class MainActivity : AppCompatActivity() {
             progressBar?.visibility = View.VISIBLE
         },
 
-        onCompleted = onCompleted@{ routes, reason, _ ->
+        onCompleted = onCompleted@{ routes, errorCode, _ ->
             progressBar?.visibility = View.GONE
 
-            when (reason) {
-                SdkError.NoError -> {
+            when (errorCode) {
+                GemError.NoError -> {
                     if (routes.size == 0) return@onCompleted
 
                     // Get the main route from the ones that were found.
                     displayRouteInstructions(routes[0])
                 }
 
-                SdkError.Cancel -> {
+                GemError.Cancel -> {
                     // The routing action was cancelled.
                 }
 
                 else -> {
                     // There was a problem at computing the routing operation.
                     Toast.makeText(
-                        this@MainActivity, "Routing service error: ${reason.name}",
+                        this@MainActivity, "Routing service error: ${GemError.getMessage(errorCode)}",
                         Toast.LENGTH_SHORT
                     ).show()
                 }

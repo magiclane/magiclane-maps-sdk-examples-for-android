@@ -16,7 +16,7 @@ import android.view.View
 import android.widget.Toast
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.*
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.d3scene.ECommonOverlayId
 import com.generalmagic.sdk.d3scene.OverlayService
 import com.generalmagic.sdk.examples.demo.R
@@ -60,85 +60,50 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
             GEMApplication.clearMapVisibleRoutes()
         }
 
-        override fun notifyComplete(reason: SdkError, hint: String) {
+        override fun notifyComplete(errorCode: ErrorCode, hint: String) {
             val route = getRoute()
 
             GEMApplication.postOnMain {
                 hideProgress()
             }
 
-            if (reason == SdkError.NoError) {
+            if (errorCode == GemError.NoError) {
                 navLayout.routeUpdated(route)
             } else {
                 GEMApplication.postOnMain {
                     Toast.makeText(
-                        context,
-                        "Routing service error: $reason",
-                        Toast.LENGTH_SHORT
-                    )
-                        .show()
+                        context, "Routing service error: $errorCode", Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
     }
 
-    protected val navigationListener = object : NavigationListener() {
-        private var startNotified = false
-        override fun onBetterRouteDetected(
-            route: Route,
-            travelTime: Int,
-            delay: Int,
-            timeGain: Int
-        ) {
-        }
-
-        override fun onBetterRouteInvalidated() {}
-
-        override fun onBetterRouteRejected(errorCode: Int) {}
-
-        override fun canPlayNavigationSound(): Boolean {
-            return false
-        }
-
-        override fun onDestinationReached(landmark: Landmark) {
-            GEMApplication.postOnMain {
-                onNavigationEnded()
-                startNotified = false
+    private var startNotified = false
+    protected val navigationListener: NavigationListener = NavigationListener.create(
+        onNavigationStarted = {
+            this@BaseNavControllerLayout.onNavigationStarted()
+        },
+        onDestinationReached = {
+            onNavigationEnded()
+            startNotified = false
+        },
+        onNavigationError = { error ->
+            onNavigationEnded(error)
+            startNotified = false
+        },
+        onNavigationInstructionUpdated = { instr ->
+            if (!startNotified) {
+                onNavigationStarted()
+                startNotified = true
             }
-        }
 
-        override fun onNavigationError(errorCode: Int) {
-            GEMApplication.postOnMain {
-                onNavigationEnded(errorCode)
-                startNotified = false
-            }
-        }
-
-        override fun onNavigationInstructionUpdated(instr: NavigationInstruction) {
-            GEMApplication.postOnMain {
-                if (!startNotified) {
-                    onNavigationStarted()
-                    startNotified = true
-                }
-
-                navLayout.updateNavInstruction(instr)
-            }
-        }
-
-        override fun onNavigationSound(sound: ISound) {}
-
-        override fun onRouteUpdated(route: Route) {
+            navLayout.updateNavInstruction(instr)
+        },
+        onRouteUpdated = { route ->
             navLayout.routeUpdated(route)
         }
-
-        override fun onWaypointReached(landmark: Landmark) {}
-
-        override fun onNavigationStarted() {
-            GEMApplication.postOnMain {
-                this@BaseNavControllerLayout.onNavigationStarted()
-            }
-        }
-    }
+    )
 
     override fun onCreated() {
         navLayout = findViewById(R.id.navLayout)
@@ -170,7 +135,7 @@ abstract class BaseNavControllerLayout(context: Context, attrs: AttributeSet?) :
 
     protected open fun onNavigationStarted() {}
 
-    protected open fun onNavigationEnded(errorCode: Int = SdkError.NoError.value) {}
+    protected open fun onNavigationEnded(error: ErrorCode = GemError.NoError) {}
 
     private fun doShowRouteDescription() {
         val route = getRoute()
@@ -222,25 +187,11 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
 
     private var alarmService: AlarmService? = null
     private val nAlarmDistanceMeters = 500.0
-    private var alarmListener: AlarmListener = object : AlarmListener() {
-        override fun onBoundaryCrossed() {}
-
-        override fun onLandmarkAlarmsPassedOver() {}
-
-        override fun onLandmarkAlarmsUpdated() {}
-
-        override fun onOverlayItemAlarmsPassedOver() {}
-
-        override fun onOverlayItemAlarmsUpdated() {
-            GEMApplication.postOnMain { navLayout.updateAlarmsInfo(alarmService) }
+    private var alarmListener = AlarmListener.create(
+        onOverlayItemAlarmsUpdated = {
+            navLayout.updateAlarmsInfo(alarmService)
         }
-
-        override fun onMonitoringStateChanged(isMonitoringActive: Boolean) {}
-
-        override fun onTunnelEntered() {}
-
-        override fun onTunnelLeft() {}
-    }
+    )
 
     init {
         SdkCall.execute {
@@ -299,7 +250,7 @@ abstract class BaseTurnByTurnLayout(context: Context, attrs: AttributeSet?) :
         showNavLayout()
     }
 
-    override fun onNavigationEnded(errorCode: Int) {
+    override fun onNavigationEnded(error: ErrorCode) {
         hideNavLayout()
 
         GEMApplication.setAppBarVisible(true)
@@ -484,11 +435,11 @@ open class PredefNavController(context: Context, attrs: AttributeSet?) :
         }
 
         searchService.onCompleted = onCompleted@{ results, gemError, _ ->
-            if (gemError == SdkError.Cancel) return@onCompleted
+            if (gemError == GemError.Cancel) return@onCompleted
 
             hideProgress()
 
-            if (gemError != SdkError.NoError) {
+            if (gemError != GemError.NoError) {
                 Toast.makeText(context, "Search failed: $gemError", Toast.LENGTH_SHORT).show()
                 return@onCompleted
             }

@@ -61,7 +61,7 @@ open class ManyMapsController(context: Context, attrs: AttributeSet?) :
             val screen = GEMApplication.gemMapScreen() ?: return@execute false
 
             val subview = GEMApplication.getMainMapView()?.camera?.let {
-                MapView.produce(screen, rect, null, it)
+                MapView.produce(screen, rect, it)
             } ?: return@execute false
 
             subview.preferences?.setMapStyleById(styleId)

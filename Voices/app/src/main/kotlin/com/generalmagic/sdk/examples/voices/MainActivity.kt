@@ -24,11 +24,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.content.ContentStore
 import com.generalmagic.sdk.content.ContentStoreItem
 import com.generalmagic.sdk.content.EContentType
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.MapDetails
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkUtil
@@ -45,11 +45,11 @@ class MainActivity : AppCompatActivity() {
             progressBar?.visibility = View.VISIBLE
         },
 
-        onCompleted = { reason, _ ->
+        onCompleted = { errorCode, _ ->
             progressBar?.visibility = View.GONE
 
-            when (reason) {
-                SdkError.NoError -> {
+            when (errorCode) {
+                GemError.NoError -> {
                     SdkCall.execute {
                         // No error encountered, we can handle the results.
                         var models: ArrayList<ContentStoreItem>? = null
@@ -91,13 +91,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                SdkError.Cancel -> {
+                GemError.Cancel -> {
                     // The action was cancelled.
                 }
 
                 else -> {
                     // There was a problem at retrieving the content store items.
-                    showToast("Content store service error: ${reason.name}")
+                    showToast("Content store service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         },

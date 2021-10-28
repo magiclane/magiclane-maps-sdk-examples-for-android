@@ -22,11 +22,11 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.RectangleGeographicArea
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
@@ -52,11 +52,11 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { results, reason, _ ->
+        onCompleted = { results, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (reason) {
-                SdkError.NoError -> {
+            when (errorCode) {
+                GemError.NoError -> {
                     if (results.isNotEmpty()) {
                         val landmark = results[0]
                         flyTo(landmark)
@@ -67,13 +67,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                SdkError.Cancel -> {
+                GemError.Cancel -> {
                     // The search action was cancelled.
                 }
 
                 else -> {
                     // There was a problem at computing the search operation.
-                    showToast("Search service error: ${reason.name}")
+                    showToast("Search service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }
@@ -202,14 +202,14 @@ class MainActivity : AppCompatActivity() {
         val area = landmark.coordinates?.let { RectangleGeographicArea(it, radius, radius) }
         val landmarks = area?.let { store.getLandmarksByArea(it) } ?: return@execute -1
 
-        val treshold = 0.00001
+        val threshold = 0.00001
         landmarks.forEach {
             val itCoordinates = it.coordinates
             val landmarkCoordinates = landmark.coordinates
 
             if (itCoordinates != null && landmarkCoordinates != null) {
-                if ((itCoordinates.latitude - landmarkCoordinates.latitude < treshold) &&
-                    (itCoordinates.longitude - landmarkCoordinates.longitude < treshold)
+                if ((itCoordinates.latitude - landmarkCoordinates.latitude < threshold) &&
+                    (itCoordinates.longitude - landmarkCoordinates.longitude < threshold)
                 )
                     return@execute it.id
             } else return@execute -1

@@ -16,7 +16,7 @@ import android.view.View
 import android.widget.Toast
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.ImageDatabase
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.d3scene.EHighlightOptions
 import com.generalmagic.sdk.d3scene.HighlightRenderSettings
 import com.generalmagic.sdk.examples.demo.R
@@ -52,11 +52,11 @@ class WikiController(context: Context, attrs: AttributeSet?) :
         }
 
         searchService.onCompleted = onCompleted@{ results, gemError, _ ->
-            if (gemError == SdkError.Cancel) return@onCompleted
+            if (gemError == GemError.Cancel) return@onCompleted
 
             hideProgress()
 
-            if (gemError != SdkError.NoError) {
+            if (gemError != GemError.NoError) {
                 Toast.makeText(context, "Search failed: $gemError", Toast.LENGTH_SHORT).show()
                 return@onCompleted
             }
@@ -131,7 +131,7 @@ class WikiController(context: Context, attrs: AttributeSet?) :
         }
 
         wikiView.onWikiFetchCompleteCallback = callback@{ gemError, _ ->
-            if (gemError != SdkError.NoError) {
+            if (gemError != GemError.NoError) {
                 if (ignoreWikiErrorsCount == 0) {
                     Toast.makeText(
                         context,

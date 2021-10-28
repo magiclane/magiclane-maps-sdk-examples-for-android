@@ -26,7 +26,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.core.EUnitSystem
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
@@ -50,11 +50,11 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = onCompleted@{ results, reason, _ ->
+        onCompleted = onCompleted@{ results, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (reason) {
-                SdkError.NoError -> {
+            when (errorCode) {
+                GemError.NoError -> {
                     // No error encountered, we can handle the results.
                     if (results.isNotEmpty()) {
                         reference?.let { listView.adapter = CustomAdapter(it, results) }
@@ -64,13 +64,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                SdkError.Cancel -> {
+                GemError.Cancel -> {
                     // The search action was cancelled.
                 }
 
                 else -> {
                     // There was a problem at computing the search operation.
-                    showToast("Search service error: ${reason.name}")
+                    showToast("Search service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }
@@ -168,6 +168,7 @@ class MainActivity : AppCompatActivity() {
         permissions: Array<String>,
         grantResults: IntArray
     ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         PermissionsHelper.onRequestPermissionsResult(this, requestCode, grantResults)
 
         postOnMain { search() }

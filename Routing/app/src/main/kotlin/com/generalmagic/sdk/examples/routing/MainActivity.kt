@@ -18,7 +18,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
@@ -36,18 +36,18 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = onCompleted@{ routes, reason, _ ->
+        onCompleted = onCompleted@{ routes, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (reason) {
-                SdkError.NoError -> {
+            when (errorCode) {
+                GemError.NoError -> {
                     if (routes.size == 0) return@onCompleted
 
                     // Get the main route from the ones that were found.
                     displayRouteInfo(formatRouteName(routes[0]))
                 }
 
-                SdkError.Cancel -> {
+                GemError.Cancel -> {
                     // The routing action was cancelled.
                 }
 
@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {
                     // There was a problem at computing the routing operation.
                     Toast.makeText(
                         this@MainActivity,
-                        "Routing service error: ${reason.name}",
+                        "Routing service error: ${GemError.getMessage(errorCode)}",
                         Toast.LENGTH_SHORT
                     ).show()
                 }

@@ -98,7 +98,7 @@ class SecondFragment : Fragment() {
             val screen = surface.gemScreen ?: return@onDefaultMapViewCreated
 
             // Add the map view to the collection of displayed maps.
-            maps[screen.address()] = it
+            maps[screen.address] = it
         }
 
         val params = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, 400)
@@ -123,7 +123,7 @@ class SecondFragment : Fragment() {
         val lastSurface = frame[0] as GemSurfaceView
 
         SdkCall.execute {
-            val mapsId = lastSurface.gemScreen?.address()
+            val mapsId = lastSurface.gemScreen?.address
             // Release the map view.
             maps[mapsId]?.release()
             // Remove the map view from the collection of displayed maps.

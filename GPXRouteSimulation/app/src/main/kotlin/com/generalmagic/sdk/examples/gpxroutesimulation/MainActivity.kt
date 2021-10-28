@@ -20,14 +20,14 @@ import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.Path
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
+import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.Util
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
 
@@ -41,18 +41,21 @@ class MainActivity : AppCompatActivity() {
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
 
+    private val navRoute: Route?
+        get() = navigationService.getNavigationRoute(navigationListener)
+
     /* 
     Define a navigation listener that will receive notifications from the
     navigation service.
     We will use just the onNavigationStarted method, but for more available
     methods you should check the documentation.
      */
-    private val navigationListener = object : NavigationListener() {
-        override fun onNavigationStarted() {
+    private val navigationListener: NavigationListener = NavigationListener.create(
+        onNavigationStarted = {
             SdkCall.execute {
                 gemSurfaceView.mapView?.let { mapView ->
                     mapView.preferences?.enableCursor = false
-                    navigationService.getNavigationRoute(this)?.let { route ->
+                    navRoute?.let { route ->
                         mapView.presentRoute(route)
                     }
 
@@ -61,7 +64,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-    }
+    )
 
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create()
@@ -71,11 +74,11 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { routes, reason, _ ->
+        onCompleted = { routes, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (reason) {
-                SdkError.NoError -> {
+            when (errorCode) {
+                GemError.NoError -> {
                     val route = routes[0]
                     SdkCall.execute {
                         navigationService.startSimulationWithRoute(
@@ -86,7 +89,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                SdkError.Cancel -> {
+                GemError.Cancel -> {
                     // No action.
                 }
 
@@ -94,7 +97,7 @@ class MainActivity : AppCompatActivity() {
                     // There was a problem at computing the routing operation.
                     Toast.makeText(
                         this@MainActivity,
-                        "Routing service error: ${reason.name}",
+                        "Routing service error: ${GemError.getMessage(errorCode)}",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -145,18 +148,18 @@ class MainActivity : AppCompatActivity() {
         finish()
         exitProcess(0)
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private fun enableGPSButton() {
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.VISIBLE }
+                followCursorButton.visibility = View.VISIBLE
             }
 
             onEnterFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.GONE }
+                followCursorButton.visibility = View.GONE
             }
 
             // Set on click action for the GPS button.

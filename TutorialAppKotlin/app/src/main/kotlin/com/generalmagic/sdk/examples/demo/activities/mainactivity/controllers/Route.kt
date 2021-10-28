@@ -17,7 +17,7 @@ import android.view.View
 import android.widget.Toast
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.*
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.activities.RouteDescriptionActivity.Companion.showRouteDescription
 import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.PickLocationController
@@ -77,7 +77,7 @@ abstract class BaseUiRouteController(context: Context, attrs: AttributeSet?) :
             updateStartStopBtn(false)
             calculatedRoutes = routes
 
-            if (gemError != SdkError.NoError) {
+            if (gemError != GemError.NoError) {
                 Toast.makeText(
                     context, "Routing service error: $gemError", Toast.LENGTH_SHORT
                 ).show()

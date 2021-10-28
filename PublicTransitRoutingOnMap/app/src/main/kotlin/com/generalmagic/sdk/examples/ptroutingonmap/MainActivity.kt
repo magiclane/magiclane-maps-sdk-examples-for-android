@@ -15,10 +15,10 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
@@ -38,15 +38,15 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { routes, reason, _ ->
+        onCompleted = { routes, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (reason) {
-                SdkError.NoError -> {
+            when (errorCode) {
+                GemError.NoError -> {
                     displayRoutesOnMap(routes)
                 }
 
-                SdkError.Cancel -> {
+                GemError.Cancel -> {
                     // The routing action was cancelled.
                 }
 
@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
                     // There was a problem at computing the routing operation.
                     Toast.makeText(
                         this@MainActivity,
-                        "Routing service error: ${reason.name}",
+                        "Routing service error: ${GemError.getMessage(errorCode)}",
                         Toast.LENGTH_SHORT
                     ).show()
                 }

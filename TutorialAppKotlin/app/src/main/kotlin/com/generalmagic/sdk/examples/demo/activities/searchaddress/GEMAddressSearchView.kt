@@ -16,10 +16,9 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.widget.EditText
 import com.generalmagic.sdk.core.MapDetails
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.app.Tutorials
-import com.generalmagic.sdk.examples.demo.util.Utils
 import com.generalmagic.sdk.places.EAddressDetailLevel
 import com.generalmagic.sdk.places.EAddressField
 import com.generalmagic.sdk.places.GuidedAddressSearchService
@@ -287,7 +286,7 @@ object GEMAddressSearchView {
             SdkCall.execute {
                 service.search(landmark, mFilter, mDetailLevel) { landmarks, gemReason, _ ->
                     val bNoError =
-                        gemReason == SdkError.NoError || gemReason == SdkError.ReducedResult
+                        gemReason == GemError.NoError || gemReason == GemError.ReducedResult
 
                     if (bNoError) {
                         mLandmarks = landmarks
@@ -316,7 +315,7 @@ object GEMAddressSearchView {
                             hideBusyIndicator(0)
                         }
                         refreshSearchResultsList(0)
-                    } else if (gemReason != SdkError.Cancel) {
+                    } else if (gemReason != GemError.Cancel) {
                         mItems.clear()
                     }
 

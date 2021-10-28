@@ -24,7 +24,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.core.*
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.activities.WebActivity
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
@@ -47,10 +47,10 @@ open class WikiServiceController {
     private var wikiFetched = false
 
     private var listener = object : ProgressListener() {
-        override fun notifyComplete(reason: SdkError, hint: String) {
+        override fun notifyComplete(errorCode: ErrorCode, hint: String) {
             GEMApplication.postOnMain {
                 wikiFetched = true
-                onWikiFetchComplete(reason, hint)
+                onWikiFetchComplete(errorCode, hint)
             }
         }
     }
@@ -138,10 +138,10 @@ open class WikiServiceController {
     private val progress = object : ProgressListener() {
         var index = 0
         var retryCount = 0
-        override fun notifyComplete(reason: SdkError, hint: String) {
+        override fun notifyComplete(errorCode: ErrorCode, hint: String) {
             val model = holders[index]
 
-            if (reason != SdkError.NoError) {
+            if (errorCode != GemError.NoError) {
                 if (retryCount > 0) { // retry
                     retryCount--
                     setImageLoadStatus(index, model, TLoadState.EPendingReloading)
@@ -178,10 +178,10 @@ open class WikiServiceController {
         var index = 0
         var retryCount = 0
 
-        override fun notifyComplete(reason: SdkError, hint: String) {
+        override fun notifyComplete(errorCode: ErrorCode, hint: String) {
             val model = holders[index]
 
-            if (reason != SdkError.NoError) {
+            if (errorCode != GemError.NoError) {
                 if (retryCount > 0) { // retry
                     retryCount--
                     setDescriptionLoadStatus(index, model, TLoadState.EPendingReloading)
@@ -238,7 +238,7 @@ open class WikiServiceController {
 
     //
 
-    open fun onWikiFetchComplete(reason: SdkError, hint: String) {}
+    open fun onWikiFetchComplete(errorCode: ErrorCode, hint: String) {}
     open fun onImageFetchStatusChanged(index: Int, status: TLoadState) {}
     open fun onImageDescriptionFetchStatusChanged(index: Int, status: TLoadState) {}
 }
@@ -274,13 +274,13 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
     private val service = RoutingService()
     private var resultRoutes = arrayListOf<Route>()
 
-    var onWikiFetchCompleteCallback = { _: SdkError, _: String -> }
+    var onWikiFetchCompleteCallback = { _: ErrorCode, _: String -> }
 
     var onVisibilityChanged = {}
     val images = ArrayList<ImageViewModel>()
 
     private val wiki = object : WikiServiceController() {
-        override fun onWikiFetchComplete(reason: SdkError, hint: String) {
+        override fun onWikiFetchComplete(errorCode: ErrorCode, hint: String) {
 
             locationDetails.wikipediaDescription = getWikiPageDescription()
             locationDetails.wikipediaUrl = getWikiPageURL()
@@ -297,7 +297,7 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
                 if (imagesCount > 0) {
                     startFetchingImages()
 
-                    onWikiFetchCompleteCallback(reason, hint)
+                    onWikiFetchCompleteCallback(errorCode, hint)
                 }
 
                 images.clear()
@@ -738,9 +738,9 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
                 service.preferences.routeType = ERouteType.Fastest
                 service.preferences.resultDetails = ERouteResultDetails.TimeDistance
 
-                service.onCompleted = { routes, reason, _ ->
+                service.onCompleted = { routes, errorCode, _ ->
                     resultRoutes = routes
-                    onCompleteCalculating(routes, reason, type)
+                    onCompleteCalculating(routes, errorCode, type)
                 }
 
                 when (type) {
@@ -759,10 +759,10 @@ class WikiView(context: Context, attrs: AttributeSet?) : LinearLayout(context, a
 
     private fun onCompleteCalculating(
         routes: ArrayList<Route>,
-        gemError: SdkError,
+        gemError: ErrorCode,
         type: ERouteTransportMode
     ) {
-        if (gemError != SdkError.NoError) {
+        if (gemError != GemError.NoError) {
             Toast.makeText(
                 context,
                 "Routing service error: $gemError",

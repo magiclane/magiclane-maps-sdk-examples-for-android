@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
         gemSurfaceView.onDefaultMapViewCreated = {
             gemSurfaceView.gemScreen?.let { screen ->
                 val secondViewRect = RectF(0.0f, 0.0f, 0.5f, 0.5f)
-                secondMapView = MapView.produce(screen, secondViewRect)
+                secondMapView = MapView.produce(screen, secondViewRect, null, true)
             }
         }
 

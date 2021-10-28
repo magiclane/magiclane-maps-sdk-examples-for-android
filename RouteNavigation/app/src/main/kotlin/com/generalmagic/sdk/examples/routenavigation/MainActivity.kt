@@ -23,10 +23,12 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.core.TAG
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
+import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.sensordatasource.PositionListener
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.PermissionsHelper
@@ -43,18 +45,21 @@ class MainActivity : AppCompatActivity() {
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
 
+    private val navRoute: Route?
+        get() = navigationService.getNavigationRoute(navigationListener)
+
     /* 
     Define a navigation listener that will receive notifications from the
     navigation service.
     We will use just the onNavigationStarted method, but for more available
     methods you should check the documentation.
      */
-    private val navigationListener = object : NavigationListener() {
-        override fun onNavigationStarted() {
+    private val navigationListener: NavigationListener = NavigationListener.create(
+        onNavigationStarted = {
             SdkCall.execute {
                 gemSurfaceView.mapView?.let { mapView ->
                     mapView.preferences?.enableCursor = false
-                    navigationService.getNavigationRoute(this)?.let { route ->
+                    navRoute?.let { route ->
                         mapView.presentRoute(route)
                         val remainingDistance = route.getTimeDistance(true)?.totalDistance ?: 0
                         Toast.makeText(
@@ -63,13 +68,13 @@ class MainActivity : AppCompatActivity() {
                             Toast.LENGTH_LONG
                         ).show()
                     }
-                    
+
                     enableGPSButton()
                     mapView.followPosition()
                 }
             }
         }
-    }
+    )
 
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
@@ -201,13 +206,13 @@ class MainActivity : AppCompatActivity() {
                 // Cancel any navigation in progress.
                 navigationService.cancelNavigation(navigationListener)
                 // Start the new navigation.
-                Log.i("GEMSDK", "MainActivity.startNavigation: before")
+                Log.i(TAG, "MainActivity.startNavigation: before")
                 val error = navigationService.startNavigation(
                     destination,
                     navigationListener,
                     routingProgressListener,
                 )
-                Log.i("GEMSDK", "MainActivity.startNavigation: after = $error")
+                Log.i(TAG, "MainActivity.startNavigation: after = $error")
             }
         }
 

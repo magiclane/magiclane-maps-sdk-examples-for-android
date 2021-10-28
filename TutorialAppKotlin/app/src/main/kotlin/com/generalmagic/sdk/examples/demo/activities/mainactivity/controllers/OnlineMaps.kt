@@ -17,9 +17,10 @@ import com.generalmagic.sdk.content.ContentStore
 import com.generalmagic.sdk.content.ContentStoreItem
 import com.generalmagic.sdk.content.EContentStoreItemStatus
 import com.generalmagic.sdk.content.EContentType
+import com.generalmagic.sdk.core.ErrorCode
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.ProgressListener
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.demo.activities.*
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.util.SdkCall
@@ -31,7 +32,7 @@ class OnlineMapsActivity : MapsListActivity() {
     private var models = ArrayList<ContentStoreItem>()
 
     private val progressListener = object : ProgressListener() {
-        override fun notifyComplete(reason: SdkError, hint: String) {
+        override fun notifyComplete(errorCode: ErrorCode, hint: String) {
             models.clear()
 
             // get call result
@@ -220,7 +221,7 @@ class OnlineMapsActivity : MapsListActivity() {
                         }
                     }
 
-                    override fun notifyComplete(reason: SdkError, hint: String) {
+                    override fun notifyComplete(errorCode: ErrorCode, hint: String) {
                         taskRefresh()
                     }
 

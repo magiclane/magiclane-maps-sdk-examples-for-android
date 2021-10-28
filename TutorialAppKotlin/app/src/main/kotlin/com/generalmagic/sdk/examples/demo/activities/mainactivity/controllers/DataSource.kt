@@ -22,10 +22,11 @@ import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.generalmagic.sdk.*
+import com.generalmagic.sdk.core.ErrorCode
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.RectF
 import com.generalmagic.sdk.core.enums.EResolution
-import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.Canvas
 import com.generalmagic.sdk.d3scene.CanvasBufferRenderer
 import com.generalmagic.sdk.d3scene.CanvasListener
@@ -46,7 +47,7 @@ import com.generalmagic.sdk.sensordatasource.*
 import com.generalmagic.sdk.sensordatasource.enums.EDataType
 import com.generalmagic.sdk.util.EnumHelp
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.Util.exportVideo
+import com.generalmagic.sdk.util.Util.exportVideoForExplorers
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
 
@@ -219,13 +220,9 @@ class SensorsListActivity : BasicSensorsActivity() {
 //            Log.d("GEMSDK", "onDataInterruption: $type, $reason, $ended")
 //        }
 
-        override fun onNewData(data: SenseData?) {
-            data ?: return
-
-            val type = data.type
-
-            val willAdd = lastData[type] == null
-            lastData[type] = data
+        override fun onNewData(dataType: EDataType) {
+            val willAdd = lastData[dataType] == null
+            lastData[dataType] = currentDataSource?.getLatestData(dataType) ?: return
 
             postOnMain {
                 if (willAdd) refresh()
@@ -262,10 +259,9 @@ class SensorsListActivity : BasicSensorsActivity() {
             for (type in desiredTypes) {
                 val errorCode = currentDataSource.addListener(listener, type, false)
 
-                val gemError = SdkError.fromInt(errorCode)
-                if (gemError != SdkError.NoError) {
+                if (errorCode != GemError.NoError) {
                     postOnMain {
-                        Toast.makeText(this, "error adding $type = $gemError", Toast.LENGTH_SHORT)
+                        Toast.makeText(this, "error adding $type = $errorCode", Toast.LENGTH_SHORT)
                             .show()
                     }
                 }
@@ -287,8 +283,8 @@ class DirectCamActivity : BaseActivity() {
 
     private var currentDataSource: DataSource? = null
     private var listener = object : DataSourceListener() {
-        override fun onNewData(data: SenseData?) {
-            if (data?.type != EDataType.Camera) return
+        override fun onNewData(dataType: EDataType) {
+            if (dataType != EDataType.Camera) return
 
 //            val camData = CameraData(data)
 //            val configs = camData.getCameraConfiguration() ?: return
@@ -357,11 +353,10 @@ class DirectCamActivity : BaseActivity() {
             val type = EDataType.Camera
 
             val errorCode = currentDataSource.addListener(listener, type, false)
-            val gemError = SdkError.fromInt(errorCode)
 
-            if (gemError != SdkError.NoError) {
+            if (errorCode != GemError.NoError) {
                 postOnMain {
-                    Toast.makeText(this, "LISTENER error $type = $gemError", Toast.LENGTH_SHORT)
+                    Toast.makeText(this, "LISTENER error $type = $errorCode", Toast.LENGTH_SHORT)
                         .show()
                 }
                 return@execute
@@ -369,12 +364,12 @@ class DirectCamActivity : BaseActivity() {
 
             val resultPair = surface?.let {
                 currentDataSource.addSurfaceToCamera(it)
-            } ?: Pair(SdkError.InvalidInput.value, -1)
+            } ?: Pair(GemError.InvalidInput, -1)
 
-            val error = SdkError.fromInt(resultPair.first)
+            val error = resultPair.first
             surfaceId = resultPair.second
 
-            if (error != SdkError.NoError) {
+            if (error != GemError.NoError) {
                 postOnMain {
                     Toast.makeText(this, "error adding surface = $error", Toast.LENGTH_SHORT)
                         .show()
@@ -403,11 +398,11 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
     }
 
     private val framesDrawerListener = object : DataSourceListener() {
-        override fun onNewData(data: SenseData?) {
-            data ?: return
+        override fun onNewData(dataType: EDataType) {
+            val data = currentDataSource.getLatestData(dataType) ?: return
 
             SdkCall.execute {
-                when (data.type) {
+                when (dataType) {
                     EDataType.Camera -> {
                         drawer?.updateCameraData(CameraData(data))
                         GEMApplication.getGlContext()?.needsRender()
@@ -447,13 +442,12 @@ class FrameDrawController(val context: Context, private val currentDataSource: D
         val cameraType = EDataType.Camera
 
         val errorCode = currentDataSource.addListener(framesDrawerListener, cameraType)
-        val error = SdkError.fromInt(errorCode)
 
-        if (error != SdkError.NoError) {
+        if (errorCode != GemError.NoError) {
             postOnMain {
                 Toast.makeText(
                     context,
-                    "starting ${cameraType.name} error = ${error.name}",
+                    "starting ${cameraType.name} error = ${GemError.getMessage(errorCode)}",
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -517,16 +511,16 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
             if (!videoFile.exists())
                 return false
 
-            return exportVideo(
+            return exportVideoForExplorers(
                 context,
                 videoFile,
-                GEMApplication.getPublicRecordsDir()
+                true
             ) != null
         }
 
-        override fun notifyComplete(reason: SdkError, hint: String) {
-            when (reason) {
-                SdkError.NoError -> {
+        override fun notifyComplete(errorCode: ErrorCode, hint: String) {
+            when (errorCode) {
+                GemError.NoError -> {
 //                    val text = if (export(hint)) "Exported!"
 //                    else "Not Exported!"
 //
@@ -534,7 +528,11 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
                 }
                 else -> {
                     postOnMain {
-                        Toast.makeText(context, "${reason.name} - $hint", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            "${GemError.getMessage(errorCode)} - $hint",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -575,11 +573,11 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
     private val orientationListener = object : DataSourceListener() {
         var mOrientation = OrientationData.EOrientationType.Unknown
 
-        override fun onNewData(data: SenseData?) {
-            data ?: return
+        override fun onNewData(dataType: EDataType) {
+            val data = currentDataSource?.getLatestData(dataType) ?: return
 
             SdkCall.execute {
-                when (data.type) {
+                when (dataType) {
                     EDataType.Orientation -> {
                         val orientationData = OrientationData(data)
                         val orientation = orientationData.deviceOrientation
@@ -649,10 +647,9 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
             recorder = Recorder.produce(config, currentDataSource)
             recorder?.addListener(recorderListener)
 
-            val startErrorInt = recorder?.startRecording() ?: SdkError.InternalAbort.value
-            val startError = SdkError.fromInt(startErrorInt)
+            val startError = recorder?.startRecording() ?: GemError.InternalAbort
 
-            if (startError == SdkError.NoError) {
+            if (startError == GemError.NoError) {
                 recorder?.startAudioRecording()
                 currentDataSource.addListener(orientationListener, EDataType.Orientation)
 
@@ -660,7 +657,7 @@ class LogRecorderController(context: Context, attrs: AttributeSet) :
                 drawer?.doStart()
             } else {
                 postOnMain {
-                    val text = "Start error = ${startError.name}"
+                    val text = "Start error = ${GemError.getMessage(startError)}"
                     Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
                 }
             }

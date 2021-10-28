@@ -72,7 +72,7 @@ class MainActivity : AppCompatActivity() {
     private fun applyCustomAssetStyle(mapView: MapView?) = SdkCall.execute {
         val filename = "(Desktop) Monochrome Deep Blue (5a1da93a-dbf2-4a36-9b5c-1370386c1496).style"
 
-        // Opens GPX input stream.
+        // Opens style input stream.
         val inputStream = applicationContext.resources.assets.open(filename)
 
         // Take bytes.

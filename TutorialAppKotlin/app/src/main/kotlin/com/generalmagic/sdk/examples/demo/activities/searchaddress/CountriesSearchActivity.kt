@@ -13,13 +13,12 @@ package com.generalmagic.sdk.examples.demo.activities.searchaddress
 import android.graphics.Bitmap
 import android.os.Bundle
 import com.generalmagic.sdk.core.MapDetails
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.activities.SLIAdapter
 import com.generalmagic.sdk.examples.demo.activities.SearchListActivity
 import com.generalmagic.sdk.examples.demo.activities.SearchListItem
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
-import com.generalmagic.sdk.examples.demo.util.Utils
 import com.generalmagic.sdk.places.EAddressDetailLevel
 import com.generalmagic.sdk.places.EAddressField
 import com.generalmagic.sdk.places.GuidedAddressSearchService
@@ -61,21 +60,21 @@ class CountriesSearchActivity : SearchListActivity() {
             service.search(
                 Landmark(), mFilter, EAddressDetailLevel.Country
             ) { landmarks, gemError, _ ->
-                if (gemError != SdkError.Cancel) {
+                if (gemError != GemError.Cancel) {
                     mItems.clear()
                 }
 
-                if (gemError == SdkError.NoError) {
+                if (gemError == GemError.NoError) {
                     for (landmark in landmarks) {
                         mItems.add(CountryModelItem(landmark))
                     }
                 }
 
-                if (gemError != SdkError.Cancel) {
+                if (gemError != GemError.Cancel) {
                     GEMApplication.hideBusyIndicator()
                     refresh()
 
-                    if (gemError != SdkError.NoError) {
+                    if (gemError != GemError.NoError) {
                         GEMApplication.showErrorMessage(gemError)
                     }
                 }

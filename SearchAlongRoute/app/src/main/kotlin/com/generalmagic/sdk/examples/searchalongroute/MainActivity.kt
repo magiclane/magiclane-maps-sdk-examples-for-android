@@ -21,7 +21,7 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
@@ -48,18 +48,18 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = onCompleted@{ results, reason, _ ->
+        onCompleted = onCompleted@{ results, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (reason) {
-                SdkError.NoError -> {
+            when (errorCode) {
+                GemError.NoError -> {
                     results.forEach {
                         // Write each result name in Logcat.
                         Log.i("SearchAlongRoute", "${SdkCall.execute { it.name }}")
                     }
                 }
 
-                SdkError.Cancel -> {
+                GemError.Cancel -> {
                     // The search action was cancelled.
                 }
 
@@ -67,10 +67,9 @@ class MainActivity : AppCompatActivity() {
                     // There was a problem at computing the search operation.
                     Toast.makeText(
                         this@MainActivity,
-                        "Search service error: ${reason.name}",
+                        "Search service error: ${GemError.getMessage(errorCode)}",
                         Toast.LENGTH_SHORT
                     ).show()
-
                 }
             }
         }
@@ -82,12 +81,12 @@ class MainActivity : AppCompatActivity() {
     We will use just the onNavigationStarted method, but for more available
     methods you should check the documentation.
      */
-    private val navigationListener = object : NavigationListener() {
-        override fun onNavigationStarted() {
+    private val navigationListener: NavigationListener = NavigationListener.create(
+        onNavigationStarted = {
             SdkCall.execute {
                 gemSurfaceView.mapView?.let { mapView ->
                     mapView.preferences?.enableCursor = false
-                    navigationService.getNavigationRoute(this)?.let { route ->
+                    getNavRoute()?.let { route ->
                         mapView.presentRoute(route)
 
                         // Make the search button visible and add a click listener to do the search.
@@ -102,7 +101,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-    }
+    )
 
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
@@ -161,6 +160,8 @@ class MainActivity : AppCompatActivity() {
         finish()
         exitProcess(0)
     }
+
+    private fun getNavRoute(): Route? = navigationService.getNavigationRoute(navigationListener)
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 

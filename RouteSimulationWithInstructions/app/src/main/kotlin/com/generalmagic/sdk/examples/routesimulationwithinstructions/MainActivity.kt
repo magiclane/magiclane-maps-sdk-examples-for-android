@@ -55,29 +55,31 @@ class MainActivity : AppCompatActivity() {
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
 
+    private val navRoute: Route?
+        get() = navigationService.getNavigationRoute(navigationListener)
+
     /* 
     Define a navigation listener that will receive notifications from the
     navigation service.
      */
-    private val navigationListener = object : NavigationListener() {
-        override fun onNavigationStarted() {
-            gemSurfaceView.mapView?.let { mapView ->
-                mapView.preferences?.enableCursor = false
-                navigationService.getNavigationRoute(this)?.let { route ->
-                    mapView.presentRoute(route)
+    private val navigationListener: NavigationListener = NavigationListener.create(
+        onNavigationStarted = {
+            SdkCall.execute {
+                gemSurfaceView.mapView?.let { mapView ->
+                    mapView.preferences?.enableCursor = false
+                    navRoute?.let { route ->
+                        mapView.presentRoute(route)
+                    }
+
+                    enableGPSButton()
+                    mapView.followPosition()
                 }
-
-                enableGPSButton()
-                mapView.followPosition()
             }
 
-            Util.postOnMain {
-                topPanel.visibility = View.VISIBLE
-                bottomPanel.visibility = View.VISIBLE
-            }
-        }
-
-        override fun onNavigationInstructionUpdated(instr: NavigationInstruction) {
+            topPanel.visibility = View.VISIBLE
+            bottomPanel.visibility = View.VISIBLE
+        },
+        onNavigationInstructionUpdated = { instr ->
             var instrText = ""
             var instrIcon: Bitmap? = null
             var instrDistance = ""
@@ -93,7 +95,7 @@ class MainActivity : AppCompatActivity() {
                 instrDistance = instr.getDistanceInMeters()
 
                 // Fetch data for the navigation bottom panel (route related info).
-                navigationService.getNavigationRoute(this)?.apply {
+                navRoute?.apply {
                     etaText = getEta() // estimated time of arrival
                     rttText = getRtt() // remaining travel time
                     rtdText = getRtd() // remaining travel distance
@@ -101,17 +103,15 @@ class MainActivity : AppCompatActivity() {
             }
 
             // Update the navigation panels info.
-            Util.postOnMain {
-                navInstruction.text = instrText
-                navInstructionIcon.setImageBitmap(instrIcon)
-                navInstructionDistance.text = instrDistance
+            navInstruction.text = instrText
+            navInstructionIcon.setImageBitmap(instrIcon)
+            navInstructionDistance.text = instrDistance
 
-                eta.text = etaText
-                rtt.text = rttText
-                rtd.text = rtdText
-            }
+            eta.text = etaText
+            rtt.text = rttText
+            rtd.text = rtdText
         }
-    }
+    )
 
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
@@ -155,10 +155,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         SdkSettings.onApiTokenRejected = {
-            /* 
+            /*
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
-            check the generalmagic.com website, sign up/ sing in and generate one. 
+            check the generalmagic.com website, sign up/ sing in and generate one.
              */
             Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
         }

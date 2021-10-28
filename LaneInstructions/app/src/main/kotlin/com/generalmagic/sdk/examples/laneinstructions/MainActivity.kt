@@ -23,9 +23,9 @@ import com.generalmagic.sdk.core.Rgba
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Landmark
-import com.generalmagic.sdk.routesandnavigation.NavigationInstruction
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
+import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -40,16 +40,19 @@ class MainActivity : AppCompatActivity() {
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
 
+    private val navRoute: Route?
+        get() = navigationService.getNavigationRoute(navigationListener)
+
     /* 
     Define a navigation listener that will receive notifications from the
     navigation service.
      */
-    private val navigationListener = object : NavigationListener() {
-        override fun onNavigationStarted() {
+    private val navigationListener: NavigationListener = NavigationListener.create(
+        onNavigationStarted = {
             SdkCall.execute {
                 gemSurfaceView.mapView?.let { mapView ->
                     mapView.preferences?.enableCursor = false
-                    navigationService.getNavigationRoute(this)?.let { route ->
+                    navRoute?.let { route ->
                         mapView.presentRoute(route)
                     }
 
@@ -57,29 +60,25 @@ class MainActivity : AppCompatActivity() {
                     mapView.followPosition()
                 }
             }
-        }
-
-        override fun onDestinationReached(landmark: Landmark) {
-            gemSurfaceView.mapView?.hideRoutes()
-        }
-
-        override fun onNavigationInstructionUpdated(instr: NavigationInstruction) {
+        },
+        onDestinationReached = {
+            SdkCall.execute { gemSurfaceView.mapView?.hideRoutes() }
+        },
+        onNavigationInstructionUpdated = { instr ->
             // Fetch the bitmap for recommended lanes.
             val lanes = SdkCall.execute {
                 instr.laneImage?.asBitmap(150, 30, activeColor = Rgba.white())
             }?.second
 
             // Show the lanes instruction.
-            Util.postOnMain {
-                if (lanes != null) {
-                    laneImage.visibility = View.VISIBLE
-                    laneImage.setImageBitmap(lanes)
-                } else {
-                    laneImage.visibility = View.GONE
-                }
+            if (lanes != null) {
+                laneImage.visibility = View.VISIBLE
+                laneImage.setImageBitmap(lanes)
+            } else {
+                laneImage.visibility = View.GONE
             }
         }
-    }
+    )
 
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
@@ -138,7 +137,7 @@ class MainActivity : AppCompatActivity() {
         finish()
         exitProcess(0)
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private fun enableGPSButton() {

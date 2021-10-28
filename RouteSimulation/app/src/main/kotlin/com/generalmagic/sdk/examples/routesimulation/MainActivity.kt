@@ -23,6 +23,7 @@ import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
+import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -36,18 +37,21 @@ class MainActivity : AppCompatActivity() {
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
 
+    private val navRoute: Route?
+        get() = navigationService.getNavigationRoute(navigationListener)
+
     /* 
     Define a navigation listener that will receive notifications from the
     navigation service.
     We will use just the onNavigationStarted method, but for more available
     methods you should check the documentation.
      */
-    private val navigationListener = object : NavigationListener() {
-        override fun onNavigationStarted() {
+    private val navigationListener: NavigationListener = NavigationListener.create(
+        onNavigationStarted = {
             SdkCall.execute {
                 gemSurfaceView.mapView?.let { mapView ->
                     mapView.preferences?.enableCursor = false
-                    navigationService.getNavigationRoute(this)?.let { route ->
+                    navRoute?.let { route ->
                         mapView.presentRoute(route)
                     }
 
@@ -56,7 +60,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-    }
+    )
 
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(

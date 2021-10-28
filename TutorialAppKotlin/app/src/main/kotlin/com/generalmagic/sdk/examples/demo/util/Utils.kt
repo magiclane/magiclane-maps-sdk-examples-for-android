@@ -19,7 +19,7 @@ import android.os.Build
 import android.util.TypedValue
 import android.view.WindowInsets
 import com.generalmagic.sdk.core.*
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.places.EAddressField
 import com.generalmagic.sdk.places.Landmark
@@ -202,51 +202,6 @@ object Utils {
 
             return@execute text
         } ?: ""
-    }
-
-    fun getErrorMessage(nError: SdkError): String {
-        return when (nError) {
-            SdkError.General -> return getUIString(StringIds.eStrErrMsgKGeneral)
-            SdkError.Activation -> return getUIString(StringIds.eStrErrMsgKActivation)
-            SdkError.Cancel -> return getUIString(StringIds.eStrErrMsgKCancel)
-            SdkError.NotSupported -> return getUIString(StringIds.eStrErrMsgKNotSupported)
-            SdkError.Exist -> return getUIString(StringIds.eStrErrMsgKExist)
-            SdkError.Io -> return getUIString(StringIds.eStrErrMsgKIo)
-            SdkError.AccessDenied -> return getUIString(StringIds.eStrErrMsgKAccessDenied)
-            SdkError.ReadonlyDrive -> return getUIString(StringIds.eStrErrMsgKReadonlyDrive)
-            SdkError.NoDiskSpace -> return getUIString(StringIds.eStrErrMsgKNoDiskSpace)
-            SdkError.InUse -> return getUIString(StringIds.eStrErrMsgKInUse)
-            SdkError.NotFound -> return getUIString(StringIds.eStrErrMsgKNotFound)
-            SdkError.OutOfRange -> return getUIString(StringIds.eStrErrMsgKOutOfRange)
-            SdkError.Invalidated -> return getUIString(StringIds.eStrErrMsgKInvalidated)
-            SdkError.NoMemory -> return getUIString(StringIds.eStrErrMsgKNoMemory)
-            SdkError.InvalidInput -> return getUIString(StringIds.eStrErrMsgKInvalidInput)
-            SdkError.ReducedResult -> return getUIString(StringIds.eStrErrMsgKReducedResult)
-            SdkError.Required -> return getUIString(StringIds.eStrErrMsgKRequired)
-            SdkError.NoRoute -> return getUIString(StringIds.eStrErrMsgKNoRoute)
-            SdkError.WaypointAccess -> return getUIString(StringIds.eStrErrMsgKWaypointAccess)
-            SdkError.RouteTooLong -> return getUIString(StringIds.eStrErrMsgKRouteTooLong)
-            SdkError.InternalAbort -> return getUIString(StringIds.eStrErrMsgKInternalAbort)
-            SdkError.Connection -> return getUIString(StringIds.eStrErrMsgKNoConnection)
-            SdkError.NetworkFailed -> return getUIString(StringIds.eStrErrMsgKNoConnection)
-            SdkError.NoConnection -> return getUIString(StringIds.eStrErrMsgKNoConnection)
-            SdkError.ConnectionRequired -> return getUIString(StringIds.eStrErrMsgKNoConnection)
-            SdkError.SendFailed -> return getUIString(StringIds.eStrErrMsgKNoConnection)
-            SdkError.RecvFailed -> return getUIString(StringIds.eStrErrMsgKNoConnection)
-            SdkError.CouldNotStart -> return getUIString(StringIds.eStrErrMsgKNoConnection)
-            SdkError.NetworkTimeout -> return getUIString(StringIds.eStrErrMsgKNoConnection)
-            SdkError.NetworkCouldntResolveHost -> return getUIString(StringIds.eStrErrMsgKNoConnection)
-            SdkError.NetworkCouldntResolveProxy -> return getUIString(StringIds.eStrErrMsgKNoConnection)
-            SdkError.NetworkCouldntResume -> return getUIString(StringIds.eStrErrMsgKNoConnection)
-// 				SdkError.NotLoggedIn->                  return getUIString(StringIds.eStrErrMsgKContentStoreNotOpened)
-            SdkError.Suspended -> return getUIString(StringIds.eStrErrMsgKSuspended)
-            SdkError.UpToDate -> return getUIString(StringIds.eStrErrMsgKUpToDate)
-// 				SdkError.ResourceMissing->              return getUIString(StringIds.eStrErrMsgKResourceMissing)
-            SdkError.OperationTimeout -> return getUIString(StringIds.eStrErrMsgKOperationTimeout)
-            else -> {
-                getUIString(StringIds.eStrUnknownErr)
-            }
-        }
     }
 
     fun getScreenWidth(activity: Activity): Int {

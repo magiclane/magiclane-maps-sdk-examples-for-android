@@ -22,9 +22,9 @@ import android.widget.*
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.LogUploaderListener
 import com.generalmagic.sdk.core.SettingsService
-import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.app.BaseActivity
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
@@ -32,10 +32,11 @@ import com.generalmagic.sdk.examples.demo.util.Util
 import com.generalmagic.sdk.examples.demo.util.Util.getFileLastModifiedDate
 import com.generalmagic.sdk.examples.demo.util.Util.getFileSize
 import com.generalmagic.sdk.examples.demo.util.UtilUITexts.formatSizeAsText
+import com.generalmagic.sdk.examples.util.ImageViewLoader
 import com.generalmagic.sdk.sensordatasource.RecorderBookmarks
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.Util.exportVideo
+import com.generalmagic.sdk.util.Util.exportVideoForExplorers
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -46,7 +47,7 @@ class UploadLogActivity : BaseActivity() {
     private var mName: EditText? = null
     private var mEmail: EditText? = null
     private var mIssueDescription: EditText? = null
-    
+
     lateinit var toolbar: Toolbar
     lateinit var upload_button: Button
     lateinit var upload_info: TextView
@@ -125,11 +126,10 @@ class UploadLogActivity : BaseActivity() {
                 mService?.setStringValue(UPLOAD_SAVED_EMAIL, email)
             }
 
-            val resultCode = GEMApplication.uploadLog(filepath, username, email, details)
-            val error = SdkError.fromInt(resultCode)
+            val errorCode = GEMApplication.uploadLog(filepath, username, email, details)
 
-            if (error != SdkError.NoError) {
-                Toast.makeText(context, "uploadAtIndex error=$error", Toast.LENGTH_SHORT).show()
+            if (errorCode != GemError.NoError) {
+                Toast.makeText(context, "uploadAtIndex error=$errorCode", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -149,7 +149,7 @@ class UploadLogActivity : BaseActivity() {
         upload_email_explanation = findViewById(R.id.upload_email_explanation)
         upload_issue_description = findViewById(R.id.upload_issue_description)
         upload_issue_description_string = findViewById(R.id.upload_issue_description_string)
-        
+
         val inputFilepath = intent.getStringExtra(VIDEO_PATH) ?: ""
 
         this.mData = UploadViewData(this, inputFilepath)
@@ -224,9 +224,6 @@ class PickLogActivity : BaseActivity() {
     private var inputDirectories: ArrayList<String>? = null
 
     private val uploadListener = object : LogUploaderListener() {
-        override fun onLogStatusChanged(logPath: String, progress: Int, status: Int) {
-
-        }
     }
 
     // //////
@@ -341,7 +338,7 @@ class PickLogActivity : BaseActivity() {
 
         val context = GEMApplication.applicationContext()
 
-        return exportVideo(context, videoFile, GEMApplication.getPublicRecordsDir())
+        return exportVideoForExplorers(context, videoFile, true)
     }
 
     private fun updateListAdapter(inputPaths: ArrayList<String>?) {
@@ -424,7 +421,7 @@ class PickLogActivity : BaseActivity() {
     //
     inner class CustomAdapter(private val mDataset: ArrayList<VideoFileModel>) :
         RecyclerView.Adapter<CustomAdapter.ListItemViewHolder>() {
-        private val imageLoader = ThumbnailLoader()
+        private val imageLoader = ImageViewLoader()
 
         init {
             imageLoader.setStubId(android.R.drawable.ic_media_play)
@@ -441,7 +438,7 @@ class PickLogActivity : BaseActivity() {
             holder.nameTextView.text = mDataset[position].name
             holder.filepathTextView.text = mDataset[position].filepath
 
-            imageLoader.displayImage(mDataset[position].filepath, holder.thumbnailView)
+            imageLoader.displayVideoThumbnail(holder.thumbnailView, mDataset[position].filepath)
         }
 
         override fun getItemCount(): Int {

@@ -20,7 +20,7 @@ import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.Path
 import com.generalmagic.sdk.core.Rgba
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.routesandnavigation.RoutingService
@@ -38,12 +38,12 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { _, reason, _ ->
+        onCompleted = { _, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (reason) {
-                SdkError.NoError,
-                SdkError.Cancel -> {
+            when (errorCode) {
+                GemError.NoError,
+                GemError.Cancel -> {
                     // No action.
                 }
 
@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
                     // There was a problem at computing the routing operation.
                     Toast.makeText(
                         this@MainActivity,
-                        "Routing service error: ${reason.name}",
+                        "Routing service error: ${GemError.getMessage(errorCode)}",
                         Toast.LENGTH_SHORT
                     ).show()
                 }

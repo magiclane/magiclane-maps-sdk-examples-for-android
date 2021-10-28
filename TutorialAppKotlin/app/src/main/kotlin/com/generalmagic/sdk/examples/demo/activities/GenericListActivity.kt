@@ -25,9 +25,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.content.ContentStoreItem
 import com.generalmagic.sdk.content.EContentStoreItemStatus
 import com.generalmagic.sdk.core.*
+import com.generalmagic.sdk.examples.demo.activities.history.TripModel
 import com.generalmagic.sdk.examples.demo.R
-import com.generalmagic.sdk.examples.demo.activities.history.Trip
-import com.generalmagic.sdk.examples.demo.activities.history.TripsHistory
 import com.generalmagic.sdk.examples.demo.app.BaseActivity
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.Util
@@ -828,9 +827,9 @@ class FavouritesLandmarkViewModel(it: Landmark?, reference: Coordinates?) :
     }
 }
 
-open class TripViewModel(val it: Trip, private val tripIndex: Int) : SearchListItem() {
+open class TripViewModel(val it: TripModel, private val tripIndex: Int) : SearchListItem() {
     override fun getIcon(width: Int, height: Int): Bitmap? = SdkCall.execute {
-        return@execute it.mPreferences?.transportMode.let { transportMode ->
+        return@execute it.preferences?.transportMode.let { transportMode ->
             return@let when (transportMode) {
                 ERouteTransportMode.Car -> {
                     UtilGemImages.asBitmap(SdkImages.UI.DriveTo_v2.value, width, height)
@@ -856,16 +855,11 @@ open class TripViewModel(val it: Trip, private val tripIndex: Int) : SearchListI
     }
 
     override fun getId(): Long {
-        return it.mTimeStamp
+        return it.timestamp
     }
 
     override fun getText(): String {
-        val waypoints = it.mWaypoints
-        if (waypoints != null) {
-            return TripsHistory.getDefaultTripName(waypoints, it.mIsFromAToB, false).second
-        }
-
-        return ""
+        return TripModel.getDefaultTripName(it.waypoints, it.ignoreDeparture) ?: ""
     }
 
     override fun deleteContent(): Boolean {

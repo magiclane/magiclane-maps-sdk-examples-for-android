@@ -18,7 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.RouteTrafficEvent
@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.GONE
 
             when (gemError) {
-                SdkError.NoError -> {
+                GemError.NoError -> {
                     if (routes.size == 0) return@onCompleted
 
                     val route = routes[0]
@@ -66,13 +66,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                SdkError.Cancel -> {
+                GemError.Cancel -> {
                     // The routing action was cancelled.
                 }
 
                 else -> {
                     // There was a problem at computing the routing operation.
-                    showToast("Routing service error: ${gemError.name}")
+                    showToast("Routing service error: ${GemError.getMessage(gemError)}")
                 }
             }
         }

@@ -37,6 +37,7 @@ import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.util.IntentHelper
 import com.generalmagic.sdk.examples.demo.util.Util
 import com.generalmagic.sdk.examples.demo.util.UtilUITexts
+import com.generalmagic.sdk.examples.demo.util.UtilUITexts.fillLandmarkAddressInfo
 import com.generalmagic.sdk.examples.demo.util.Utils.getFormattedWaypointName
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteInstruction

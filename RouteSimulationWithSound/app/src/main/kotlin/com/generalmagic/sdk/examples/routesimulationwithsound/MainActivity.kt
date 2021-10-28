@@ -17,7 +17,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
-import com.generalmagic.sdk.core.ISound
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.SoundPlayingListener
@@ -28,7 +27,6 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.Util
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
 
@@ -53,27 +51,16 @@ class MainActivity : AppCompatActivity() {
     We will use just the onNavigationStarted method, but for more available
     methods you should check the documentation.
      */
-    private val navigationListener = object : NavigationListener() {
-        override fun onNavigationStarted() {
+    private val navigationListener: NavigationListener = NavigationListener.create(
+        onNavigationStarted = { onNavigationStarted() },
+        onNavigationSound = { sound ->
             SdkCall.execute {
-                gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.enableCursor = false
-                    navigationService.getNavigationRoute(this)?.let { route ->
-                        mapView.presentRoute(route)
-                    }
-
-                    enableGPSButton()
-                    mapView.followPosition()
-                }
+                soundService.play(sound, playingListener, soundPreference)
             }
-        }
-
-        override fun onNavigationSound(sound: ISound) {
-            soundService.play(sound, playingListener, soundPreference)
-        }
-
-        override fun canPlayNavigationSound(): Boolean = true
-    }
+        },
+        canPlayNavigationSound = true,
+        postOnMain = true
+    )
 
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
@@ -89,6 +76,18 @@ class MainActivity : AppCompatActivity() {
     )
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun onNavigationStarted() = SdkCall.execute {
+        gemSurfaceView.mapView?.let { mapView ->
+            mapView.preferences?.enableCursor = false
+            navigationService.getNavigationRoute(navigationListener)?.let { route ->
+                mapView.presentRoute(route)
+            }
+
+            enableGPSButton()
+            mapView.followPosition()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -140,11 +139,11 @@ class MainActivity : AppCompatActivity() {
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.VISIBLE }
+                followCursorButton.visibility = View.VISIBLE
             }
 
             onEnterFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.GONE }
+                followCursorButton.visibility = View.GONE
             }
 
             // Set on click action for the GPS button.

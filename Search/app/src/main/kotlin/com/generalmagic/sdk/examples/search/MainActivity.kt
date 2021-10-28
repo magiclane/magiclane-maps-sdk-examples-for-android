@@ -27,7 +27,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
@@ -43,10 +43,10 @@ class MainActivity : AppCompatActivity() {
     private var progressBar: ProgressBar? = null
 
     private var searchService = SearchService(
-        onCompleted = { results, reason, _ ->
+        onCompleted = { results, errorCode, _ ->
             progressBar?.visibility = View.GONE
-            when (reason) {
-                SdkError.NoError -> {
+            when (errorCode) {
+                GemError.NoError -> {
                     // No error encountered, we can handle the results.
                     if (results.isNotEmpty()) {
                         listView?.adapter = CustomAdapter(results)
@@ -56,13 +56,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                SdkError.Cancel -> {
+                GemError.Cancel -> {
                     // The search action was cancelled.
                 }
 
                 else -> {
                     // There was a problem at computing the search operation.
-                    showToast("Search service error: ${reason.name}")
+                    showToast("Search service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }
@@ -166,7 +166,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun search(filter: String): Int = SdkCall.execute {
         searchService.searchByFilter(filter)
-    } ?: SdkError.Cancel.value
+    } ?: GemError.Cancel
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -175,6 +175,7 @@ class MainActivity : AppCompatActivity() {
         permissions: Array<String>,
         grantResults: IntArray
     ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         PermissionsHelper.onRequestPermissionsResult(this, requestCode, grantResults)
 
         val result = grantResults[permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)]

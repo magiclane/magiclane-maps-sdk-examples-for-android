@@ -28,7 +28,7 @@ import com.generalmagic.sdk.core.EGenericCategoriesIDs
 import com.generalmagic.sdk.core.EUnitSystem
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
@@ -51,11 +51,11 @@ class MainActivity : AppCompatActivity() {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = onCompleted@{ results, reason, _ ->
+        onCompleted = onCompleted@{ results, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (reason) {
-                SdkError.NoError -> {
+            when (errorCode) {
+                GemError.NoError -> {
                     val reference = reference ?: return@onCompleted
                     if (results.isEmpty()) {
                         // The search completed without errors, but there were no results found.
@@ -66,13 +66,13 @@ class MainActivity : AppCompatActivity() {
                     listView.adapter = CustomAdapter(reference, results)
                 }
 
-                SdkError.Cancel -> {
+                GemError.Cancel -> {
                     // The search action was cancelled.
                 }
 
                 else -> {
                     // There was a problem at computing the search operation.
-                    showToast("Search service error: ${reason.name}")
+                    showToast("Search service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }
@@ -177,6 +177,7 @@ class MainActivity : AppCompatActivity() {
         permissions: Array<String>,
         grantResults: IntArray
     ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         PermissionsHelper.onRequestPermissionsResult(
             this,
             requestCode,

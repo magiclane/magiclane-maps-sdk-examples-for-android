@@ -15,7 +15,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.Toast
 import com.generalmagic.sdk.*
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.d3scene.*
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.activities.mainactivity.controllers.common.NavTopPanelController
@@ -91,9 +91,9 @@ class FlyToArea(context: Context, attrs: AttributeSet?) : FlyController(context,
                 hideAllButtons()
                 setCustomStartButtonVisible(true)
 
-                if (gemError == SdkError.Cancel) return@onCompleted
+                if (gemError == GemError.Cancel) return@onCompleted
 
-                if (gemError != SdkError.NoError) {
+                if (gemError != GemError.NoError) {
                     Toast.makeText(context, "Search failed: $gemError", Toast.LENGTH_SHORT).show()
                     return@onCompleted
                 }
@@ -188,7 +188,7 @@ open class FlyToInstr(context: Context, attrs: AttributeSet?) : FlyController(co
             hideProgress()
             setStartButtonVisible(true)
 
-            if (gemError != SdkError.NoError) {
+            if (gemError != GemError.NoError) {
                 Toast.makeText(
                     context,
                     "Routing service error: $gemError",
@@ -298,7 +298,7 @@ class FlyToTraffic(context: Context, attrs: AttributeSet?) : FlyController(conte
             hideAllButtons()
             setStartButtonVisible(true)
 
-            if (gemError != SdkError.NoError) {
+            if (gemError != GemError.NoError) {
                 Toast.makeText(
                     context,
                     "Routing service error: $gemError",

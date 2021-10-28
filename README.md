@@ -15,6 +15,7 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Multiple surfaces in Fragment](MultipleSurfacesInFragment) - Display a variable list of maps on an Android Fragment.
 * [Multiple surfaces in Fragment Recycler](MultipleSurfacesInFragmentRecycler) - Displaying a variable list of maps on an Android Fragment.
 * [Map Compass](MapCompass) - Display an interactive map with a compass.
+* [Map Gestures](MapGestures) - Display an interactive map supporting pan, zoom, rotate, tilt that displays logs about what gestures the user made on the map.
 * [Map Perspective Change](MapPerspectiveChange) - Display an interactive map with a button that changes the view perspective between 2D and 3D.
 * [Online Maps](OnlineMaps) - Gather the list of available maps; download first available map.
 * [Overlapped Maps](OverlappedMaps) - Display a second map view over the existing one.
@@ -35,6 +36,7 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Search](Search) - Searches for landmarks based on user input; display a list with landmarks found.
 * [Search Along Route](SearchAlongRoute) - Start simulation between 2 landmarks. Search for gas stations along the route if the search button is pressed.
 * [Speed Watcher](SpeedWatcher) - Start simulation between 2 given landmarks. Display the current speed and the legal speed limit.
+* [Favourites](Favourites) - Fly to a location and use UI to add or remove that landmark to/ from the favourites folder.
 * [Fly to Area](FlyToArea) - Search for a landmark; fly to resulted landmark, if exists.
 * [Fly To Coordinates](FlyToCoordinates) - Fly to given coodinates.
 * [Fly to Route Instruction](FlyToRouteInstruction) - Calculate the routes between 2 given landmarks; display the first route on a map, if exists; fly to first route instruction, if exists.

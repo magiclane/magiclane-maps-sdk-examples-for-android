@@ -20,7 +20,7 @@ import com.generalmagic.sdk.core.ExternalInfo
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
@@ -41,10 +41,10 @@ class MainActivity : AppCompatActivity() {
             progressBar?.visibility = View.VISIBLE
         },
 
-        onCompleted = { results, reason, _ ->
+        onCompleted = { results, errorCode, _ ->
             progressBar?.visibility = View.GONE
 
-            if (reason == SdkError.NoError) {
+            if (errorCode == GemError.NoError) {
                 if (results.isNotEmpty()) {
                     val name = SdkCall.execute { results[0].name }
                     locationName?.text = name

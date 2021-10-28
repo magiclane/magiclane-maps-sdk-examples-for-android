@@ -25,17 +25,15 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.generalmagic.sdk.content.*
 import com.generalmagic.sdk.core.*
-import com.generalmagic.sdk.core.enums.SdkError
 import com.generalmagic.sdk.d3scene.*
 import com.generalmagic.sdk.examples.demo.R
 import com.generalmagic.sdk.examples.demo.activities.WebActivity
-import com.generalmagic.sdk.examples.demo.activities.history.Trip
+import com.generalmagic.sdk.examples.demo.activities.history.TripModel
 import com.generalmagic.sdk.examples.demo.activities.history.TripsHistory
 import com.generalmagic.sdk.examples.demo.activities.pickvideo.PickLogActivity
 import com.generalmagic.sdk.examples.demo.app.TutorialsOpener.getCurrentTutorial
 import com.generalmagic.sdk.examples.demo.util.KeyboardUtil
 import com.generalmagic.sdk.examples.demo.util.Util
-import com.generalmagic.sdk.examples.demo.util.Utils
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.LandmarkStore
@@ -235,16 +233,14 @@ object GEMApplication {
     fun uploadLog(filepath: String, username: String, email: String, details: String): Int {
         if (logUploader == null) {
             logUploader = SdkCall.execute {
-                val proxyListener = object : LogUploaderListener() {
-                    override fun onLogStatusChanged(
-                        logPath: String, progress: Int, status: Int
-                    ) {
+                val proxyListener = LogUploaderListener.create(
+                    onLogStatusChanged = onLogStatusChanged@{ logPath, progress, status ->
                         for (listener in logUploaderListeners) {
                             listener.onLogStatusChanged(logPath, progress, status)
                         }
 
                         if (status < 0) { // internally aborted
-                            return
+                            return@onLogStatusChanged
                         }
 
                         val chunks = logPath.split("/")
@@ -259,16 +255,16 @@ object GEMApplication {
                             }
                         }
                     }
-                }
+                )
                 return@execute LogUploader.produce(proxyListener)
             }
         }
 
-        val logUploader = logUploader ?: return SdkError.NotSupported.value
+        val logUploader = logUploader ?: return GemError.NotSupported
 
         return SdkCall.execute {
             logUploader.upload(filepath, username, email, details, arrayListOf(filepath))
-        } ?: SdkError.General.value
+        } ?: GemError.General
     }
 
     /** //////////////////////////////////////////////////////////// */
@@ -399,15 +395,15 @@ object GEMApplication {
     ///                      utils
     /** //////////////////////////////////////////////////////////// */
 
-    private var mLastDisplayedError: SdkError = SdkError.NoError
+    private var mLastDisplayedError: ErrorCode = GemError.NoError
 
-    fun showErrorMessage(error: SdkError, length: Int = Toast.LENGTH_SHORT) {
+    fun showErrorMessage(error: ErrorCode, length: Int = Toast.LENGTH_SHORT) {
         if (mLastDisplayedError == error) {
             return
         }
 
         mLastDisplayedError = error
-        showErrorMessage(Utils.getErrorMessage(error), length)
+        showErrorMessage(GemError.getMessage(error), length)
     }
 
     fun showErrorMessage(error: String, length: Int = Toast.LENGTH_SHORT) {
@@ -495,7 +491,7 @@ object GEMApplication {
 
     private fun getLandmarkStoreLandmarkId(landmarkStore: LandmarkStore?, landmark: Landmark): Int =
         SdkCall.execute {
-            val treshold = 0.00001
+            val threshold = 0.00001
             val landmarks = landmarkStore?.getLandmarks() ?: arrayListOf()
             val name = landmark.name ?: ""
             val lat = landmark.coordinates?.latitude ?: 0.0
@@ -505,17 +501,17 @@ object GEMApplication {
                 val itemLatitude = item.coordinates?.latitude ?: 0.0
                 val itemLongitude = item.coordinates?.longitude ?: 0.0
                 if ((item.name == name) &&
-                    (abs(itemLatitude - lat) < treshold) &&
-                    (abs(itemLongitude - lon) < treshold)
+                    (abs(itemLatitude - lat) < threshold) &&
+                    (abs(itemLongitude - lon) < threshold)
                 ) {
-                    return@execute item.landmarkId
+                    return@execute item.id
                 }
             }
             return@execute 0
         } ?: 0
 
     fun addRouteToHistory(route: Route, isFromAToB: Boolean = true) {
-        val trip = Trip()
+        val trip = TripModel()
         trip.set(route, isFromAToB)
 
         mTripsHistory?.saveTrip(trip)

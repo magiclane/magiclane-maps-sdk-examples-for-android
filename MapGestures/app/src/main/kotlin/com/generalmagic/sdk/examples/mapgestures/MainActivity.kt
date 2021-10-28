@@ -18,6 +18,7 @@ import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.Xy
 import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.util.SdkCall
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
@@ -39,59 +40,75 @@ class MainActivity : AppCompatActivity() {
              */
             gemSurfaceView.mapView?.let { mapView ->
                 mapView.onDoubleTouch = {
-                    Log.i("Gesture", "onDoubleTouch at (${it.x}, ${it.y}).")
+                    SdkCall.execute {
+                        Log.i("Gesture", "onDoubleTouch at (${it.x}, ${it.y}).")
+                    }
                 }
 
                 mapView.onLongDown = {
-                    Log.i("Gesture", "onLongDown at (${it.x}, ${it.y}).")
+                    SdkCall.execute {
+                        Log.i("Gesture", "onLongDown at (${it.x}, ${it.y}).")
+                    }
                 }
 
                 mapView.onMove = { start: Xy, end: Xy ->
-                    Log.i(
-                        "Gesture",
-                        "onMove from (${start.x}, ${start.y}) to (${end.x}, ${end.y})."
-                    )
+                    SdkCall.execute {
+                        Log.i(
+                            "Gesture",
+                            "onMove from (${start.x}, ${start.y}) to (${end.x}, ${end.y})."
+                        )
+                    }
                 }
 
                 mapView.onPinch = { start1: Xy, start2: Xy, end1: Xy, end2: Xy ->
-                    Log.i(
-                        "Gesture",
-                        "onPinch from " +
-                            "(${start1.x}, ${start1.y}) and (${start2.x}, ${start2.y}) " +
-                            "to " +
-                            "(${end1.x}, ${end1.y}) and (${end2.x}, ${end2.y})."
-                    )
+                    SdkCall.execute {
+                        Log.i(
+                            "Gesture",
+                            "onPinch from " +
+                                    "(${start1.x}, ${start1.y}) and (${start2.x}, ${start2.y}) " +
+                                    "to " +
+                                    "(${end1.x}, ${end1.y}) and (${end2.x}, ${end2.y})."
+                        )
+                    }
                 }
 
                 mapView.onRotate =
                     { start1: Xy, start2: Xy, end1: Xy, end2: Xy, center: Xy, deltaAngleDeg: Double ->
-                        Log.i(
-                            "Gesture",
-                            "onRotate from " +
-                                "(${start1.x}, ${start1.y}) and (${start2.x}, ${start2.y}) " +
-                                "to " +
-                                "(${end1.x}, ${end1.y}) and (${end2.x}, ${end2.y}) " +
-                                "with center " +
-                                "(${center.x}, ${center.y}) " +
-                                "and $deltaAngleDeg degrees."
-                        )
+                        SdkCall.execute {
+                            Log.i(
+                                "Gesture",
+                                "onRotate from " +
+                                        "(${start1.x}, ${start1.y}) and (${start2.x}, ${start2.y}) " +
+                                        "to " +
+                                        "(${end1.x}, ${end1.y}) and (${end2.x}, ${end2.y}) " +
+                                        "with center " +
+                                        "(${center.x}, ${center.y}) " +
+                                        "and $deltaAngleDeg degrees."
+                            )
+                        }
                     }
 
                 mapView.onSwipe = { distX: Int, distY: Int, speedMMPerSec: Double ->
-                    Log.i(
-                        "Gesture", "onSwipe with " +
-                            "$distX pixels on X and " +
-                            "$distY pixels on Y and " +
-                            "the speed of $speedMMPerSec mm/s."
-                    )
+                    SdkCall.execute {
+                        Log.i(
+                            "Gesture", "onSwipe with " +
+                                    "$distX pixels on X and " +
+                                    "$distY pixels on Y and " +
+                                    "the speed of $speedMMPerSec mm/s."
+                        )
+                    }
                 }
 
                 mapView.onTouch = {
-                    Log.i("Gesture", "onTouch at (${it.x}, ${it.y}).")
+                    SdkCall.execute {
+                        Log.i("Gesture", "onTouch at (${it.x}, ${it.y}).")
+                    }
                 }
 
                 mapView.onTwoTouches = {
-                    Log.i("Gesture", "onTwoTouches with middle point (${it.x}, ${it.y}).")
+                    SdkCall.execute {
+                        Log.i("Gesture", "onTwoTouches with middle point (${it.x}, ${it.y}).")
+                    }
                 }
             }
         }

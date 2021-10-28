@@ -16,9 +16,9 @@ import android.widget.SearchView
 import android.widget.Toast
 import com.generalmagic.sdk.*
 import com.generalmagic.sdk.core.*
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.examples.demo.activities.*
-import com.generalmagic.sdk.examples.demo.activities.history.Trip
+import com.generalmagic.sdk.examples.demo.activities.history.TripModel
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.examples.demo.app.Tutorials
 import com.generalmagic.sdk.examples.demo.util.KeyboardUtil
@@ -40,11 +40,11 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
         }
 
         searchService.onCompleted = onCompleted@{ results, gemError, _ ->
-            if (gemError == SdkError.Cancel) return@onCompleted
+            if (gemError == GemError.Cancel) return@onCompleted
 
             hideProgress()
 
-            if (gemError != SdkError.NoError) {
+            if (gemError != GemError.NoError) {
                 Toast.makeText(
                     this@BaseSearchTutorialActivity, "Search failed: $gemError", Toast.LENGTH_SHORT
                 ).show()
@@ -55,7 +55,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
             val adapter = SLIAdapter(wrapped)
 
             listView.adapter = adapter
-            if (gemError == SdkError.NoError && results.isEmpty()) {
+            if (gemError == GemError.NoError && results.isEmpty()) {
                 Toast.makeText(
                     this@BaseSearchTutorialActivity, "No result!", Toast.LENGTH_SHORT
                 ).show()
@@ -121,7 +121,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
         return result
     }
 
-    protected fun wrapTripList(list: ArrayList<Trip>): ArrayList<SearchListItem> {
+    protected fun wrapTripList(list: ArrayList<TripModel>): ArrayList<SearchListItem> {
         val result = ArrayList<SearchListItem>()
         for ((index, item) in list.withIndex()) {
             val wrappedItem = TripViewModel(item, index)
@@ -151,9 +151,9 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
         val itTrip = item.it
 
         finish()
-        itTrip.mWaypoints?.let { waypoints ->
+        itTrip.waypoints.let { waypoints ->
 
-            if (!itTrip.mIsFromAToB) {
+            if (!itTrip.ignoreDeparture) {
                 val list = arrayListOf<Landmark>()
                 val position = PositionService().position
                 if (position != null) {
@@ -170,7 +170,7 @@ open class BaseSearchTutorialActivity : SearchListActivity() {
                 return@let
             }
 
-            if (itTrip.mPreferences?.transportMode != ERouteTransportMode.Public) {
+            if (itTrip.preferences?.transportMode != ERouteTransportMode.Public) {
                 Tutorials.openCustomRouteTutorial(waypoints)
             } else {
                 Tutorials.openCustomPublicNavTutorial(waypoints)
@@ -289,10 +289,10 @@ class SearchHistoryActivity : BaseSearchTutorialActivity() {
             }
 
             GEMApplication.getTripsHistory()?.let { tripsHistory ->
-                val nItems = tripsHistory.getTripsCount()
-                val list = arrayListOf<Trip>()
+                val nItems = tripsHistory.tripsCount
+                val list = arrayListOf<TripModel>()
                 for (index in 0 until nItems) {
-                    val trip = tripsHistory.loadTrip(index).second
+                    val trip = tripsHistory.loadTrip(index)
                     if (trip != null) {
                         list.add(trip)
                     }

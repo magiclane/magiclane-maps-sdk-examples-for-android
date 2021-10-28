@@ -23,14 +23,15 @@ import android.widget.TextView
 import com.generalmagic.sdk.content.ContentStore
 import com.generalmagic.sdk.content.EContentStoreItemStatus
 import com.generalmagic.sdk.content.EContentType
+import com.generalmagic.sdk.core.ErrorCode
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.ProgressListener
-import com.generalmagic.sdk.core.enums.SdkError
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.d3scene.OverlayItem
 import com.generalmagic.sdk.examples.demo.app.GEMApplication
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkImages
-import com.generalmagic.sdk.util.Util.moveFile
+import com.generalmagic.sdk.util.Util.moveByRenaming
 import com.generalmagic.sdk.util.UtilGemImages
 import java.io.File
 import java.util.*
@@ -188,10 +189,10 @@ object Util {
         return fAspectRatio
     }
 
-    fun moveFileToDir(filePath: String, dirPath: String): SdkError {
+    fun moveFileToDir(filePath: String, dirPath: String): ErrorCode {
         val from = File(filePath)
         if (!from.exists()) {
-            return SdkError.InvalidInput
+            return GemError.InvalidInput
         }
 
         val dir = File(dirPath)
@@ -199,28 +200,28 @@ object Util {
             dir.mkdirs()
         } catch (e: Exception) {
             e.printStackTrace()
-            return SdkError.AccessDenied
+            return GemError.AccessDenied
         }
 
         val to = File(dirPath + File.separator + from.name)
         if (to.exists()) {
-            return SdkError.Exist
+            return GemError.Exist
         } else if (to.isDirectory) {
-            return SdkError.InvalidInput
+            return GemError.InvalidInput
         }
 
-        moveFile(from, dir)
+        moveByRenaming(from, dir)
 //            if(!from.renameTo(to))
 //                return SdkError.KInternalAbort
 
-        return SdkError.NoError
+        return GemError.NoError
     }
 
     fun downloadSecondStyle() {
         // download another style
         SdkCall.execute {
             val listener = object : ProgressListener() {
-                override fun notifyComplete(reason: SdkError, hint: String) {
+                override fun notifyComplete(errorCode: ErrorCode, hint: String) {
                     // select the downloaded style
                     val result =
                         ContentStore().getStoreContentList(EContentType.ViewStyleHighRes)
@@ -229,13 +230,11 @@ object Util {
                     val contentStoreStyles = result.first
                     if (contentStoreStyles.isNotEmpty() && contentStoreStyles.size > 1) {
                         val styleListener = object : ProgressListener() {
-                            override fun notifyComplete(reason: SdkError, hint: String) {}
+                            override fun notifyComplete(errorCode: ErrorCode, hint: String) {}
                         }
 
                         for (style in contentStoreStyles) {
-                            if (style.name != null && style.name!!
-                                    .contains("Satellite")
-                            ) {
+                            if (style.name != null && style.name!!.contains("Satellite")) {
                                 style.asyncDownload(
                                     styleListener,
                                     GemSdk.EDataSavePolicy.UseDefault,

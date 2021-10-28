@@ -23,9 +23,9 @@ import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Landmark
-import com.generalmagic.sdk.routesandnavigation.NavigationInstruction
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
+import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.sensordatasource.PositionData
 import com.generalmagic.sdk.sensordatasource.PositionListener
 import com.generalmagic.sdk.sensordatasource.PositionService
@@ -46,18 +46,21 @@ class MainActivity : AppCompatActivity() {
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
 
+    private val navRoute: Route?
+        get() = navigationService.getNavigationRoute(navigationListener)
+
     /* 
     Define a navigation listener that will receive notifications from the
     navigation service.
     We will use just the onNavigationStarted method, but for more available
     methods you should check the documentation.
      */
-    private val navigationListener = object : NavigationListener() {
-        override fun onNavigationStarted() {
+    private val navigationListener: NavigationListener = NavigationListener.create(
+        onNavigationStarted = {
             SdkCall.execute {
                 gemSurfaceView.mapView?.let { mapView ->
                     mapView.preferences?.enableCursor = false
-                    navigationService.getNavigationRoute(this)?.let { route ->
+                    navRoute?.let { route ->
                         mapView.presentRoute(route)
                     }
 
@@ -67,25 +70,21 @@ class MainActivity : AppCompatActivity() {
                     mapView.followPosition()
                 }
             }
-        }
-
-        override fun onNavigationInstructionUpdated(instr: NavigationInstruction) {
-            // From every new navigation instruction get the speed limit. 
-            val limit = SdkUtil.getSpeedText(instr.currentStreetSpeedLimit, EUnitSystem.Metric).let { speedPair ->  
-                speedPair.first + " " + speedPair.second
+        },
+        onNavigationInstructionUpdated = { instr ->
+            // From every new navigation instruction get the speed limit.
+            val limit = SdkCall.execute execute@{
+                val pair = SdkUtil.getSpeedText(instr.currentStreetSpeedLimit, EUnitSystem.Metric)
+                return@execute pair.first + " " + pair.second
             }
-            
-            Util.postOnMain {
-                speedLimit.text = limit
-            }
-        }
 
-        override fun onDestinationReached(landmark: Landmark) {
+            speedLimit.text = limit
+        },
+        onDestinationReached = {
             // DON'T FORGET to remove the position listener after the navigation is done.
             PositionService().removeListener(positionListener)
         }
-
-    }
+    )
 
     // Define a position listener tht will help us get the current speed.
     private val positionListener = object : PositionListener() {
@@ -188,7 +187,12 @@ class MainActivity : AppCompatActivity() {
             Landmark("Paris", 48.856693, 2.351461)
         )
 
-        navigationService.startSimulation(waypoints, navigationListener, routingProgressListener, speedMultiplier = 0.5f)
+        navigationService.startSimulation(
+            waypoints,
+            navigationListener,
+            routingProgressListener,
+            speedMultiplier = 0.5f
+        )
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
