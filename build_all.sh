@@ -32,6 +32,24 @@ function on_exit()
 }
 trap 'on_exit' EXIT
 
+function num_cpus() 
+{
+	local N_CPUS
+
+	if [[ -f /proc/cpuinfo ]]; then
+		N_CPUS=$(grep -c ^processor /proc/cpuinfo)
+	else
+		# Fallback method
+		N_CPUS=$(getconf _NPROCESSORS_ONLN)
+	fi
+	if [[ -z ${N_CPUS} ]]; then
+		echo "ERROR: Unable to determine the number of CPUs"
+	fi
+
+	echo ${N_CPUS}
+}
+
+
 if [ -z "${ANDROID_SDK_ROOT}" ]; then
 	echo "ANDROID_SDK_ROOT env. variable must be defined"
 	exit 1
@@ -58,7 +76,7 @@ for EXAMPLE_PATH in $EXAMPLE_PROJECTS; do
 done
 
 GRADLE_WRAPPER=$(find $MY_DIR -type f -executable -name gradlew -print -quit)
-$GRADLE_WRAPPER assembleAll
+$GRADLE_WRAPPER --max-workers $(( ($(num_cpus) + 4 - 1) / 4 )) assembleAll 
 
 if [ -d "APK" ]; then
 	rm -rf "APK"
