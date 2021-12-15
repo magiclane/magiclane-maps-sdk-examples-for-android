@@ -1,0 +1,15 @@
+#!/bin/bash
+
+clear
+echo "----------------------------------------------------------------------------------------------------"
+echo "| PLEASE ensure Android Auto -> Settings -> \"Start head unit server\" happened before running this! |"
+echo "----------------------------------------------------------------------------------------------------"
+echo "| \"Start/Stop head unit server\" might help!                                                        |"
+echo "----------------------------------------------------------------------------------------------------"
+
+export ANDROID_SDK=~/Android/Sdk
+adb kill-server
+sleep 1
+adb forward tcp:5277 tcp:5277
+sleep 1
+$ANDROID_SDK/extras/google/auto/desktop-head-unit

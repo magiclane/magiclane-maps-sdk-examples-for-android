@@ -42,8 +42,7 @@ class MainActivity : AppCompatActivity() {
             when (errorCode) {
                 GemError.NoError -> {
                     SdkCall.execute {
-                        gemSurfaceView.mapView
-                            ?.presentRoutes(routes, displayBubble = true)
+                        gemSurfaceView.mapView?.presentRoutes(routes, displayBubble = true)
                     }
                 }
 

@@ -32,6 +32,7 @@
         <activity
             android:name=".activities.mainactivity.MainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize|fontScale"
+            android:exported="false"
             android:windowSoftInputMode="stateAlwaysVisible"> <!-- must exist on all activities ! -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

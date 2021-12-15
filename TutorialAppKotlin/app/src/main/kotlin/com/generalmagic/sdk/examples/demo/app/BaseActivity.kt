@@ -83,7 +83,7 @@ open class BaseActivity : AppCompatActivity(), TutorialsOpener.ITutorialControll
         else window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
-    @Suppress("deprecation")
+    @Suppress("DEPRECATION")
     fun setSystemBarsVisible(visible: Boolean) {
         if (visible) {
             window?.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
