@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2021, General Magic B.V.
+ * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of General Magic
@@ -11,6 +11,7 @@
 package com.generalmagic.sdk.examples.drawpolyline
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
@@ -22,6 +23,7 @@ import com.generalmagic.sdk.d3scene.MarkerCollection
 import com.generalmagic.sdk.d3scene.MarkerCollectionDisplaySettings
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.util.SdkCall
+import com.generalmagic.sdk.util.Util
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
@@ -39,6 +41,10 @@ class MainActivity : AppCompatActivity() {
 
             // Defines an action that should be done when the map is ready.
             flyToPolyline()
+        }
+
+        if (!Util.isInternetConnected(this)) {
+            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
         }
     }
 

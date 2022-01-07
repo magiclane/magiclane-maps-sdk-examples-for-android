@@ -24,7 +24,7 @@
             android:value="YOUR_TOKEN" />
 
         <activity
-            android:name="com.generalmagic.sdk.examples.activities.MainActivity"
+            android:name="com.generalmagic.sdk.examples.androidauto.activities.MainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize|fontScale"
             android:launchMode="singleTop"
             android:exported="true">
@@ -54,7 +54,7 @@
             android:value="2" />
 
         <service
-            android:name=".androidAuto.Service"
+            android:name="com.generalmagic.sdk.examples.androidauto.androidAuto.Service"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name">

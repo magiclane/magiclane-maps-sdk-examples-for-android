@@ -4,6 +4,11 @@ This example app demonstrates the following features:
 - Searches for landmarks based on user input.
 - Display a list with landmarks found.
 
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
+
 ## Build instructions
 
 Step 1. Download the SDK

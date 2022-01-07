@@ -4,6 +4,11 @@ This example app demonstrates the following features:
 - Calculate the routes between 2 given landmarks.
 - Display a list with all route instructions for the first route, if it exists.
 
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
+
 ## Build instructions
 
 Step 1. Download the SDK

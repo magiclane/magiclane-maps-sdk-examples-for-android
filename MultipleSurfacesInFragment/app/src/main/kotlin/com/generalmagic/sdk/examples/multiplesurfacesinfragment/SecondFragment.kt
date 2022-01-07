@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2021, General Magic B.V.
+ * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of General Magic
@@ -151,7 +151,11 @@ class SecondFragment : Fragment() {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private fun buttonAsDelete(context: Context, button: FloatingActionButton?, action: () -> Unit) {
+    private fun buttonAsDelete(
+        context: Context,
+        button: FloatingActionButton?,
+        action: () -> Unit
+    ) {
         button ?: return
 
         val tag = "delete"

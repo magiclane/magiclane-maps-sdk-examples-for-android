@@ -1,8 +1,14 @@
 ## Overview
 
 This example app present the followings:
+- Present a map.
 - Start simulation between 2 given landmarks if any route can be calculated.
 - Use TTS to play navigation instructions.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

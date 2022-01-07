@@ -1,7 +1,12 @@
 ## Overview
 
 This example app demonstrates the following feature:
-- Display an interactive map supporting pan, zoom, rotate, tilt that displays logs about what gestures the user made on the map.
+- Present an interactive map supporting pan, zoom, rotate, tilt that displays logs about what gestures the user made on the map.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

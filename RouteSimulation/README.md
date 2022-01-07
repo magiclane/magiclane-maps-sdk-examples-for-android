@@ -1,7 +1,13 @@
 ## Overview
 
 This example app demonstrates the following features:
+- Present a map.
 - Start simulated navigation between 2 given landmarks if a route can be calculated.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

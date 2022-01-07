@@ -1,7 +1,12 @@
 ## Overview
 
 This example app demonstrates the following features:
-- Display a second map view on top of the existing one.
+- Present a second map view on top of the existing one.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

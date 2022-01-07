@@ -1,6 +1,6 @@
 # GeneralMagic - Maps SDK for Android demo applications
 
-Copyright (C) 2019-2021, General Magic B.V.  
+Copyright (C) 2019-2022, General Magic B.V.  
 All rights reserved.  
 Contact: info@generalmagic.com
 
@@ -8,9 +8,12 @@ This repository holds a series of example projects using the **GeneralMagic - Ma
 
 This set of individual, use-case based projects is designed to be cloned by developers for their own use.
 
+* [Android Auto Route Navigation](AndroidAutoRouteNavigation) - Start navigation from the current position to a given landmark if a route can be calculated.
 * [Apply Custom Map Style](ApplyCustomMapStyle) - Present a map; apply a custom map style.
 * [Apply Map Style](ApplyMapStyle) - Get the map style items from the server; download and apply a map style.
-* [Android Auto Route Navigation](AndroidAutoRouteNavigation) - Start navigation from the current position to a given landmark if a route can be calculated.
+* [Downloaded Onboard Map Simulation](DownloadedOnboardMapSimulation) - Fully offline start simulation between 2 given landmarks if any route can be calculated.
+* [Downloading Onboard Map](DownloadingOnboardMap) - Gather the list of available maps; Download an onboard map.
+* [Downloading Onboard Map Simulation](DownloadingOnboardMapSimulation) - Gather the list of available maps; Download an onboard map. Starts a simulation.
 * [Draw Polyline](DrawPolyline) - Create a polyline and its display settings; fly to the polyline.
 * [Favourites](Favourites) - Fly to a location and use UI to add or remove that landmark to/ from the favourites folder.
 * [Fly to Area](FlyToArea) - Search for a landmark; fly to resulted landmark, if exists.
@@ -30,14 +33,12 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Map Perspective Change](MapPerspectiveChange) - Display an interactive map with a button that changes the view perspective between 2D and 3D.
 * [Multiple surfaces in Fragment](MultipleSurfacesInFragment) - Display a variable list of maps on an Android Fragment.
 * [Multiple surfaces in Fragment Recycler](MultipleSurfacesInFragmentRecycler) - Displaying a variable list of maps on an Android Fragment.
-* [Online Maps](OnlineMaps) - Gather the list of available maps; download first available map.
 * [Overlapped Maps](OverlappedMaps) - Display a second map view over the existing one.
 * [Public Transit Routing on Map](PublicTransitRoutingOnMap) - Calculate the public transport routes between 2 given landmarks; display all results on the map and fly to the main route, if exists.
 * [Route Alarms](RouteAlarms) - Start simulated navigation between 2 given landmarks if a route can be calculated.
 * [Route Instructions](RouteInstructions) - Calculate the routes between 2 given landmarks; display a list with all route instructions, if exists.
 * [Route Navigation](RouteNavigation) - Start navigation from the current position to a given landmark if any route can be calculated.
 * [Route Simulation](RouteSimulation) - Start simulation between 2 given landmarks if any route can be calculated.
-* [Route Simulation Offline](RouteSimulationOffline) - Start simulation between 2 given landmarks if any route can be calculated.
 * [Route Simulation with Instructions](RouteSimulationWithInstructions) - Start simulation between 2 given landmarks. Displays turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance.
 * [Route Simulation with Sound](RouteSimulationWithSound) - Start simulation between 2 given landmarks if any route can be calculated; use TTS to play navigation instructions.
 * [Route Terrain Profile](RouteTerrainProfile) - Calculate the routes between 2 given landmarks; display some of the route terrain profile details available for a route.

@@ -1,7 +1,13 @@
 ## Overview
 
 This example app demonstrates the following features:
+- Present a map.
 - Fly to a location and use UI to add or remove that landmark to the favourites.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

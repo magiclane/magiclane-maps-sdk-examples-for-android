@@ -1,7 +1,13 @@
 ## Overview
 
 This example app demonstrates the following features:
+- Present a map.
 - Fly to the given coodinates.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

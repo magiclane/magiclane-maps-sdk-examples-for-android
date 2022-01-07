@@ -4,6 +4,11 @@ This example app demonstrates the following features:
 - Get the map style items from the server.
 - Download and apply a map style.
 
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
+
 ## Build instructions
 
 Step 1. Download the SDK

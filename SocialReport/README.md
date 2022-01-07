@@ -1,8 +1,14 @@
 ## Overview
 
 This example app demonstrates the following features:
+- Presents a map.
 - Waits for a valid position.
 - Submit a social report.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

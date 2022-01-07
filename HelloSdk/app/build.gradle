@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021, General Magic B.V.
+// Copyright (C) 2019-2022, General Magic B.V.
 // All rights reserved.
 //
 // This software is confidential and proprietary information of General Magic

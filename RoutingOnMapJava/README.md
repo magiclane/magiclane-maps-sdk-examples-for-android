@@ -1,8 +1,15 @@
 ## Overview
 
 This example app demonstrates the following features:
+- Present a map.
 - Calculate the routes between 2 given landmarks.
 - Display and fly to the first route in the resulting route list, if it exists.
+- How Java uses of our Kotlin SDK.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 
@@ -17,7 +24,3 @@ Step 4. ```File``` -> ```Sync project with gradle files```.
 Step 5. Select desired ```Active Build Variant``` (debug/release) in ```Build Variants``` menu.
 
 Step 6. Deploy to device as usual.
-
-## Requirements
-- Deployment target device must run min Android API 16.
-- Deployment target device must be connected to internet.

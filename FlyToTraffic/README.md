@@ -1,9 +1,15 @@
 ## Overview
 
 This example app demonstrates the following features:
+- Present a map.
 - Calculate the routes between 2 given landmarks.
 - Display the first route on a map, if it exists.
 - Fly to the first traffic event available on route, if it exists.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

@@ -3,6 +3,11 @@
 This example app demonstrates the following features:
 - Start navigation from the current position to a given landmark if a route can be calculated.
 
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
+
 ## Build instructions
 
 Step 1. Download the SDK
@@ -19,6 +24,7 @@ Step 6. Deploy to device as usual.
 
 
 ## How to run DHU
+-2. Ubuntu required.
 -1. (required)
 Install libs:
 sudo apt install libssl1.0.0

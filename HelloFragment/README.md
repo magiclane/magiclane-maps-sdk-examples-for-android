@@ -1,7 +1,12 @@
 ## Overview
 
 This example app demonstrates the following features:
-- Displaying a map on an Android Fragment.
+- Present a map on an Android Fragment.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

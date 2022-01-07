@@ -1,8 +1,14 @@
 ## Overview
 
 This example app demonstrates the following features:
+- Presents a map.
 - Start simulated navigation between 2 given landmarks if a route can be calculated.
 - Search gas stations along the calculated route.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

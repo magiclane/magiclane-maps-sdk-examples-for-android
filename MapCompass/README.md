@@ -1,7 +1,12 @@
 ## Overview
 
 This example app demonstrates the following feature:
-- Display an interactive map with a compass.
+- Present an interactive map with a compass.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

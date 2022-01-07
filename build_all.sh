@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2019-2021, General Magic B.V.
+# Copyright (C) 2019-2022, General Magic B.V.
 # All rights reserved.
 #
 # This software is confidential and proprietary information of General Magic
@@ -77,6 +77,7 @@ done
 
 GRADLE_WRAPPER=$(find $MY_DIR -type f -executable -name gradlew -print -quit)
 $GRADLE_WRAPPER --max-workers $(( ($(num_cpus) + 4 - 1) / 4 )) assembleAll 
+$GRADLE_WRAPPER --stop
 
 if [ -d "APK" ]; then
 	rm -rf "APK"

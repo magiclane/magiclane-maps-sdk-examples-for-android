@@ -1,9 +1,15 @@
 ## Overview
 
 This example app demonstrates the following features:
+- Present a map.
 - Calculate the public transport routes between 2 given landmarks.
 - Display all results on the map and fly to the default main route
   (first route in the resulting route list), if it exists.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

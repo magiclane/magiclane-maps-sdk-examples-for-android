@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2021, General Magic B.V.
+ * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of General Magic
@@ -37,6 +37,7 @@ import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkUtil.getDistText
+import com.generalmagic.sdk.util.Util
 import com.generalmagic.sdk.util.Util.postOnMain
 import kotlin.system.exitProcess
 
@@ -127,6 +128,10 @@ class MainActivity : AppCompatActivity() {
         Not requesting this permission or not granting it will make the search fail.
          */
         requestPermissions(this)
+
+        if (!Util.isInternetConnected(this)) {
+            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

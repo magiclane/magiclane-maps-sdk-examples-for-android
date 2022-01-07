@@ -1,8 +1,14 @@
 ## Overview
 
 This example app demonstrates the following features:
+- Present a map.
 - Search for a landmark.
 - Request Wikipedia info about the first landmark in the resulting list, if it exists.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

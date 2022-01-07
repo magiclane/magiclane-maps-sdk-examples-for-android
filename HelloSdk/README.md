@@ -3,6 +3,11 @@
 This example app demonstrates the following feature:
 - How the Maps SDK for Android can be integrated into your project.
 
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
+
 ## Build instructions
 
 Step 1. Download the SDK

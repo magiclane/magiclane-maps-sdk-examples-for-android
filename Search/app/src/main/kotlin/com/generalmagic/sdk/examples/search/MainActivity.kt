@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2021, General Magic B.V.
+ * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of General Magic
@@ -123,6 +123,10 @@ class MainActivity : AppCompatActivity() {
         Not requesting this permissions or not granting them will make the search to not work.
          */
         requestPermissions(this)
+
+        if (!Util.isInternetConnected(this)) {
+            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

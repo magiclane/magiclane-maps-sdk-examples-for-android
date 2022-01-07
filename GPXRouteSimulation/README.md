@@ -1,8 +1,14 @@
 ## Overview
 
 This example app demonstrates the following features:
+- Present a map.
 - Importing a GPX file.
 - Calculating a route based on the GPX and starting a simulation on it.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

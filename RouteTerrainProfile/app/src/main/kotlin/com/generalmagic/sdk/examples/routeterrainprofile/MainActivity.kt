@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2021, General Magic B.V.
+ * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of General Magic
@@ -25,6 +25,7 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.RouteTerrainProfile
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
+import com.generalmagic.sdk.util.Util
 import kotlin.system.exitProcess
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -102,6 +103,10 @@ class MainActivity : AppCompatActivity() {
         if (!GemSdk.initSdkWithDefaults(this)) {
             // The SDK initialization was not completed.
             finish()
+        }
+
+        if (!Util.isInternetConnected(this)) {
+            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
         }
     }
 

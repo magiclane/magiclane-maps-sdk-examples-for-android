@@ -1,8 +1,14 @@
 ## Overview
 
 This example app demonstrates the following features:
+- Present a map.
 - Start simulated navigation between 2 given landmarks.
 - Display the recommended lanes for the next turn instruction.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

@@ -3,6 +3,11 @@
 This example app demonstrates the following feature:
 - Calculate the routes between 2 given landmarks.
 
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
+
 ## Build instructions
 
 Step 1. Download the SDK

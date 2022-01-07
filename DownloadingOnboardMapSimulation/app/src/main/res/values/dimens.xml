@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="filterHeight">35dp</dimen>
+    <dimen name="smallPadding">4dp</dimen>
+    <dimen name="bigPadding">10dp</dimen>
+    <dimen name="filterMinHeight">34dp</dimen>
+    <dimen name="filterPadding">12dp</dimen>
+    <dimen name="itemHeight">50dp</dimen>
+    <dimen name="itemTextSize">15sp</dimen>
+    <dimen name="listItemPadding">10dp</dimen>
+    <dimen name="standardTextSize">16sp</dimen>
+    <dimen name="smallTextSize">12sp</dimen>
+
+</resources>

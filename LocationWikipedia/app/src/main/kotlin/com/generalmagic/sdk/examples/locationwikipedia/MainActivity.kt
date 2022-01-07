@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2021, General Magic B.V.
+ * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of General Magic
@@ -101,6 +101,10 @@ class MainActivity : AppCompatActivity() {
         // This step of initialization is mandatory if you want to use the SDK without a map.
         if (!GemSdk.initSdkWithDefaults(this)) {
             finish()
+        }
+
+        if (!Util.isInternetConnected(this)) {
+            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
         }
     }
 

@@ -1,8 +1,14 @@
 ## Overview
 
 This example app demonstrates the following features:
+- Present a map.
 - Create a polyline and its display settings.
 - Fly to the polyline.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 

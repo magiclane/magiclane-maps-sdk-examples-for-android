@@ -4,6 +4,11 @@ This example app demonstrates the following features:
 - Searches all landmarks near the current position.
 - Display a list of found landmarks.
 
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
+
 ## Build instructions
 
 Step 1. Download the SDK

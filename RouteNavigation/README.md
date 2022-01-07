@@ -1,7 +1,14 @@
 ## Overview
 
 This example app demonstrates the following features:
+- Present a map.
+- Wait for a valid position.
 - Start navigation from the current position to a given landmark if a route can be calculated.
+
+## Requirements
+
+- Deployment target device must run min Android API 16.
+- Deployment target device must be connected to internet.
 
 ## Build instructions
 
