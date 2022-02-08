@@ -40,7 +40,6 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Route Navigation](RouteNavigation) - Start navigation from the current position to a given landmark if any route can be calculated.
 * [Route Simulation](RouteSimulation) - Start simulation between 2 given landmarks if any route can be calculated.
 * [Route Simulation with Instructions](RouteSimulationWithInstructions) - Start simulation between 2 given landmarks. Displays turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance.
-* [Route Simulation with Sound](RouteSimulationWithSound) - Start simulation between 2 given landmarks if any route can be calculated; use TTS to play navigation instructions.
 * [Route Terrain Profile](RouteTerrainProfile) - Calculate the routes between 2 given landmarks; display some of the route terrain profile details available for a route.
 * [Routing](Routing) - Calculate the routes between 2 given landmarks.
 * [Routing on Map](RoutingOnMap) - Calculate the routes between 2 given landmarks; display and fly to the first resulted route, if exists.
@@ -49,8 +48,8 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Search Along Route](SearchAlongRoute) - Start simulation between 2 landmarks. Search for gas stations along the route if the search button is pressed.
 * [Social Report](SocialReport) - Waits for a valid position. Submit a social report.
 * [Speed Watcher](SpeedWatcher) - Start simulation between 2 given landmarks. Display the current speed and the legal speed limit.
-* [Tutorial Demo App](TutorialAppKotlin) - Presents how you can perform a search, download a map, change the map style, make a route from point A to point B and more.
-* [Voices](Voices) - Gather the list of available voices; download first available voice.
+* [Voice Downloading](VoiceDownloading) - Gather the list of available voices; download first available voice.
+* [Voice Instructions Route Simulation](VoiceInstrRouteSimulation) - Start simulation between 2 given landmarks if any route can be calculated; use TTS to play navigation instructions.
 * [What's Nearby](WhatsNearby) - Searches all landmarks near current position; display a list of found landmarks.
 * [What's Nearby Category](WhatsNearbyCategory) - Searches all landmarks of a specific category near current position; display a list of found landmarks.
 

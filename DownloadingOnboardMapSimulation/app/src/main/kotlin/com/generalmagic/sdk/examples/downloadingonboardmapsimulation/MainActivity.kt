@@ -237,18 +237,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         gemSurfaceView.onSdkInitSucceeded = onSdkInitSucceeded@{
+            var mapFound = false
+
             val localMaps =
                 contentStore.getLocalContentList(EContentType.RoadMap) ?: return@onSdkInitSucceeded
 
-            var mapFound = false
             for (map in localMaps) {
                 val mapName = map.name ?: continue
                 if (mapName.compareTo(MAP_NAME, true) != 0)
                 // searching another map
                     continue
 
-                if
-                    (!map.isCompleted()) {
+                if (!map.isCompleted()) {
                     // can't continue with incomplete map.
                     break
                 }

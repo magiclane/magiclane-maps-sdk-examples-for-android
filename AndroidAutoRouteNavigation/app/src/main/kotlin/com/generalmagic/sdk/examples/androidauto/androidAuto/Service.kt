@@ -219,7 +219,7 @@ class Service : CarAppService() {
             val x = center.x / viewport.width.toFloat()
             val y = center.y / viewport.height.toFloat()
 
-            mapView.preferences?.followPositionCameraFocus = XyF(x, y)
+            mapView.preferences?.followPositionPreferences?.cameraFocus = XyF(x, y)
         }
     }
 
