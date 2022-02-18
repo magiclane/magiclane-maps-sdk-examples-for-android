@@ -19,7 +19,7 @@ import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteBookmarks
 import com.generalmagic.sdk.routesandnavigation.RoutePreferences
 import com.generalmagic.sdk.util.SdkUtil.getUIString
-import com.generalmagic.sdk.util.StringIds
+import com.generalmagic.sdk.util.EStringIds
 import com.generalmagic.sdk.util.Util
 import kotlin.math.abs
 
@@ -175,7 +175,7 @@ class TripModel {
                 if (tripWptsCount > 2) {
                     // use "From A to B, via C" string
                     String.format(
-                        getUIString(StringIds.eStrFromAToBViaC),
+                        getUIString(EStringIds.eStrFromAToBViaC),
                         departureName,
                         destinationName,
                         intermediateWptsName
@@ -183,7 +183,7 @@ class TripModel {
                 } else {
                     // use "From A to B" string
                     String.format(
-                        getUIString(StringIds.eStrFromAtoB),
+                        getUIString(EStringIds.eStrFromAtoB),
                         departureName,
                         destinationName
                     )
@@ -192,13 +192,13 @@ class TripModel {
                 if (tripWptsCount > 1) {
                     // use "To B, via C" string
                     String.format(
-                        getUIString(StringIds.eStrToBViaC),
+                        getUIString(EStringIds.eStrToBViaC),
                         destinationName,
                         intermediateWptsName
                     )
                 } else {
                     // use "To B" string
-                    String.format(getUIString(StringIds.eStrToB), destinationName)
+                    String.format(getUIString(EStringIds.eStrToB), destinationName)
                 }
             }
 

@@ -18,14 +18,14 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkImages
 import com.generalmagic.sdk.util.SdkUtil
-import com.generalmagic.sdk.util.StringIds
-import com.generalmagic.sdk.util.StringIds.eStrUnknown
-import com.generalmagic.sdk.util.StringIds.eStringNodeNearby
-import com.generalmagic.sdk.util.StringIds.eStringUnnamedStreet
+import com.generalmagic.sdk.util.EStringIds
+import com.generalmagic.sdk.util.EStringIds.eStrUnknown
+import com.generalmagic.sdk.util.EStringIds.eStringNodeNearby
+import com.generalmagic.sdk.util.EStringIds.eStringUnnamedStreet
 import java.util.ArrayList
 
 internal object TextsUtil {
-    fun getUIString(stringIds: StringIds): String = SdkCall.execute {
+    fun getUIString(stringIds: EStringIds): String = SdkCall.execute {
         SdkUtil.getUIString(stringIds)
     } ?: ""
 
@@ -320,7 +320,7 @@ internal object TextsUtil {
                 return@execute name
             }
 
-            name = getUIString(StringIds.eStrUnknown)
+            name = getUIString(EStringIds.eStrUnknown)
             return@execute name
         } ?: ""
     }
