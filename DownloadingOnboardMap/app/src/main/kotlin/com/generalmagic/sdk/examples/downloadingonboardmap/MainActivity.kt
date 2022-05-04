@@ -30,7 +30,7 @@ import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkUtil
+import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.Util
 import kotlin.system.exitProcess
 
@@ -211,7 +211,7 @@ class CustomAdapter(private val dataSet: ArrayList<ContentStoreItem>) :
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         viewHolder.text.text =
-            SdkCall.execute { dataSet[position].name + " (" + SdkUtil.formatSizeAsText(dataSet[position].totalSize) + ")" }
+            SdkCall.execute { dataSet[position].name + " (" + GemUtil.formatSizeAsText(dataSet[position].totalSize) + ")" }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

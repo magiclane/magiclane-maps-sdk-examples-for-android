@@ -22,7 +22,7 @@ import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkUtil
+import com.generalmagic.sdk.util.GemUtil
 
 object NavigationInstance {
     val service: NavigationService = NavigationService()
@@ -73,7 +73,7 @@ object NavigationInstance {
     val remainingTimeIncludingTraffic: Int
         get() {
             return remainingTime + (currentRoute?.let {
-                SdkUtil.getTrafficEventsDelay(it, true)
+                GemUtil.getTrafficEventsDelay(it, true)
             } ?: 0)
         }
 

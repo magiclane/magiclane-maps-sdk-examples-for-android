@@ -31,7 +31,7 @@ import com.generalmagic.sdk.sensordatasource.PositionListener
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.sensordatasource.enums.EDataType
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkUtil
+import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.Util
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         onNavigationInstructionUpdated = { instr ->
             // From every new navigation instruction get the speed limit.
             val limit = SdkCall.execute execute@{
-                val pair = SdkUtil.getSpeedText(instr.currentStreetSpeedLimit, EUnitSystem.Metric)
+                val pair = GemUtil.getSpeedText(instr.currentStreetSpeedLimit, EUnitSystem.Metric)
                 return@execute pair.first + " " + pair.second
             }
 
@@ -90,7 +90,7 @@ class MainActivity : AppCompatActivity() {
     private val positionListener = object : PositionListener() {
         override fun onNewPosition(value: PositionData) {
             // Get the current speed for every new position received
-            val speed = SdkUtil.getSpeedText(value.speed, EUnitSystem.Metric).let { speedPair ->
+            val speed = GemUtil.getSpeedText(value.speed, EUnitSystem.Metric).let { speedPair ->
                 speedPair.first + " " + speedPair.second
             }
 

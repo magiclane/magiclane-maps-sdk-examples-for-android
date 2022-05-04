@@ -17,7 +17,7 @@ import com.generalmagic.sdk.places.EAddressField
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.SdkImages
-import com.generalmagic.sdk.util.SdkUtil
+import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.EStringIds
 import com.generalmagic.sdk.util.EStringIds.eStrUnknown
 import com.generalmagic.sdk.util.EStringIds.eStringNodeNearby
@@ -26,7 +26,7 @@ import java.util.ArrayList
 
 internal object TextsUtil {
     fun getUIString(stringIds: EStringIds): String = SdkCall.execute {
-        SdkUtil.getUIString(stringIds)
+        GemUtil.getUIString(stringIds)
     } ?: ""
 
     fun fillLandmarkAddressInfo(
@@ -109,11 +109,11 @@ internal object TextsUtil {
         val nearSettlement = ""
 
         if (city.isNotEmpty()) {
-            nearCity.format(SdkUtil.getUIString(eStringNodeNearby), city)
+            nearCity.format(GemUtil.getUIString(eStringNodeNearby), city)
         }
 
         if (settlement.isNotEmpty()) {
-            nearSettlement.format(SdkUtil.getUIString(eStringNodeNearby), settlement)
+            nearSettlement.format(GemUtil.getUIString(eStringNodeNearby), settlement)
         }
 
         if (streetName.isNotEmpty() && name.isNotEmpty()) {
@@ -210,7 +210,7 @@ internal object TextsUtil {
                 text += ", $landmarkDescription"
             } else if (text.isEmpty()) {
                 if (bNameEmpty) {
-                    text = SdkUtil.getUIString(eStringUnnamedStreet)
+                    text = GemUtil.getUIString(eStringUnnamedStreet)
                     if (landmarkDescription.isNotEmpty()) {
                         text += ", $landmarkDescription"
                     }
@@ -387,7 +387,7 @@ internal object TextsUtil {
             return name
         }
 
-        name = SdkUtil.getUIString(eStrUnknown)
+        name = GemUtil.getUIString(eStrUnknown)
         return name
     }
 

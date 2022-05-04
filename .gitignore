@@ -1,5 +1,7 @@
 /*/*.idea/
 /*/build/
+APK/
+.gradle/
 /*/app/build/
 /*/app/libs/*.aar
 /*/.idea/

@@ -30,7 +30,7 @@ import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteInstruction
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkUtil
+import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.Util
 import com.generalmagic.sdk.util.Util.postOnMain
 import kotlin.system.exitProcess
@@ -199,7 +199,7 @@ class CustomAdapter(private val dataSet: ArrayList<RouteInstruction>) :
                 val distance =
                     instruction.traveledTimeDistance?.totalDistance?.toDouble() ?: 0.0
 
-                val distText = SdkUtil.getDistText(distance.toInt(), SdkSettings().unitSystem)
+                val distText = GemUtil.getDistText(distance.toInt(), SdkSettings().unitSystem)
                 status = distText.first
                 description = distText.second
                 if (status == "0.00") {

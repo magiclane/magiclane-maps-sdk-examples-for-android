@@ -18,7 +18,7 @@ import com.generalmagic.sdk.examples.R;
 import com.generalmagic.sdk.places.Landmark;
 import com.generalmagic.sdk.routesandnavigation.Route;
 import com.generalmagic.sdk.routesandnavigation.RoutingService;
-import com.generalmagic.sdk.util.SdkCall;
+import com.generalmagic.sdk.util.GemCall;
 
 import java.util.ArrayList;
 
@@ -51,7 +51,7 @@ public class MainActivityJava extends AppCompatActivity {
 
                 switch (errorCode) {
                     case GemError.NoError: {
-                        SdkCall.INSTANCE.execute(() -> {
+                        GemCall.INSTANCE.execute(() -> {
                             MapView mapView = gemSurfaceView.getMapView();
                             if (mapView != null) {
                                 Animation animation = new Animation(EAnimation.Linear, 1000, null, null);
@@ -117,7 +117,7 @@ public class MainActivityJava extends AppCompatActivity {
 
 
     private void calculateRoute() {
-        SdkCall.INSTANCE.execute(() -> {
+        GemCall.INSTANCE.execute(() -> {
             ArrayList<Landmark> waypoints = new ArrayList<>();
             waypoints.add(new Landmark("London", 51.5073204, -0.1276475));
             waypoints.add(new Landmark("Paris", 48.8566932, 2.3514616));

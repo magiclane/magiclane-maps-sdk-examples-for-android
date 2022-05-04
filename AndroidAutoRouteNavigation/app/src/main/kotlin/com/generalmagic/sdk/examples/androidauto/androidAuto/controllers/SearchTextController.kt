@@ -27,7 +27,7 @@ import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.LandmarkList
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkUtil
+import com.generalmagic.sdk.util.GemUtil
 
 class SearchTextController(context: CarContext) : SearchScreen(context) {
     private var reference: Coordinates? = null
@@ -119,7 +119,7 @@ class SearchTextController(context: CarContext) : SearchScreen(context) {
             val distanceInMeters = reference?.let { coordinates.getDistance(it).toInt() } ?: -1
 
             val distText = if (distanceInMeters != -1)
-                SdkUtil.getDistText(distanceInMeters, EUnitSystem.Metric, true)
+                GemUtil.getDistText(distanceInMeters, EUnitSystem.Metric, true)
             else null
 
             val customDescription = Pair(nameDesc.first, nameDesc.second)

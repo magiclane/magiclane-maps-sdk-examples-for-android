@@ -34,7 +34,7 @@ import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkUtil
+import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.Util
 import com.generalmagic.sdk.util.Util.postOnMain
 import kotlin.system.exitProcess
@@ -239,7 +239,7 @@ class CustomAdapter(private val reference: Coordinates, private val dataSet: Arr
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) = SdkCall.execute {
         val meters = dataSet[position].coordinates?.getDistance(reference)?.toInt() ?: 0
-        val dist = SdkUtil.getDistText(meters, EUnitSystem.Metric, true)
+        val dist = GemUtil.getDistText(meters, EUnitSystem.Metric, true)
 
         viewHolder.text.text = dataSet[position].name
         viewHolder.status.text = dist.first

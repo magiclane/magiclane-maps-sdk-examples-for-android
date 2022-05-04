@@ -24,7 +24,7 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkUtil
+import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.Util
 import kotlin.system.exitProcess
 
@@ -139,13 +139,13 @@ class MainActivity : AppCompatActivity() {
         val distInMeters = timeDistance.totalDistance
         val timeInSeconds = timeDistance.totalTime
 
-        val distTextPair = SdkUtil.getDistText(
+        val distTextPair = GemUtil.getDistText(
             distInMeters,
             SdkSettings().unitSystem,
             bHighResolution = true
         )
 
-        val timeTextPair = SdkUtil.getTimeText(timeInSeconds)
+        val timeTextPair = GemUtil.getTimeText(timeInSeconds)
 
         var wayPointsText = ""
         route.waypoints?.let { wayPoints ->

@@ -36,7 +36,7 @@ import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkUtil.getDistText
+import com.generalmagic.sdk.util.GemUtil.getDistText
 import com.generalmagic.sdk.util.Util
 import com.generalmagic.sdk.util.Util.postOnMain
 import kotlin.system.exitProcess

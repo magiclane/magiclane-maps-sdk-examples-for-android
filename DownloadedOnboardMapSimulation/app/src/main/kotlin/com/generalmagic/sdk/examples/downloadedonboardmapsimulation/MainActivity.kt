@@ -34,7 +34,7 @@ import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.SdkUtil
+import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.Util
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
@@ -205,7 +205,7 @@ class MainActivity : AppCompatActivity() {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private fun NavigationInstruction.getDistanceInMeters(): String {
-        return SdkUtil.getDistText(
+        return GemUtil.getDistText(
             this.timeDistanceToNextTurn?.totalDistance ?: 0, EUnitSystem.Metric
         ).let { pair ->
             pair.first + " " + pair.second
@@ -226,7 +226,7 @@ class MainActivity : AppCompatActivity() {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private fun Route.getRtt(): String {
-        return SdkUtil.getTimeText(
+        return GemUtil.getTimeText(
             this.getTimeDistance(true)?.totalTime ?: 0
         ).let { pair ->
             pair.first + " " + pair.second
@@ -236,7 +236,7 @@ class MainActivity : AppCompatActivity() {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private fun Route.getRtd(): String {
-        return SdkUtil.getDistText(
+        return GemUtil.getDistText(
             this.getTimeDistance(true)?.totalDistance ?: 0, EUnitSystem.Metric
         ).let { pair ->
             pair.first + " " + pair.second
