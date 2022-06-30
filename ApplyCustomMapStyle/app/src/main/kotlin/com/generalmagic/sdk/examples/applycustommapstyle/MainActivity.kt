@@ -20,6 +20,7 @@ import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.d3scene.MapView
 import com.generalmagic.sdk.util.SdkCall
+import com.generalmagic.sdk.examples.applycustommapstyle.R
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {

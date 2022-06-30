@@ -40,12 +40,12 @@ class GeneralSettingsController(context: CarContext) : GeneralSettingsScreen(con
 
         listItemModelList.add(GenericListItemModel(
             title = "Avoid Traffic",
-            isToggleChecked = SdkCall.execute { RoutingInstance.avoidTraffic } ?: false,
-            hasToggle = true,
-            onToggleChanged = {
-                SdkCall.execute {
-                    RoutingInstance.avoidTraffic = it
-                }
+            isBrowsable = true,
+            onClicked = onClicked@{
+                if (Service.topScreen != this)
+                    return@onClicked
+
+                Service.pushScreen(AvoidTrafficSettingsController(context))
             }
         ))
 

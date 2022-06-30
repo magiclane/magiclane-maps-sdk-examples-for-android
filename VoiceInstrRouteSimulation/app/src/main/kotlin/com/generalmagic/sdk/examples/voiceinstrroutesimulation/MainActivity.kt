@@ -24,7 +24,6 @@ import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.SoundPlayingListener
 import com.generalmagic.sdk.core.SoundPlayingPreferences
 import com.generalmagic.sdk.core.SoundPlayingService
-import com.generalmagic.sdk.examples.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
@@ -37,9 +36,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var followCursorButton: FloatingActionButton
-
-    private lateinit var soundService: SoundPlayingService
-
     private val soundPreference = SoundPlayingPreferences()
     private val playingListener = object : SoundPlayingListener() {
         override fun notifyStart(hasProgress: Boolean) {}
@@ -60,7 +56,7 @@ class MainActivity : AppCompatActivity() {
         onNavigationStarted = { onNavigationStarted() },
         onNavigationSound = { sound ->
             SdkCall.execute {
-                soundService.play(sound, playingListener, soundPreference)
+                SoundPlayingService.play(sound, playingListener, soundPreference)
             }
         },
         canPlayNavigationSound = true,
@@ -153,8 +149,6 @@ class MainActivity : AppCompatActivity() {
              */
             Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
         }
-
-        gemSurfaceView.onSdkInitSucceeded = { soundService = SoundPlayingService() }
 
         if (!Util.isInternetConnected(this)) {
             Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()

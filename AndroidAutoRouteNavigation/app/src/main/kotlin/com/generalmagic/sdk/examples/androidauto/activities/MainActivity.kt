@@ -15,7 +15,7 @@ import android.os.Bundle
 import android.widget.ProgressBar
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.d3scene.MapView
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.androidauto.R
 import com.generalmagic.sdk.examples.androidauto.activities.controllers.MainActivityController
 
 class MainActivity : BaseActivity() {

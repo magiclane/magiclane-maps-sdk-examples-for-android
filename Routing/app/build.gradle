@@ -4,6 +4,8 @@ plugins {
 }
 
 android {
+	namespace 'com.generalmagic.sdk.examples.routing'
+
     compileSdkVersion 31
 
     defaultConfig {

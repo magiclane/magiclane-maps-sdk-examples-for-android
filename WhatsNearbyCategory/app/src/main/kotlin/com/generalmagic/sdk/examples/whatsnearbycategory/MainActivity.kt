@@ -29,7 +29,7 @@ import com.generalmagic.sdk.core.EUnitSystem
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.GemError
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.whatsnearbycategory.R
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService

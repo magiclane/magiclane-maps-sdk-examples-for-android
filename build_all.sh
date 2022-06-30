@@ -14,20 +14,20 @@ function on_err()
 	
 	exit 1
 }
-trap 'on_err $LINENO' ERR
+trap 'on_err ${LINENO}' ERR
 
 function on_exit()
 {
-	if [ -n "$EXAMPLE_PROJECTS" ]; then
-		for EXAMPLE_PATH in $EXAMPLE_PROJECTS; do
-			find "$EXAMPLE_PATH" -type d -name "build" -exec rm -rf {} +
-			find "$EXAMPLE_PATH" -type d -name ".gradle" -exec rm -rf {} +
-			find "$EXAMPLE_PATH" -type f -name "*.aar" -exec rm {} +
+	if [ -n "${EXAMPLE_PROJECTS}" ]; then
+		for EXAMPLE_PATH in ${EXAMPLE_PROJECTS}; do
+			find "${EXAMPLE_PATH}" -type d -name "build" -exec rm -rf {} +
+			find "${EXAMPLE_PATH}" -type d -name ".gradle" -exec rm -rf {} +
+			find "${EXAMPLE_PATH}" -type f -name "*.aar" -exec rm {} +
 		done
 	fi
 
-	if [ -d "$MY_DIR/.gradle" ]; then
-		rm -rf "$MY_DIR/.gradle"
+	if [ -d "${MY_DIR}/.gradle" ]; then
+		rm -rf "${MY_DIR}/.gradle"
 	fi
 }
 trap 'on_exit' EXIT
@@ -66,26 +66,26 @@ if [[ "$#" -eq 0 ]]; then
     exit 1
 fi
 
-MAPS_SDK_AAR="$1"
+MAPS_SDK_AAR="${1}"
 
 # Find paths that contain an app module
-EXAMPLE_PROJECTS=$(find $MY_DIR -maxdepth 1 -type d -exec [ -d {}/app/libs ] \; -print -prune)
+EXAMPLE_PROJECTS=$(find ${MY_DIR} -maxdepth 1 -type d -exec [ -d {}/app/libs ] \; -print -prune)
 
-for EXAMPLE_PATH in $EXAMPLE_PROJECTS; do
-    cp "$MAPS_SDK_AAR" "$EXAMPLE_PATH/app/libs"
+for EXAMPLE_PATH in ${EXAMPLE_PROJECTS}; do
+    cp "${MAPS_SDK_AAR}" "${EXAMPLE_PATH}/app/libs"
 done
 
-GRADLE_WRAPPER=$(find $MY_DIR -type f -executable -name gradlew -print -quit)
-$GRADLE_WRAPPER --max-workers $(( ($(num_cpus) + 4 - 1) / 4 )) assembleAll 
-$GRADLE_WRAPPER --stop
+GRADLE_WRAPPER=$(find ${MY_DIR} -type f -executable -name gradlew -print -quit)
+${GRADLE_WRAPPER} --max-workers $(( ($(num_cpus) + 4 - 1) / 4 )) assembleAll 
+${GRADLE_WRAPPER} --stop
 
 if [ -d "APK" ]; then
 	rm -rf "APK"
 fi
 mkdir APK
-for EXAMPLE_PATH in $EXAMPLE_PROJECTS; do
-	mkdir -p "APK/$(basename $EXAMPLE_PATH)"
-    cp "$EXAMPLE_PATH/build/app/outputs/apk/release/app-release.apk" "APK/$(basename $EXAMPLE_PATH)"
+for EXAMPLE_PATH in ${EXAMPLE_PROJECTS}; do
+	mkdir -p "APK/$(basename ${EXAMPLE_PATH})"
+    cp "${EXAMPLE_PATH}/build/app/outputs/apk/release/app-release.apk" "APK/$(basename ${EXAMPLE_PATH})"
 done
 
 popd &>/dev/null || exit 1

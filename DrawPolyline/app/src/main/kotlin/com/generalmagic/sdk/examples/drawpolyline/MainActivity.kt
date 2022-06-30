@@ -21,7 +21,7 @@ import com.generalmagic.sdk.d3scene.EMarkerType
 import com.generalmagic.sdk.d3scene.Marker
 import com.generalmagic.sdk.d3scene.MarkerCollection
 import com.generalmagic.sdk.d3scene.MarkerCollectionRenderSettings
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.drawpolyline.R
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import kotlin.system.exitProcess
@@ -88,7 +88,7 @@ class MainActivity : AppCompatActivity() {
             markerCollection.add(marker)
 
             // Make a list of settings that will decide how each marker collection will be displayed on the map.
-            val settings = MarkerCollectionRenderSettings(image = Image())
+            val settings = MarkerCollectionRenderSettings()
 
             // Add the collection to the desired map view so it can be displayed.
             mapView.preferences?.markers?.add(markerCollection, settings)

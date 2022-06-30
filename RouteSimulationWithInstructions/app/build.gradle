@@ -4,6 +4,8 @@ plugins {
 }
 
 android {
+	namespace 'com.generalmagic.sdk.examples.routesimulationwithinstructions'
+
     compileSdkVersion 31
 
     defaultConfig {

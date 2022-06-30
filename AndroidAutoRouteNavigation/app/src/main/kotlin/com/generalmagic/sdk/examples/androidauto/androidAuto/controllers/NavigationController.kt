@@ -14,7 +14,7 @@ package com.generalmagic.sdk.examples.androidauto.androidAuto.controllers
 
 import androidx.car.app.CarContext
 import com.generalmagic.sdk.d3scene.MapCamera
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.androidauto.R
 import com.generalmagic.sdk.examples.androidauto.androidAuto.Service
 import com.generalmagic.sdk.examples.androidauto.androidAuto.model.UIActionModel
 import com.generalmagic.sdk.examples.androidauto.androidAuto.screens.NavigationScreen

@@ -28,7 +28,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.GemError
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.search.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.util.PermissionsHelper

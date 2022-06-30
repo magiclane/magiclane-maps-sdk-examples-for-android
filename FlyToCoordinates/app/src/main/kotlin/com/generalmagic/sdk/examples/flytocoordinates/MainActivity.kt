@@ -16,7 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.flytocoordinates.R
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util

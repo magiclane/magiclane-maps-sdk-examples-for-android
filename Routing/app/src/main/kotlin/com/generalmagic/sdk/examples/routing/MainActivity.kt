@@ -19,7 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.GemError
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.routing.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RoutingService

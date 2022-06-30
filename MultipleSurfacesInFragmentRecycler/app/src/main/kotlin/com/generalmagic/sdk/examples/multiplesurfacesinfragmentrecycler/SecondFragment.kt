@@ -22,7 +22,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.multiplesurfacesinfragmentrecycler.R
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class SecondFragment : Fragment() {

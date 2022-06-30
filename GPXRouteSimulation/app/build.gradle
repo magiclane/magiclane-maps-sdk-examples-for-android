@@ -4,11 +4,13 @@ plugins {
 }
 
 android {
+	namespace 'com.generalmagic.sdk.examples.gpxroutesimulation'
+
     compileSdkVersion 31
 
     defaultConfig {
         applicationId "com.generalmagic.sdk.examples.gpxroutesimulation"
-        minSdkVersion 16
+        minSdkVersion 19
         targetSdkVersion 31
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

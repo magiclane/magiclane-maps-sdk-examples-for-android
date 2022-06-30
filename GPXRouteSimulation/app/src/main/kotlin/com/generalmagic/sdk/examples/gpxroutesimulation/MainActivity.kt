@@ -21,7 +21,7 @@ import com.generalmagic.sdk.core.Path
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.GemError
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.gpxroutesimulation.R
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService

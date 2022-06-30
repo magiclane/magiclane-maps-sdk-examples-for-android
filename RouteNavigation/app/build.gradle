@@ -4,11 +4,13 @@ plugins {
 }
 
 android {
+	namespace 'com.generalmagic.sdk.examples.routenavigation'
+
     compileSdkVersion 31
 
     defaultConfig {
         applicationId "com.generalmagic.sdk.examples.routenavigation"
-        minSdkVersion 16
+        minSdkVersion 19
         targetSdkVersion 31
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

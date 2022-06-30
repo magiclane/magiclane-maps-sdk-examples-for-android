@@ -1,0 +1,69 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Drop Shadow -->
+    <item>
+        <shape android:shape="oval">
+            <padding
+                android:bottom="@dimen/round_button_padding"
+                android:left="@dimen/round_button_padding"
+                android:right="@dimen/round_button_padding"
+                android:top="@dimen/round_button_padding" />
+
+            <solid android:color="#00CCCCCC" />
+
+            <corners android:radius="@dimen/route_list_cell_padding" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="oval">
+            <padding
+                android:bottom="@dimen/round_button_padding"
+                android:left="@dimen/round_button_padding"
+                android:right="@dimen/round_button_padding"
+                android:top="@dimen/round_button_padding" />
+
+            <solid android:color="#10CCCCCC" />
+
+            <corners android:radius="@dimen/route_list_cell_padding" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="oval">
+            <padding
+                android:bottom="@dimen/round_button_padding"
+                android:left="@dimen/round_button_padding"
+                android:right="@dimen/round_button_padding"
+                android:top="@dimen/round_button_padding" />
+
+            <solid android:color="#20CCCCCC" />
+
+            <corners android:radius="@dimen/route_list_cell_padding" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="oval">
+            <padding
+                android:bottom="@dimen/round_button_padding"
+                android:left="@dimen/round_button_padding"
+                android:right="@dimen/round_button_padding"
+                android:top="@dimen/round_button_padding" />
+
+            <solid android:color="#30CCCCCC" />
+
+            <corners android:radius="@dimen/route_list_cell_padding" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="oval">
+            <padding
+                android:bottom="@dimen/round_button_padding"
+                android:left="@dimen/round_button_padding"
+                android:right="@dimen/round_button_padding"
+                android:top="@dimen/round_button_padding" />
+
+            <solid android:color="#50CCCCCC" />
+
+            <corners android:radius="@dimen/route_list_cell_padding" />
+        </shape>
+    </item>
+</layer-list>

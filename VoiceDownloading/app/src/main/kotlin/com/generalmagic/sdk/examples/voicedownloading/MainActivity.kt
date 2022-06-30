@@ -29,7 +29,7 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.MapDetails
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.voicedownloading.R
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.Util

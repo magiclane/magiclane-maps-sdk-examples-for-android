@@ -27,7 +27,7 @@ import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.Time
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.downloadedonboardmapsimulation.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationInstruction
 import com.generalmagic.sdk.routesandnavigation.NavigationListener

@@ -4,11 +4,13 @@ plugins {
 }
 
 android {
+	namespace 'com.generalmagic.sdk.examples.hellofragmentcustomstyle'
+
     compileSdkVersion 31
 
     defaultConfig {
         applicationId "com.generalmagic.sdk.examples.hellofragmentcustomstyle"
-        minSdkVersion 16
+        minSdkVersion 19
         targetSdkVersion 31
 
 		multiDexEnabled true

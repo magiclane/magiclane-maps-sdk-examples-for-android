@@ -15,7 +15,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.hellosdk.R
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {

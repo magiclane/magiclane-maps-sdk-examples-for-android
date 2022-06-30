@@ -14,7 +14,7 @@ import androidx.car.app.CarContext
 import com.generalmagic.sdk.core.EGenericCategoriesIDs
 import com.generalmagic.sdk.core.GenericCategories
 import com.generalmagic.sdk.core.ProgressListener
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.androidauto.R
 import com.generalmagic.sdk.examples.androidauto.androidAuto.Service
 import com.generalmagic.sdk.examples.androidauto.androidAuto.model.GenericListItemModel
 import com.generalmagic.sdk.examples.androidauto.androidAuto.model.UIActionModel

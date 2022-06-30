@@ -18,11 +18,7 @@ import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SettingsService
 import com.generalmagic.sdk.examples.androidauto.app.AppProcess
 import com.generalmagic.sdk.places.LandmarkList
-import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
-import com.generalmagic.sdk.routesandnavigation.ERouteType
-import com.generalmagic.sdk.routesandnavigation.OnRoutingCompleted
-import com.generalmagic.sdk.routesandnavigation.RouteList
-import com.generalmagic.sdk.routesandnavigation.RoutingService
+import com.generalmagic.sdk.routesandnavigation.*
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.EnumHelp
 
@@ -86,10 +82,10 @@ object RoutingInstance {
             service.preferences.routeType = value
         }
 
-    var avoidTraffic: Boolean
+    var avoidTraffic: ETrafficAvoidance
         get() = service.preferences.avoidTraffic
         set(value) {
-            settingsService.setBooleanValue("avoidTraffic", value)
+            settingsService.setIntValue("avoidTraffic", value.value)
             service.preferences.avoidTraffic = value
         }
 
@@ -126,7 +122,7 @@ object RoutingInstance {
             settingsService.getIntValue("travelMode", ERouteType.Fastest.value)
         )
         service.preferences.avoidTraffic =
-            settingsService.getBooleanValue("avoidTraffic", false)
+            EnumHelp.fromInt(settingsService.getIntValue("avoidTraffic", ETrafficAvoidance.None.value))
         service.preferences.avoidMotorways =
             settingsService.getBooleanValue("avoidMotorways", false)
         service.preferences.avoidTollRoads =

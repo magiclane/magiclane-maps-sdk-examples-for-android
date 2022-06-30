@@ -21,7 +21,7 @@ import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.d3scene.ECommonOverlayId
 import com.generalmagic.sdk.d3scene.OverlayService
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.routealarms.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.AlarmListener
 import com.generalmagic.sdk.routesandnavigation.AlarmService

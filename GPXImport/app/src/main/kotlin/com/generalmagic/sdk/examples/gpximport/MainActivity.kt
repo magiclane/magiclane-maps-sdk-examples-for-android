@@ -21,7 +21,7 @@ import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.Path
 import com.generalmagic.sdk.core.Rgba
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.gpximport.R
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall

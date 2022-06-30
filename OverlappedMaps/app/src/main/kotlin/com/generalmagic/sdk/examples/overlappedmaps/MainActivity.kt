@@ -18,7 +18,7 @@ import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.RectF
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.d3scene.MapView
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.overlappedmaps.R
 import com.generalmagic.sdk.util.Util
 import kotlin.system.exitProcess
 

@@ -13,7 +13,7 @@ package com.generalmagic.sdk.examples.multiplesurfacesinfragment
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.multiplesurfacesinfragment.R
 
 class SecondActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

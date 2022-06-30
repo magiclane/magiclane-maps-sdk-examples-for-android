@@ -23,7 +23,7 @@ import androidx.car.app.notification.CarAppExtender
 import androidx.car.app.notification.CarPendingIntent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.androidauto.R
 import com.generalmagic.sdk.examples.androidauto.androidAuto.Service
 import com.generalmagic.sdk.examples.androidauto.androidAuto.model.CarNavigationData
 

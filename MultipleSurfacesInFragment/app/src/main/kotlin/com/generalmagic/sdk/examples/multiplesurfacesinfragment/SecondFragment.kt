@@ -20,13 +20,12 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
-import androidx.core.view.get
 import androidx.core.view.setMargins
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.d3scene.MapView
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.multiplesurfacesinfragment.R
 import com.generalmagic.sdk.util.SdkCall
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
@@ -119,8 +118,8 @@ class SecondFragment : Fragment() {
             return
 
         val lastIndex = linearLayout.childCount - 1
-        val frame = (linearLayout[lastIndex] as FrameLayout)
-        val lastSurface = frame[0] as GemSurfaceView
+        val frame = (linearLayout.getChildAt(lastIndex) as FrameLayout)
+        val lastSurface = frame.getChildAt(0) as GemSurfaceView
 
         SdkCall.execute {
             val mapsId = lastSurface.gemScreen?.address

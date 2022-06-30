@@ -19,7 +19,7 @@ import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.flytotraffic.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.RouteTrafficEvent
 import com.generalmagic.sdk.routesandnavigation.RoutingService

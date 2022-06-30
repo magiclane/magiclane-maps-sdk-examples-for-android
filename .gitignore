@@ -1,9 +1,12 @@
 /*/*.idea/
+/*/.idea/
+.idea/
+/*/.gradle/
 /*/build/
+/*/app/build/
 APK/
 .gradle/
-/*/app/build/
-/*/app/libs/*.aar
-/*/.idea/
-/*/.gradle/
+/*/*/local.properties
 /*/local.properties
+local.properties
+/*/app/libs/*.aar

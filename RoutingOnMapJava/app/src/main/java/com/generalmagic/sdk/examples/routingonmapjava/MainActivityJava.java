@@ -14,7 +14,7 @@ import com.generalmagic.sdk.d3scene.Animation;
 import com.generalmagic.sdk.d3scene.EAnimation;
 import com.generalmagic.sdk.d3scene.ERouteDisplayMode;
 import com.generalmagic.sdk.d3scene.MapView;
-import com.generalmagic.sdk.examples.R;
+import com.generalmagic.sdk.examples.routingonmapjava.R;
 import com.generalmagic.sdk.places.Landmark;
 import com.generalmagic.sdk.routesandnavigation.Route;
 import com.generalmagic.sdk.routesandnavigation.RoutingService;

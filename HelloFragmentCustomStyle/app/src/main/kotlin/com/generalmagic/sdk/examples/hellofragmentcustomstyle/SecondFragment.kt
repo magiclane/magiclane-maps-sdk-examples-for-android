@@ -20,7 +20,7 @@ import androidx.navigation.fragment.findNavController
 import com.generalmagic.sdk.core.DataBuffer
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.d3scene.MapView
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.hellofragmentcustomstyle.R
 import com.generalmagic.sdk.util.SdkCall
 
 class SecondFragment : Fragment() {

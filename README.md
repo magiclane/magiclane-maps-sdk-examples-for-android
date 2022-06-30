@@ -54,6 +54,7 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [What's Nearby Category](WhatsNearbyCategory) - Searches all landmarks of a specific category near current position; display a list of found landmarks.
 
 **Note:** As the very first step, we highly recommend that you get a token from [General Magic Portal](https://developer.generalmagic.com/api). If no token is set, you can still test your apps, but a watermark will be displayed, and all the online services including mapping, searching, routing, etc. will slow down after a few minutes.
+
 **Note:** Build all examples by using `build_all.sh`. First set environment variable `ANDROID_SDK_ROOT`, e.g.: `export ANDROID_SDK_ROOT=/path/to/android-sdk` and then call `build_all.sh <path/to/sdk/.aar>`
 
 ## License

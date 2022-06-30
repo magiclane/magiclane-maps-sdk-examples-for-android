@@ -22,7 +22,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.generalmagic.sdk.content.ContentStore
 import com.generalmagic.sdk.content.EContentType
 import com.generalmagic.sdk.core.*
-import com.generalmagic.sdk.examples.R
+import com.generalmagic.sdk.examples.downloadingonboardmapsimulation.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationInstruction
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
