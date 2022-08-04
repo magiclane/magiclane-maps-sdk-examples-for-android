@@ -17,7 +17,6 @@ import android.view.ViewGroup
 import android.widget.Button
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.generalmagic.sdk.examples.multiplesurfacesinfragment.R
 
 class FirstFragment : Fragment() {
 

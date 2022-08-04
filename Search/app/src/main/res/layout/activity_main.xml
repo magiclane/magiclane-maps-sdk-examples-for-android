@@ -2,24 +2,35 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/root_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.generalmagic.sdk.examples.MainActivity">
+    tools:context=".MainActivity">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="#476483"
+        android:background="@color/purple_500"
         app:layout_constraintTop_toTopOf="parent"
         app:popupTheme="@style/Theme.AppCompat.Light"
         app:titleTextColor="@android:color/white">
 
-        <include
-            layout="@layout/filter_view"
+        <SearchView
+            android:id="@+id/searchInput"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="@dimen/filterHeight"
+            android:layout_marginEnd="@dimen/filterPadding"
+            android:closeIcon="@drawable/ic_close_white_24dp"
+            android:iconifiedByDefault="false"
+            android:imeOptions="flagNoExtractUi"
+            android:maxHeight="@dimen/filterHeight"
+            android:minHeight="@dimen/filterMinHeight"
+            android:searchIcon="@drawable/ic_search_white_24dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:targetApi="lollipop" />
 
     </androidx.appcompat.widget.Toolbar>
 

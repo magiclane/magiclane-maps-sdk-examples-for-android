@@ -7,5 +7,4 @@
     <dimen name="filterPadding">12dp</dimen>
     <dimen name="itemHeight">50dp</dimen>
     <dimen name="itemTextSize">15sp</dimen>
-
 </resources>

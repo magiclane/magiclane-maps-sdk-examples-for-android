@@ -35,6 +35,7 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Multiple surfaces in Fragment Recycler](MultipleSurfacesInFragmentRecycler) - Displaying a variable list of maps on an Android Fragment.
 * [Overlapped Maps](OverlappedMaps) - Display a second map view over the existing one.
 * [Public Transit Routing on Map](PublicTransitRoutingOnMap) - Calculate the public transport routes between 2 given landmarks; display all results on the map and fly to the main route, if exists.
+* [Range Finder](RangeFinder) - Calculate the routes between 2 given landmarks; display and fly to the first route in the resulting route list, if it exists.
 * [Route Alarms](RouteAlarms) - Start simulated navigation between 2 given landmarks if a route can be calculated.
 * [Route Instructions](RouteInstructions) - Calculate the routes between 2 given landmarks; display a list with all route instructions, if exists.
 * [Route Navigation](RouteNavigation) - Start navigation from the current position to a given landmark if any route can be calculated.
@@ -46,6 +47,7 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Routing on Map Java](RoutingOnMapJava) - Calculate the routes between 2 given landmarks; display and fly to the first resulted route, if exists.
 * [Search](Search) - Searches for landmarks based on user input; display a list with landmarks found.
 * [Search Along Route](SearchAlongRoute) - Start simulation between 2 landmarks. Search for gas stations along the route if the search button is pressed.
+* [Set TTS Language](SetTTSLanguage) - Shows usage of `SoundPlayingService` class and setting TTS language.
 * [Social Report](SocialReport) - Waits for a valid position. Submit a social report.
 * [Speed Watcher](SpeedWatcher) - Start simulation between 2 given landmarks. Display the current speed and the legal speed limit.
 * [Voice Downloading](VoiceDownloading) - Gather the list of available voices; download first available voice.

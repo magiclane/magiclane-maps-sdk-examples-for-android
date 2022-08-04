@@ -25,7 +25,6 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.d3scene.MapView
-import com.generalmagic.sdk.examples.multiplesurfacesinfragment.R
 import com.generalmagic.sdk.util.SdkCall
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 

@@ -4,45 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".multiplesurfacesinfragmentrecycler.SecondFragment">
-
-    <!--    <ScrollView-->
-    <!--        android:id="@+id/scrollView"-->
-    <!--        android:layout_width="match_parent"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:fadeScrollbars="false"-->
-    <!--        android:scrollbars="vertical"-->
-    <!--        app:layout_constraintBottom_toTopOf="@id/button_second"-->
-    <!--        app:layout_constraintEnd_toEndOf="parent"-->
-    <!--        app:layout_constraintStart_toStartOf="parent"-->
-    <!--        app:layout_constraintTop_toTopOf="parent">-->
-
-    <!--        <LinearLayout-->
-    <!--            android:id="@+id/scrolledLinearLayout"-->
-    <!--            android:layout_width="match_parent"-->
-    <!--            android:layout_height="wrap_content"-->
-    <!--            android:orientation="vertical">-->
-
-    <!--        </LinearLayout>-->
-
-    <!--    </ScrollView>-->
+    tools:context=".SecondFragment">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/list"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/button_second"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/previous"
-        app:layout_constraintBottom_toTopOf="@+id/bottomButtons"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/list" />
-
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomButtons"/>
+    
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/bottomButtons"
         android:layout_width="match_parent"
@@ -61,17 +31,19 @@
             android:tint="@color/white"
             android:visibility="invisible"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="ContentDescription" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/bottomCenterButton"
+        <Button
+            android:id="@+id/button_second"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:tint="@color/white"
-            android:visibility="invisible"
+            android:text="@string/previous"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/bottomRightButton"
@@ -80,7 +52,8 @@
             android:tint="@color/white"
             android:visibility="invisible"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="ContentDescription" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

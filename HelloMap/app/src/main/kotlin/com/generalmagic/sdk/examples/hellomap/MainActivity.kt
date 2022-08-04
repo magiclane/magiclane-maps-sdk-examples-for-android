@@ -14,7 +14,6 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
-import com.generalmagic.sdk.examples.hellomap.R
 import com.generalmagic.sdk.util.Util
 import kotlin.system.exitProcess
 

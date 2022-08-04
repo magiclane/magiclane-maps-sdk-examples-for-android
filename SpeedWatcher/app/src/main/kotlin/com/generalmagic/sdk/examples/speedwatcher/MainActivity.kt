@@ -21,7 +21,6 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.examples.speedwatcher.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
@@ -30,8 +29,8 @@ import com.generalmagic.sdk.sensordatasource.PositionData
 import com.generalmagic.sdk.sensordatasource.PositionListener
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.sensordatasource.enums.EDataType
-import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.GemUtil
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess

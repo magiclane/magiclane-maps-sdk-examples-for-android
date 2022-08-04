@@ -16,15 +16,14 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.GemError
-import com.generalmagic.sdk.examples.routing.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RoutingService
-import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.GemUtil
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import kotlin.system.exitProcess
 
@@ -141,7 +140,7 @@ class MainActivity : AppCompatActivity() {
 
         val distTextPair = GemUtil.getDistText(
             distInMeters,
-            SdkSettings().unitSystem,
+            SdkSettings.unitSystem,
             bHighResolution = true
         )
 

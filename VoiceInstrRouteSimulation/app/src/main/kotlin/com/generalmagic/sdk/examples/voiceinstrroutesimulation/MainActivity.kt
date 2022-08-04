@@ -109,7 +109,7 @@ class MainActivity : AppCompatActivity() {
                 val countryCode = "DEU"
 
                 val onVoiceReady = { voiceFilePath: String ->
-                    SdkSettings().setVoiceByPath(voiceFilePath)
+                    SdkSettings.setVoiceByPath(voiceFilePath)
                     startSimulation()
                 }
 
@@ -166,6 +166,7 @@ class MainActivity : AppCompatActivity() {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         finish()
         exitProcess(0)

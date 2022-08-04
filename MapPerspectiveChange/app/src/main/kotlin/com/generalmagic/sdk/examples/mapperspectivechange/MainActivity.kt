@@ -11,18 +11,13 @@
 package com.generalmagic.sdk.examples.mapperspectivechange
 
 import android.os.Bundle
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
-import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.d3scene.Animation
 import com.generalmagic.sdk.d3scene.EAnimation
 import com.generalmagic.sdk.d3scene.EMapViewPerspective
-import com.generalmagic.sdk.d3scene.EViewCameraTransitionStatus
-import com.generalmagic.sdk.d3scene.EViewDataTransitionStatus
-import com.generalmagic.sdk.examples.mapperspectivechange.R
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import com.google.android.material.button.MaterialButton

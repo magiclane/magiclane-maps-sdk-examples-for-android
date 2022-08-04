@@ -15,13 +15,12 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.d3scene.EHighlightOptions
 import com.generalmagic.sdk.d3scene.HighlightRenderSettings
-import com.generalmagic.sdk.examples.flytoarea.R
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService

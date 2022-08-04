@@ -22,13 +22,13 @@ import android.widget.SearchView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.GemError
-import com.generalmagic.sdk.examples.search.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.util.PermissionsHelper
@@ -41,6 +41,7 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity() {
     private var listView: RecyclerView? = null
     private var progressBar: ProgressBar? = null
+    private var toolbar: Toolbar? = null
 
     private var searchService = SearchService(
         onCompleted = { results, errorCode, _ ->
@@ -74,33 +75,38 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        listView = findViewById(R.id.list_view)
         progressBar = findViewById(R.id.progressBar)
-        val layoutManager = LinearLayoutManager(this)
-        listView?.layoutManager = layoutManager
+        toolbar = findViewById(R.id.toolbar)
+        listView = findViewById<RecyclerView?>(R.id.list_view).apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
 
-        val separator = DividerItemDecoration(applicationContext, layoutManager.orientation)
-        listView?.addItemDecoration(separator)
+            addItemDecoration(DividerItemDecoration(applicationContext, (layoutManager as LinearLayoutManager).orientation))
 
-        listView?.setBackgroundResource(R.color.white)
-        val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
-        listView?.setPadding(lateralPadding, 0, lateralPadding, 0)
+            setBackgroundResource(R.color.white)
+            
+            val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
+            setPadding(lateralPadding, 0, lateralPadding, 0)
+        }
+        
+        setSupportActionBar(toolbar)
 
-        val searchInput = findViewById<SearchView>(R.id.searchInput)
+        findViewById<SearchView>(R.id.searchInput).apply {
+            setOnQueryTextListener(
+                object : SearchView.OnQueryTextListener {
+                    override fun onQueryTextSubmit(query: String?): Boolean {
+                        clearFocus()
+                        return true
+                    }
 
-        searchInput.setOnQueryTextListener(
-            object : SearchView.OnQueryTextListener {
-                override fun onQueryTextSubmit(query: String?): Boolean {
-                    searchInput.clearFocus()
-                    return true
+                    override fun onQueryTextChange(newText: String?): Boolean {
+                        applyFilter(newText ?: "")
+                        return true
+                    }
                 }
-
-                override fun onQueryTextChange(newText: String?): Boolean {
-                    applyFilter(newText ?: "")
-                    return true
-                }
-            }
-        )
+            )
+            
+            requestFocus()
+        }
 
         /// GENERAL MAGIC
         SdkSettings.onApiTokenRejected = {

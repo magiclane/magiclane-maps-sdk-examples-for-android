@@ -15,13 +15,12 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.Path
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.GemError
-import com.generalmagic.sdk.examples.gpxroutesimulation.R
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService

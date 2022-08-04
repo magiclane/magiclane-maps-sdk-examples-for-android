@@ -24,17 +24,16 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.core.EUnitSystem
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.GemError
-import com.generalmagic.sdk.examples.whatsnearby.R
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.sensordatasource.PositionService
+import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.Util
 import com.generalmagic.sdk.util.Util.postOnMain
 import kotlin.system.exitProcess
@@ -83,18 +82,17 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        listView = findViewById(R.id.list_view)
         progressBar = findViewById(R.id.progressBar)
+        listView = findViewById<RecyclerView?>(R.id.list_view).apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
 
-        val layoutManager = LinearLayoutManager(this)
-        listView.layoutManager = layoutManager
+            addItemDecoration(DividerItemDecoration(applicationContext, (layoutManager as LinearLayoutManager).orientation))
 
-        val separator = DividerItemDecoration(applicationContext, layoutManager.orientation)
-        listView.addItemDecoration(separator)
+            setBackgroundResource(R.color.white)
+            val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
+            setPadding(lateralPadding, 0, lateralPadding, 0)
+        }
 
-        listView.setBackgroundResource(R.color.white)
-        val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
-        listView.setPadding(lateralPadding, 0, lateralPadding, 0)
 
         /// GENERAL MAGIC
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->

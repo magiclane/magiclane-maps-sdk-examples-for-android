@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="smallPadding">4dp</dimen>
+    <dimen name="bigPadding">10dp</dimen>
+    <dimen name="itemTextSize">15sp</dimen>
+    <dimen name="itemHeight">50dp</dimen>
+</resources>

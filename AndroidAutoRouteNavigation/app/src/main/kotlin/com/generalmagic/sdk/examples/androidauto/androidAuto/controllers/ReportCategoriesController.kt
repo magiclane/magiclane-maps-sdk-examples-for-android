@@ -32,7 +32,6 @@ import java.util.ArrayList
 typealias ReportCategoriesScreen = QuickLeftListScreen
 
 class ReportCategoriesController(context: CarContext) : ReportCategoriesScreen(context) {
-    private val socialOverlay = SocialOverlay()
 
     override fun updateData() {
         title = "Report event"
@@ -51,7 +50,7 @@ class ReportCategoriesController(context: CarContext) : ReportCategoriesScreen(c
         SdkCall.execute {
             val countryISOCode = MapDetails().isoCodeForCurrentPosition ?: return@execute
 
-            val overlayInfo = socialOverlay.reportsOverlayInfo ?: return@execute
+            val overlayInfo = SocialOverlay.reportsOverlayInfo ?: return@execute
 
             val categories = overlayInfo.getCategories(countryISOCode) ?: return@execute
 
@@ -80,7 +79,7 @@ class ReportCategoriesController(context: CarContext) : ReportCategoriesScreen(c
             if (mainCategoryId == INVALID_ID)
                 return@execute
 
-            val prepareIdOrError = socialOverlay.prepareReporting()
+            val prepareIdOrError = SocialOverlay.prepareReporting()
             if (prepareIdOrError <= 0) {
                 Util.postOnMain {
                     Service.pop()
@@ -93,7 +92,6 @@ class ReportCategoriesController(context: CarContext) : ReportCategoriesScreen(c
                 Service.pushScreen(
                     ReportSubCategoriesController(
                         context,
-                        socialOverlay,
                         prepareIdOrError,
                         mainCategoryId
                     )
@@ -108,7 +106,6 @@ typealias ReportSubCategoriesScreen = QuickLeftListScreen
 
 class ReportSubCategoriesController(
     context: CarContext,
-    private val socialOverlay: SocialOverlay,
     private val prepareId: Int,
     private val mainCategoryId: Int
 ) : ReportSubCategoriesScreen(context) {
@@ -128,7 +125,7 @@ class ReportSubCategoriesController(
     private fun getItems(): ArrayList<GenericListItemModel> = SdkCall.execute {
         val result = ArrayList<GenericListItemModel>()
 
-        val overlayInfo = socialOverlay.reportsOverlayInfo ?: return@execute arrayListOf()
+        val overlayInfo = SocialOverlay.reportsOverlayInfo ?: return@execute arrayListOf()
 
         val categories =
             overlayInfo.getCategory(mainCategoryId)?.subcategories ?: return@execute arrayListOf()
@@ -147,7 +144,6 @@ class ReportSubCategoriesController(
                     Service.pushScreen(
                         ReportSubCategoriesController(
                             context,
-                            socialOverlay,
                             prepareId,
                             category.uid
                         )
@@ -180,7 +176,7 @@ class ReportSubCategoriesController(
     } ?: arrayListOf()
 
     private fun submitReport(category: OverlayCategory) = SdkCall.execute {
-        /*val error =*/ socialOverlay.report(
+        /*val error =*/ SocialOverlay.report(
             prepareId, category.uid, socialReportListener
         )
 //        if (GemError.isError(error)) {

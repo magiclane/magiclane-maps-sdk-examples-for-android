@@ -19,7 +19,6 @@ import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.examples.ptroutingonmap.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.ERouteTransportMode
 import com.generalmagic.sdk.routesandnavigation.Route

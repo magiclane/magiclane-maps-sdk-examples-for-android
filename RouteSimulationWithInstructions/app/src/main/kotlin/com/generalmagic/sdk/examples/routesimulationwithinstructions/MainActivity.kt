@@ -25,14 +25,13 @@ import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.Time
-import com.generalmagic.sdk.examples.routesimulationwithinstructions.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationInstruction
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
 import com.generalmagic.sdk.routesandnavigation.Route
-import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.GemUtil
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess

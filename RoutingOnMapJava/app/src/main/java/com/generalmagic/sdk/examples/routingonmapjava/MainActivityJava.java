@@ -14,7 +14,6 @@ import com.generalmagic.sdk.d3scene.Animation;
 import com.generalmagic.sdk.d3scene.EAnimation;
 import com.generalmagic.sdk.d3scene.ERouteDisplayMode;
 import com.generalmagic.sdk.d3scene.MapView;
-import com.generalmagic.sdk.examples.routingonmapjava.R;
 import com.generalmagic.sdk.places.Landmark;
 import com.generalmagic.sdk.routesandnavigation.Route;
 import com.generalmagic.sdk.routesandnavigation.RoutingService;
@@ -92,8 +91,8 @@ public class MainActivityJava extends AppCompatActivity {
 
         progressBar = findViewById(R.id.progressBar);
         gemSurfaceView = findViewById(R.id.gem_surface);
-
-        SdkSettings.Companion.setOnMapDataReady(isReady -> {
+        
+        SdkSettings.INSTANCE.setOnMapDataReady(isReady -> {
             if (!isReady)
                 return null;
 
@@ -102,7 +101,7 @@ public class MainActivityJava extends AppCompatActivity {
             return null;
         });
 
-        SdkSettings.Companion.setOnApiTokenRejected(() -> {
+        SdkSettings.INSTANCE.setOnApiTokenRejected(() -> {
             /* 
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,

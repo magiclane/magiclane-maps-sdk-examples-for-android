@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="filterHeight">35dp</dimen>
+    <dimen name="smallPadding">4dp</dimen>
+    <dimen name="bigPadding">10dp</dimen>
+    <dimen name="itemHeight">50dp</dimen>
+    <dimen name="itemTextSize">15sp</dimen>
+    <dimen name="listItemPadding">10dp</dimen>
+    <dimen name="standardTextSize">16sp</dimen>
+    <dimen name="smallTextSize">12sp</dimen>
+    <dimen name="radio_button_size">28dp</dimen>
+    <dimen name="language_text_size">20sp</dimen>
+    <dimen name="current_language_text_size">30sp</dimen>
+</resources>

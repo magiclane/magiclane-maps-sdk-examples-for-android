@@ -16,6 +16,7 @@ import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.generalmagic.sdk.core.DataBuffer
 import com.generalmagic.sdk.core.GemSdk
@@ -116,7 +117,7 @@ class MainActivity : AppCompatActivity() {
         val drawable = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             ResourcesCompat.getDrawable(resources, drawableRes, theme)
         } else {
-            resources.getDrawable(drawableRes)
+            ContextCompat.getDrawable(this, drawableRes)
         }
 
         drawable ?: return null

@@ -21,16 +21,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.GemError
-import com.generalmagic.sdk.examples.routeinstructions.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteInstruction
 import com.generalmagic.sdk.routesandnavigation.RoutingService
-import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.GemUtil
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import com.generalmagic.sdk.util.Util.postOnMain
 import kotlin.system.exitProcess
@@ -199,7 +198,7 @@ class CustomAdapter(private val dataSet: ArrayList<RouteInstruction>) :
                 val distance =
                     instruction.traveledTimeDistance?.totalDistance?.toDouble() ?: 0.0
 
-                val distText = GemUtil.getDistText(distance.toInt(), SdkSettings().unitSystem)
+                val distText = GemUtil.getDistText(distance.toInt(), SdkSettings.unitSystem)
                 status = distText.first
                 description = distText.second
                 if (status == "0.00") {

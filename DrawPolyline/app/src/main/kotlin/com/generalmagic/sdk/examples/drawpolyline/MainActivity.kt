@@ -15,13 +15,11 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
-import com.generalmagic.sdk.core.Image
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.d3scene.EMarkerType
 import com.generalmagic.sdk.d3scene.Marker
 import com.generalmagic.sdk.d3scene.MarkerCollection
 import com.generalmagic.sdk.d3scene.MarkerCollectionRenderSettings
-import com.generalmagic.sdk.examples.drawpolyline.R
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import kotlin.system.exitProcess

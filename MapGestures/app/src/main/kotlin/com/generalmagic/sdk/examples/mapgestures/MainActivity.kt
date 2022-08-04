@@ -18,7 +18,6 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.Xy
-import com.generalmagic.sdk.examples.mapgestures.R
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import kotlin.system.exitProcess

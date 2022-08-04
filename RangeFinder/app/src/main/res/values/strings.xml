@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">RangeFinder</string>
+    <string name="transport_mode">Transport mode</string>
+    <string name="car">Car</string>
+    <string name="lorry">Lorry</string>
+    <string name="bicycle">Bicycle</string>
+    <string name="pedestrian">Pedestrian</string>
+    <string name="range_type">Range type</string>
+    <string name="range_value">Range value</string>
+    <string name="fastest">Fastest</string>
+    <string name="shortest">Shortest</string>
+    <string name="economic">Economic</string>
+    <string name="add">Add</string>
+    <string name="meters">Meters</string>
+    <string name="seconds">Seconds</string>
+    <string name="kilograms">Kilograms</string>
+    <string name="watts_per_hour">Watts per hour</string>
+    <string name="bike_weight">Bike weight</string>
+    <string name="biker_weight">Biker weight</string>
+</resources>

@@ -11,18 +11,23 @@
 package com.generalmagic.sdk.examples.searchalongroute
 
 import android.os.Bundle
-import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.core.EGenericCategoriesIDs
+import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.GemError
-import com.generalmagic.sdk.examples.searchalongroute.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
@@ -53,10 +58,8 @@ class MainActivity : AppCompatActivity() {
 
             when (errorCode) {
                 GemError.NoError -> {
-                    results.forEach {
-                        // Write each result name in Logcat.
-                        Log.i("SearchAlongRoute", "${SdkCall.execute { it.name }}")
-                    }
+                    // Display results in AlertDialog
+                    onSearchCompleted(results)
                 }
 
                 GemError.Cancel -> {
@@ -201,12 +204,64 @@ class MainActivity : AppCompatActivity() {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private fun searchAlongRoute(route: Route) = SdkCall.execute {
-        // Set the maximum number of results to 20.
-        searchService.preferences.maxMatches = 20
+        // Set the maximum number of results to 25.
+        searchService.preferences.maxMatches = 25
 
         // Search Gas Stations along the route.
         searchService.searchAlongRoute(route, EGenericCategoriesIDs.GasStation)
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    private fun onSearchCompleted(results: ArrayList<Landmark>) {
+        val builder = AlertDialog.Builder(this)
+
+        val convertView = layoutInflater.inflate(R.layout.dialog_list, null)
+        convertView.findViewById<RecyclerView>(R.id.list_view).apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
+
+            addItemDecoration(DividerItemDecoration(
+                applicationContext,
+                (layoutManager as LinearLayoutManager).orientation
+            ))
+
+            setBackgroundResource(R.color.white)
+
+            val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
+            setPadding(lateralPadding, 0, lateralPadding, 0)
+            
+            adapter = CustomAdapter(results)
+        }
+        
+        builder.setView(convertView)
+        
+        builder.create().show()
+    }
+    
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    inner class CustomAdapter(private val dataSet: ArrayList<Landmark>) : RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
+        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            private val text: TextView = view.findViewById(R.id.search_text)
+
+            fun bind(position: Int)
+            {
+                text.text = SdkCall.execute { dataSet[position].name }
+            }
+        }
+
+        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(viewGroup.context).inflate(R.layout.list_item, viewGroup, false)
+            
+            return ViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            holder.bind(position)
+        }
+
+        override fun getItemCount(): Int = dataSet.size
+    }
+    
     ////////////////////////////////////////////////////////////////////////////////////////////////
 }

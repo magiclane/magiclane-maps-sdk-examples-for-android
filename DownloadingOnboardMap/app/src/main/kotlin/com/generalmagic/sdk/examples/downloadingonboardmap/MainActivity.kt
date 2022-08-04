@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,9 +10,15 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.downloadingonboardmap
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,71 +36,77 @@ import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.examples.downloadingonboardmap.R
-import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.GemUtil
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity() {
+// -------------------------------------------------------------------------------------------------------------------------------
+
+class MainActivity: AppCompatActivity()
+{
+    // ---------------------------------------------------------------------------------------------------------------------------
+
     private var listView: RecyclerView? = null
+
     private val contentStore = ContentStore()
+
     private var progressBar: ProgressBar? = null
+
+    private var mapsCatalogRequested = false
+
+    private val kDefaultToken = "YOUR_TOKEN"
+
+    private var connected = false
+
+    private var mapReady = false
 
     private val progressListener = ProgressListener.create(
         onStarted = {
             progressBar?.visibility = View.VISIBLE
         },
-
         onCompleted = { errorCode, _ ->
             progressBar?.visibility = View.GONE
 
-            when (errorCode) {
-                GemError.NoError -> {
+            when (errorCode)
+            {
+                GemError.NoError ->
+                {
                     SdkCall.execute {
                         // No error encountered, we can handle the results.
-                        var models: ArrayList<ContentStoreItem>? = null
-                        // Get the list of maps that was retrieved in the content store.
-                        val result = contentStore.getStoreContentList(EContentType.RoadMap)
-                        if (result != null) models = result.first
+                        val models = contentStore.getStoreContentList(EContentType.RoadMap)?.first
 
-                        if (!models.isNullOrEmpty()) {
+                        if (!models.isNullOrEmpty())
+                        {
                             // The map items list is not empty or null.
                             val mapItem = models[0]
                             val itemName = mapItem.name
 
                             // Define a listener to the progress of the map download action.
-                            val downloadProgressListener = ProgressListener.create(
-                                onStarted = {
-                                    progressBar?.visibility = View.VISIBLE
-                                    showToast("Started downloading $itemName.")
-                                },
-
-                                onCompleted = { _, _ ->
-                                    progressBar?.visibility = View.GONE
-                                    showToast("$itemName was downloaded.")
-                                }
-                            )
+                            val downloadProgressListener = ProgressListener.create(onStarted = {
+                                                                                       progressBar?.visibility = View.VISIBLE
+                                                                                       showToast("Started downloading $itemName.")
+                                                                                   },
+                                                                                   onCompleted = { _, _ ->
+                                                                                       progressBar?.visibility = View.GONE
+                                                                                       showToast("$itemName was downloaded.")
+                                                                                   })
 
                             // Start downloading the first map item.
                             SdkCall.execute {
-                                mapItem.asyncDownload(
-                                    downloadProgressListener,
-                                    GemSdk.EDataSavePolicy.UseDefault,
-                                    true
-                                )
+                                mapItem.asyncDownload(downloadProgressListener, GemSdk.EDataSavePolicy.UseDefault, true)
                             }
                         }
 
                         displayList(models)
                     }
                 }
-
-                GemError.Cancel -> {
+                GemError.Cancel ->
+                {
                     // The action was cancelled.
                 }
-
-                else -> {
+                else ->
+                {
                     // There was a problem at retrieving the content store items.
                     showToast("Content store service error: ${GemError.getMessage(errorCode)}")
                 }
@@ -100,9 +114,10 @@ class MainActivity : AppCompatActivity() {
         }
     )
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -118,19 +133,50 @@ class MainActivity : AppCompatActivity() {
         val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
         listView?.setPadding(lateralPadding, 0, lateralPadding, 0)
 
-        /// GENERAL MAGIC
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
+        val loadMaps = {
+            mapsCatalogRequested = true
 
-            SdkCall.execute {
-                // Defines an action that should be done after the network is connected.
-                // Call to the content store to asynchronously retrieve the list of maps.
-                contentStore.asyncGetStoreContentList(EContentType.RoadMap, progressListener)
+            val loadMapsCatalog = {
+                SdkCall.execute {
+                    // Call to the content store to asynchronously retrieve the list of maps.
+                    contentStore.asyncGetStoreContentList(EContentType.RoadMap, progressListener)
+                }
+            }
+
+            val token = GemSdk.getTokenFromManifest(this)
+
+            if (!token.isNullOrEmpty() && (token != kDefaultToken))
+            {
+                loadMapsCatalog()
+            }
+            else // if token is not present try to avoid content server requests limitation by delaying the voices catalog request
+            {
+                progressBar?.visibility = View.VISIBLE
+
+                Handler(Looper.getMainLooper()).postDelayed({
+                    loadMapsCatalog()
+                }, 3000)
+            }
+        }
+
+        SdkSettings.onMapDataReady = { it ->
+            mapReady = it
+            if (connected && mapReady && !mapsCatalogRequested)
+            {
+                loadMaps()
+            }
+        }
+
+        SdkSettings.onConnectionStatusUpdated = { it ->
+            connected = it
+            if (connected && mapReady && !mapsCatalogRequested)
+            {
+                loadMaps()
             }
         }
 
         SdkSettings.onApiTokenRejected = {
-            /* 
+            /*
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/ sing in and generate one. 
@@ -139,85 +185,94 @@ class MainActivity : AppCompatActivity() {
         }
 
         // This step of initialization is mandatory if you want to use the SDK without a map.
-        if (!GemSdk.initSdkWithDefaults(this)) {
+        if (!GemSdk.initSdkWithDefaults(this))
+        {
             // The SDK initialization was not completed.
             finish()
         }
 
-        if (!Util.isInternetConnected(this)) {
+        if (!Util.isInternetConnected(this))
+        {
             Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun displayList(models: ArrayList<ContentStoreItem>?) {
-        if (models != null) {
+    private fun displayList(models: ArrayList<ContentStoreItem>?)
+    {
+        if (models != null)
+        {
             val adapter = CustomAdapter(models)
             listView?.adapter = adapter
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun showToast(text: String) = Util.postOnMain {
         Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------------------------------------------------------------
 
 /**
  * This custom adapter is made to facilitate the displaying of the data from the model
  * and to decide how it is displayed.
  */
-class CustomAdapter(private val dataSet: ArrayList<ContentStoreItem>) :
-    RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
+class CustomAdapter(private val dataSet: ArrayList<ContentStoreItem>): RecyclerView.Adapter<CustomAdapter.ViewHolder>()
+{
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
+    {
         val text: TextView = view.findViewById(R.id.text)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(viewGroup.context)
-            .inflate(R.layout.list_item, viewGroup, false)
+    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder
+    {
+        val view = LayoutInflater.from(viewGroup.context).inflate(R.layout.list_item, viewGroup, false)
 
         return ViewHolder(view)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
+    override fun onBindViewHolder(viewHolder: ViewHolder, position: Int)
+    {
         viewHolder.text.text =
             SdkCall.execute { dataSet[position].name + " (" + GemUtil.formatSizeAsText(dataSet[position].totalSize) + ")" }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
     override fun getItemCount() = dataSet.size
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------------------------------------
 

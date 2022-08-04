@@ -22,12 +22,11 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.generalmagic.sdk.examples.multiplesurfacesinfragmentrecycler.R
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class SecondFragment : Fragment() {
     private val maxSurfacesCount = 9
-    private val list = arrayListOf(0, 1, 2, 3, 4, 5, 6, 7)
+    private val list = arrayListOf(0, 1, 2, 3)
 
     private lateinit var recycler: RecyclerView
 
@@ -49,11 +48,11 @@ class SecondFragment : Fragment() {
             findNavController().navigate(R.id.action_SecondFragment_to_FirstFragment)
         }
 
-        val adapter = CustomAdapter(list)
-
-        recycler = view.findViewById(R.id.list)
-        recycler.layoutManager = LinearLayoutManager(requireContext())
-        recycler.adapter = adapter
+        recycler = view.findViewById<RecyclerView>(R.id.list).apply { 
+            itemAnimator = null
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = CustomAdapter(list)
+        }
 
         val leftBtn = view.findViewById<FloatingActionButton>(R.id.bottomLeftButton)
         leftBtn.visibility = View.VISIBLE
@@ -104,9 +103,7 @@ class SecondFragment : Fragment() {
 
         override fun getItemCount() = dataSet.size
 
-        override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
-
-        }
+        override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) = Unit
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
