@@ -6,8 +6,9 @@
     <dimen name="itemHeight">50dp</dimen>
     <dimen name="itemTextSize">15sp</dimen>
     <dimen name="listItemPadding">10dp</dimen>
-    <dimen name="standardTextSize">16sp</dimen>
-    <dimen name="smallTextSize">12sp</dimen>
+    <dimen name="standard_text_size">16sp</dimen>
+    <dimen name="small_text_size">12sp</dimen>
+    <dimen name="big_text_size">20sp</dimen>
     <dimen name="radio_button_size">28dp</dimen>
     <dimen name="language_text_size">20sp</dimen>
     <dimen name="current_language_text_size">30sp</dimen>

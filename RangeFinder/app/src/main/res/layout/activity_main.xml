@@ -47,6 +47,30 @@
                 app:layout_constraintEnd_toEndOf="parent" />
 
             <TextView
+                android:id="@+id/bike_type_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/bike_type"
+                android:textSize="@dimen/big_text_size"
+                android:textStyle="bold"
+                android:layout_marginStart="@dimen/big_padding"
+                android:singleLine="true"
+                android:ellipsize="end"
+                app:layout_constraintTop_toTopOf="@id/bike_type_spinner"
+                app:layout_constraintBottom_toBottomOf="@id/bike_type_spinner"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/bike_type_spinner"/>
+
+            <Spinner
+                android:id="@+id/bike_type_spinner"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/big_padding"
+                app:layout_constraintTop_toBottomOf="@id/transport_mode_spinner"
+                app:layout_constraintStart_toEndOf="@id/bike_type_text"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <TextView
                 android:id="@+id/range_type_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -66,7 +90,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/big_padding"
-                app:layout_constraintTop_toBottomOf="@id/transport_mode_spinner"
+                app:layout_constraintTop_toBottomOf="@id/bike_type_spinner"
                 app:layout_constraintStart_toEndOf="@id/range_type_text"
                 app:layout_constraintEnd_toEndOf="parent" />
 
@@ -102,7 +126,8 @@
                 android:visibility="gone"
                 app:layout_constraintTop_toBottomOf="@id/range_type_spinner"
                 app:layout_constraintStart_toEndOf="@id/bike_weight_text"
-                app:layout_constraintEnd_toEndOf="parent" />
+                app:layout_constraintEnd_toEndOf="parent"
+                tools:ignore="Autofill,TextFields" />
 
             <TextView
                 android:id="@+id/biker_weight_text"
@@ -136,7 +161,8 @@
                 android:visibility="gone"
                 app:layout_constraintTop_toBottomOf="@id/bike_weight_edit_text"
                 app:layout_constraintStart_toEndOf="@id/biker_weight_text"
-                app:layout_constraintEnd_toEndOf="parent" />
+                app:layout_constraintEnd_toEndOf="parent"
+                tools:ignore="Autofill,TextFields" />
 
             <TextView
                 android:id="@+id/range_value_text"
@@ -167,7 +193,8 @@
                 android:imeOptions="flagNoExtractUi|actionDone"
                 app:layout_constraintTop_toBottomOf="@id/biker_weight_edit_text"
                 app:layout_constraintStart_toEndOf="@id/range_value_text"
-                app:layout_constraintEnd_toStartOf="@id/add_button" />
+                app:layout_constraintEnd_toStartOf="@id/add_button"
+                tools:ignore="Autofill,TextFields" />
 
             <TextView
                 android:id="@+id/add_button"

@@ -16,6 +16,7 @@ package com.generalmagic.sdk.examples.voicedownloading
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.Handler
@@ -23,10 +24,10 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -43,6 +44,7 @@ import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -52,6 +54,8 @@ class MainActivity: AppCompatActivity()
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private var listView: RecyclerView? = null
+    
+    private var statusText: TextView? = null
 
     private val contentStore = ContentStore()
 
@@ -66,10 +70,12 @@ class MainActivity: AppCompatActivity()
     private val progressListener = ProgressListener.create(
         onStarted = {
             progressBar?.visibility = View.VISIBLE
+            showStatusMessage("Started content store service.")
         },
         
         onCompleted = { errorCode, _ ->
             progressBar?.visibility = View.GONE
+            showStatusMessage("Content store service completed with error code: $errorCode")
 
             when (errorCode)
             {
@@ -91,11 +97,11 @@ class MainActivity: AppCompatActivity()
                                 voiceItem.asyncDownload(GemSdk.EDataSavePolicy.UseDefault,
                                                         true,
                                                         onStarted = {
-                                                                        showToast("Started downloading $itemName.")
+                                                            showStatusMessage("Started downloading $itemName.")
                                                         },
                                                         onCompleted = { _, _ ->
                                                                             listView?.adapter?.notifyItemChanged(0)
-                                                                            showToast("$itemName was downloaded.")
+                                                                            showStatusMessage("$itemName was downloaded.")
                                                         },
                                                         onProgress = {
                                                             listView?.adapter?.notifyItemChanged(0)
@@ -113,7 +119,7 @@ class MainActivity: AppCompatActivity()
                 else ->
                 {
                     // There was a problem at retrieving the content store items.
-                    showToast("Content store service error: ${GemError.getMessage(errorCode)}")
+                    showDialog("Content store service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         },
@@ -127,6 +133,7 @@ class MainActivity: AppCompatActivity()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         
+        statusText = findViewById(R.id.status_text)
         progressBar = findViewById(R.id.progressBar)
         listView = findViewById<RecyclerView?>(R.id.list_view).apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
@@ -176,7 +183,7 @@ class MainActivity: AppCompatActivity()
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/ sing in and generate one. 
              */
-            showToast("TOKEN REJECTED")
+            showDialog("TOKEN REJECTED")
         }
 
         // This step of initialization is mandatory if you want to use the SDK without a map.
@@ -188,7 +195,7 @@ class MainActivity: AppCompatActivity()
 
         if (!Util.isInternetConnected(this))
         {
-            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
+            showDialog("You must be connected to internet!")
         }
     }
 
@@ -222,9 +229,30 @@ class MainActivity: AppCompatActivity()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
-
-    private fun showToast(text: String) = Util.postOnMain {
-        Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show()
+    
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply { 
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener { 
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
+    private fun showStatusMessage(text: String)
+    {
+        statusText?.text = text
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -264,6 +292,7 @@ class MainActivity: AppCompatActivity()
                 imageView.setImageBitmap(SdkCall.execute { getFlagBitmap(dataSet[position]) })
 
                 statusImageView.visibility = View.GONE
+                progressBar.visibility = View.INVISIBLE
                 when (SdkCall.execute { dataSet[position].status })
                 {
                     EContentStoreItemStatus.Completed ->

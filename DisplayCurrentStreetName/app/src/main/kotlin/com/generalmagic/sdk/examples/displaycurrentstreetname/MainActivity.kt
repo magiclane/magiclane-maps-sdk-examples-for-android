@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,16 +10,22 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.displaycurrentstreetname
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
@@ -29,13 +37,19 @@ import com.generalmagic.sdk.sensordatasource.enums.EDataType
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity() {
+// -------------------------------------------------------------------------------------------------------------------------------
 
+@Suppress("SameParameterValue")
+class MainActivity : AppCompatActivity() 
+{
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var currentStreetNameView: TextView
     private lateinit var followCursorButton: FloatingActionButton
@@ -58,20 +72,36 @@ class MainActivity : AppCompatActivity() {
                     df.roundingMode = RoundingMode.CEILING
 
                     if (it.isEmpty())
-                        return@let
+                    {
+                        text = "Current street name not available."
+                        return@let   
+                    }
 
-                    text = it
-                    text += ", ${df.format(improvedPositionData.roadSpeedLimit)}"
-                    text += ", ${improvedPositionData.roadModifier}"
+                    text = "Current street name: $it"
+                    
+                    val speedLimit = (improvedPositionData.roadSpeedLimit * 3.6).toInt()
+                    if (speedLimit != 0)
+                    {
+                        text += "\nRoad speed limit: $speedLimit km/h"
+                    }
                 }
             }
-            currentStreetNameView.text = text
+            Util.postOnMain { 
+                currentStreetNameView.apply { 
+                    if (!isVisible)
+                    {
+                        visibility = View.VISIBLE
+                    }
+                    this.text = text
+                } 
+            }
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -95,30 +125,54 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
+        if (!Util.isInternetConnected(this))
+        {
+            showDialog("You must be connected to internet!")
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun startImprovedPositionListener() {
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun startImprovedPositionListener()
+    {
         if (gemSurfaceView.mapView?.isFollowingPosition() != true)
             gemSurfaceView.mapView?.followPosition()
 
@@ -128,9 +182,10 @@ class MainActivity : AppCompatActivity() {
         dataSource?.addListener(dataSourceListener, EDataType.ImprovedPosition)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun enableGPSButton() {
+    private fun enableGPSButton()
+    {
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
@@ -148,11 +203,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<String>, grantResults: IntArray
-    ) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray)
+    {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode != REQUEST_PERMISSIONS) return
 
@@ -171,7 +225,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
     private val permissions = arrayOf(
         Manifest.permission.INTERNET,
@@ -180,17 +234,21 @@ class MainActivity : AppCompatActivity() {
         Manifest.permission.ACCESS_COARSE_LOCATION
     )
 
-    private fun requestPermissions(activity: Activity): Boolean {
+    private fun requestPermissions(activity: Activity): Boolean
+    {
         return PermissionsHelper.requestPermissions(
             REQUEST_PERMISSIONS, activity, permissions
         )
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    companion object {
+    companion object
+    {
         private const val REQUEST_PERMISSIONS = 110
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------------------------------------

@@ -25,13 +25,12 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/location_details"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:layout_margin="10dp"
-        android:background="@color/white"
+        android:layout_height="@dimen/location_details_height"
+        android:layout_margin="@dimen/list_item_padding"
+        android:background="@color/colorOnPrimary"
         android:elevation="3dp"
-        android:gravity="center"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/status_text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
@@ -39,12 +38,11 @@
             android:id="@+id/name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginEnd="10dp"
+            android:layout_marginStart="@dimen/list_item_padding"
+            android:layout_marginTop="@dimen/list_item_padding"
+            android:layout_marginEnd="@dimen/list_item_padding"
             android:layout_marginBottom="5dp"
-            android:textColor="@color/black"
-            android:textSize="20sp"
+            android:textSize="@dimen/big_text_size"
             app:layout_constraintBottom_toTopOf="@id/coordinates"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -54,9 +52,9 @@
             android:id="@+id/coordinates"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_marginEnd="10dp"
-            android:layout_marginBottom="10dp"
+            android:layout_marginStart="@dimen/list_item_padding"
+            android:layout_marginEnd="@dimen/list_item_padding"
+            android:layout_marginBottom="@dimen/list_item_padding"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/favourites_icon"
             app:layout_constraintStart_toStartOf="parent"
@@ -64,12 +62,11 @@
 
         <ImageView
             android:id="@+id/favourites_icon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginEnd="20dp"
-            android:layout_marginRight="20dp"
-            android:layout_marginBottom="10dp"
+            android:layout_width="@dimen/image_size"
+            android:layout_height="@dimen/image_size"
+            android:layout_marginTop="@dimen/list_item_padding"
+            android:layout_marginEnd="@dimen/big_padding"
+            android:layout_marginBottom="@dimen/list_item_padding"
             android:src="@drawable/ic_baseline_favorite_border_24"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -78,7 +75,20 @@
             app:layout_constraintStart_toEndOf="@id/coordinates"
             app:layout_constraintTop_toTopOf="parent"
             tools:ignore="ContentDescription" />
-
-
+        
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <TextView
+        android:id="@+id/status_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/colorOnPrimary"
+        android:padding="@dimen/list_item_padding"
+        android:textStyle="bold"
+        android:textSize="@dimen/standard_text_size"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+    
 </androidx.constraintlayout.widget.ConstraintLayout>

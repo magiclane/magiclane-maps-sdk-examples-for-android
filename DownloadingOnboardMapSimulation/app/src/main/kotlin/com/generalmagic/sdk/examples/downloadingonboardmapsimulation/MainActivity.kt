@@ -16,20 +16,31 @@ package com.generalmagic.sdk.examples.downloadingonboardmapsimulation
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.isVisible
 import com.generalmagic.sdk.content.ContentStore
+import com.generalmagic.sdk.content.ContentStoreItem
+import com.generalmagic.sdk.content.EContentStoreItemStatus
 import com.generalmagic.sdk.content.EContentType
-import com.generalmagic.sdk.core.*
+import com.generalmagic.sdk.core.EUnitSystem
+import com.generalmagic.sdk.core.GemError
+import com.generalmagic.sdk.core.GemSdk
+import com.generalmagic.sdk.core.GemSurfaceView
+import com.generalmagic.sdk.core.MapDetails
+import com.generalmagic.sdk.core.ProgressListener
+import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.core.Time
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationInstruction
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
@@ -38,6 +49,7 @@ import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
 
@@ -66,6 +78,20 @@ class MainActivity : AppCompatActivity()
     private lateinit var rtt: TextView
 
     private lateinit var rtd: TextView
+    
+    private lateinit var mapContainer: ConstraintLayout
+    
+    private lateinit var flagIcon: ImageView
+    
+    private lateinit var countryName: TextView
+    
+    private lateinit var mapDescription: TextView
+    
+    private lateinit var downloadProgressBar: ProgressBar
+    
+    private lateinit var downloadedIcon: ImageView
+    
+    private lateinit var statusText: TextView
 
     private val mapName = "Luxembourg"
 
@@ -108,6 +134,8 @@ class MainActivity : AppCompatActivity()
 
             topPanel.visibility = View.VISIBLE
             bottomPanel.visibility = View.VISIBLE
+            
+            showStatusMessage("Simulation started.")
         },
         onNavigationInstructionUpdated = { instr ->
             var instrText = ""
@@ -139,6 +167,8 @@ class MainActivity : AppCompatActivity()
             eta.text = etaText
             rtt.text = rttText
             rtd.text = rtdText
+
+            showStatusMessage("Navigation instruction updated.")
         }
     )
 
@@ -146,9 +176,11 @@ class MainActivity : AppCompatActivity()
     private val routingProgressListener = ProgressListener.create(
         onStarted = {
             progressBar.visibility = View.VISIBLE
+            showStatusMessage("Routing process started.")
         },
         onCompleted = { _, _ ->
             progressBar.visibility = View.GONE
+            showStatusMessage("Routing process completed.")
         },
         postOnMain = true
     )
@@ -156,9 +188,11 @@ class MainActivity : AppCompatActivity()
     private val contentListener = ProgressListener.create(
         onStarted = {
             progressBar.visibility = View.VISIBLE
+            showStatusMessage("Started content store service.")
         },
         onCompleted = { errorCode, _ ->
             progressBar.visibility = View.GONE
+            showStatusMessage("Content store service completed with error code: $errorCode")
 
             when (errorCode)
             {
@@ -179,19 +213,24 @@ class MainActivity : AppCompatActivity()
                             if (!map.isCompleted())
                             {
                                 // Define a listener to the progress of the map download action.
-                                val downloadProgressListener = ProgressListener.create(onStarted = {
-                                                                                           progressBar.visibility = View.VISIBLE
-                                                                                           showToast("Started downloading $mapName.")
-                                                                                       },
-                                                                                       onCompleted = { errorCode, _ ->
-                                                                                           progressBar.visibility = View.GONE
-
-                                                                                           if (errorCode == GemError.NoError)
-                                                                                           {
-                                                                                               showToast("$mapName was downloaded.")
-                                                                                               onOnboardMapReady()
-                                                                                           }
-                                                                                       })
+                                val downloadProgressListener = ProgressListener.create(
+                                    onStarted = {
+                                        onDownloadStarted(map)
+                                        showStatusMessage("Started downloading $mapName.") 
+                                    },
+                                    onStatusChanged = { status ->
+                                        onStatusChanged(status)
+                                    },
+                                    onProgress = { progress ->
+                                        onProgressUpdated(progress)
+                                    },
+                                    onCompleted = { errorCode, _ ->
+                                        if (errorCode == GemError.NoError)
+                                        {
+                                            showStatusMessage("$mapName was downloaded.")
+                                            onOnboardMapReady()
+                                        }
+                                    })
 
                                 // Start downloading the first map item.
                                 map.asyncDownload(downloadProgressListener, GemSdk.EDataSavePolicy.UseDefault, true)
@@ -207,7 +246,7 @@ class MainActivity : AppCompatActivity()
                 else ->
                 {
                     // There was a problem at retrieving the content store items.
-                    showToast("Content store service error: ${GemError.getMessage(errorCode)}")
+                    showDialog("Content store service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }
@@ -233,7 +272,15 @@ class MainActivity : AppCompatActivity()
         eta = findViewById(R.id.eta)
         rtt = findViewById(R.id.rtt)
         rtd = findViewById(R.id.rtd)
-
+        
+        mapContainer = findViewById(R.id.map_container)
+        flagIcon = findViewById(R.id.flag_icon)
+        countryName = findViewById(R.id.country_name)
+        mapDescription = findViewById(R.id.map_description)
+        downloadProgressBar = findViewById(R.id.download_progress_bar)
+        downloadedIcon = findViewById(R.id.downloaded_icon)
+        
+        statusText = findViewById(R.id.status_text)
 
         val loadMaps = {
             mapsCatalogRequested = true
@@ -253,7 +300,7 @@ class MainActivity : AppCompatActivity()
             }
             else // if token is not present try to avoid content server requests limitation by delaying the voices catalog request
             {
-                progressBar?.visibility = View.VISIBLE
+                progressBar.visibility = View.VISIBLE
 
                 Handler(Looper.getMainLooper()).postDelayed({
                     loadMapsCatalog()
@@ -288,7 +335,7 @@ class MainActivity : AppCompatActivity()
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/ sing in and generate one.
              */
-            showToast("TOKEN REJECTED")
+            showDialog("TOKEN REJECTED")
         }
 
         gemSurfaceView.onSdkInitSucceeded = onSdkInitSucceeded@{
@@ -313,7 +360,7 @@ class MainActivity : AppCompatActivity()
 
         if (!requiredMapHasBeenDownloaded && !Util.isInternetConnected(this))
         {
-            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
+            showDialog("You must be connected to internet!")
         }
     }
 
@@ -336,10 +383,59 @@ class MainActivity : AppCompatActivity()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
+    
+    private fun onDownloadStarted(map: ContentStoreItem)
+    {
+        mapContainer.visibility = View.VISIBLE
+        
+        var flagBitmap: Bitmap? = null 
+        SdkCall.execute {
+            map.countryCodes?.let { codes ->
+                val size = resources.getDimension(R.dimen.icon_size).toInt()
+                flagBitmap = MapDetails().getCountryFlag(codes[0])?.asBitmap(size, size)
+            }
+        }
+        flagIcon.setImageBitmap(flagBitmap)
+        
+        countryName.text = SdkCall.execute { map.name }
+        mapDescription.text = SdkCall.execute { GemUtil.formatSizeAsText(map.totalSize) }
+    }
+    
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
+    private fun onStatusChanged(status: Int)
+    {
+        when (EContentStoreItemStatus.values()[status])
+        {
+            EContentStoreItemStatus.Completed ->
+            {
+                downloadedIcon.visibility = View.VISIBLE
+                downloadProgressBar.visibility = View.INVISIBLE
+            }
+            
+            EContentStoreItemStatus.DownloadRunning ->
+            {
+                downloadedIcon.visibility = View.GONE
+                downloadProgressBar.visibility = View.VISIBLE
+            }
+            
+            else -> return
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
+    private fun onProgressUpdated(progress: Int)
+    {
+        downloadProgressBar.progress = progress
+    }
+    
+    // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun onOnboardMapReady()
     {
         startSimulation()
+        mapContainer.visibility = View.GONE
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -356,11 +452,35 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun showToast(text: String)
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
     {
-        Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
     }
+    
+    // ---------------------------------------------------------------------------------------------------------------------------
 
+    private fun showStatusMessage(text: String)
+    {
+        if (!statusText.isVisible)
+        {
+            statusText.visibility = View.VISIBLE
+        }
+        statusText.text = text
+    }
+    
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun NavigationInstruction.getDistanceInMeters(): String

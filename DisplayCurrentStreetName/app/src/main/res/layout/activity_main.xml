@@ -19,7 +19,7 @@
         android:src="@drawable/ic_baseline_gps_fixed_24"
         android:visibility="gone"
         app:backgroundTint="@color/purple_500"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/current_street_name"
         app:layout_constraintEnd_toEndOf="parent"
         app:tint="@color/white"
         tools:ignore="ContentDescription" />
@@ -28,11 +28,11 @@
         android:id="@+id/current_street_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/black"
-        android:textColor="#bd0000"
-        android:textSize="20dp"
+        android:background="@color/colorOnPrimary"
+        android:textSize="@dimen/text_size"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/followCursor"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

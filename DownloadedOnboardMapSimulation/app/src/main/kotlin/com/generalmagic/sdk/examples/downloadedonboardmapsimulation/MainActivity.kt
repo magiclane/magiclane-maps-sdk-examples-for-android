@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,39 +10,51 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 @file:Suppress("SameParameterValue")
+
+// -------------------------------------------------------------------------------------------------------------------------------
 
 package com.generalmagic.sdk.examples.downloadedonboardmapsimulation
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.isVisible
 import com.generalmagic.sdk.core.EUnitSystem
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.ProgressListener
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.Time
-import com.generalmagic.sdk.examples.downloadedonboardmapsimulation.R
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationInstruction
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
 import com.generalmagic.sdk.routesandnavigation.Route
-import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.GemUtil
+import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
 
+// -------------------------------------------------------------------------------------------------------------------------------
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity()
+{
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var followCursorButton: FloatingActionButton
@@ -49,6 +63,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navInstruction: TextView
     private lateinit var navInstructionDistance: TextView
     private lateinit var navInstructionIcon: ImageView
+    private lateinit var statusText: TextView
 
     private lateinit var bottomPanel: ConstraintLayout
     private lateinit var eta: TextView
@@ -81,6 +96,8 @@ class MainActivity : AppCompatActivity() {
 
             topPanel.visibility = View.VISIBLE
             bottomPanel.visibility = View.VISIBLE
+
+            showStatusMessage("Simulation started.")
         },
         onNavigationInstructionUpdated = { instr ->
             var instrText = ""
@@ -113,6 +130,11 @@ class MainActivity : AppCompatActivity() {
             eta.text = etaText
             rtt.text = rttText
             rtd.text = rtdText
+
+            if (statusText.isVisible)
+            {
+                statusText.visibility = View.GONE
+            }
         }
     )
 
@@ -120,18 +142,19 @@ class MainActivity : AppCompatActivity() {
     private val routingProgressListener = ProgressListener.create(
         onStarted = {
             progressBar.visibility = View.VISIBLE
+            showStatusMessage("Routing process started.")
         },
-
         onCompleted = { _, _ ->
             progressBar.visibility = View.GONE
+            showStatusMessage("Routing process completed.")
         },
-
         postOnMain = true
     )
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -143,6 +166,7 @@ class MainActivity : AppCompatActivity() {
         navInstruction = findViewById(R.id.nav_instruction)
         navInstructionDistance = findViewById(R.id.instr_distance)
         navInstructionIcon = findViewById(R.id.nav_icon)
+        statusText = findViewById(R.id.status_text)
 
         bottomPanel = findViewById(R.id.bottom_panel)
         eta = findViewById(R.id.eta)
@@ -156,7 +180,7 @@ class MainActivity : AppCompatActivity() {
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/ sing in and generate one.
              */
-            Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
+            showDialog("TOKEN REJECTED")
         }
 
         gemSurfaceView.onSdkInitSucceeded = {
@@ -166,25 +190,59 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed() 
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun enableGPSButton() {
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun showStatusMessage(text: String)
+    {
+        if (!statusText.isVisible)
+        {
+            statusText.visibility = View.VISIBLE
+        }
+        statusText.text = text
+    }
+    
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun enableGPSButton() 
+    {
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
@@ -202,9 +260,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun NavigationInstruction.getDistanceInMeters(): String {
+    private fun NavigationInstruction.getDistanceInMeters(): String 
+    {
         return GemUtil.getDistText(
             this.timeDistanceToNextTurn?.totalDistance ?: 0, EUnitSystem.Metric
         ).let { pair ->
@@ -212,9 +271,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun Route.getEta(): String {
+    private fun Route.getEta(): String 
+    {
         val etaNumber = this.getTimeDistance(true)?.totalTime ?: 0
 
         val time = Time()
@@ -223,9 +283,10 @@ class MainActivity : AppCompatActivity() {
         return String.format("%d:%02d", time.hour, time.minute)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun Route.getRtt(): String {
+    private fun Route.getRtt(): String 
+    {
         return GemUtil.getTimeText(
             this.getTimeDistance(true)?.totalTime ?: 0
         ).let { pair ->
@@ -233,9 +294,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun Route.getRtd(): String {
+    private fun Route.getRtd(): String 
+    {
         return GemUtil.getDistText(
             this.getTimeDistance(true)?.totalDistance ?: 0, EUnitSystem.Metric
         ).let { pair ->
@@ -243,7 +305,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun startSimulation() = SdkCall.execute {
         val waypoints = arrayListOf(
@@ -258,5 +320,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------------------------------------

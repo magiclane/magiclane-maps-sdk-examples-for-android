@@ -86,7 +86,7 @@
         android:background="@color/white"
         android:elevation="5dp"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/status_text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
@@ -145,5 +145,109 @@
         app:layout_constraintBottom_toTopOf="@id/bottom_panel"
         app:layout_constraintEnd_toEndOf="parent"
         tools:ignore="ContentDescription" />
+    
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/map_container"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/item_height"
+        android:visibility="gone"
+        android:background="@color/colorOnPrimary"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/status_text">
+
+        <ImageView
+            android:id="@+id/flag_icon"
+            android:layout_width="@dimen/icon_size"
+            android:layout_height="@dimen/icon_size"
+            android:layout_marginStart="@dimen/list_item_padding"
+            android:layout_marginTop="@dimen/list_item_padding"
+            android:layout_marginBottom="@dimen/list_item_padding"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:ignore="ContentDescription" />
+
+        <TextView
+            android:id="@+id/country_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/standard_text_size"
+            android:textDirection="locale"
+            android:layout_marginStart="@dimen/list_item_padding"
+            android:layout_marginLeft="@dimen/list_item_padding"
+            android:layout_marginEnd="@dimen/list_item_padding"
+            android:layout_marginRight="@dimen/list_item_padding"
+            android:layout_marginTop="@dimen/list_item_padding"
+            app:layout_goneMarginEnd="@dimen/progress_bar_size"
+            app:layout_constraintStart_toEndOf="@id/flag_icon"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/download_progress_bar"
+            app:layout_constraintBottom_toTopOf="@id/map_description"
+            app:layout_constraintVertical_bias="0.4"
+            app:layout_constraintVertical_chainStyle="packed" />
+
+        <TextView
+            android:id="@+id/map_description"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/small_text_size"
+            android:textDirection="locale"
+            android:layout_marginStart="@dimen/list_item_padding"
+            android:layout_marginLeft="@dimen/list_item_padding"
+            android:layout_marginEnd="@dimen/list_item_padding"
+            android:layout_marginRight="@dimen/list_item_padding"
+            android:layout_marginBottom="@dimen/list_item_padding"
+            app:layout_goneMarginEnd="@dimen/progress_bar_size"
+            android:gravity="start|center_vertical"
+            app:layout_constraintStart_toEndOf="@id/flag_icon"
+            app:layout_constraintTop_toBottomOf="@id/country_name"
+            app:layout_constraintEnd_toStartOf="@id/download_progress_bar"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <ProgressBar
+            android:id="@+id/download_progress_bar"
+            android:layout_width="@dimen/progress_bar_size"
+            android:layout_height="@dimen/progress_bar_size"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:progressDrawable="@drawable/circular_progress_bar"
+            android:background="@drawable/circle_shape"
+            android:indeterminate="false"
+            android:layout_margin="@dimen/list_item_padding"
+            android:visibility="invisible"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <ImageView
+            android:id="@+id/downloaded_icon"
+            android:layout_width="@dimen/icon_size"
+            android:layout_height="@dimen/icon_size"
+            android:layout_margin="@dimen/list_item_padding"
+            android:src="@drawable/ic_baseline_phone_android"
+            app:layout_goneMarginEnd="@dimen/icon_gone_margin_end"
+            app:layout_goneMarginTop="@dimen/icon_gone_margin"
+            app:layout_goneMarginBottom="@dimen/icon_gone_margin"
+            app:layout_constraintStart_toStartOf="@id/download_progress_bar"
+            app:layout_constraintTop_toTopOf="@id/download_progress_bar"
+            app:layout_constraintEnd_toEndOf="@id/download_progress_bar"
+            app:layout_constraintBottom_toBottomOf="@id/download_progress_bar"
+            android:visibility="gone"
+            tools:ignore="ContentDescription" />
+        
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <TextView
+        android:id="@+id/status_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/colorOnPrimary"
+        android:padding="@dimen/bigPadding"
+        android:textStyle="bold"
+        android:textSize="@dimen/standard_text_size"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

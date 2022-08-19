@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,13 +10,20 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.flytoarea
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.ProgressBar
-import android.widget.Toast
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
@@ -26,53 +35,71 @@ import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------------------------------------------------------------
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity()
+{
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
     private lateinit var progressBar: ProgressBar
     private lateinit var gemSurfaceView: GemSurfaceView
+    private lateinit var statusText: TextView
 
     private val searchService = SearchService(
         onStarted = {
             progressBar.visibility = View.VISIBLE
+            showStatusMessage("Search service has started!")
         },
 
         onCompleted = { results, errorCode, _ ->
             progressBar.visibility = View.GONE
+            showStatusMessage("Search service completed with error code: $errorCode")
 
-            when (errorCode) {
-                GemError.NoError -> {
-                    if (results.isNotEmpty()) {
+            when (errorCode)
+            {
+                GemError.NoError ->
+                {
+                    if (results.isNotEmpty())
+                    {
+                        showStatusMessage("Fly to area started")
                         val landmark = results[0]
                         flyTo(landmark)
-                    } else {
+                        showStatusMessage("Fly to area completed")
+                    }
+                    else
+                    {
                         // The search completed without errors, but there were no results found.
-                        showToast("No results!")
+                        showStatusMessage("The search completed without errors, but there were no results found.")
                     }
                 }
 
-                GemError.Cancel -> {
+                GemError.Cancel ->
+                {
                     // The search action was cancelled.
                 }
 
-                else -> {
+                else ->
+                {
                     // There was a problem at computing the search operation.
-                    showToast("Search service error: ${GemError.getMessage(errorCode)}")
+                    showDialog("Search service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }
     )
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         progressBar = findViewById(R.id.progressBar)
         gemSurfaceView = findViewById(R.id.gem_surface)
+        statusText = findViewById(R.id.status_text)
 
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
@@ -92,31 +119,34 @@ class MainActivity : AppCompatActivity() {
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/ sing in and generate one. 
              */
-            showToast("TOKEN REJECTED")
+            showDialog("TOKEN REJECTED")
         }
 
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
+        if (!Util.isInternetConnected(this))
+        {
+            showDialog("You must be connected to internet!")
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun flyTo(landmark: Landmark) = SdkCall.execute {
         landmark.geographicArea?.let { area ->
@@ -133,11 +163,38 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun showToast(text: String) = Util.postOnMain {
-        Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show()
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun showStatusMessage(text: String)
+    {
+        if (!statusText.isVisible)
+        {
+            statusText.visibility = View.VISIBLE
+        }
+        statusText.text = text
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------------------------------------

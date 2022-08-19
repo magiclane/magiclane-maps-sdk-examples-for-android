@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="text_size">20sp</dimen>
+    <dimen name="list_item_padding">10dp</dimen>
+    <dimen name="standard_text_size">16sp</dimen>
+</resources>

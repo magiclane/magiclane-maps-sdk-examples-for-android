@@ -16,6 +16,7 @@ package com.generalmagic.sdk.examples.rangefinder
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
@@ -23,6 +24,7 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Button
 import android.widget.EditText
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
@@ -31,7 +33,6 @@ import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -48,6 +49,7 @@ import com.generalmagic.sdk.routesandnavigation.ElectricBikeProfile
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -60,6 +62,8 @@ class MainActivity: AppCompatActivity()
     private lateinit var progressBar: ProgressBar
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var transportModeSpinner: Spinner
+    private lateinit var bikeTypeText: TextView
+    private lateinit var bikeTypeSpinner: Spinner
     private lateinit var rangeTypeSpinner: Spinner
     private lateinit var bikeWeightEditText: EditText
     private lateinit var bikeWeightTextView: TextView
@@ -75,8 +79,6 @@ class MainActivity: AppCompatActivity()
     private var currentRangeType: ERouteType? = null
     
     private val currentSelectedRanges = ArrayList<Int>()
-    
-    private var transportTypesList = mutableListOf<String>()
 
     private val routingService = RoutingService(
         onStarted = {
@@ -105,9 +107,7 @@ class MainActivity: AppCompatActivity()
                 { // There was a problem at computing the routing operation.
                     currentSelectedRanges.removeAt(currentSelectedRanges.size - 1)
                     
-                    Toast.makeText(
-                        this@MainActivity, "Routing service error: ${GemError.getMessage(errorCode)}", Toast.LENGTH_SHORT
-                    ).show()
+                    showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }
@@ -124,6 +124,8 @@ class MainActivity: AppCompatActivity()
         progressBar = findViewById(R.id.progressBar)
         gemSurfaceView = findViewById(R.id.gem_surface)
         transportModeSpinner = findViewById(R.id.transport_mode_spinner)
+        bikeTypeText = findViewById(R.id.bike_type_text)
+        bikeTypeSpinner = findViewById(R.id.bike_type_spinner)
         rangeTypeSpinner = findViewById(R.id.range_type_spinner)
         bikeWeightEditText = findViewById(R.id.bike_weight_edit_text)
         bikeWeightTextView = findViewById(R.id.bike_weight_text)
@@ -153,12 +155,12 @@ class MainActivity: AppCompatActivity()
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/ sing in and generate one. 
              */
-            Toast.makeText(this, "TOKEN REJECTED", Toast.LENGTH_LONG).show()
+            showDialog("TOKEN REJECTED")
         }
 
         if (!Util.isInternetConnected(this))
         {
-            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
+            showDialog("You must be connected to internet!")
         }
     }
 
@@ -190,6 +192,26 @@ class MainActivity: AppCompatActivity()
         exitProcess(0)
     }
 
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun calculateRange(transportMode: ERouteTransportMode,
@@ -303,7 +325,7 @@ class MainActivity: AppCompatActivity()
 
     private fun prepareViews()
     {
-        transportTypesList = mutableListOf(getString(R.string.car), getString(R.string.lorry), getString(R.string.pedestrian), getString(R.string.bicycle))
+        val transportTypesList = mutableListOf(getString(R.string.car), getString(R.string.lorry), getString(R.string.pedestrian), getString(R.string.bicycle))
         val adapter = ArrayAdapter(this, R.layout.spinner_item, R.id.spinner_text, transportTypesList)
         transportModeSpinner.adapter = adapter
         transportModeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener
@@ -317,6 +339,23 @@ class MainActivity: AppCompatActivity()
         }
         transportModeSpinner.setSelection(0)
         
+        val bikeTypeList = mutableListOf(getString(R.string.road), getString(R.string.cross), getString(R.string.city), getString(R.string.mountain))
+        bikeTypeSpinner.adapter = ArrayAdapter(this, R.layout.spinner_item, R.id.spinner_text, bikeTypeList)
+        bikeTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener
+        {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long)
+            {
+                if (currentSelectedRanges.isNotEmpty())
+                {
+                    currentSelectedRanges.clear()
+                    renderSelectedRanges()
+                    SdkCall.execute { gemSurfaceView.mapView?.hideRoutes() }
+                }
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+        }
+        
         addButton.setOnClickListener { 
             if (rangeValueEditText.text.isNotEmpty())
             {
@@ -327,7 +366,7 @@ class MainActivity: AppCompatActivity()
             }
             else
             {
-                Toast.makeText(this, "Range value is empty!", Toast.LENGTH_LONG).show()
+                showDialog("Range value is empty!")
             }
         }
     }
@@ -336,33 +375,25 @@ class MainActivity: AppCompatActivity()
 
     private fun onTransportModeSelected(transportMode: Int)
     {
-        var rangeTypesList = mutableListOf<String>()
-        
-        when (transportMode)
+        currentTransportMode = ERouteTransportMode.values()[transportMode]
+        val rangeTypesList: MutableList<String> = when (transportMode)
         {
-            ERouteTransportMode.Car.value ->
-            {
-                rangeTypesList = mutableListOf(getString(R.string.fastest), getString(R.string.shortest))
-                currentTransportMode = ERouteTransportMode.Car
-            }
-            
-            ERouteTransportMode.Lorry.value ->
-            {
-                rangeTypesList = mutableListOf(getString(R.string.fastest), getString(R.string.shortest))
-                currentTransportMode = ERouteTransportMode.Lorry
-            }
-            
-            ERouteTransportMode.Pedestrian.value ->
-            {
-                rangeTypesList = mutableListOf(getString(R.string.fastest))
-                currentTransportMode = ERouteTransportMode.Pedestrian
-            }
-            
-            ERouteTransportMode.Bicycle.value ->
-            {
-                rangeTypesList = mutableListOf(getString(R.string.fastest), getString(R.string.shortest), getString(R.string.economic))
-                currentTransportMode = ERouteTransportMode.Bicycle
-            }
+            ERouteTransportMode.Car.value -> mutableListOf(getString(R.string.fastest), getString(R.string.shortest))
+            ERouteTransportMode.Lorry.value -> mutableListOf(getString(R.string.fastest), getString(R.string.shortest))
+            ERouteTransportMode.Pedestrian.value -> mutableListOf(getString(R.string.fastest))
+            ERouteTransportMode.Bicycle.value -> mutableListOf(getString(R.string.fastest), getString(R.string.shortest), getString(R.string.economic))
+            else -> mutableListOf()
+        }
+        
+        if (transportMode == ERouteTransportMode.Bicycle.value)
+        {
+            bikeTypeText.visibility = View.VISIBLE 
+            bikeTypeSpinner.visibility = View.VISIBLE 
+        }
+        else
+        {
+            bikeTypeText.visibility = View.GONE
+            bikeTypeSpinner.visibility = View.GONE
         }
         
         val adapter = ArrayAdapter(this, R.layout.spinner_item, R.id.spinner_text, rangeTypesList)
@@ -382,10 +413,7 @@ class MainActivity: AppCompatActivity()
         {
             currentSelectedRanges.clear()
             renderSelectedRanges()
-            SdkCall.execute {
-                calculateRanges()
-                gemSurfaceView.mapView?.hideRoutes() 
-            }
+            SdkCall.execute { gemSurfaceView.mapView?.hideRoutes() }
         }
     }
     
@@ -440,10 +468,7 @@ class MainActivity: AppCompatActivity()
         {
             currentSelectedRanges.clear()
             renderSelectedRanges()
-            SdkCall.execute {
-                calculateRanges()    
-                gemSurfaceView.mapView?.hideRoutes() 
-            }
+            SdkCall.execute { gemSurfaceView.mapView?.hideRoutes() }
         }
     }
     
@@ -506,33 +531,44 @@ class MainActivity: AppCompatActivity()
 
     private fun calculateRanges()
     {
-        if (currentRangeType == ERouteType.Economic)
-        {
-            currentTransportMode?.let { transportMode ->
-                currentRangeType?.let { rangeType ->
-                    val bikeWeight = bikeWeightEditText.toString().toIntOrNull() ?: 0
-                    val bikerWeight = bikerWeightEditText.toString().toIntOrNull() ?: 0
-                    calculateRange (
-                        transportMode,
-                        rangeType,
-                        currentSelectedRanges,
-                        EBikeProfile.Road, ElectricBikeProfile (
-                            EEBikeType.Pedelec,
-                            bikeWeight.toFloat(),
-                            bikerWeight.toFloat(),
-                            2f,
-                            4f
+        
+        currentTransportMode?.let { transportMode ->
+            if (transportMode == ERouteTransportMode.Bicycle)
+            {
+                val bikeType = EBikeProfile.values()[bikeTypeSpinner.selectedItemPosition]
+                currentRangeType?.let { rangeType -> 
+                    if (rangeType == ERouteType.Economic)
+                    {
+                        val bikeWeight = bikeWeightEditText.toString().toIntOrNull() ?: 0
+                        val bikerWeight = bikerWeightEditText.toString().toIntOrNull() ?: 0
+                        calculateRange (
+                            transportMode,
+                            rangeType,
+                            currentSelectedRanges,
+                            bikeType,
+                            ElectricBikeProfile (
+                                EEBikeType.Pedelec,
+                                bikeWeight.toFloat(),
+                                bikerWeight.toFloat(),
+                                2f,
+                                4f
+                            )
                         )
-                    )
+                    }
+                    else
+                    {
+                        calculateRange (
+                            transportMode,
+                            rangeType,
+                            currentSelectedRanges,
+                            bikeType
+                        )
+                    }
                 }
             }
-        }
-        else
-        {
-            currentTransportMode?.let { transportMode ->
-                currentRangeType?.let { rangeType ->
-                    calculateRange(transportMode, rangeType, currentSelectedRanges)
-                }
+            else
+            {
+                currentRangeType?.let { rangeType -> calculateRange(transportMode, rangeType, currentSelectedRanges) }
             }
         }
     }

@@ -17,18 +17,30 @@ package com.generalmagic.sdk.examples.socialreport
 // -------------------------------------------------------------------------------------------------------------------------------
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.widget.Toast
+import android.view.View
+import android.widget.Button
+import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.generalmagic.sdk.core.*
+import androidx.core.view.isVisible
+import com.generalmagic.sdk.core.GemError
+import com.generalmagic.sdk.core.GemSdk
+import com.generalmagic.sdk.core.GemSurfaceView
+import com.generalmagic.sdk.core.MapDetails
+import com.generalmagic.sdk.core.ProgressListener
+import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.core.SocialOverlay
 import com.generalmagic.sdk.sensordatasource.PositionListener
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.sensordatasource.enums.EDataType
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -38,6 +50,10 @@ class MainActivity : AppCompatActivity()
     // ---------------------------------------------------------------------------------------------------------------------------
     
     private lateinit var gemSurfaceView: GemSurfaceView
+    
+    private lateinit var statusText: TextView
+    
+    private lateinit var statusProgressBar: ProgressBar
 
     private val socialReportListener = ProgressListener.create()
 
@@ -51,8 +67,11 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        
 
         gemSurfaceView = findViewById(R.id.gem_surface)
+        statusText = findViewById(R.id.status_text)
+        statusProgressBar = findViewById(R.id.status_progress_bar)
 
         SdkSettings.onMapDataReady = { isReady ->
             if (isReady)
@@ -73,14 +92,14 @@ class MainActivity : AppCompatActivity()
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/ sing in and generate one. 
              */
-            Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
+            showDialog("TOKEN REJECTED")
         }
 
         requestPermissions(this)
 
         if (!Util.isInternetConnected(this))
         {
-            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
+            showDialog("You must be connected to internet!")
         }
     }
 
@@ -104,6 +123,46 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
+    private fun showStatusMessage(text: String, withProgress: Boolean = false)
+    {
+        if (!statusText.isVisible)
+        {
+            statusText.visibility = View.VISIBLE
+        }
+        statusText.text = text
+
+        if (withProgress)
+        {
+            statusProgressBar.visibility = View.VISIBLE
+        }
+        else
+        {
+            statusProgressBar.visibility = View.GONE
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------------------------------------
+
     private fun submitReport() = SdkCall.execute {
         val overlayInfo = SocialOverlay.reportsOverlayInfo ?: return@execute
         val countryISOCode = MapDetails().isoCodeForCurrentPosition ?: return@execute
@@ -119,20 +178,21 @@ class MainActivity : AppCompatActivity()
         if (prepareIdOrError <= 0)
         {
             val errorMsg = "Prepare error: ${GemError.getMessage(prepareIdOrError)}"
-            Toast.makeText(this@MainActivity, errorMsg, Toast.LENGTH_SHORT).show()
+            Util.postOnMain { showDialog(errorMsg) }
 
             return@execute
         }
 
         val error = SocialOverlay.report(prepareIdOrError, subCategory.uid, socialReportListener)
 
-        var errorMsg = "Report Sent!"
         if (GemError.isError(error))
         {
-            errorMsg = "Report Error: ${GemError.getMessage(error)}"
+            Util.postOnMain { showDialog("Report Error: ${GemError.getMessage(error)}") }
         }
-
-        Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
+        else
+        {
+            Util.postOnMain { showStatusMessage("Report Sent!") }
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -142,7 +202,7 @@ class MainActivity : AppCompatActivity()
         positionListener = PositionListener {
             if (it.isValid())
             {
-                Toast.makeText(this@MainActivity, "On valid position", Toast.LENGTH_SHORT).show()
+                Util.postOnMain { showStatusMessage("On valid position") }
                 onEvent()
 
                 PositionService().removeListener(positionListener)
@@ -152,7 +212,7 @@ class MainActivity : AppCompatActivity()
         PositionService().addListener(positionListener, EDataType.ImprovedPosition)
 
         // listen for first valid position to start the nav
-        Toast.makeText(this, "Waiting for valid position", Toast.LENGTH_SHORT).show()
+        Util.postOnMain { showStatusMessage("Waiting for valid position", true) }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------

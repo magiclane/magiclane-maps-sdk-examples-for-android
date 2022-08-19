@@ -15,6 +15,7 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Downloading Onboard Map](DownloadingOnboardMap) - Gather the list of available maps; Download an onboard map.
 * [Downloading Onboard Map Simulation](DownloadingOnboardMapSimulation) - Gather the list of available maps; Download an onboard map. Starts a simulation.
 * [Draw Polyline](DrawPolyline) - Create a polyline and its display settings; fly to the polyline.
+* [External Position Source Navigation](ExternalPositionSourceNavigation) - Navigate to a given landmark using an external data source (GPS positions are not coming from system. They are hardcoded in the app and they are provided to the SDK via an "ExternalDataSource" object)
 * [Favourites](Favourites) - Fly to a location and use UI to add or remove that landmark to/ from the favourites folder.
 * [Fly to Area](FlyToArea) - Search for a landmark; fly to resulted landmark, if exists.
 * [Fly To Coordinates](FlyToCoordinates) - Fly to given coodinates.

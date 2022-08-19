@@ -86,7 +86,7 @@
         android:background="@color/white"
         android:elevation="5dp"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/status_text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
@@ -145,5 +145,18 @@
         app:layout_constraintBottom_toTopOf="@id/bottom_panel"
         app:layout_constraintEnd_toEndOf="parent"
         tools:ignore="ContentDescription" />
+
+    <TextView
+        android:id="@+id/status_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/colorOnPrimary"
+        android:padding="10dp"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

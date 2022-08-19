@@ -5,6 +5,11 @@
     <string name="lorry">Lorry</string>
     <string name="bicycle">Bicycle</string>
     <string name="pedestrian">Pedestrian</string>
+    <string name="bike_type">Bike type</string>
+    <string name="city">City</string>
+    <string name="road">Road</string>
+    <string name="cross">Cross</string>
+    <string name="mountain">Mountain</string>
     <string name="range_type">Range type</string>
     <string name="range_value">Range value</string>
     <string name="fastest">Fastest</string>
@@ -17,4 +22,6 @@
     <string name="watts_per_hour">Watts per hour</string>
     <string name="bike_weight">Bike weight</string>
     <string name="biker_weight">Biker weight</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
 </resources>

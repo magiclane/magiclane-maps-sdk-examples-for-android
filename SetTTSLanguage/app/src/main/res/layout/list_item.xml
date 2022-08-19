@@ -36,7 +36,7 @@
         android:layout_marginEnd="@dimen/listItemPadding"
         android:paddingTop="@dimen/listItemPadding"
         android:textColor="@android:color/black"
-        android:textSize="@dimen/standardTextSize"
+        android:textSize="@dimen/standard_text_size"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@id/text"
         app:layout_constraintEnd_toEndOf="parent"

@@ -16,6 +16,7 @@ package com.generalmagic.sdk.examples.setttslanguage
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -26,7 +27,6 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -41,14 +41,16 @@ import com.generalmagic.sdk.util.EStringIds
 import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
-import com.generalmagic.sdk.util.Util.postOnMain
 import com.generalmagic.sound.SoundUtils
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
 class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationListener
 {
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
     private lateinit var progressBar: ProgressBar
     private lateinit var selectedLanguageTextView: TextView
     private lateinit var languageContainer: LinearLayout
@@ -99,7 +101,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/ sing in and generate one. 
              */
-            showToast("TOKEN REJECTED")
+            showDialog("TOKEN REJECTED")
         }
 
         // This step of initialization is mandatory if you want to use the SDK without a map.
@@ -108,10 +110,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             // The SDK initialization was not completed.
             finish()
         }
-
+        
         if (!Util.isInternetConnected(this))
         {
-            showToast("You must be connected to internet!")
+            showDialog("You must be connected to internet!")
         }
     }
 
@@ -137,8 +139,22 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun showToast(text: String) = postOnMain {
-        Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show()
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
