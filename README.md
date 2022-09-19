@@ -48,9 +48,11 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Routing on Map Java](RoutingOnMapJava) - Calculate the routes between 2 given landmarks; display and fly to the first resulted route, if exists.
 * [Search](Search) - Searches for landmarks based on user input; display a list with landmarks found.
 * [Search Along Route](SearchAlongRoute) - Start simulation between 2 landmarks. Search for gas stations along the route if the search button is pressed.
+* [Send Debug Info](SendDebugInfo) - This example app shows how to send the app log and latest crash report, if any, to General Magic support.
 * [Set TTS Language](SetTTSLanguage) - Shows usage of `SoundPlayingService` class and setting TTS language.
 * [Social Report](SocialReport) - Waits for a valid position. Submit a social report.
 * [Speed Watcher](SpeedWatcher) - Start simulation between 2 given landmarks. Display the current speed and the legal speed limit.
+* [Speed TTS Warning](SpeedTTSWarning) - Starts a navigation from the current position to a given landmark. Displays the current speed and the legal speed limit. Sends a TTS warning each time the current speed overcomes the legal speed limit.
 * [Voice Downloading](VoiceDownloading) - Gather the list of available voices; download first available voice.
 * [Voice Instructions Route Simulation](VoiceInstrRouteSimulation) - Start simulation between 2 given landmarks if any route can be calculated; use TTS to play navigation instructions.
 * [What's Nearby](WhatsNearby) - Searches all landmarks near current position; display a list of found landmarks.
