@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             /* 
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
-            check the generalmagic.com website, sign up/ sing in and generate one. 
+            check the generalmagic.com website, sign up/sign in and generate one. 
              */
             showDialog("TOKEN REJECTED")
         }
@@ -113,7 +113,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         
         if (!Util.isInternetConnected(this))
         {
-            showDialog("You must be connected to internet!")
+            showDialog("You must be connected to the internet!")
         }
     }
 

@@ -2,8 +2,8 @@
 
 This example app demonstrates the following features:
 - Presents a map.
-- Start simulated navigation between 2 given landmars.
-- Display the current speed and the legal speed limit.
+- Starts a simulated navigation between 2 given landmarks.
+- Displays the current speed and the legal speed limit.
 
 ## Requirements
 

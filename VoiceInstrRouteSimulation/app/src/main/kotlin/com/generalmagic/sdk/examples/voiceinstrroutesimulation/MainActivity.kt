@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,22 +10,23 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.voiceinstrroutesimulation
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.content.ContentStore
 import com.generalmagic.sdk.content.EContentType
-import com.generalmagic.sdk.core.GemSdk
-import com.generalmagic.sdk.core.GemSurfaceView
-import com.generalmagic.sdk.core.ProgressListener
-import com.generalmagic.sdk.core.SdkSettings
-import com.generalmagic.sdk.core.SoundPlayingListener
-import com.generalmagic.sdk.core.SoundPlayingPreferences
-import com.generalmagic.sdk.core.SoundPlayingService
+import com.generalmagic.sdk.core.*
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
@@ -32,13 +35,23 @@ import com.generalmagic.sdk.util.Util
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity() {
+// -------------------------------------------------------------------------------------------------------------------------------
+
+class MainActivity : AppCompatActivity()
+{
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var followCursorButton: FloatingActionButton
     private val soundPreference = SoundPlayingPreferences()
-    private val playingListener = object : SoundPlayingListener() {
-        override fun notifyStart(hasProgress: Boolean) {}
+    private var voiceLoaded = false
+    private val kDefaultToken = "YOUR_TOKEN"
+    private var connected = false
+    private var mapReady = false
+    private val playingListener = object : SoundPlayingListener()
+    {
+        override fun notifyStart(hasProgress: Boolean)
+        {
+        }
     }
 
     // Define a navigation service from which we will start the simulation.
@@ -52,31 +65,25 @@ class MainActivity : AppCompatActivity() {
     We will use just the onNavigationStarted method, but for more available
     methods you should check the documentation.
      */
-    private val navigationListener: NavigationListener = NavigationListener.create(
-        onNavigationStarted = { onNavigationStarted() },
-        onNavigationSound = { sound ->
-            SdkCall.execute {
-                SoundPlayingService.play(sound, playingListener, soundPreference)
-            }
-        },
-        canPlayNavigationSound = true,
-        postOnMain = true
-    )
+    private val navigationListener: NavigationListener = NavigationListener.create(onNavigationStarted = { onNavigationStarted() },
+                                                                                   onNavigationSound = {
+                                                                                                           sound -> SdkCall.execute {
+                                                                                                               SoundPlayingService.play(sound, playingListener, soundPreference)
+                                                                                                           }
+                                                                                                       },
+                                                                                   canPlayNavigationSound = true,
+                                                                                   postOnMain = true)
 
     // Define a listener that will let us know the progress of the routing process.
-    private val routingProgressListener = ProgressListener.create(
-        onStarted = {
-            progressBar.visibility = View.VISIBLE
-        },
+    private val routingProgressListener = ProgressListener.create(onStarted = {
+                                                                     progressBar.visibility = View.VISIBLE
+                                                                  },
+                                                                  onCompleted = { _, _ ->
+                                                                     progressBar.visibility = View.GONE
+                                                                  },
+                                                                  postOnMain = true)
 
-        onCompleted = { _, _ ->
-            progressBar.visibility = View.GONE
-        },
-
-        postOnMain = true
-    )
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun onNavigationStarted() = SdkCall.execute {
         gemSurfaceView.mapView?.let { mapView ->
@@ -90,7 +97,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -98,83 +108,128 @@ class MainActivity : AppCompatActivity() {
         gemSurfaceView = findViewById(R.id.gem_surface)
         followCursorButton = findViewById(R.id.followCursor)
 
-        /// GENERAL MAGIC
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
+        progressBar.visibility = View.VISIBLE
+
+        val loadVoice = {
+            voiceLoaded = true
+
+            val type = EContentType.HumanVoice
+            val countryCode = "DEU"
+            var voiceHasBeenDownloaded = false
+
+            val onVoiceReady = { voiceFilePath: String ->
+                SdkSettings.setVoiceByPath(voiceFilePath)
+                startSimulation()
+            }
 
             SdkCall.execute {
                 contentStore = ContentStore()
 
-                val type = EContentType.HumanVoice
-                val countryCode = "DEU"
-
-                val onVoiceReady = { voiceFilePath: String ->
-                    SdkSettings.setVoiceByPath(voiceFilePath)
-                    startSimulation()
-                }
-
                 // check if already exists locally
                 contentStore?.getLocalContentList(type)?.let { localList ->
-                    for (item in localList) {
-                        if (item.countryCodes?.contains(countryCode) == true) {
+                    for (item in localList)
+                    {
+                        if (item.countryCodes?.contains(countryCode) == true)
+                        {
+                            voiceHasBeenDownloaded = true
                             onVoiceReady(item.filename!!)
                             return@execute // already exists
                         }
                     }
                 }
+            }
 
-                // download the voice
-                contentStore?.asyncGetStoreContentList(type, onCompleted = { result, _, _ ->
+            if (!voiceHasBeenDownloaded)
+            {
+                val downloadVoice = {
                     SdkCall.execute {
-                        for (item in result) {
-                            if (item.countryCodes?.contains(countryCode) == true) {
-                                item.asyncDownload(onCompleted = { _, _ ->
-                                    SdkCall.execute {
-                                        onVoiceReady(item.filename!!)
+                        contentStore?.asyncGetStoreContentList(type, onCompleted = { result, _, _ ->
+                            SdkCall.execute {
+                                for (item in result)
+                                {
+                                    if (item.countryCodes?.contains(countryCode) == true)
+                                    {
+                                        item.asyncDownload(onCompleted = { _, _ ->
+                                            SdkCall.execute {
+                                                onVoiceReady(item.filename!!)
+                                            }
+                                        })
+                                        break
                                     }
-                                })
-                                break
+                                }
                             }
-                        }
+                        })
                     }
-                })
+                }
+
+                val token = GemSdk.getTokenFromManifest(this)
+
+                if (!token.isNullOrEmpty() && (token != kDefaultToken))
+                {
+                    downloadVoice()
+                }
+                else // if token is not present try to avoid content server requests limitation by delaying the voices catalog request
+                {
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        downloadVoice()
+                    }, 3000)
+                }
             }
         }
 
-        SdkSettings.onApiTokenRejected = {
-            /* 
+        SdkSettings.onMapDataReady = { it ->
+            mapReady = it
+            if (connected && mapReady && !voiceLoaded)
+            {
+                loadVoice()
+            }
+        }
+
+        SdkSettings.onConnectionStatusUpdated = { it ->
+            connected = it
+            if (connected && mapReady && !voiceLoaded)
+            {
+                loadVoice()
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {/*
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
-            check the generalmagic.com website, sign up/ sing in and generate one. 
+            check the generalmagic.com website, sign up/sign in and generate one. 
              */
             Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
         }
 
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
+        if (!Util.isInternetConnected(this))
+        {
+            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
     @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun enableGPSButton() {
+    private fun enableGPSButton()
+    {
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
@@ -192,16 +247,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun startSimulation() = SdkCall.execute {
         val waypoints = arrayListOf(
-            Landmark("Start", 51.50338075949678, -0.11946124784612752),
-            Landmark("Destination", 51.500996060519896, -0.12461566914005363)
+            Landmark("Start", 51.50338075949678, -0.11946124784612752), Landmark("Destination", 51.500996060519896, -0.12461566914005363)
         )
 
         navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------------------------------------

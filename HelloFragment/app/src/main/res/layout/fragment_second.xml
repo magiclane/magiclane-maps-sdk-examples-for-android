@@ -6,22 +6,14 @@
     android:layout_height="match_parent"
     tools:context="com.generalmagic.sdk.examples.hellofragment.SecondFragment">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/container"
+    <com.generalmagic.sdk.core.GemSurfaceView
+        android:id="@+id/gem_surface"
         android:layout_width="match_parent"
-        android:layout_height="900px"
+        android:layout_height="@dimen/surface_height"
         app:layout_constraintBottom_toTopOf="@id/button_second"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <com.generalmagic.sdk.core.GemSurfaceView
-            android:id="@+id/gem_surface"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/button_second"

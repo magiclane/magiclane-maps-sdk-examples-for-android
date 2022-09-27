@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,7 +10,11 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.multiplesurfacesinfragment
+
+// -------------------------------------------------------------------------------------------------------------------------------
 
 import android.content.Context
 import android.os.Bundle
@@ -28,22 +34,26 @@ import com.generalmagic.sdk.d3scene.MapView
 import com.generalmagic.sdk.util.SdkCall
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-class SecondFragment : Fragment() {
+// -------------------------------------------------------------------------------------------------------------------------------
+
+class SecondFragment : Fragment()
+{
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
     private val maps = mutableMapOf<Long, MapView?>()
     private val maxSurfacesCount = 9
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
+    {
         return inflater.inflate(R.layout.fragment_second, container, false)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?)
+    {
         super.onViewCreated(view, savedInstanceState)
 
         view.findViewById<Button>(R.id.button_second).setOnClickListener {
@@ -52,37 +62,43 @@ class SecondFragment : Fragment() {
 
         val leftBtn = view.findViewById<FloatingActionButton>(R.id.bottomLeftButton)
         leftBtn.visibility = View.VISIBLE
-        buttonAsDelete(requireContext(), leftBtn) {
+        buttonAsDelete(requireContext(), leftBtn)
+        {
             deleteLastSurface()
         }
 
         val rightBtn = view.findViewById<FloatingActionButton>(R.id.bottomRightButton)
         rightBtn.visibility = View.VISIBLE
-        buttonAsAdd(requireContext(), rightBtn) {
+        buttonAsAdd(requireContext(), rightBtn)
+        {
             addSurface()
         }
 
         addSurface()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onStop() {
+    override fun onStop()
+    {
         super.onStop()
 
         val linearLayout = view?.findViewById<LinearLayout>(R.id.scrolledLinearLayout) ?: return
 
-        while (linearLayout.childCount > 0) {
+        while (linearLayout.childCount > 0)
+        {
             deleteLastSurface()
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun addSurface() {
+    private fun addSurface()
+    {
         val linearLayout = view?.findViewById<LinearLayout>(R.id.scrolledLinearLayout) ?: return
 
-        if (linearLayout.childCount >= maxSurfacesCount) {
+        if (linearLayout.childCount >= maxSurfacesCount)
+        {
             return
         }
 
@@ -109,9 +125,10 @@ class SecondFragment : Fragment() {
         linearLayout.addView(frame)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun deleteLastSurface() {
+    private fun deleteLastSurface()
+    {
         val linearLayout = view?.findViewById<LinearLayout>(R.id.scrolledLinearLayout) ?: return
         if (linearLayout.childCount == 0)
             return
@@ -131,9 +148,10 @@ class SecondFragment : Fragment() {
         linearLayout.removeView(frame)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun buttonAsAdd(context: Context, button: FloatingActionButton?, action: () -> Unit) {
+    private fun buttonAsAdd(context: Context, button: FloatingActionButton?, action: () -> Unit)
+    {
         button ?: return
 
         val tag = "add"
@@ -147,13 +165,10 @@ class SecondFragment : Fragment() {
         button.backgroundTintList = backgroundTintList
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun buttonAsDelete(
-        context: Context,
-        button: FloatingActionButton?,
-        action: () -> Unit
-    ) {
+    private fun buttonAsDelete(context: Context, button: FloatingActionButton?, action: () -> Unit)
+    {
         button ?: return
 
         val tag = "delete"
@@ -166,4 +181,8 @@ class SecondFragment : Fragment() {
         button.setImageDrawable(drawable)
         button.backgroundTintList = backgroundTintList
     }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------------------------------------

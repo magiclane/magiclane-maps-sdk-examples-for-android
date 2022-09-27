@@ -49,7 +49,7 @@ object AppProcess {
 
     val currentPosition: Coordinates?
         get() {
-            return PositionService().position?.let {
+            return PositionService.position?.let {
                 Coordinates(it.latitude, it.longitude)
             }
         }
@@ -63,7 +63,7 @@ object AppProcess {
             /*
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
-            check the generalmagic.com website, sign up/ sing in and generate one.
+            check the generalmagic.com website, sign up/sign in and generate one.
              */
             Toast.makeText(context, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
         }
@@ -129,13 +129,13 @@ object AppProcess {
             override fun onNewPosition(value: PositionData) {
                 if (!value.isValid()) return
 
-                PositionService().removeListener(this)
+                PositionService.removeListener(this)
                 onPosition()
             }
         }
 
         // listen for first valid position to start the nav
-        PositionService().addListener(positionListener)
+        PositionService.addListener(positionListener)
     }
 
     fun onAndroidAutoConnected() {

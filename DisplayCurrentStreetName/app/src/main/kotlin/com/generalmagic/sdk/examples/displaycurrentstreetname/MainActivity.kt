@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity()
 
         if (!Util.isInternetConnected(this))
         {
-            showDialog("You must be connected to internet!")
+            showDialog("You must be connected to the internet!")
         }
     }
 

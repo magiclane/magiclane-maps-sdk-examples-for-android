@@ -11,8 +11,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.GEMSdk"
-        tools:targetApi="donut">
+        android:theme="@style/Theme.GEMSdk">
 
         <meta-data
             android:name="com.generalmagic.sdk.token"
@@ -20,8 +19,10 @@
 
         <activity
             android:name=".MainActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize|fontScale"
-            android:exported="true">
+            android:configChanges="keyboardHidden|screenSize|fontScale"
+            android:screenOrientation="portrait"
+            android:exported="true"
+            tools:ignore="LockedOrientationActivity">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.generalmagic.sdk.examples.mapcompass.MainActivity">
+    tools:context=".MainActivity">
 
     <com.generalmagic.sdk.core.GemSurfaceView
         android:id="@+id/gem_surface"
@@ -15,7 +15,7 @@
         android:id="@+id/compass"
         android:layout_width="@dimen/compass_height"
         android:layout_height="@dimen/compass_height"
-        android:layout_margin="10dp"
+        android:layout_margin="@dimen/big_padding"
         android:background="@drawable/round_shadow"
         android:src="@drawable/ic_north_up_foreground"
         app:layout_constraintEnd_toEndOf="parent"
@@ -23,13 +23,23 @@
         tools:ignore="ContentDescription" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/btnEnableLiveHeading"
-        android:layout_width="@dimen/compass_height"
-        android:layout_height="@dimen/compass_height"
-        android:layout_margin="10dp"
+        android:id="@+id/btn_enable_live_heading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/big_padding"
         android:focusable="true"
         app:borderWidth="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/status_text"
         app:layout_constraintEnd_toEndOf="parent" />
+    
+    <TextView
+        android:id="@+id/status_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorOnPrimary"
+        android:text="@string/live_heading_disabled"
+        android:textColor="@color/text_color"
+        android:textSize="@dimen/big_text_size"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

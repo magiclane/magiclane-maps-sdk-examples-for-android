@@ -29,6 +29,7 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -53,13 +54,13 @@ class MainActivity: AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private var listView: RecyclerView? = null
+    private lateinit var listView: RecyclerView
 
-    private var statusText: TextView? = null
+    private lateinit var statusText: TextView
+
+    private lateinit var progressBar: ProgressBar
 
     private val contentStore = ContentStore()
-
-    private var progressBar: ProgressBar? = null
 
     private val flagBitmapsMap = HashMap<String, Bitmap?>()
 
@@ -73,11 +74,11 @@ class MainActivity: AppCompatActivity()
 
     private val progressListener = ProgressListener.create(
         onStarted = {
-            progressBar?.visibility = View.VISIBLE
+            progressBar.visibility = View.VISIBLE
             showStatusMessage("Started content store service.")
         },
         onCompleted = { errorCode, _ ->
-            progressBar?.visibility = View.GONE
+            progressBar.visibility = View.GONE
             showStatusMessage("Content store service completed with error code: $errorCode")
 
             when (errorCode)
@@ -99,10 +100,10 @@ class MainActivity: AppCompatActivity()
                                                                                         showStatusMessage("Started downloading $itemName.")
                                                                                    },
                                                                                    onProgress = { 
-                                                                                       listView?.adapter?.notifyItemChanged(0)
+                                                                                       listView.adapter?.notifyItemChanged(0)
                                                                                    }, 
                                                                                    onCompleted = { _, _ ->
-                                                                                       listView?.adapter?.notifyItemChanged(0)
+                                                                                       listView.adapter?.notifyItemChanged(0)
                                                                                        showStatusMessage("$itemName was downloaded.")
                                                                                    })
 
@@ -167,7 +168,7 @@ class MainActivity: AppCompatActivity()
             }
             else // if token is not present try to avoid content server requests limitation by delaying the voices catalog request
             {
-                progressBar?.visibility = View.VISIBLE
+                progressBar.visibility = View.VISIBLE
 
                 Handler(Looper.getMainLooper()).postDelayed({
                     loadMapsCatalog()
@@ -195,7 +196,7 @@ class MainActivity: AppCompatActivity()
             /*
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
-            check the generalmagic.com website, sign up/ sing in and generate one. 
+            check the generalmagic.com website, sign up/sign in and generate one. 
              */
             showDialog("TOKEN REJECTED")
         }
@@ -209,7 +210,7 @@ class MainActivity: AppCompatActivity()
 
         if (!Util.isInternetConnected(this))
         {
-            showDialog("You must be connected to internet!")
+            showDialog("You must be connected to the internet!")
         }
     }
 
@@ -238,7 +239,7 @@ class MainActivity: AppCompatActivity()
         if (models != null)
         {
             val adapter = CustomAdapter(models)
-            listView?.adapter = adapter
+            listView.adapter = adapter
         }
     }
 
@@ -266,7 +267,11 @@ class MainActivity: AppCompatActivity()
 
     private fun showStatusMessage(text: String)
     {
-        statusText?.text = text
+        if (!statusText.isVisible)
+        {
+            statusText.visibility = View.VISIBLE
+        }
+        statusText.text = text
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------

@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,10 +10,13 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.mapperspectivechange
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
@@ -19,18 +24,21 @@ import com.generalmagic.sdk.d3scene.Animation
 import com.generalmagic.sdk.d3scene.EAnimation
 import com.generalmagic.sdk.d3scene.EMapViewPerspective
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.Util
 import com.google.android.material.button.MaterialButton
 import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity() {
+// -------------------------------------------------------------------------------------------------------------------------------
+
+class MainActivity : AppCompatActivity()
+{
     private lateinit var surfaceView: GemSurfaceView
     private lateinit var button: MaterialButton
     private var currentPerspective: EMapViewPerspective = EMapViewPerspective.TwoDimensional
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -44,10 +52,13 @@ class MainActivity : AppCompatActivity() {
             // Get the map view.
             surfaceView.mapView?.let { mapView ->
                 // Establish the current map view perspective.
-                currentPerspective = if (currentPerspective == EMapViewPerspective.TwoDimensional) {
+                currentPerspective = if (currentPerspective == EMapViewPerspective.TwoDimensional)
+                {
                     button.text = twoDimensionalText
                     EMapViewPerspective.ThreeDimensional
-                } else {
+                }
+                else
+                {
                     button.text = threeDimensionalText
                     EMapViewPerspective.TwoDimensional
                 }
@@ -61,27 +72,27 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
-        }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------------------------------------

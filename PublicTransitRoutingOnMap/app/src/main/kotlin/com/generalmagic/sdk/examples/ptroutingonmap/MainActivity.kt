@@ -82,13 +82,13 @@ class MainActivity : AppCompatActivity() {
             /* 
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
-            check the generalmagic.com website, sign up/ sing in and generate one. 
+            check the generalmagic.com website, sign up/sign in and generate one. 
              */
             Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
         }
 
         if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
         }
     }
 

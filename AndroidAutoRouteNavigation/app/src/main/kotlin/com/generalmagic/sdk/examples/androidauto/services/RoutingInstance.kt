@@ -60,7 +60,7 @@ object RoutingInstance {
     // ---------------------------------------------------------------------------------------------
 
     fun calculateRoute(waypoints: LandmarkList, type: ERouteTransportMode): Int {
-        val position = PositionService().position
+        val position = PositionService.position
 
         if (position?.isValid() == true) {
             return service.calculateRoute(waypoints, type, true)

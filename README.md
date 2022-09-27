@@ -11,6 +11,8 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Android Auto Route Navigation](AndroidAutoRouteNavigation) - Start navigation from the current position to a given landmark if a route can be calculated.
 * [Apply Custom Map Style](ApplyCustomMapStyle) - Present a map; apply a custom map style.
 * [Apply Map Style](ApplyMapStyle) - Get the map style items from the server; download and apply a map style.
+* [BLE Client](BLEClient) - BLE client for BLEServer example. It displays navigation instructions received from server.
+* [BLE Server](BLEServer) - Start simulated navigation between 2 given landmarks. Displays turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance. Acts like BLE server. Send navigation info (next turn image id, distance to next turn, next navigation instruction) to the BLE client.
 * [Downloaded Onboard Map Simulation](DownloadedOnboardMapSimulation) - Fully offline start simulation between 2 given landmarks if any route can be calculated.
 * [Downloading Onboard Map](DownloadingOnboardMap) - Gather the list of available maps; Download an onboard map.
 * [Downloading Onboard Map Simulation](DownloadingOnboardMapSimulation) - Gather the list of available maps; Download an onboard map. Starts a simulation.

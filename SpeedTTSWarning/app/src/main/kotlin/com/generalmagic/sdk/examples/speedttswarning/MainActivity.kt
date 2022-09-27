@@ -181,7 +181,7 @@ class MainActivity: AppCompatActivity()
             /* 
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
-            check the generalmagic.com website, sign up/ sing in and generate one. 
+            check the generalmagic.com website, sign up/sign in and generate one. 
              */
             showDialog("TOKEN REJECTED")
         }
@@ -190,7 +190,7 @@ class MainActivity: AppCompatActivity()
 
         if (!Util.isInternetConnected(this))
         {
-            showDialog("You must be connected to internet!")
+            showDialog("You must be connected to the internet!")
         }
     }
     
@@ -265,11 +265,11 @@ class MainActivity: AppCompatActivity()
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.VISIBLE }
+                followCursorButton.visibility = View.VISIBLE
             }
 
             onEnterFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.GONE }
+                followCursorButton.visibility = View.GONE
             }
 
             // Set on click action for the GPS button.

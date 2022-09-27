@@ -74,7 +74,6 @@ class MainActivity : AppCompatActivity()
     private lateinit var rtd: TextView
 
     private lateinit var positionListener: PositionListener
-    private lateinit var positionService: PositionService
 
     // Define a navigation service from which we will start navigation
     private val navigationService = NavigationService()
@@ -184,7 +183,7 @@ class MainActivity : AppCompatActivity()
             /*
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
-            check the generalmagic.com website, sign up/ sing in and generate one.
+            check the generalmagic.com website, sign up/sign in and generate one.
              */
             showDialog("TOKEN REJECTED")
         }
@@ -337,8 +336,6 @@ class MainActivity : AppCompatActivity()
                 }
 
                 SdkCall.execute {
-                    positionService = PositionService()
-
                     externalDataSource = DataSourceFactory.produceExternal(arrayListOf(EDataType.Position))
                     externalDataSource?.start()
 
@@ -351,12 +348,12 @@ class MainActivity : AppCompatActivity()
                                 routingProgressListener
                             )
 
-                            positionService.removeListener(positionListener)
+                            PositionService.removeListener(positionListener)
                         }
                     }
 
-                    positionService.dataSource = externalDataSource
-                    positionService.addListener(positionListener)
+                    PositionService.dataSource = externalDataSource
+                    PositionService.addListener(positionListener)
 
                     externalDataSource?.let { dataSource ->
                         fixedRateTimer("timer", false, 0L, 1000) {
@@ -385,7 +382,7 @@ class MainActivity : AppCompatActivity()
 
         if (!Util.isInternetConnected(this))
         {
-            showDialog("You must be connected to internet!")
+            showDialog("You must be connected to the internet!")
         }
     }
 

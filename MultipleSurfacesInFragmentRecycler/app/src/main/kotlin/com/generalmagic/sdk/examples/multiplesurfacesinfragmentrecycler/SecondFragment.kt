@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,7 +10,11 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.multiplesurfacesinfragmentrecycler
+
+// -------------------------------------------------------------------------------------------------------------------------------
 
 import android.content.Context
 import android.os.Bundle
@@ -24,24 +30,28 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-class SecondFragment : Fragment() {
+// -------------------------------------------------------------------------------------------------------------------------------
+
+class SecondFragment : Fragment()
+{
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
     private val maxSurfacesCount = 9
     private val list = arrayListOf(0, 1, 2, 3)
 
     private lateinit var recycler: RecyclerView
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
+    {
         return inflater.inflate(R.layout.fragment_second, container, false)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?)
+    {
         super.onViewCreated(view, savedInstanceState)
 
         view.findViewById<Button>(R.id.button_second).setOnClickListener {
@@ -56,21 +66,25 @@ class SecondFragment : Fragment() {
 
         val leftBtn = view.findViewById<FloatingActionButton>(R.id.bottomLeftButton)
         leftBtn.visibility = View.VISIBLE
-        buttonAsDelete(requireContext(), leftBtn) {
+        buttonAsDelete(requireContext(), leftBtn)
+        {
             deleteLastSurface()
         }
 
         val rightBtn = view.findViewById<FloatingActionButton>(R.id.bottomRightButton)
         rightBtn.visibility = View.VISIBLE
-        buttonAsAdd(requireContext(), rightBtn) {
+        buttonAsAdd(requireContext(), rightBtn)
+        {
             addSurface()
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun addSurface() {
-        if (list.size >= maxSurfacesCount) {
+    private fun addSurface()
+    {
+        if (list.size >= maxSurfacesCount)
+        {
             return
         }
 
@@ -78,20 +92,23 @@ class SecondFragment : Fragment() {
         recycler.adapter?.notifyItemInserted(list.lastIndex)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun deleteLastSurface() {
+    private fun deleteLastSurface()
+    {
         if (list.size == 0) return
         list.removeLast()
         recycler.adapter?.notifyItemRemoved(list.lastIndex + 1)
     }
 
-    class CustomAdapter(private val dataSet: ArrayList<Int>) :
-        RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
+    // ---------------------------------------------------------------------------------------------------------------------------
 
+    class CustomAdapter(private val dataSet: ArrayList<Int>) : RecyclerView.Adapter<CustomAdapter.ViewHolder>()
+    {
         class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
-        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
+        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder
+        {
             val view = LayoutInflater.from(viewGroup.context)
                 .inflate(R.layout.map_layout, viewGroup, false)
 
@@ -106,9 +123,10 @@ class SecondFragment : Fragment() {
         override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) = Unit
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun buttonAsAdd(context: Context, button: FloatingActionButton?, action: () -> Unit) {
+    private fun buttonAsAdd(context: Context, button: FloatingActionButton?, action: () -> Unit)
+    {
         button ?: return
 
         val tag = "add"
@@ -122,13 +140,10 @@ class SecondFragment : Fragment() {
         button.backgroundTintList = backgroundTintList
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun buttonAsDelete(
-        context: Context,
-        button: FloatingActionButton?,
-        action: () -> Unit
-    ) {
+    private fun buttonAsDelete(context: Context, button: FloatingActionButton?, action: () -> Unit)
+    {
         button ?: return
 
         val tag = "delete"
@@ -141,4 +156,8 @@ class SecondFragment : Fragment() {
         button.setImageDrawable(drawable)
         button.backgroundTintList = backgroundTintList
     }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------------------------------------

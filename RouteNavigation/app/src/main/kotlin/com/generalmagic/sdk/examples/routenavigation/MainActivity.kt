@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity() {
             /* 
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
-            check the generalmagic.com website, sign up/ sing in and generate one. 
+            check the generalmagic.com website, sign up/sign in and generate one. 
              */
             Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
         }
@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity() {
         requestPermissions(this)
 
         if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -220,21 +220,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         SdkCall.execute {
-            val positionService = PositionService()
-
             lateinit var positionListener: PositionListener
-            if (positionService.position?.isValid() == true) {
+            if (PositionService.position?.isValid() == true) {
                 startNavTask()
             } else {
                 positionListener = PositionListener {
                     if (!it.isValid()) return@PositionListener
 
-                    PositionService().removeListener(positionListener)
+                    PositionService.removeListener(positionListener)
                     startNavTask()
                 }
 
                 // listen for first valid position to start the nav
-                PositionService().addListener(positionListener)
+                PositionService.addListener(positionListener)
             }
         }
     }

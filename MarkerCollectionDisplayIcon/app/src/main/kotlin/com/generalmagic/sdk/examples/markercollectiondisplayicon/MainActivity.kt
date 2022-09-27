@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,13 +10,16 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.markercollectiondisplayicon
+
+// -------------------------------------------------------------------------------------------------------------------------------
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
@@ -30,17 +35,21 @@ import com.generalmagic.sdk.d3scene.MarkerCollectionRenderSettings
 import com.generalmagic.sdk.examples.markercollectiondisplayicon.databinding.ActivityMainBinding
 import com.generalmagic.sdk.places.Coordinates
 import com.generalmagic.sdk.routesandnavigation.EImageFileFormat
-import com.generalmagic.sdk.util.Util
 import java.io.ByteArrayOutputStream
 import kotlin.system.exitProcess
 
+// -------------------------------------------------------------------------------------------------------------------------------
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity()
+{
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
     private lateinit var binding: ActivityMainBinding
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -57,10 +66,10 @@ class MainActivity : AppCompatActivity() {
             )
 
             /* Image and text */
-
             val imageTextsCollection = MarkerCollection(EMarkerType.Point, "Restaurants Nearby")
 
-            for (place in predefinedPlaces) {
+            for (place in predefinedPlaces)
+            {
                 Marker().apply {
                     setCoordinates(arrayListOf(place.second))
                     name = place.first
@@ -79,7 +88,6 @@ class MainActivity : AppCompatActivity() {
             mapView.preferences?.markers?.add(imageTextsCollection, imageTextsSettings)
 
             /* Polyline */
-
             val polylineCollection = MarkerCollection(EMarkerType.Polyline, "Polyline")
 
             Marker().apply {
@@ -95,16 +103,14 @@ class MainActivity : AppCompatActivity() {
             mapView.preferences?.markers?.add(polylineCollection, polylineSettings)
 
             /* Center map on result */
-
             mapView.centerOnCoordinates(predefinedPlaces[0].second, 80)
-        }
-
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
         }
     }
 
-    private fun toPngByteArray(bmp: Bitmap): ByteArray {
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun toPngByteArray(bmp: Bitmap): ByteArray
+    {
         val stream = ByteArrayOutputStream()
         bmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
         val byteArray: ByteArray = stream.toByteArray()
@@ -113,10 +119,16 @@ class MainActivity : AppCompatActivity() {
         return byteArray
     }
 
-    private fun getBitmap(drawableRes: Int): Bitmap? {
-        val drawable = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun getBitmap(drawableRes: Int): Bitmap?
+    {
+        val drawable = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        {
             ResourcesCompat.getDrawable(resources, drawableRes, theme)
-        } else {
+        }
+        else
+        {
             ContextCompat.getDrawable(this, drawableRes)
         }
 
@@ -134,22 +146,25 @@ class MainActivity : AppCompatActivity() {
         return bitmap
     }
 
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------------------------------------

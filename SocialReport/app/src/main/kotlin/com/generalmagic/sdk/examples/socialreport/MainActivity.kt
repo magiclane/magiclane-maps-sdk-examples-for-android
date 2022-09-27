@@ -90,7 +90,7 @@ class MainActivity : AppCompatActivity()
         SdkSettings.onApiTokenRejected = {/* 
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
-            check the generalmagic.com website, sign up/ sing in and generate one. 
+            check the generalmagic.com website, sign up/sign in and generate one. 
              */
             showDialog("TOKEN REJECTED")
         }
@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity()
 
         if (!Util.isInternetConnected(this))
         {
-            showDialog("You must be connected to internet!")
+            showDialog("You must be connected to the internet!")
         }
     }
 
@@ -205,11 +205,11 @@ class MainActivity : AppCompatActivity()
                 Util.postOnMain { showStatusMessage("On valid position") }
                 onEvent()
 
-                PositionService().removeListener(positionListener)
+                PositionService.removeListener(positionListener)
             }
         }
 
-        PositionService().addListener(positionListener, EDataType.ImprovedPosition)
+        PositionService.addListener(positionListener, EDataType.ImprovedPosition)
 
         // listen for first valid position to start the nav
         Util.postOnMain { showStatusMessage("Waiting for valid position", true) }

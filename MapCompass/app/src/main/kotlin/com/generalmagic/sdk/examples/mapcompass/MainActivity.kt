@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,12 +10,19 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.mapcompass
 
+// -------------------------------------------------------------------------------------------------
+
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
+import android.view.View
+import android.widget.Button
 import android.widget.ImageView
-import android.widget.Toast
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
@@ -32,62 +41,79 @@ import com.generalmagic.sdk.sensordatasource.enums.EDataType
 import com.generalmagic.sdk.util.GemCall
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity() {
+// -------------------------------------------------------------------------------------------------
+
+class MainActivity : AppCompatActivity()
+{
+    // ---------------------------------------------------------------------------------------------
+    
     private lateinit var surfaceView: GemSurfaceView
     private lateinit var compass: ImageView
     private lateinit var btnEnableLiveHeading: FloatingActionButton
+    private lateinit var statusText: TextView
     private var isLiveHeadingEnabled = AtomicBoolean(false)
 
     var dataSource: DataSource? = null
 
     val headingSmoother = HeadingSmoother()
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         surfaceView = findViewById(R.id.gem_surface)
         compass = findViewById(R.id.compass)
-        btnEnableLiveHeading = findViewById(R.id.btnEnableLiveHeading)
+        btnEnableLiveHeading = findViewById(R.id.btn_enable_live_heading)
+        statusText = findViewById(R.id.status_text)
 
         // start stop btn
-
         buttonAsStart(this, btnEnableLiveHeading)
 
         btnEnableLiveHeading.setOnClickListener {
             isLiveHeadingEnabled.set(!isLiveHeadingEnabled.get())
 
-            if (isLiveHeadingEnabled.get()) {
+            if (isLiveHeadingEnabled.get())
+            {
                 buttonAsStop(this, btnEnableLiveHeading)
-            } else {
+                statusText.text = getString(R.string.live_heading_enabled)
+            }
+            else
+            {
                 buttonAsStart(this, btnEnableLiveHeading)
+                statusText.text = getString(R.string.live_heading_disabled)
             }
 
-            Toast.makeText(
-                this, "Live heading update, enabled=$isLiveHeadingEnabled ", Toast.LENGTH_SHORT
-            ).show()
-
             GemCall.execute {
-                if (isLiveHeadingEnabled.get()) {
+                if (isLiveHeadingEnabled.get())
+                {
                     startLiveHeading()
-                } else {
+                }
+                else
+                {
                     stopLiveHeading()
                 }
             }
         }
 
         // compass sync with mapView's rotation angle
-
-        SdkSettings.onMapDataReady = {
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
+            if (!isReady) return@onMapDataReady
+            
+            compass.visibility = View.VISIBLE
+            btnEnableLiveHeading.visibility = View.VISIBLE
+            statusText.visibility = View.VISIBLE
+            
             // Get the map view.
             surfaceView.mapView?.let { mapView ->
-                // Change the compass icon rotation based on the map rotation at redndering.
+                // Change the compass icon rotation based on the map rotation at rendering.
                 mapView.onViewRendered =
                     { _: EViewDataTransitionStatus, _: EViewCameraTransitionStatus ->
                         SdkCall.execute {
@@ -96,7 +122,7 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                     }
-
+                
                 // Align the map to north if the compass icon is pressed. 
                 compass.setOnClickListener {
                     GemCall.execute {
@@ -106,12 +132,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to internet!", Toast.LENGTH_LONG).show()
+        SdkSettings.onApiTokenRejected = {
+            /* 
+            The TOKEN you provided in the AndroidManifest.xml file was rejected.
+            Make sure you provide the correct value, or if you don't have a TOKEN,
+            check the generalmagic.com website, sign up/sign in and generate one. 
+             */
+            showDialog("TOKEN REJECTED")
+        }
+
+        if (!Util.isInternetConnected(this))
+        {
+            showDialog("You must be connected to the internet!")
+            compass.visibility = View.GONE
+            btnEnableLiveHeading.visibility = View.GONE
+            statusText.visibility = View.GONE
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     /**
      * Will start listening for compass data. Compass's data needs to be smoothed by [HeadingSmoother].
@@ -121,8 +160,10 @@ class MainActivity : AppCompatActivity() {
         dataSource = DataSourceFactory.produceLive()
 
         // start listening for compass data
-        dataSource?.addListener(object : DataSourceListener() {
-            override fun onNewData(dataType: EDataType) {
+        dataSource?.addListener(object : DataSourceListener()
+        {
+            override fun onNewData(dataType: EDataType)
+            {
                 GemCall.execute {
                     dataSource?.getLatestData(dataType)?.let {
 
@@ -137,6 +178,8 @@ class MainActivity : AppCompatActivity() {
         }, EDataType.Compass)
     }
 
+    // ---------------------------------------------------------------------------------------------
+
     /**
      * Will stop listening for compass data.
      */
@@ -145,51 +188,79 @@ class MainActivity : AppCompatActivity() {
         dataSource = null
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    companion object {
-        fun buttonAsStart(context: Context, button: FloatingActionButton?) {
-            button ?: return
+    private fun buttonAsStart(context: Context, button: FloatingActionButton?)
+    {
+        button ?: return
 
-            val tag = "start"
-            val backgroundTintList =
-                AppCompatResources.getColorStateList(context, R.color.green)
-            val drawable = ContextCompat.getDrawable(
-                context, android.R.drawable.ic_media_play
-            )
+        val tag = "start"
+        val backgroundTintList =
+            AppCompatResources.getColorStateList(context, R.color.green)
+        val drawable = ContextCompat.getDrawable(
+            context, android.R.drawable.ic_media_play
+        )
 
-            button.tag = tag
-            button.setImageDrawable(drawable)
-            button.backgroundTintList = backgroundTintList
+        button.tag = tag
+        button.setImageDrawable(drawable)
+        button.backgroundTintList = backgroundTintList
+    }
+
+    // ---------------------------------------------------------------------------------------------
+
+    private fun buttonAsStop(context: Context, button: FloatingActionButton?)
+    {
+        button ?: return
+
+        val tag = "stop"
+        val backgroundTintList =
+            AppCompatResources.getColorStateList(context, R.color.red)
+        val drawable = ContextCompat.getDrawable(context, android.R.drawable.ic_media_pause)
+
+        button.tag = tag
+        button.setImageDrawable(drawable)
+        button.backgroundTintList = backgroundTintList
+    }
+
+    // ---------------------------------------------------------------------------------------------
+
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
         }
-
-        fun buttonAsStop(context: Context, button: FloatingActionButton?) {
-            button ?: return
-
-            val tag = "stop"
-            val backgroundTintList =
-                AppCompatResources.getColorStateList(context, R.color.red)
-            val drawable = ContextCompat.getDrawable(context, android.R.drawable.ic_media_play)
-
-            button.tag = tag
-            button.setImageDrawable(drawable)
-            button.backgroundTintList = backgroundTintList
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
         }
     }
+
+    // ---------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------

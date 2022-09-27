@@ -17,9 +17,6 @@ package com.generalmagic.sdk.examples.favourites
 // -------------------------------------------------------------------------------------------------------------------------------
 
 import android.annotation.SuppressLint
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -28,11 +25,11 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
+import com.generalmagic.sdk.core.ImageDatabase
 import com.generalmagic.sdk.core.RectangleGeographicArea
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.places.Coordinates
@@ -41,6 +38,7 @@ import com.generalmagic.sdk.places.LandmarkStore
 import com.generalmagic.sdk.places.LandmarkStoreService
 import com.generalmagic.sdk.places.SearchService
 import com.generalmagic.sdk.util.SdkCall
+import com.generalmagic.sdk.util.SdkImages
 import com.generalmagic.sdk.util.Util
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
@@ -50,30 +48,30 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
-    
+
     private lateinit var progressBar: ProgressBar
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var locationDetails: ConstraintLayout
     private lateinit var statusText: TextView
+    private var imageSize: Int = 0
 
     // Define a Landmark Store so we can write the favourite landmarks in the data folder.
     private lateinit var store: LandmarkStore
 
-    private val searchService = SearchService(
-        onStarted = {
-            progressBar.visibility = View.VISIBLE
-            showStatusMessage("Search service has started!")
-        },
+    private val searchService = SearchService(onStarted = {
+        progressBar.visibility = View.VISIBLE
+        showStatusMessage("Search service has started!")
+    },
 
         onCompleted = { results, errorCode, _ ->
             progressBar.visibility = View.GONE
             showStatusMessage("Search service completed with error code: $errorCode")
-            
-            when (errorCode) 
+
+            when (errorCode)
             {
-                GemError.NoError -> 
+                GemError.NoError ->
                 {
-                    if (results.isNotEmpty()) 
+                    if (results.isNotEmpty())
                     {
                         val landmark = results[0]
                         flyTo(landmark)
@@ -81,25 +79,20 @@ class MainActivity : AppCompatActivity()
                         showStatusMessage("The search completed without errors.")
                     }
                     else
-                    {
-                        // The search completed without errors, but there were no results found.
+                    { // The search completed without errors, but there were no results found.
                         showStatusMessage("The search completed without errors, but there were no results found.")
                     }
                 }
-
                 GemError.Cancel ->
-                {
-                    // The search action was cancelled.
+                { // The search action was cancelled.
                 }
-
                 else ->
                 {
                     // There was a problem at computing the search operation.
                     showDialog("Search service error: ${GemError.getMessage(errorCode)}")
                 }
             }
-        }
-    )
+        })
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
@@ -107,6 +100,8 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        imageSize = resources.getDimensionPixelSize(R.dimen.image_size)
 
         progressBar = findViewById(R.id.progressBar)
         gemSurfaceView = findViewById(R.id.gem_surface)
@@ -128,17 +123,17 @@ class MainActivity : AppCompatActivity()
         }
 
         SdkSettings.onApiTokenRejected = {
-            /* 
+            /*
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
-            check the generalmagic.com website, sign up/ sing in and generate one. 
+            check the generalmagic.com website, sign up/sign in and generate one. 
              */
             showDialog("TOKEN REJECTED")
         }
 
         if (!Util.isInternetConnected(this))
         {
-            showDialog("You must be connected to internet!")
+            showDialog("You must be connected to the internet!")
         }
     }
 
@@ -179,7 +174,7 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun showStatusMessage(text: String)
@@ -190,7 +185,7 @@ class MainActivity : AppCompatActivity()
         }
         statusText.text = text
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun flyTo(landmark: Landmark) = SdkCall.execute {
@@ -200,7 +195,10 @@ class MainActivity : AppCompatActivity()
                 mainMapView.centerOnArea(area)
 
                 // Highlights a specific area on the map using the provided settings.
-                mainMapView.activateHighlightLandmarks(landmark)
+                if (getFavouriteId(landmark) == -1)
+                {
+                    mainMapView.activateHighlightLandmarks(landmark)
+                }
             }
         }
     }
@@ -210,6 +208,12 @@ class MainActivity : AppCompatActivity()
     private fun createStore()
     {
         store = LandmarkStoreService().createLandmarkStore("Favourites")?.first!!
+
+        gemSurfaceView.mapView?.let { mainMapView ->
+            SdkCall.execute {
+                mainMapView.preferences?.landmarkStores?.addAllStoreCategories(store.id)
+            }
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -245,6 +249,11 @@ class MainActivity : AppCompatActivity()
                     {
                         deleteFromFavourites(landmarkId)
                         updateFavouritesIcon(imageView, false)
+
+                        SdkCall.execute {
+                            gemSurfaceView.mapView?.activateHighlightLandmarks(landmark)
+                        }
+
                         showStatusMessage("The landmark was deleted from favourites.")
                     }
                     else
@@ -278,51 +287,51 @@ class MainActivity : AppCompatActivity()
 
             if (itCoordinates != null && landmarkCoordinates != null)
             {
-                if ((itCoordinates.latitude - landmarkCoordinates.latitude < threshold) &&
-                    (itCoordinates.longitude - landmarkCoordinates.longitude < threshold))
-                    return@execute it.id
+                if ((itCoordinates.latitude - landmarkCoordinates.latitude < threshold) && (itCoordinates.longitude - landmarkCoordinates.longitude < threshold)) return@execute it.id
             }
-            else 
-                return@execute -1
+            else return@execute -1
         }
         -1
     } ?: -1
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun addToFavourites(landmark: Landmark) = SdkCall.execute {
-        // Add the landmark to the desired LandmarkStore.
-        store.addLandmark(landmark)
+    private fun addToFavourites(landmark: Landmark) = SdkCall.execute { // Add the landmark to the desired LandmarkStore.
+        gemSurfaceView.mapView?.deactivateAllHighlights()
+
+        val lmk = Landmark()
+        lmk.assign(landmark)
+        ImageDatabase().getImageById(SdkImages.Engine_Misc.LocationDetails_FavouritePushPin.value)?.let { lmk.image = it }
+
+        store.addLandmark(lmk)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun deleteFromFavourites(landmarkId: Int) = SdkCall.execute {
-        // Remove the landmark associated to this ID from the LandmarkStore.
-        store.removeLandmark(landmarkId)
-    }
+    private fun deleteFromFavourites(landmarkId: Int) =
+        SdkCall.execute {
+            // Remove the landmark associated to this ID from the LandmarkStore.
+            store.removeLandmark(landmarkId)
+        }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun updateFavouritesIcon(imageView: ImageView, isFavourite: Boolean)
     {
-        imageView.setImageDrawable(
+        val bmp = SdkCall.execute {
             if (isFavourite)
             {
-                getMainDrawable(R.drawable.ic_baseline_favorite_24)
+                ImageDatabase().getImageById(SdkImages.UI.LocationDetails_AddToFavourites.value)?.asBitmap(imageSize, imageSize)
             }
             else
             {
-                getMainDrawable(R.drawable.ic_baseline_favorite_border_24)
+                ImageDatabase().getImageById(SdkImages.UI.LocationDetails_RemoveFromFavourites.value)?.asBitmap(imageSize, imageSize)
             }
-        )
-    }
+        }
 
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    private fun getMainDrawable(id: Int): Drawable
-    {
-        return ContextCompat.getDrawable(this@MainActivity, id) ?: ColorDrawable(Color.TRANSPARENT)
+        bmp?.let {
+            imageView.setImageBitmap(bmp)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------

@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">MapCompass</string>
+    <string name="live_heading_enabled">Live heading is enabled.</string>
+    <string name="live_heading_disabled">Live heading is disabled.</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
 </resources>

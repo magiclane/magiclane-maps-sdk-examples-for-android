@@ -1,0 +1,7 @@
+<resources>
+    <dimen name="nav_top_panel_big_img_size">60dip</dimen>
+    <dimen name="small_padding">5dp</dimen>
+    <dimen name="big_padding">10dp</dimen>
+    <dimen name="standard_text_size">16sp</dimen>
+    <dimen name="big_text_size">20sp</dimen>
+</resources>

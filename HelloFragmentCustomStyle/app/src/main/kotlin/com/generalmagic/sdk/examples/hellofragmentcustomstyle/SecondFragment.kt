@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,7 +10,11 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.hellofragmentcustomstyle
+
+// -------------------------------------------------------------------------------------------------------------------------------
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -22,20 +28,25 @@ import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.d3scene.MapView
 import com.generalmagic.sdk.util.SdkCall
 
-class SecondFragment : Fragment() {
-    private lateinit var gemSurfaceView: GemSurfaceView
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------------------------------------------------------------
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+class SecondFragment : Fragment()
+{
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
+    private lateinit var gemSurfaceView: GemSurfaceView
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
+    {
         return inflater.inflate(R.layout.fragment_second, container, false)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?)
+    {
         super.onViewCreated(view, savedInstanceState)
 
         view.findViewById<Button>(R.id.button_second).setOnClickListener {
@@ -49,7 +60,7 @@ class SecondFragment : Fragment() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun applyCustomAssetStyle(mapView: MapView?) = SdkCall.execute {
         val filename = "(Desktop) Monochrome Deep Blue (5a1da93a-dbf2-4a36-9b5c-1370386c1496).style"
@@ -64,4 +75,8 @@ class SecondFragment : Fragment() {
         // Apply style.
         mapView?.preferences?.setMapStyleByDataBuffer(DataBuffer(data))
     }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------------------------------------

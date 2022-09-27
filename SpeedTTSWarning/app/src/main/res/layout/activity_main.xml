@@ -27,7 +27,7 @@
         android:layout_width="@dimen/speed_panel_width"
         android:layout_height="@dimen/speed_panel_height"
         android:layout_margin="@dimen/big_padding"
-        android:background="@color/white"
+        android:background="@color/colorOnPrimary"
         android:gravity="center"
         android:orientation="vertical"
         app:layout_constraintEnd_toEndOf="parent"
@@ -36,28 +36,30 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/text_color"
             android:text="@string/current_speed" />
 
         <TextView
             android:id="@+id/current_speed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/text_color"
             android:text="@string/not_applicable"
-            android:textColor="@color/black"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/small_padding"
+            android:textColor="@color/text_color"
             android:text="@string/speed_limit" />
 
         <TextView
             android:id="@+id/speed_limit"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/text_color"
             android:text="@string/not_applicable"
-            android:textColor="@color/black"
             android:textStyle="bold" />
     </LinearLayout>
 
