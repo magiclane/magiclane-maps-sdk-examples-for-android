@@ -1,3 +1,11 @@
 <resources>
-    <dimen name="turn_img_size">60dip</dimen>
+    <dimen name="top_panel_height">120dp</dimen>
+    <dimen name="top_panel_margin">20dp</dimen>
+    <dimen name="turn_image_size">50dp</dimen>
+    <dimen name="elevation_height">5dp</dimen>
+    <dimen name="big_padding">10dp</dimen>
+    <dimen name="standard_text_size">16sp</dimen>
+    <dimen name="medium_text_size">18sp</dimen>
+    <dimen name="big_text_size">20sp</dimen>
+    <dimen name="instruction_text_size">22sp</dimen>
 </resources>

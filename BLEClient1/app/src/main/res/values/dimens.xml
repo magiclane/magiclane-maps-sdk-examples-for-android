@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="icon_size">35dp</dimen>
+    <dimen name="small_padding">4dp</dimen>
+    <dimen name="big_padding">10dp</dimen>
+    <dimen name="item_height">60dp</dimen>
+    <dimen name="list_item_padding">10dp</dimen>
+    <dimen name="standard_text_size">16sp</dimen>
+    <dimen name="big_text_size">20sp</dimen>
+    <dimen name="small_text_size">12sp</dimen>
+    <dimen name="progress_bar_size">50dp</dimen>
+    <dimen name="icon_gone_margin_end">70dp</dimen>
+    <dimen name="icon_gone_margin">80dp</dimen>
+    <dimen name="toolbar_height">56dp</dimen>
+    <dimen name="toolbar_title_text_size">22sp</dimen>
+</resources>

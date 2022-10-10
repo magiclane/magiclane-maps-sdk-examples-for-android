@@ -22,9 +22,7 @@ import android.bluetooth.*
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Binder
-import android.os.Build
-import android.os.IBinder
+import android.os.*
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.generalmagic.bleclient.SampleGattAttributes.CLIENT_CONFIG
@@ -68,6 +66,8 @@ class BLEService : Service()
 
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int)
         {
+            Log.i(tag, "BluetoothGattCallback.onConnectionStateChange(): newState = $newState, status = $status")
+
             val intentAction: String
             if (newState == BluetoothProfile.STATE_CONNECTED)
             {
@@ -79,7 +79,8 @@ class BLEService : Service()
                     (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED))
                 {
                     bluetoothGatt?.let {
-                        Log.i(tag, "Attempting to start service discovery:" + it.discoverServices())
+                        val result = it.discoverServices()
+                        Log.i(tag, "BluetoothGattCallback.onConnectionStateChange(): attempting to start service discovery:" + result)
                     }
                 }
             }
@@ -87,7 +88,7 @@ class BLEService : Service()
             {
                 intentAction = ACTION_GATT_DISCONNECTED
                 connectionState = STATE_DISCONNECTED
-                Log.i(tag, "Disconnected from GATT server, status = $status")
+                Log.i(tag, "BluetoothGattCallback.onConnectionStateChange(): disconnected from GATT server, status = $status")
                 broadcastUpdate(intentAction)
             }
         }
@@ -102,7 +103,7 @@ class BLEService : Service()
             }
             else
             {
-                Log.w(tag, "onServicesDiscovered received: $status")
+                Log.d(tag, "onServicesDiscovered received: $status")
             }
         }
 
@@ -131,6 +132,22 @@ class BLEService : Service()
         override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic)
         {
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic)
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------------
+
+        override fun onServiceChanged(gatt: BluetoothGatt)
+        {
+            if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.S) ||
+                (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED))
+            {
+                bluetoothGatt?.let {
+                    Log.i(tag, "BluetoothGattCallback.onServiceChanged(): try to reconnect")
+
+                    it.disconnect()
+                    Handler(Looper.getMainLooper()).postDelayed({connect(bluetoothDeviceAddress)}, 1000)
+                }
+            }
         }
 
         // -----------------------------------------------------------------------------------------------------------------------

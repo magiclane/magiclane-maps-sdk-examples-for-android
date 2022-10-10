@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,15 +10,23 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.routeinstructions
 
+// -------------------------------------------------------------------------------------------------
+
+import android.annotation.SuppressLint
+import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -32,64 +42,68 @@ import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import com.generalmagic.sdk.util.Util.postOnMain
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------------------------------
 
-class MainActivity : AppCompatActivity() {
-    private var listView: RecyclerView? = null
-    private var progressBar: ProgressBar? = null
+class MainActivity : AppCompatActivity()
+{
+    // ---------------------------------------------------------------------------------------------
+    
+    private lateinit var listView: RecyclerView
+    private lateinit var progressBar: ProgressBar
 
     private val routingService = RoutingService(
         onStarted = {
-            progressBar?.visibility = View.VISIBLE
+            progressBar.visibility = View.VISIBLE
         },
 
         onCompleted = onCompleted@{ routes, errorCode, _ ->
-            progressBar?.visibility = View.GONE
+            progressBar.visibility = View.GONE
 
-            when (errorCode) {
-                GemError.NoError -> {
+            when (errorCode)
+            {
+                GemError.NoError ->
+                {
                     if (routes.size == 0) return@onCompleted
 
                     // Get the main route from the ones that were found.
                     displayRouteInstructions(routes[0])
                 }
 
-                GemError.Cancel -> {
+                GemError.Cancel ->
+                {
                     // The routing action was cancelled.
+                    showDialog("The routing action was cancelled.")
                 }
 
-                else -> {
+                else ->
+                {
                     // There was a problem at computing the routing operation.
-                    Toast.makeText(
-                        this@MainActivity, "Routing service error: ${GemError.getMessage(errorCode)}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }
     )
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        listView = findViewById(R.id.list_view)
         progressBar = findViewById(R.id.progressBar)
-
-        val layoutManager = LinearLayoutManager(this)
-        listView?.layoutManager = layoutManager
-
-        val separator = DividerItemDecoration(applicationContext, layoutManager.orientation)
-        listView?.addItemDecoration(separator)
-
-        listView?.setBackgroundResource(R.color.white)
-        val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
-        listView?.setPadding(lateralPadding, 0, lateralPadding, 0)
-
+        listView = findViewById<RecyclerView?>(R.id.list_view).also { 
+            it.layoutManager = LinearLayoutManager(this)
+            it.addItemDecoration(DividerItemDecoration(this, (it.layoutManager as LinearLayoutManager).orientation))
+            
+            if (!isDarkThemeOn())
+            {
+                it.setBackgroundResource(R.color.gray)
+            }
+        }
 
         /// GENERAL MAGIC
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
@@ -105,36 +119,40 @@ class MainActivity : AppCompatActivity() {
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/sign in and generate one. 
              */
-            Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
+            showDialog("TOKEN REJECTED")
         }
 
         // This step of initialization is mandatory if you want to use the SDK without a map.
-        if (!GemSdk.initSdkWithDefaults(this)) {
+        if (!GemSdk.initSdkWithDefaults(this))
+        {
             finish()
         }
 
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
+        if (!Util.isInternetConnected(this))
+        {
+            showDialog("You must be connected to the internet!")
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     private fun startCalculateRoute() = SdkCall.execute {
         val wayPoints = arrayListOf(
@@ -145,67 +163,107 @@ class MainActivity : AppCompatActivity() {
         routingService.calculateRoute(wayPoints)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    private fun displayRouteInstructions(route: Route) {
+    private fun displayRouteInstructions(route: Route)
+    {
         // Get the instructions from the route.
         val instructions = SdkCall.execute { route.instructions } ?: arrayListOf()
-        listView?.adapter = CustomAdapter(instructions)
+        val imageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
+        listView.adapter = CustomAdapter(instructions, imageSize)
     }
+
+    // ---------------------------------------------------------------------------------------------
+
+    private fun isDarkThemeOn(): Boolean
+    {
+        return resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+    }
+    // ---------------------------------------------------------------------------------------------
+
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------------------------------
 
 /**
  * This custom adapter is made to facilitate the displaying of the data from the model
  * and to decide how it is displayed.
  */
-class CustomAdapter(private val dataSet: ArrayList<RouteInstruction>) :
-    RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
+class CustomAdapter(private val dataSet: ArrayList<RouteInstruction>, private val imageSize: Int) :
+    RecyclerView.Adapter<CustomAdapter.ViewHolder>()
+{
+    // ---------------------------------------------------------------------------------------------
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
+    {
+        val turnImage: ImageView = view.findViewById(R.id.turn_image)
         val text: TextView = view.findViewById(R.id.text)
         val status: TextView = view.findViewById(R.id.status_text)
         val description: TextView = view.findViewById(R.id.status_description)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
+    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder
+    {
         val view = LayoutInflater.from(viewGroup.context)
             .inflate(R.layout.list_item, viewGroup, false)
 
         return ViewHolder(view)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
+    override fun onBindViewHolder(viewHolder: ViewHolder, position: Int)
+    {
         val instruction = dataSet[position]
         var text: String
         var status: String
         var description: String
+        var turnImage: Bitmap?
 
         SdkCall.execute {
-            if (instruction.hasTurnInfo()) {
+            if (instruction.hasTurnInfo())
+            {
+                turnImage = instruction.turnImage?.asBitmap(imageSize, imageSize)
+                
                 text = instruction.turnInstruction ?: ""
-                if (text.isNotEmpty() && text.last() == '.') {
+                if (text.isNotEmpty() && text.last() == '.')
+                {
                     text.removeSuffix(".")
                 }
 
-                val distance =
-                    instruction.traveledTimeDistance?.totalDistance?.toDouble() ?: 0.0
+                val distance = instruction.traveledTimeDistance?.totalDistance?.toDouble() ?: 0.0
 
                 val distText = GemUtil.getDistText(distance.toInt(), SdkSettings.unitSystem)
                 status = distText.first
                 description = distText.second
-                if (status == "0.00") {
+                if (status == "0.00")
+                {
                     status = "0"
                 }
 
                 postOnMain {
+                    viewHolder.turnImage.setImageBitmap(turnImage)
                     viewHolder.text.text = text
                     viewHolder.status.text = status
                     viewHolder.description.text = description
@@ -214,9 +272,11 @@ class CustomAdapter(private val dataSet: ArrayList<RouteInstruction>) :
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     override fun getItemCount() = dataSet.size
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------

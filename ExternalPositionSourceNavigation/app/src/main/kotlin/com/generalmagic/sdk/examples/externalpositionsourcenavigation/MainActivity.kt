@@ -319,7 +319,7 @@ class MainActivity : AppCompatActivity()
                     val x2 = rho2 * cos(lon2)
                     val y2 = rho2 * sin(lon2)
                     // dot product
-                    val dot = (x1 * x2 + y1 * y2 + z1 * z2);
+                    val dot = (x1 * x2 + y1 * y2 + z1 * z2)
                     val cosTheta = dot / (r * r)
                     val theta = acos(cosTheta)
                     // distance in Metres
@@ -442,11 +442,11 @@ class MainActivity : AppCompatActivity()
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.VISIBLE }
+                followCursorButton.visibility = View.VISIBLE
             }
 
             onEnterFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.GONE }
+                followCursorButton.visibility = View.GONE
             }
 
             // Set on click action for the GPS button.

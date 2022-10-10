@@ -169,11 +169,11 @@ class MainActivity : AppCompatActivity()
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.VISIBLE }
+                followCursorButton.visibility = View.VISIBLE
             }
 
             onEnterFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.GONE }
+                followCursorButton.visibility = View.GONE
             }
 
             // Set on click action for the GPS button.

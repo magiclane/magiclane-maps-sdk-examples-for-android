@@ -8,9 +8,9 @@
         android:id="@+id/title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="20sp"
+        android:textSize="@dimen/big_text_size"
         android:textStyle="bold"
-        android:layout_margin="10dp"
+        android:layout_margin="@dimen/big_padding"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -19,8 +19,8 @@
         android:id="@+id/message"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:textSize="16sp"
+        android:layout_margin="@dimen/big_padding"
+        android:textSize="@dimen/standard_text_size"
         app:layout_constraintBottom_toTopOf="@id/button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -31,7 +31,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/ok"
-        android:layout_margin="10dp"
+        android:layout_margin="@dimen/big_text_size"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
 

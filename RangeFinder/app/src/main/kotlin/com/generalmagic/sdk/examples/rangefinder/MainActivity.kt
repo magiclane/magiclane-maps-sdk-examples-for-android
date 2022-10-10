@@ -96,7 +96,7 @@ class MainActivity: AppCompatActivity()
                     SdkCall.execute {
                         gemSurfaceView.mapView?.presentRoutes(routes, displayBubble = true)
                     }
-                    renderSelectedRanges()
+                    showScrollableRangesList()
                 }
 
                 GemError.Cancel ->
@@ -348,7 +348,7 @@ class MainActivity: AppCompatActivity()
                 if (currentSelectedRanges.isNotEmpty())
                 {
                     currentSelectedRanges.clear()
-                    renderSelectedRanges()
+                    showScrollableRangesList()
                     SdkCall.execute { gemSurfaceView.mapView?.hideRoutes() }
                 }
             }
@@ -381,7 +381,7 @@ class MainActivity: AppCompatActivity()
             ERouteTransportMode.Car.value -> mutableListOf(getString(R.string.fastest), getString(R.string.shortest))
             ERouteTransportMode.Lorry.value -> mutableListOf(getString(R.string.fastest), getString(R.string.shortest))
             ERouteTransportMode.Pedestrian.value -> mutableListOf(getString(R.string.fastest))
-            ERouteTransportMode.Bicycle.value -> mutableListOf(getString(R.string.fastest), getString(R.string.shortest), getString(R.string.economic))
+            ERouteTransportMode.Bicycle.value -> mutableListOf(getString(R.string.fastest), getString(R.string.economic))
             else -> mutableListOf()
         }
         
@@ -402,7 +402,14 @@ class MainActivity: AppCompatActivity()
         {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long)
             {
-                onRangeTypeSelected(position)
+                if (transportMode == ERouteTransportMode.Bicycle.value && position == 1)
+                {
+                    onRangeTypeSelected(position + 1)
+                }
+                else
+                {
+                    onRangeTypeSelected(position)
+                }
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
@@ -412,7 +419,7 @@ class MainActivity: AppCompatActivity()
         if (currentSelectedRanges.isNotEmpty())
         {
             currentSelectedRanges.clear()
-            renderSelectedRanges()
+            showScrollableRangesList()
             SdkCall.execute { gemSurfaceView.mapView?.hideRoutes() }
         }
     }
@@ -467,7 +474,7 @@ class MainActivity: AppCompatActivity()
         if (currentSelectedRanges.isNotEmpty())
         {
             currentSelectedRanges.clear()
-            renderSelectedRanges()
+            showScrollableRangesList()
             SdkCall.execute { gemSurfaceView.mapView?.hideRoutes() }
         }
     }
@@ -491,7 +498,7 @@ class MainActivity: AppCompatActivity()
     
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun renderSelectedRanges()
+    private fun showScrollableRangesList()
     {
         if (currentSelectedRanges.size <= 0)
         {
@@ -511,8 +518,8 @@ class MainActivity: AppCompatActivity()
                 textView.text = currentSelectedRanges[i].toString()
                 
                 clearButton.setOnClickListener { 
-                     currentSelectedRanges.removeAt(i)
-                    renderSelectedRanges()
+                    currentSelectedRanges.removeAt(i)
+                    showScrollableRangesList()
                     SdkCall.execute {
                         calculateRanges()    
                         gemSurfaceView.mapView?.hideRoutes() 

@@ -44,7 +44,6 @@ import com.generalmagic.sdk.routesandnavigation.NavigationService
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.SdkCall
-import com.generalmagic.sdk.util.Util
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
@@ -246,11 +245,11 @@ class MainActivity : AppCompatActivity()
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.VISIBLE }
+                followCursorButton.visibility = View.VISIBLE
             }
 
             onEnterFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.GONE }
+                followCursorButton.visibility = View.GONE
             }
 
             // Set on click action for the GPS button.

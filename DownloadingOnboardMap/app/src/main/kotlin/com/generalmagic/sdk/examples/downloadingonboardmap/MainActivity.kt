@@ -288,6 +288,7 @@ class MainActivity: AppCompatActivity()
             val progressBar: ProgressBar = view.findViewById(R.id.item_progress_bar)
             val statusImageView: ImageView = view.findViewById(R.id.status_icon)
         }
+        
         // -----------------------------------------------------------------------------------------------------------------------
 
         override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder

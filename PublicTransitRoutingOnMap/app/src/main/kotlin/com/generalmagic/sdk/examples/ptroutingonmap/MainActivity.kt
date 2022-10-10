@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,12 +10,18 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.ptroutingonmap
 
+// -------------------------------------------------------------------------------------------------
+
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.ProgressBar
-import android.widget.Toast
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
@@ -25,11 +33,15 @@ import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------------------------------
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity()
+{
+    // ---------------------------------------------------------------------------------------------
+    
     private lateinit var progressBar: ProgressBar
     private lateinit var gemSurfaceView: GemSurfaceView
 
@@ -41,40 +53,42 @@ class MainActivity : AppCompatActivity() {
         onCompleted = { routes, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (errorCode) {
-                GemError.NoError -> {
+            when (errorCode)
+            {
+                GemError.NoError ->
+                {
                     displayRoutesOnMap(routes)
                 }
 
-                GemError.Cancel -> {
+                GemError.Cancel ->
+                {
                     // The routing action was cancelled.
+                    showDialog("The routing action was cancelled.")
                 }
 
-                else -> {
+                else ->
+                {
                     // There was a problem at computing the routing operation.
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Routing service error: ${GemError.getMessage(errorCode)}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }
     )
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        progressBar = findViewById(R.id.progressBar)
+        progressBar = findViewById(R.id.progress_bar)
         gemSurfaceView = findViewById(R.id.gem_surface)
 
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
-            // Defines an action that should be done when the world map is ready (Updated/ loaded).
+            // Defines an action that should be done when the world map is ready (updated/loaded).
             calculateRoute()
         }
 
@@ -84,31 +98,34 @@ class MainActivity : AppCompatActivity() {
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/sign in and generate one. 
              */
-            Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
+            showDialog("TOKEN REJECTED")
         }
 
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
+        if (!Util.isInternetConnected(this))
+        {
+            showDialog("You must be connected to the internet!")
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     private fun calculateRoute() = SdkCall.execute {
         val waypoints = arrayListOf(
@@ -120,11 +137,33 @@ class MainActivity : AppCompatActivity() {
         routingService.calculateRoute(waypoints)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     private fun displayRoutesOnMap(routes: ArrayList<Route>) = SdkCall.execute {
         gemSurfaceView.mapView?.presentRoutes(routes)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
+
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------

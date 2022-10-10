@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,12 +10,18 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.routesimulation
 
+// -------------------------------------------------------------------------------------------------
+
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.ProgressBar
-import android.widget.Toast
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
@@ -25,10 +33,16 @@ import com.generalmagic.sdk.routesandnavigation.NavigationService
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity() {
+// -------------------------------------------------------------------------------------------------
+
+class MainActivity : AppCompatActivity()
+{
+    // ---------------------------------------------------------------------------------------------
+    
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var followCursorButton: FloatingActionButton
@@ -74,9 +88,10 @@ class MainActivity : AppCompatActivity() {
         postOnMain = true
     )
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -98,41 +113,45 @@ class MainActivity : AppCompatActivity() {
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/sign in and generate one. 
              */
-            Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
+            showDialog("TOKEN REJECTED")
         }
 
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
+        if (!Util.isInternetConnected(this))
+        {
+            showDialog("You must be connected to the internet!")
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    private fun enableGPSButton() {
+    private fun enableGPSButton()
+    {
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.VISIBLE }
+                followCursorButton.visibility = View.VISIBLE
             }
 
             onEnterFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.GONE }
+                followCursorButton.visibility = View.GONE
             }
 
             // Set on click action for the GPS button.
@@ -142,7 +161,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     private fun startSimulation() = SdkCall.execute {
         val waypoints = arrayListOf(
@@ -153,5 +172,27 @@ class MainActivity : AppCompatActivity() {
         navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
+
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------

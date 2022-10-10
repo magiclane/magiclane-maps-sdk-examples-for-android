@@ -16,16 +16,24 @@ package com.generalmagic.sdk.examples.routesimulationwithinstructions
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import com.generalmagic.sdk.core.*
+import com.generalmagic.sdk.core.EUnitSystem
+import com.generalmagic.sdk.core.GemError
+import com.generalmagic.sdk.core.GemSdk
+import com.generalmagic.sdk.core.GemSurfaceView
+import com.generalmagic.sdk.core.ProgressListener
+import com.generalmagic.sdk.core.Rgba
+import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.core.Time
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.NavigationInstruction
 import com.generalmagic.sdk.routesandnavigation.NavigationListener
@@ -35,6 +43,7 @@ import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.GemUtilImages
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
 
@@ -71,62 +80,67 @@ class MainActivity : AppCompatActivity()
     Define a navigation listener that will receive notifications from the
     navigation service.
      */
-    private val navigationListener: NavigationListener = NavigationListener.create(onNavigationStarted = {
-        SdkCall.execute {
-            gemSurfaceView.mapView?.let { mapView ->
-                mapView.preferences?.enableCursor = false
-                navRoute?.let { route ->
-                    mapView.presentRoute(route)
+    private val navigationListener: NavigationListener = NavigationListener.create(
+    
+        onNavigationStarted = {
+            SdkCall.execute {
+                gemSurfaceView.mapView?.let { mapView ->
+                    mapView.preferences?.enableCursor = false
+                    navRoute?.let { route ->
+                        mapView.presentRoute(route)
+                    }
+    
+                    enableGPSButton()
+                    mapView.followPosition()
                 }
-
-                enableGPSButton()
-                mapView.followPosition()
             }
-        }
-
-        topPanel.visibility = View.VISIBLE
-        bottomPanel.visibility = View.VISIBLE
-    }, onNavigationInstructionUpdated = { instr ->
-        var instrText = ""
-        var instrDistance = ""
-
-        var etaText = ""
-        var rttText = ""
-        var rtdText = ""
-
-        SdkCall.execute { // Fetch data for the navigation top panel (instruction related info).
-            instrText = instr.nextStreetName ?: ""
-
-            if (instrText.isEmpty())
+    
+            topPanel.visibility = View.VISIBLE
+            bottomPanel.visibility = View.VISIBLE
+        }, 
+        
+        onNavigationInstructionUpdated = { instr ->
+            var instrText = ""
+            var instrDistance = ""
+    
+            var etaText = ""
+            var rttText = ""
+            var rtdText = ""
+    
+            SdkCall.execute { // Fetch data for the navigation top panel (instruction related info).
+                instrText = instr.nextStreetName ?: ""
+    
+                if (instrText.isEmpty())
+                {
+                    instrText = instr.nextTurnInstruction ?: ""
+                }
+    
+                instrDistance = instr.getDistanceInMeters()
+    
+                // Fetch data for the navigation bottom panel (route related info).
+                navRoute?.apply {
+                    etaText = getEta() // estimated time of arrival
+                    rttText = getRtt() // remaining travel time
+                    rtdText = getRtd() // remaining travel distance
+                }
+            }
+    
+            // Update the navigation panels info.
+            val sameTurnImage = TSameImage()
+            val newTurnImage = getNextTurnImage(instr, turnImageSize, turnImageSize, sameTurnImage)
+            if (!sameTurnImage.value)
             {
-                instrText = instr.nextTurnInstruction ?: ""
+                navInstructionIcon.setImageBitmap(newTurnImage)
             }
-
-            instrDistance = instr.getDistanceInMeters()
-
-            // Fetch data for the navigation bottom panel (route related info).
-            navRoute?.apply {
-                etaText = getEta() // estimated time of arrival
-                rttText = getRtt() // remaining travel time
-                rtdText = getRtd() // remaining travel distance
-            }
+    
+            navInstruction.text = instrText
+            navInstructionDistance.text = instrDistance
+    
+            eta.text = etaText
+            rtt.text = rttText
+            rtd.text = rtdText
         }
-
-        // Update the navigation panels info.
-        val sameTurnImage = TSameImage()
-        val newTurnImage = getNextTurnImage(instr, turnImageSize, turnImageSize, sameTurnImage)
-        if (!sameTurnImage.value)
-        {
-            navInstructionIcon.setImageBitmap(newTurnImage)
-        }
-
-        navInstruction.text = instrText
-        navInstructionDistance.text = instrDistance
-
-        eta.text = etaText
-        rtt.text = rttText
-        rtd.text = rtdText
-    })
+    )
 
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
@@ -139,7 +153,7 @@ class MainActivity : AppCompatActivity()
 
             if (errorCode != GemError.NoError)
             {
-                Toast.makeText(this, GemError.getMessage(errorCode), Toast.LENGTH_LONG).show()
+                showDialog(GemError.getMessage(errorCode))
             }
         },
 
@@ -182,7 +196,7 @@ class MainActivity : AppCompatActivity()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        turnImageSize = resources.getDimension(R.dimen.turn_img_size).toInt()
+        turnImageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
 
         gemSurfaceView = findViewById(R.id.gem_surface)
         progressBar = findViewById(R.id.progressBar)
@@ -212,12 +226,12 @@ class MainActivity : AppCompatActivity()
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/sign in and generate one.
              */
-            Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
+            showDialog("TOKEN REJECTED")
         }
 
         if (!Util.isInternetConnected(this))
         {
-            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
+            showDialog("You must be connected to the internet!")
         }
     }
 
@@ -245,11 +259,11 @@ class MainActivity : AppCompatActivity()
     { // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.VISIBLE }
+                followCursorButton.visibility = View.VISIBLE
             }
 
             onEnterFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.GONE }
+                followCursorButton.visibility = View.GONE
             }
 
             // Set on click action for the GPS button.
@@ -306,5 +320,25 @@ class MainActivity : AppCompatActivity()
         navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
     }
 
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
     // ---------------------------------------------------------------------------------------------------------------------------
 }

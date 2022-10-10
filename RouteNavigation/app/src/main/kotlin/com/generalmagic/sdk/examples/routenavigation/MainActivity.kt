@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,15 +10,22 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.routenavigation
 
+// -------------------------------------------------------------------------------------------------
+
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemSdk
@@ -33,10 +42,16 @@ import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity() {
+// -------------------------------------------------------------------------------------------------
+
+class MainActivity : AppCompatActivity()
+{
+    // ---------------------------------------------------------------------------------------------
+    
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var followCursorButton: FloatingActionButton
@@ -63,7 +78,7 @@ class MainActivity : AppCompatActivity() {
                         val remainingDistance = route.getTimeDistance(true)?.totalDistance ?: 0
                         Toast.makeText(
                             this@MainActivity,
-                            "Remaining distance $remainingDistance m",
+                            "Distance to destination $remainingDistance m",
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -88,9 +103,10 @@ class MainActivity : AppCompatActivity() {
         postOnMain = true
     )
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -112,43 +128,47 @@ class MainActivity : AppCompatActivity() {
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/sign in and generate one. 
              */
-            Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
+            showDialog("TOKEN REJECTED")
         }
 
         requestPermissions(this)
 
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
+        if (!Util.isInternetConnected(this))
+        {
+            showDialog("You must be connected to the internet!")
         }
     }
+    
+    // ---------------------------------------------------------------------------------------------
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Release the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    private fun enableGPSButton() {
+    private fun enableGPSButton()
+    {
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.VISIBLE }
+                followCursorButton.visibility = View.VISIBLE
             }
 
             onEnterFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.GONE }
+                followCursorButton.visibility = View.GONE
             }
 
             // Set on click action for the GPS button.
@@ -158,16 +178,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<String>, grantResults: IntArray
-    ) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray)
+    {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode != REQUEST_PERMISSIONS) return
 
-        for (item in grantResults) {
-            if (item != PackageManager.PERMISSION_GRANTED) {
+        for (item in grantResults)
+        {
+            if (item != PackageManager.PERMISSION_GRANTED)
+            {
                 finish()
                 exitProcess(0)
             }
@@ -181,9 +202,10 @@ class MainActivity : AppCompatActivity() {
         startNavigation()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    private fun requestPermissions(activity: Activity): Boolean {
+    private fun requestPermissions(activity: Activity): Boolean
+    {
         val permissions = arrayListOf(
             Manifest.permission.INTERNET,
             Manifest.permission.ACCESS_NETWORK_STATE,
@@ -196,9 +218,10 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    private fun startNavigation() {
+    private fun startNavigation()
+    {
         val startNavTask = {
             val hasPermissions =
                 PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -209,7 +232,6 @@ class MainActivity : AppCompatActivity() {
                 // Cancel any navigation in progress.
                 navigationService.cancelNavigation(navigationListener)
                 // Start the new navigation.
-                Log.i(TAG, "MainActivity.startNavigation: before")
                 val error = navigationService.startNavigation(
                     destination,
                     navigationListener,
@@ -221,9 +243,12 @@ class MainActivity : AppCompatActivity() {
 
         SdkCall.execute {
             lateinit var positionListener: PositionListener
-            if (PositionService.position?.isValid() == true) {
+            if (PositionService.position?.isValid() == true)
+            {
                 startNavTask()
-            } else {
+            }
+            else
+            {
                 positionListener = PositionListener {
                     if (!it.isValid()) return@PositionListener
 
@@ -237,11 +262,34 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    companion object {
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------
+
+    companion object
+    {
         private const val REQUEST_PERMISSIONS = 110
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------

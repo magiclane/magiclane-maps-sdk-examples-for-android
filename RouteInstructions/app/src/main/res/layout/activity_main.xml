@@ -4,14 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.generalmagic.sdk.examples.MainActivity">
+    tools:context=".MainActivity">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/list_view"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:layout_editor_absoluteX="8dp" />
+        android:layout_height="match_parent"
+        android:paddingStart="@dimen/big_padding"
+        android:paddingEnd="@dimen/big_padding"/>
 
     <ProgressBar
         android:id="@+id/progressBar"

@@ -398,13 +398,21 @@ class MainActivity: AppCompatActivity()
                     {
                         Log.i(TAG, "Read turn instruction")
 
-                        val turnInstruction = navInstruction.text ?: " "
+                        val turnInstruction =  navInstruction.text ?: " "
+                        var byteArray = turnInstruction.toString().toByteArray()
+
+                        if (byteArray.size > 20)
+                        {
+                            val tmp = ByteArray(20)
+                            System.arraycopy(byteArray, 0, tmp, 0, 20)
+                            byteArray = tmp
+                        }
 
                         bluetoothGattServer?.sendResponse(device,
                                                           requestId,
                                                           BluetoothGatt.GATT_SUCCESS,
                                                           0,
-                                                          turnInstruction.toString().toByteArray())
+                                                          byteArray)
                     }
                     TURN_IMAGE == characteristic.uuid ->
                     {
@@ -489,6 +497,16 @@ class MainActivity: AppCompatActivity()
                     {
                         Log.d(TAG, "Subscribe device to notifications: $device")
                         registeredDevices.add(device)
+
+                        Util.postOnMain {
+                            notifyRegisteredDevices(turnEvent, TURN_IMAGE)
+
+                            val turnInstruction =  navInstruction.text ?: " "
+                            notifyRegisteredDevices(turnInstruction.toString().toByteArray(), TURN_INSTRUCTION)
+
+                            val turnDistance = navInstructionDistance.text ?: " "
+                            notifyRegisteredDevices(turnDistance.toString().toByteArray(), TURN_DISTANCE)
+                        }
                     }
                     else if (Arrays.equals(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE, value))
                     {
@@ -729,7 +747,7 @@ class MainActivity: AppCompatActivity()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        turnImageSize = resources.getDimension(R.dimen.nav_top_panel_big_img_size).toInt()
+        turnImageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
 
         gemSurfaceView = findViewById(R.id.gem_surface)
         progressBar = findViewById(R.id.progressBar)
@@ -832,11 +850,11 @@ class MainActivity: AppCompatActivity()
         // Set actions for entering / exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.VISIBLE }
+                followCursorButton.visibility = View.VISIBLE
             }
 
             onEnterFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.GONE }
+                followCursorButton.visibility = View.GONE
             }
 
             // Set on click action for the GPS button.

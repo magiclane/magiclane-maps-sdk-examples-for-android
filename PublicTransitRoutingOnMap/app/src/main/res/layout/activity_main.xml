@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.generalmagic.sdk.examples.ptroutingonmap.MainActivity">
+    tools:context=".MainActivity">
 
     <com.generalmagic.sdk.core.GemSurfaceView
         android:id="@+id/gem_surface"
@@ -12,7 +12,7 @@
         android:layout_height="match_parent" />
 
     <ProgressBar
-        android:id="@+id/progressBar"
+        android:id="@+id/progress_bar"
         style="?android:attr/progressBarStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
