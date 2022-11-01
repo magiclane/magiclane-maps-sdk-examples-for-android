@@ -26,11 +26,11 @@ import java.util.*
 object SampleGattAttributes
 {
     private val attributes: HashMap<String, String> = hashMapOf()
-    var NAVIGATION_SERVICE: UUID = UUID.fromString("00001805-0000-1000-8000-00805f9b34fb")
-    var TURN_INSTRUCTION: UUID = UUID.fromString("00002a2b-0000-1000-8000-00805f9b34fb")
+    var NAVIGATION_SERVICE: UUID = UUID.fromString("00011805-0000-1000-8000-00805f9b34fb")
+    var TURN_INSTRUCTION: UUID = UUID.fromString("00012a2b-0000-1000-8000-00805f9b34fb")
     val CLIENT_CONFIG: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
-    val TURN_IMAGE: UUID = UUID.fromString("00002a0f-0000-1000-8000-00805f9b34fb")
-    val TURN_DISTANCE: UUID = UUID.fromString("00002a2f-0000-1000-8000-00805f9b34fb")
+    val TURN_IMAGE: UUID = UUID.fromString("00012a0f-0000-1000-8000-00805f9b34fb")
+    val TURN_DISTANCE: UUID = UUID.fromString("00012a2f-0000-1000-8000-00805f9b34fb")
 
     fun lookup(uuid: String?, defaultName: String): String
     {
@@ -40,10 +40,10 @@ object SampleGattAttributes
 
     init
     {
-        attributes["00001805-0000-1000-8000-00805f9b34fb"] = "Navigation service"
-        attributes["00002a2b-0000-1000-8000-00805f9b34fb"] = "Turn instruction characteristic"
-        attributes["00002a0f-0000-1000-8000-00805f9b34fb"] = "Turn image characteristic"
-        attributes["00002a2f-0000-1000-8000-00805f9b34fb"] = "Turn distance characteristic"
+        attributes["00011805-0000-1000-8000-00805f9b34fb"] = "Navigation service"
+        attributes["00012a2b-0000-1000-8000-00805f9b34fb"] = "Turn instruction characteristic"
+        attributes["00012a0f-0000-1000-8000-00805f9b34fb"] = "Turn image characteristic"
+        attributes["00012a2f-0000-1000-8000-00805f9b34fb"] = "Turn distance characteristic"
     }
 }
 

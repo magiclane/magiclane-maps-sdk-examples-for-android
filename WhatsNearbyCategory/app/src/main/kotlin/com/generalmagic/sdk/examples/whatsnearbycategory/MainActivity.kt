@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,18 +10,24 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.whatsnearbycategory
 
+// -------------------------------------------------------------------------------------------------
+
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -38,13 +46,16 @@ import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import com.generalmagic.sdk.util.Util.postOnMain
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------------------------------
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity()
+{
     private lateinit var listView: RecyclerView
     private lateinit var progressBar: ProgressBar
+    private var imageSize = 0
 
     private val searchService = SearchService(
         onStarted = {
@@ -54,25 +65,30 @@ class MainActivity : AppCompatActivity() {
         onCompleted = onCompleted@{ results, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (errorCode) {
-                GemError.NoError -> {
+            when (errorCode)
+            {
+                GemError.NoError ->
+                {
                     val reference = reference ?: return@onCompleted
-                    if (results.isEmpty()) {
+                    if (results.isEmpty())
+                    {
                         // The search completed without errors, but there were no results found.
-                        showToast("No results!")
+                        showDialog("No results!")
                         return@onCompleted
                     }
 
-                    listView.adapter = CustomAdapter(reference, results)
+                    listView.adapter = CustomAdapter(reference, results, imageSize)
                 }
 
-                GemError.Cancel -> {
+                GemError.Cancel ->
+                {
                     // The search action was cancelled.
                 }
 
-                else -> {
+                else ->
+                {
                     // There was a problem at computing the search operation.
-                    showToast("Search service error: ${GemError.getMessage(errorCode)}")
+                    showDialog("Search service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }
@@ -80,12 +96,15 @@ class MainActivity : AppCompatActivity() {
 
     private var reference: Coordinates? = null
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        imageSize = resources.getDimension(R.dimen.landmark_image_size).toInt()
+        
         listView = findViewById(R.id.list_view)
         progressBar = findViewById(R.id.progressBar)
         val layoutManager = LinearLayoutManager(this)
@@ -94,8 +113,8 @@ class MainActivity : AppCompatActivity() {
         val separator = DividerItemDecoration(applicationContext, layoutManager.orientation)
         listView.addItemDecoration(separator)
 
-        listView.setBackgroundResource(R.color.white)
-        val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
+        listView.setBackgroundResource(R.color.background_color)
+        val lateralPadding = resources.getDimension(R.dimen.big_padding).toInt()
         listView.setPadding(lateralPadding, 0, lateralPadding, 0)
 
         /// GENERAL MAGIC
@@ -112,11 +131,12 @@ class MainActivity : AppCompatActivity() {
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/sign in and generate one. 
              */
-            showToast("TOKEN REJECTED")
+            showDialog("TOKEN REJECTED")
         }
 
         // This step of initialization is mandatory if you want to use the SDK without a map.
-        if (!GemSdk.initSdkWithDefaults(this)) {
+        if (!GemSdk.initSdkWithDefaults(this))
+        {
             // The SDK initialization was not completed.
             finish()
         }
@@ -128,28 +148,31 @@ class MainActivity : AppCompatActivity() {
          */
         requestPermissions(this)
 
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
+        if (!Util.isInternetConnected(this))
+        {
+            showDialog("You must be connected to the internet!")
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Release the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     private fun search() = SdkCall.execute {
         // If one of the location permissions is granted, we can do the search around action.
@@ -162,7 +185,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     private fun searchAround(reference: Coordinates) = SdkCall.execute {
         this.reference = reference
@@ -170,17 +193,18 @@ class MainActivity : AppCompatActivity() {
         // Cancel any search that is in progress now.
         searchService.cancelSearch()
 
-        // Search around position using the provided search preferences and/ or filter.
+        // Search around position using the provided search preferences and/or filter.
         searchService.searchAroundPosition(EGenericCategoriesIDs.GasStation)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
         grantResults: IntArray
-    ) {
+    )
+    {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         PermissionsHelper.onRequestPermissionsResult(
             this,
@@ -189,7 +213,8 @@ class MainActivity : AppCompatActivity() {
         )
 
         val result = grantResults[permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)]
-        if (result != PackageManager.PERMISSION_GRANTED) {
+        if (result != PackageManager.PERMISSION_GRANTED)
+        {
             finish()
             exitProcess(0)
         }
@@ -197,9 +222,10 @@ class MainActivity : AppCompatActivity() {
         postOnMain { search() }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    private fun requestPermissions(activity: Activity): Boolean {
+    private fun requestPermissions(activity: Activity): Boolean
+    {
         val permissions = arrayListOf(
             Manifest.permission.INTERNET,
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -214,60 +240,87 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    private fun showToast(text: String) = postOnMain {
-        Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show()
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    companion object {
+    companion object
+    {
         private const val REQUEST_PERMISSIONS = 110
     }
+
+    // ---------------------------------------------------------------------------------------------
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------------------------------
 
 /**
  * This custom adapter is made to facilitate the displaying of the data from the model
  * and to decide how it is displayed.
  */
-class CustomAdapter(private val reference: Coordinates, private val dataSet: ArrayList<Landmark>) :
-    RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
+class CustomAdapter(
+    private val reference: Coordinates, 
+    private val dataSet: ArrayList<Landmark>,
+    private val imageSize: Int
+) : RecyclerView.Adapter<CustomAdapter.ViewHolder>()
+{
+    // ---------------------------------------------------------------------------------------------
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
+    {
+        val image: ImageView = view.findViewById(R.id.image)
         val text: TextView = view.findViewById(R.id.text)
         val status: TextView = view.findViewById(R.id.status_text)
         val description: TextView = view.findViewById(R.id.status_description)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
+    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder
+    {
         val view = LayoutInflater.from(viewGroup.context)
             .inflate(R.layout.list_item, viewGroup, false)
 
         return ViewHolder(view)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) = SdkCall.execute {
         val meters = dataSet[position].coordinates?.getDistance(reference)?.toInt() ?: 0
         val dist = getDistText(meters, EUnitSystem.Metric, true)
 
-        viewHolder.text.text = dataSet[position].name
-        viewHolder.status.text = dist.first
-        viewHolder.description.text = dist.second
+        viewHolder.run {
+            image.setImageBitmap(dataSet[position].imageAsBitmap(imageSize))
+            text.text = dataSet[position].name
+            status.text = dist.first
+            description.text = dist.second
+        }
     } ?: Unit
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     override fun getItemCount() = dataSet.size
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 }
 
+// -------------------------------------------------------------------------------------------------

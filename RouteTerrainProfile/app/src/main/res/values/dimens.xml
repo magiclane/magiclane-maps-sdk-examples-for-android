@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="bigTextSize">25sp</dimen>
+    <dimen name="big_text_size">25sp</dimen>
+    <dimen name="big_padding">10dp</dimen>
+    <dimen name="small_text_size">14sp</dimen>
+    <dimen name="standard_text_size">16sp</dimen>
+    <dimen name="medium_text_size">20sp</dimen>
+    <dimen name="button_container_height">52dp</dimen>
+    <dimen name="elevation_button_size">34dp</dimen>
+    <dimen name="steepness_icon_size">18dp</dimen>
+    <dimen name="line_marker_width">3dp</dimen>
+    <dimen name="small_padding">4dp</dimen>
+    <dimen name="pin_text_size">10sp</dimen>
+    <dimen name="pin_size">24dp</dimen>
+    <dimen name="elevation_chart_height">250dp</dimen>
+    <dimen name="bar_chart_height">40dp</dimen>
+    <dimen name="elevation_chart_text_size">12sp</dimen>
 </resources>

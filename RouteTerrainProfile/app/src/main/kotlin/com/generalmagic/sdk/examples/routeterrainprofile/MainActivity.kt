@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,28 +10,45 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.routeterrainprofile
 
+// -------------------------------------------------------------------------------------------------
+
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.widget.NestedScrollView
 import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
+import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
+import com.generalmagic.sdk.d3scene.EMapViewPerspective
 import com.generalmagic.sdk.places.Landmark
-import com.generalmagic.sdk.routesandnavigation.RouteTerrainProfile
+import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
-////////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------------------------------------------------------------------------------------
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity()
+{
+    // ---------------------------------------------------------------------------------------------
+    
+    lateinit var gemSurfaceView: GemSurfaceView
+    private lateinit var routeProfileContainer: NestedScrollView
     private lateinit var progressBar: ProgressBar
 
     private val routingService = RoutingService(
@@ -40,49 +59,60 @@ class MainActivity : AppCompatActivity() {
         onCompleted = { routes, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (errorCode) {
-                GemError.NoError -> {
-                    if (routes.isNotEmpty()) {
+            when (errorCode)
+            {
+                GemError.NoError ->
+                {
+                    if (routes.isNotEmpty())
+                    {
                         val route = routes[0]
+                        
+                        // Presents the route in the map view
+                        displayRoute(route)
+                        
                         // Get the terrain profile of the route.
-                        val terrain = SdkCall.execute {
-                            route.terrainProfile
-                        }
+                        val terrain = SdkCall.execute { route.terrainProfile }
 
-                        if (terrain != null) {
+                        if (terrain != null)
+                        {
                             // The route has a terrain profile so we can display it.
-                            displayTerrainInfo(terrain)
-                        } else {
-                            Toast.makeText(this, "No RouteTerrainProfile!", Toast.LENGTH_LONG)
-                                .show()
+                            displayTerrainInfo(route)
+                        }
+                        else
+                        {
+                            showDialog("Route terrain profile is not available!")
                         }
                     }
                 }
 
-                GemError.Cancel -> {
+                GemError.Cancel ->
+                {
                     // The routing action was cancelled.
+                    showDialog("The routing action was cancelled.")
                 }
 
-                else -> {
+                else ->
+                {
                     // There was a problem at computing the routing operation.
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Routing service error: ${GemError.getMessage(errorCode)}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }
     )
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        
+        gemSurfaceView = findViewById(R.id.gem_surface_view)
+        routeProfileContainer = findViewById(R.id.route_profile_scroll_view)
         progressBar = findViewById(R.id.progressBar)
 
+        setConstraints(resources.configuration.orientation)
+        
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
@@ -96,73 +126,92 @@ class MainActivity : AppCompatActivity() {
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/sign in and generate one. 
              */
-            Toast.makeText(this, "TOKEN REJECTED", Toast.LENGTH_LONG).show()
+            showDialog("TOKEN REJECTED")
         }
 
-        if (!GemSdk.initSdkWithDefaults(this)) {
+        if (!GemSdk.initSdkWithDefaults(this))
+        {
             // The SDK initialization was not completed.
             finish()
         }
 
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
+        if (!Util.isInternetConnected(this))
+        {
+            showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true)
+        {
+            override fun handleOnBackPressed()
+            {
+                finish()
+                exitProcess(0)
+            }
+        })
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onConfigurationChanged(newConfig: Configuration)
+    {
+        super.onConfigurationChanged(newConfig)
+        
+        setConstraints(newConfig.orientation)
+    }
+    
+    // ---------------------------------------------------------------------------------------------
+
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
     }
+    
+    // ---------------------------------------------------------------------------------------------
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    override fun onBackPressed() {
-        finish()
-        exitProcess(0)
+    fun zoomToRoute() = SdkCall.execute {
+        gemSurfaceView.mapView?.let {
+            it.preferences?.setMapViewPerspective(EMapViewPerspective.TwoDimensional)
+            val mainRoute = it.preferences?.routes?.mainRoute
+            flyToRoute(mainRoute)
+        }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
+    
+    fun flyToRoute(route: Route?)
+    {
+        route?.let { gemSurfaceView.mapView?.centerOnRoute(it) }
+    }
+    
+    // ---------------------------------------------------------------------------------------------
+    
+    fun isDarkThemeOn() : Boolean = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+    
+    // ---------------------------------------------------------------------------------------------
+    
+    private fun displayRoute(route: Route) = SdkCall.execute { 
+        gemSurfaceView.mapView?.let { 
+            it.presentRoute(route)
+            it.centerOnRoute(route)
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------
 
     @SuppressLint("SetTextI18n")
-    private fun displayTerrainInfo(terrain: RouteTerrainProfile) {
-        /*
-        The RouteTerrainInfo class contains a lot of information, but we will present here
-        just the maximum/ minimum elevation, elevation at certain point, the total number of meters ascending/ going down
-        and the number of climbing sections in the selected route.
-        If you want to display a chart representing the elevation of the route/ of the upcoming part of the route
-        you can use the method "getElevationSamples(samplesCount)" specifying the number of samples that you want.
-        For more methods and information about the route terrain profile, please check the documentation.
-         */
-        var maxElv = .0f
-        var minElv = .0f
-        var elevationAt = .0f
-        var totalUp = .0f
-        var totalDown = .0f
-        var climbingSections = 0
-
-        SdkCall.execute {
-            maxElv = terrain.maxElevation
-            minElv = terrain.minElevation
-            elevationAt = terrain.getElevation(1000) // 1 KM
-            totalUp = terrain.totalUp
-            totalDown = terrain.totalDown
-            climbingSections = terrain.climbSections?.size ?: 0
-        }
-
-        findViewById<TextView>(R.id.text).text =
-            "Details: \nMin. Elevation = $minElv m, " +
-                "\nMax. Elevation = $maxElv m, " +
-                "\nElevation after 1KM = $elevationAt m," +
-                "\nTotal Up = $totalUp m, \n" +
-                "Total Down = $totalDown m \n\n\n" +
-                "Number of Climbing Section: \n$climbingSections"
+    private fun displayTerrainInfo(route: Route)
+    {
+        // show the layout that containts the elevation views
+        routeProfileContainer.visibility = View.VISIBLE
+        
+        // creates the instance of the class that operates the elevation data
+        RouteProfile(this, route)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     private fun calculateRoute() = SdkCall.execute {
         val waypoints = arrayListOf(
@@ -179,5 +228,98 @@ class MainActivity : AppCompatActivity() {
         routingService.calculateRoute(waypoints)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
+
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------
+    
+    private fun setConstraints(orientation: Int)
+    {
+        val rootView = findViewById<ConstraintLayout>(R.id.root_view)
+        when (orientation)
+        {
+            Configuration.ORIENTATION_LANDSCAPE ->
+            {
+                ConstraintSet().apply {
+                    clone(rootView)
+
+                    connect(R.id.route_profile_scroll_view, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
+                    connect(R.id.route_profile_scroll_view, ConstraintSet.END, R.id.gem_surface_view, ConstraintSet.START)
+                    connect(R.id.route_profile_scroll_view, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
+                    connect(R.id.route_profile_scroll_view, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
+
+                    connect(R.id.gem_surface_view, ConstraintSet.START, R.id.route_profile_scroll_view, ConstraintSet.END)
+                    connect(R.id.gem_surface_view, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
+                    connect(R.id.gem_surface_view, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
+                    connect(R.id.gem_surface_view, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
+
+                    applyTo(rootView)
+                }
+
+                routeProfileContainer.layoutParams.apply {
+                    width = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
+                    height = ConstraintLayout.LayoutParams.MATCH_PARENT
+                }
+                routeProfileContainer.requestLayout()
+
+                gemSurfaceView.layoutParams.apply {
+                    width = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
+                    height = ConstraintLayout.LayoutParams.MATCH_PARENT
+                }
+                gemSurfaceView.requestLayout()
+            }
+
+            Configuration.ORIENTATION_PORTRAIT ->
+            {
+                ConstraintSet().apply { 
+                    clone(rootView)
+
+                    connect(R.id.gem_surface_view, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
+                    connect(R.id.gem_surface_view, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
+                    connect(R.id.gem_surface_view, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
+                    connect(R.id.gem_surface_view, ConstraintSet.BOTTOM, R.id.route_profile_scroll_view, ConstraintSet.TOP)
+
+                    connect(R.id.route_profile_scroll_view, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
+                    connect(R.id.route_profile_scroll_view, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
+                    connect(R.id.route_profile_scroll_view, ConstraintSet.TOP, R.id.gem_surface_view, ConstraintSet.BOTTOM)
+                    connect(R.id.route_profile_scroll_view, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
+                    
+                    applyTo(rootView)
+                }
+
+                routeProfileContainer.layoutParams.apply {
+                    width = ConstraintLayout.LayoutParams.MATCH_PARENT
+                    height = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
+                }
+                routeProfileContainer.requestLayout()
+
+                gemSurfaceView.layoutParams.apply {
+                    width = ConstraintLayout.LayoutParams.MATCH_PARENT
+                    height = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
+                }
+                gemSurfaceView.requestLayout()
+            }
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------

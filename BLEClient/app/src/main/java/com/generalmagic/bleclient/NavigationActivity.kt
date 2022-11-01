@@ -402,6 +402,14 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver
             }
             else ->
             {
+                for (characteristic in characteristics)
+                {
+                    if ((characteristic.properties or BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0)
+                    {
+                        bluetoothLeService?.setCharacteristicNotification(characteristic, true)
+                    }
+                }
+
                 return
             }
         }

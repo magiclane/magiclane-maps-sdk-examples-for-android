@@ -158,7 +158,14 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver
             for (x in 0 until width)
             {
                 g = img[index++].toUByte().toInt()
-                result.setPixel(x, y, Color.rgb(g, g, g))
+                if (g % 2 == 1)
+                {
+                    result.setPixel(x, y, Color.argb(g, 255, 0, 0))
+                }
+                else
+                {
+                    result.setPixel(x, y, Color.rgb(g, g, g))
+                }
             }
         }
 

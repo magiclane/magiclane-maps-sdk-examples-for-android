@@ -33,12 +33,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
+import com.generalmagic.sdk.core.Rgba
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RouteInstruction
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.GemUtil
+import com.generalmagic.sdk.util.GemUtilImages
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
 import com.generalmagic.sdk.util.Util.postOnMain
@@ -98,11 +100,6 @@ class MainActivity : AppCompatActivity()
         listView = findViewById<RecyclerView?>(R.id.list_view).also { 
             it.layoutManager = LinearLayoutManager(this)
             it.addItemDecoration(DividerItemDecoration(this, (it.layoutManager as LinearLayoutManager).orientation))
-            
-            if (!isDarkThemeOn())
-            {
-                it.setBackgroundResource(R.color.gray)
-            }
         }
 
         /// GENERAL MAGIC
@@ -170,7 +167,7 @@ class MainActivity : AppCompatActivity()
         // Get the instructions from the route.
         val instructions = SdkCall.execute { route.instructions } ?: arrayListOf()
         val imageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
-        listView.adapter = CustomAdapter(instructions, imageSize)
+        listView.adapter = CustomAdapter(instructions, imageSize, isDarkThemeOn())
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -208,8 +205,11 @@ class MainActivity : AppCompatActivity()
  * This custom adapter is made to facilitate the displaying of the data from the model
  * and to decide how it is displayed.
  */
-class CustomAdapter(private val dataSet: ArrayList<RouteInstruction>, private val imageSize: Int) :
-    RecyclerView.Adapter<CustomAdapter.ViewHolder>()
+class CustomAdapter(
+    private val dataSet: ArrayList<RouteInstruction>,
+    private val imageSize: Int,
+    private val isDarkThemeOn: Boolean
+) : RecyclerView.Adapter<CustomAdapter.ViewHolder>()
 {
     // ---------------------------------------------------------------------------------------------
 
@@ -244,7 +244,12 @@ class CustomAdapter(private val dataSet: ArrayList<RouteInstruction>, private va
         SdkCall.execute {
             if (instruction.hasTurnInfo())
             {
-                turnImage = instruction.turnImage?.asBitmap(imageSize, imageSize)
+                val aInner = if (isDarkThemeOn) Rgba(255, 255, 255, 255) else Rgba(0, 0, 0, 255)
+                val aOuter = if (isDarkThemeOn) Rgba(0, 0, 0, 255) else Rgba(255, 255, 255, 255)
+                val iInner = Rgba(128, 128, 128, 255)
+                val iOuter = Rgba(128, 128, 128, 255)
+                
+                turnImage = GemUtilImages.asBitmap(instruction.turnDetails?.abstractGeometryImage, imageSize, imageSize, aInner, aOuter, iInner, iOuter)
                 
                 text = instruction.turnInstruction ?: ""
                 if (text.isNotEmpty() && text.last() == '.')

@@ -18,13 +18,14 @@
         <SearchView
             android:id="@+id/searchInput"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/filterHeight"
-            android:layout_marginEnd="@dimen/filterPadding"
+            android:layout_height="@dimen/filter_height"
+            android:layout_marginEnd="@dimen/filter_padding"
             android:closeIcon="@drawable/ic_close_white_24dp"
             android:iconifiedByDefault="false"
+            android:queryHint="@string/app_name"
             android:imeOptions="flagNoExtractUi"
-            android:maxHeight="@dimen/filterHeight"
-            android:minHeight="@dimen/filterMinHeight"
+            android:maxHeight="@dimen/filter_height"
+            android:minHeight="@dimen/filter_min_height"
             android:searchIcon="@drawable/ic_search_white_24dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -39,9 +40,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar"
-        tools:ignore="MissingConstraints"
-        tools:layout_editor_absoluteX="8dp" />
+        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
 
     <ProgressBar
         android:id="@+id/progressBar"

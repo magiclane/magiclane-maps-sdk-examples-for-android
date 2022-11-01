@@ -9,6 +9,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:overScrollMode="never"
-        android:padding="@dimen/smallPadding" />
+        android:padding="@dimen/small_padding" />
 
 </LinearLayout>

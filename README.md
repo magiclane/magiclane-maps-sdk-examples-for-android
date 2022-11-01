@@ -36,6 +36,8 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Map Compass](MapCompass) - Display an interactive map with a compass.
 * [Map Gestures](MapGestures) - Display an interactive map supporting pan, zoom, rotate, tilt that displays logs about what gestures the user made on the map.
 * [Map Perspective Change](MapPerspectiveChange) - Display an interactive map with a button that changes the view perspective between 2D and 3D.
+* [Map Selection](MapSelection) - - Present a map. Calculate the routes between 2 given landmarks. Illustrates how to tap on different map overlays.
+* [Marker Collection Display Icon](MarkerCollectionDisplayIcon) - Shows usage of `MarkerCollection`.
 * [Multiple surfaces in Fragment](MultipleSurfacesInFragment) - Display a variable list of maps on an Android Fragment.
 * [Multiple surfaces in Fragment Recycler](MultipleSurfacesInFragmentRecycler) - Displaying a variable list of maps on an Android Fragment.
 * [Overlapped Maps](OverlappedMaps) - Display a second map view over the existing one.

@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="icon_size">35dp</dimen>
-    <dimen name="smallPadding">4dp</dimen>
-    <dimen name="bigPadding">10dp</dimen>
+    <dimen name="big_padding">10dp</dimen>
     <dimen name="item_height">60dp</dimen>
-    <dimen name="list_item_padding">10dp</dimen>
     <dimen name="standard_text_size">16sp</dimen>
     <dimen name="big_text_size">20sp</dimen>
     <dimen name="small_text_size">12sp</dimen>

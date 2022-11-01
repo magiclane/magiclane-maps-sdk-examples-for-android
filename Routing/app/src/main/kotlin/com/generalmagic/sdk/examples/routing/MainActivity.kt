@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,13 +10,18 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.routing
 
+// -------------------------------------------------------------------------------------------------
+
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
@@ -25,10 +32,15 @@ import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
+// -------------------------------------------------------------------------------------------------
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() 
+{
+    // ---------------------------------------------------------------------------------------------
+    
     private lateinit var progressBar: ProgressBar
 
     private val routingService = RoutingService(
@@ -39,33 +51,35 @@ class MainActivity : AppCompatActivity() {
         onCompleted = onCompleted@{ routes, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (errorCode) {
-                GemError.NoError -> {
+            when (errorCode)
+            {
+                GemError.NoError ->
+                {
                     if (routes.size == 0) return@onCompleted
 
                     // Get the main route from the ones that were found.
                     displayRouteInfo(formatRouteName(routes[0]))
                 }
 
-                GemError.Cancel -> {
+                GemError.Cancel ->
+                {
                     // The routing action was cancelled.
+                    showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
                 }
 
-                else -> {
+                else ->
+                {
                     // There was a problem at computing the routing operation.
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Routing service error: ${GemError.getMessage(errorCode)}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }
     )
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -84,42 +98,47 @@ class MainActivity : AppCompatActivity() {
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/sign in and generate one. 
              */
-            Toast.makeText(this, "TOKEN REJECTED", Toast.LENGTH_LONG).show()
+            showDialog("TOKEN REJECTED")
         }
 
-        if (!GemSdk.initSdkWithDefaults(this)) {
+        if (!GemSdk.initSdkWithDefaults(this))
+        {
             // The SDK initialization was not completed.
             finish()
         }
 
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
+        if (!Util.isInternetConnected(this))
+        {
+            showDialog("You must be connected to the internet!")
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Release the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    private fun displayRouteInfo(routeName: String) {
+    private fun displayRouteInfo(routeName: String)
+    {
         findViewById<TextView>(R.id.text).text = routeName
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     private fun calculateRoute() = SdkCall.execute {
         val wayPoints = arrayListOf(
@@ -131,7 +150,7 @@ class MainActivity : AppCompatActivity() {
         routingService.calculateRoute(wayPoints)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     private fun formatRouteName(route: Route): String = SdkCall.execute {
         val timeDistance = route.timeDistance ?: return@execute ""
@@ -148,7 +167,8 @@ class MainActivity : AppCompatActivity() {
 
         var wayPointsText = ""
         route.waypoints?.let { wayPoints ->
-            for (point in wayPoints) {
+            for (point in wayPoints)
+            {
                 wayPointsText += (point.name + "\n")
             }
         }
@@ -158,4 +178,28 @@ class MainActivity : AppCompatActivity() {
                 "${timeTextPair.first} ${timeTextPair.second}"
         )
     } ?: ""
+
+    // ---------------------------------------------------------------------------------------------
+
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
+    // ---------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------

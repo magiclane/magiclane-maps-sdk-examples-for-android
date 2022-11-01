@@ -204,13 +204,13 @@ class MainActivity: AppCompatActivity()
         if (instrText != navInstruction.text)
         {
             navInstruction.text = instrText
-            notifyRegisteredDevices(instrText.toByteArray(), TURN_INSTRUCTION)
+            sendTurnInstruction()
         }
 
         if (instrDistance != navInstructionDistance.text)
         {
             navInstructionDistance.text = instrDistance
-            notifyRegisteredDevices(instrDistance.toByteArray(), TURN_DISTANCE)
+            sendTurnDistance()
         }
 
         eta.text = etaText
@@ -398,21 +398,11 @@ class MainActivity: AppCompatActivity()
                     {
                         Log.i(TAG, "Read turn instruction")
 
-                        val turnInstruction =  navInstruction.text ?: " "
-                        var byteArray = turnInstruction.toString().toByteArray()
-
-                        if (byteArray.size > 20)
-                        {
-                            val tmp = ByteArray(20)
-                            System.arraycopy(byteArray, 0, tmp, 0, 20)
-                            byteArray = tmp
-                        }
-
                         bluetoothGattServer?.sendResponse(device,
                                                           requestId,
                                                           BluetoothGatt.GATT_SUCCESS,
                                                           0,
-                                                          byteArray)
+                                                          byteArrayOf(0))
                     }
                     TURN_IMAGE == characteristic.uuid ->
                     {
@@ -488,43 +478,44 @@ class MainActivity: AppCompatActivity()
                                               offset: Int,
                                               value: ByteArray)
         {
-            if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.S) ||
-                (ActivityCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED))
+            if (registeredDevices.isEmpty())
             {
-                if (CLIENT_CONFIG == descriptor.uuid)
+                if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.S) ||
+                    (ActivityCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED))
                 {
-                    if (Arrays.equals(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE, value))
+                    if (CLIENT_CONFIG == descriptor.uuid)
                     {
-                        Log.d(TAG, "Subscribe device to notifications: $device")
-                        registeredDevices.add(device)
+                        if (Arrays.equals(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE, value))
+                        {
+                            Log.d(TAG, "Subscribe device to notifications: $device")
+                            registeredDevices.add(device)
 
-                        Util.postOnMain {
-                            notifyRegisteredDevices(turnEvent, TURN_IMAGE)
+                            Util.postOnMain {
+                                notifyRegisteredDevices(turnEvent, TURN_IMAGE)
 
-                            val turnInstruction =  navInstruction.text ?: " "
-                            notifyRegisteredDevices(turnInstruction.toString().toByteArray(), TURN_INSTRUCTION)
+                                sendTurnInstruction()
 
-                            val turnDistance = navInstructionDistance.text ?: " "
-                            notifyRegisteredDevices(turnDistance.toString().toByteArray(), TURN_DISTANCE)
+                                sendTurnDistance()
+                            }
+                        }
+                        else if (Arrays.equals(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE, value))
+                        {
+                            Log.d(TAG, "Unsubscribe device from notifications: $device")
+                            registeredDevices.remove(device)
+                        }
+
+                        if (responseNeeded)
+                        {
+                            bluetoothGattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null)
                         }
                     }
-                    else if (Arrays.equals(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE, value))
+                    else
                     {
-                        Log.d(TAG, "Unsubscribe device from notifications: $device")
-                        registeredDevices.remove(device)
-                    }
-
-                    if (responseNeeded)
-                    {
-                        bluetoothGattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null)
-                    }
-                }
-                else
-                {
-                    Log.w(TAG, "Unknown descriptor write request")
-                    if (responseNeeded)
-                    {
-                        bluetoothGattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_FAILURE, 0, null)
+                        Log.w(TAG, "Unknown descriptor write request")
+                        if (responseNeeded)
+                        {
+                            bluetoothGattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_FAILURE, 0, null)
+                        }
                     }
                 }
             }
@@ -674,17 +665,25 @@ class MainActivity: AppCompatActivity()
                                                           BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY,
                                                           BluetoothGattCharacteristic.PERMISSION_READ)
 
-        val configDescriptor = BluetoothGattDescriptor(CLIENT_CONFIG, // Read/write descriptor
-                                                       BluetoothGattDescriptor.PERMISSION_READ or BluetoothGattDescriptor.PERMISSION_WRITE)
-        turnInstruction.addDescriptor(configDescriptor)
+        val turnInstructionDescriptor = BluetoothGattDescriptor(CLIENT_CONFIG, // Read/write descriptor
+                                                                BluetoothGattDescriptor.PERMISSION_READ or BluetoothGattDescriptor.PERMISSION_WRITE)
+        turnInstruction.addDescriptor(turnInstructionDescriptor)
 
         val turnImage = BluetoothGattCharacteristic(TURN_IMAGE, // Read-only characteristic, supports notifications
-                                                    BluetoothGattCharacteristic.PROPERTY_READ,
-                                                    BluetoothGattCharacteristic.PERMISSION_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY)
+                                                    BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+                                                    BluetoothGattCharacteristic.PERMISSION_READ)
+
+        val turnImageDescriptor = BluetoothGattDescriptor(CLIENT_CONFIG, // Read/write descriptor
+                                  BluetoothGattDescriptor.PERMISSION_READ or BluetoothGattDescriptor.PERMISSION_WRITE)
+        turnImage.addDescriptor(turnImageDescriptor)
 
         val turnDistance = BluetoothGattCharacteristic(TURN_DISTANCE, // Read-only characteristic, supports notifications
-                                                       BluetoothGattCharacteristic.PROPERTY_READ,
-                                                       BluetoothGattCharacteristic.PERMISSION_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY)
+                                                       BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+                                                       BluetoothGattCharacteristic.PERMISSION_READ)
+
+        val turnDistanceDescriptor = BluetoothGattDescriptor(CLIENT_CONFIG, // Read/write descriptor
+                                                             BluetoothGattDescriptor.PERMISSION_READ or BluetoothGattDescriptor.PERMISSION_WRITE)
+        turnDistance.addDescriptor(turnDistanceDescriptor)
 
         service.addCharacteristic(turnInstruction)
         service.addCharacteristic(turnImage)
@@ -911,10 +910,60 @@ class MainActivity: AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
+    private fun sendTurnInstruction()
+    {
+        var turnInstruction = navInstruction.text.toString()
+        if (turnInstruction.length > 128)
+        {
+            turnInstruction = turnInstruction.substring(0, 125).plus("...")
+        }
+
+        if (turnInstruction.isEmpty())
+        {
+            turnInstruction = " "
+        }
+
+        val byteArray = turnInstruction.toByteArray()
+
+        notifyRegisteredDevices(byteArrayOf(byteArray.size.toByte()), TURN_INSTRUCTION)
+
+        val n = byteArray.size / 20
+        val r = byteArray.size % 20
+        var tmp = ByteArray(20)
+        var index = 0
+
+        for (i in 1..n)
+        {
+            System.arraycopy(byteArray, index, tmp, 0, 20)
+            index += 20
+
+            notifyRegisteredDevices(tmp, TURN_INSTRUCTION)
+        }
+
+        if (r > 0)
+        {
+            tmp = ByteArray(r)
+            System.arraycopy(byteArray, index, tmp, 0, r)
+
+            notifyRegisteredDevices(tmp, TURN_INSTRUCTION)
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun sendTurnDistance()
+    {
+        val turnDistance = navInstructionDistance.text ?: " "
+        notifyRegisteredDevices(turnDistance.toString().toByteArray(), TURN_DISTANCE)
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
     private fun startSimulation() = SdkCall.execute {
         val waypoints = arrayListOf(Landmark("Amsterdam", 52.3585050, 4.8803423), Landmark("Paris", 48.8566932, 2.3514616))
         // val waypoints = arrayListOf(Landmark("one", 44.41972, 26.08907), Landmark("two", 44.42479, 26.09076))
         // val waypoints = arrayListOf(Landmark("one", 44.42125, 26.09267), Landmark("two", 44.42233, 26.09205))
+        // val waypoints = arrayListOf(Landmark("Brasov", 45.65231, 25.61027), Landmark("Codlea", 45.69252, 25.44899))
 
         val errorCode = navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
         if (errorCode != GemError.NoError)
@@ -950,19 +999,19 @@ class MainActivity: AppCompatActivity()
     companion object
     {
         /* Navigation Service UUID */
-        val NAVIGATION_SERVICE: UUID = UUID.fromString("00001805-0000-1000-8000-00805f9b34fb")
+        val NAVIGATION_SERVICE: UUID = UUID.fromString("00011805-0000-1000-8000-00805f9b34fb")
 
         /* Mandatory Client Characteristic Config Descriptor */
         val CLIENT_CONFIG: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
         /* Mandatory Current Turn Instruction Characteristic */
-        val TURN_INSTRUCTION: UUID = UUID.fromString("00002a2b-0000-1000-8000-00805f9b34fb")
+        val TURN_INSTRUCTION: UUID = UUID.fromString("00012a2b-0000-1000-8000-00805f9b34fb")
 
         /* Mandatory Current Turn Image Characteristic */
-        val TURN_IMAGE: UUID = UUID.fromString("00002a0f-0000-1000-8000-00805f9b34fb")
+        val TURN_IMAGE: UUID = UUID.fromString("00012a0f-0000-1000-8000-00805f9b34fb")
 
         /* Mandatory Current Turn DISTANCE Characteristic */
-        val TURN_DISTANCE: UUID = UUID.fromString("00002a2f-0000-1000-8000-00805f9b34fb")
+        val TURN_DISTANCE: UUID = UUID.fromString("00012a2f-0000-1000-8000-00805f9b34fb")
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------

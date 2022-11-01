@@ -169,13 +169,13 @@ class MainActivity: AppCompatActivity()
         if (instrText != navInstruction.text)
         {
             navInstruction.text = instrText
-            notifyRegisteredDevices(instrText.toByteArray(), TURN_INSTRUCTION)
+            sendTurnInstruction()
         }
 
         if (instrDistance != navInstructionDistance.text)
         {
             navInstructionDistance.text = instrDistance
-            notifyRegisteredDevices(instrDistance.toByteArray(), TURN_DISTANCE)
+            sendTurnDistance()
         }
 
         eta.text = etaText
@@ -252,7 +252,52 @@ class MainActivity: AppCompatActivity()
                 }
                 else
                 {
-                    byteBuffer.put((((redVal * Color.red(pixel) + greenVal * Color.green(pixel) + blueVal * Color.blue(pixel)) * alpha) / 255).toInt().toByte())
+                    val r = Color.red(pixel)
+                    val g = Color.green(pixel)
+                    val b = Color.blue(pixel)
+
+                    var value = (((redVal * r + greenVal * g + blueVal * b) * alpha) / 255).toInt()
+
+                    if ((r == 255) && (r > g) && (r > b))
+                    {
+                        value = if (alpha % 2 == 0)
+                        {
+                            alpha + 1
+                        }
+                        else
+                        {
+                            alpha
+                        }
+                    }
+                    else if ((r > 200) && (r > g) && (r > b) && (alpha == 255))
+                    {
+                        value = if (r < 255)
+                        {
+                            r
+                        }
+                        else
+                        {
+                            r - g
+                        }
+
+                        if (value % 2 == 0)
+                        {
+                            value += 1
+                        }
+                    }
+                    else
+                    {
+                        if (value % 2 == 1)
+                        {
+                            value++
+                            if (value == 256)
+                            {
+                                value = 254
+                            }
+                        }
+                    }
+
+                    byteBuffer.put(value.toByte())
                 }
             }
         }
@@ -263,11 +308,186 @@ class MainActivity: AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
+    private fun sendTurnInstruction()
+    {
+        var turnInstruction = navInstruction.text.toString()
+        if (turnInstruction.length > 128)
+        {
+            turnInstruction = turnInstruction.substring(0, 125).plus("...")
+        }
+
+        if (turnInstruction.isEmpty())
+        {
+            turnInstruction = " "
+        }
+
+        val byteArray = turnInstruction.toByteArray()
+
+        notifyRegisteredDevices(byteArrayOf(byteArray.size.toByte()), TURN_INSTRUCTION)
+
+        val n = byteArray.size / 20
+        val r = byteArray.size % 20
+        var tmp = ByteArray(20)
+        var index = 0
+
+        for (i in 1..n)
+        {
+            System.arraycopy(byteArray, index, tmp, 0, 20)
+            index += 20
+
+            notifyRegisteredDevices(tmp, TURN_INSTRUCTION)
+        }
+
+        if (r > 0)
+        {
+            tmp = ByteArray(r)
+            System.arraycopy(byteArray, index, tmp, 0, r)
+
+            notifyRegisteredDevices(tmp, TURN_INSTRUCTION)
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun sendTurnDistance()
+    {
+        val turnDistance = navInstructionDistance.text ?: " "
+        notifyRegisteredDevices(turnDistance.toString().toByteArray(), TURN_DISTANCE)
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
     private fun sendTurnImage()
     {
         turnImage?.let {
             val byteBuffer: ByteBuffer = transformBitmapToGrayscale(it)
+            val array = byteBuffer.array()
 
+            val tmp = ByteArray(20)
+            var sum = 1
+
+            val sendRange = { offset: Int, itemsCount: Int ->
+                val n = itemsCount / 20
+                val r = itemsCount % 20
+                var index = offset
+
+                sum += itemsCount
+
+                for (i in 1..n)
+                {
+                    System.arraycopy(array, index, tmp, 0, 20)
+                    index += 20
+
+                    notifyRegisteredDevices(tmp, TURN_IMAGE)
+                    // Thread.sleep(1)
+                }
+
+                if (r > 0)
+                {
+                    val tmp1 = ByteArray(r)
+                    System.arraycopy(array, index, tmp1, 0, r)
+
+                    notifyRegisteredDevices(tmp1, TURN_IMAGE)
+                    // Thread.sleep(1)
+                }
+            }
+
+            notifyRegisteredDevices(byteArrayOf(1), TURN_IMAGE)
+
+            var offset = 0
+            for (y in 0 until turnImageSize)
+            {
+                var minX = 0
+                var maxX = 0
+                var minX1 = 0
+                var maxX1 = 0
+                var maxDist = 0
+                var minX1Tmp = 0
+                var maxX1Tmp = 0
+                var maxDistTmp: Int
+
+                for (x in 0 until turnImageSize)
+                {
+                    if (array[offset + x].toInt() != 0)
+                    {
+                        minX = x
+                        break
+                    }
+                }
+
+                for (x in (turnImageSize - 1) downTo 0)
+                {
+                    if (array[offset + x].toInt() != 0)
+                    {
+                        maxX = x
+                        break
+                    }
+                }
+
+                if (maxX > minX)
+                {
+                    for (i in minX .. maxX)
+                    {
+                        if (array[offset + i].toUByte().toInt() == 254)
+                        {
+                            if (minX1Tmp == 0)
+                            {
+                                minX1Tmp = i
+                            }
+                            else
+                            {
+                                maxX1Tmp = i
+                            }
+                        }
+                        else if (minX1Tmp > 0)
+                        {
+                            maxDistTmp = maxX1Tmp - minX1Tmp
+                            if (maxDistTmp > maxDist)
+                            {
+                                maxDist = maxDistTmp
+                                minX1 = minX1Tmp
+                                maxX1 = maxX1Tmp
+                            }
+
+                            minX1Tmp = 0
+                            maxX1Tmp = 0
+                        }
+                    }
+
+                    if (maxX1 > minX1)
+                    {
+                        notifyRegisteredDevices(byteArrayOf(minX.toByte(), minX1.toByte(), maxX1.toByte(), maxX.toByte()), TURN_IMAGE)
+                        sum += 4
+
+                        if (minX1 > minX)
+                        {
+                            sendRange(offset + minX, minX1 - minX)
+                        }
+                        if (maxX > maxX1)
+                        {
+                            sendRange(offset + maxX1 + 1, maxX - maxX1)
+                        }
+                    }
+                    else
+                    {
+                        notifyRegisteredDevices(byteArrayOf(minX.toByte(), maxX.toByte()), TURN_IMAGE)
+                        sum += 2
+
+                        sendRange(offset + minX, maxX - minX + 1)
+                    }
+                }
+                else
+                {
+                    notifyRegisteredDevices(byteArrayOf(minX.toByte(), maxX.toByte()), TURN_IMAGE)
+                    sum += 2
+                }
+
+                offset += turnImageSize
+            }
+
+            Log.d(TAG, "sendTurnImage, size = $sum")
+
+            /*
             Log.d(TAG, "sendTurnImage, size = ${it.width * it.height}")
 
             val array = byteBuffer.array()
@@ -297,6 +517,7 @@ class MainActivity: AppCompatActivity()
                 notifyRegisteredDevices(tmp, TURN_IMAGE)
                 // Thread.sleep(1)
             }
+            */
         }
     }
 
@@ -513,21 +734,11 @@ class MainActivity: AppCompatActivity()
                     {
                         Log.i(TAG, "Read turn instruction")
 
-                        val turnInstruction =  navInstruction.text ?: " "
-                        var byteArray = turnInstruction.toString().toByteArray()
-
-                        if (byteArray.size > 20)
-                        {
-                            val tmp = ByteArray(20)
-                            System.arraycopy(byteArray, 0, tmp, 0, 20)
-                            byteArray = tmp
-                        }
-
                         bluetoothGattServer?.sendResponse(device,
                                                           requestId,
                                                           BluetoothGatt.GATT_SUCCESS,
                                                           0,
-                                                          byteArray)
+                                                          byteArrayOf(0))
                     }
                     TURN_IMAGE == characteristic.uuid ->
                     {
@@ -616,12 +827,8 @@ class MainActivity: AppCompatActivity()
                         registeredDevices.add(device)
                         Util.postOnMain {
                             sendTurnImage()
-
-                            val turnInstruction =  navInstruction.text ?: " "
-                            notifyRegisteredDevices(turnInstruction.toString().toByteArray(), TURN_INSTRUCTION)
-
-                            val turnDistance = navInstructionDistance.text ?: " "
-                            notifyRegisteredDevices(turnDistance.toString().toByteArray(), TURN_DISTANCE)
+                            sendTurnInstruction()
+                            sendTurnDistance()
                         }
                     }
                     else if (Arrays.equals(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE, value))
@@ -1029,6 +1236,7 @@ class MainActivity: AppCompatActivity()
         val waypoints = arrayListOf(Landmark("Amsterdam", 52.3585050, 4.8803423), Landmark("Paris", 48.8566932, 2.3514616))
         // val waypoints = arrayListOf(Landmark("one", 44.41972, 26.08907), Landmark("two", 44.42479, 26.09076))
         // val waypoints = arrayListOf(Landmark("one", 44.42125, 26.09267), Landmark("two", 44.42233, 26.09205))
+        // val waypoints = arrayListOf(Landmark("Brasov", 45.65231, 25.61027), Landmark("Codlea", 45.69252, 25.44899))
 
         val errorCode = navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
         if (errorCode != GemError.NoError)

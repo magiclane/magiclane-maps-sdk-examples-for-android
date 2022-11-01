@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.generalmagic.sdk.examples.searchalongroute.MainActivity">
+    tools:context=".MainActivity">
 
     <com.generalmagic.sdk.core.GemSurfaceView
         android:id="@+id/gem_surface"
@@ -26,7 +26,7 @@
         android:id="@+id/search_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="10dp"
+        android:layout_margin="@dimen/big_padding"
         android:src="@drawable/ic_baseline_search_24"
         android:visibility="gone"
         app:backgroundTint="@color/purple_500"
@@ -39,7 +39,7 @@
         android:id="@+id/followCursor"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="10dp"
+        android:layout_margin="@dimen/big_padding"
         android:src="@drawable/ic_baseline_gps_fixed_24"
         android:visibility="gone"
         app:backgroundTint="@color/purple_500"

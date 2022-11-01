@@ -16,13 +16,14 @@ package com.generalmagic.sdk.examples.voiceinstrroutesimulation
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.ProgressBar
-import android.widget.Toast
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.generalmagic.sdk.content.ContentStore
 import com.generalmagic.sdk.content.EContentType
@@ -32,6 +33,7 @@ import com.generalmagic.sdk.routesandnavigation.NavigationListener
 import com.generalmagic.sdk.routesandnavigation.NavigationService
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
 
@@ -193,17 +195,18 @@ class MainActivity : AppCompatActivity()
             }
         }
 
-        SdkSettings.onApiTokenRejected = {/*
+        SdkSettings.onApiTokenRejected = {
+            /*
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/sign in and generate one. 
              */
-            Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
+            showDialog("TOKEN REJECTED")
         }
 
         if (!Util.isInternetConnected(this))
         {
-            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
+            showDialog("You must be connected to the internet!")
         }
     }
 
@@ -257,6 +260,26 @@ class MainActivity : AppCompatActivity()
         navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
     }
 
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
     // ---------------------------------------------------------------------------------------------------------------------------
 }
 

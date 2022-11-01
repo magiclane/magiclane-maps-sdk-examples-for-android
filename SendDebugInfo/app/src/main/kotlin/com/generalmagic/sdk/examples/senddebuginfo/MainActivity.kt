@@ -16,6 +16,7 @@ package com.generalmagic.sdk.examples.senddebuginfo
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -23,20 +24,21 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
-import android.widget.Toast
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
-import com.generalmagic.androidsphere.utils.CoroutinesAsyncTask
 import com.generalmagic.sdk.core.*
 import com.generalmagic.sdk.util.*
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.io.File
-import java.util.ArrayList
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
 class MainActivity : AppCompatActivity()
 {
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var sendDebugInfoButton: Button
@@ -75,17 +77,18 @@ class MainActivity : AppCompatActivity()
             }
         }
 
-        SdkSettings.onApiTokenRejected = {/*
+        SdkSettings.onApiTokenRejected = {
+            /*
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/sign in and generate one. 
              */
-            Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
+            showDialog("TOKEN REJECTED")
         }
 
         if (!Util.isInternetConnected(this))
         {
-            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
+            showDialog("You must be connected to the internet!")
         }
     }
 
@@ -110,7 +113,7 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private class SendFeedbackTask(val a: Activity, val email: String, val subject: String) : CoroutinesAsyncTask<Void, Void, Intent>()
+    private class SendFeedbackTask(val activity: Activity, val email: String, val subject: String) : CoroutinesAsyncTask<Void, Void, Intent>()
     {
         override fun doInBackground(vararg params: Void?): Intent
         {
@@ -126,7 +129,7 @@ class MainActivity : AppCompatActivity()
             var publicLogPath = ""
             val privateLogPath = GemSdk.appLogPath
             privateLogPath?.let {
-                val path = GemUtil.getApplicationPublicFilesAbsolutePath(a, "phoneLog.txt")
+                val path = GemUtil.getApplicationPublicFilesAbsolutePath(activity, "phoneLog.txt")
                 if (GemUtil.copyFile(it, path))
                 {
                     publicLogPath = path
@@ -141,7 +144,7 @@ class MainActivity : AppCompatActivity()
 
                 try
                 {
-                    uris.add(FileProvider.getUriForFile(a, a.packageName + ".provider", file))
+                    uris.add(FileProvider.getUriForFile(activity, activity.packageName + ".provider", file))
                 }
                 catch (e: Exception)
                 {
@@ -160,7 +163,7 @@ class MainActivity : AppCompatActivity()
                     files?.forEach breakLoop@{
                         try
                         {
-                            uris.add(FileProvider.getUriForFile(a, a.packageName + ".provider", it))
+                            uris.add(FileProvider.getUriForFile(activity, activity.packageName + ".provider", it))
                         }
                         catch (e: Exception)
                         {
@@ -181,8 +184,8 @@ class MainActivity : AppCompatActivity()
             {
                 return
             }
-
-            a.startActivity(Intent.createChooser(result, GemUtil.getUIString(EStringIds.eStrSelect)))
+            
+            activity.startActivity(result)
         }
     }
 
@@ -194,6 +197,26 @@ class MainActivity : AppCompatActivity()
         sendFeedbackTask.execute(null)
     }
 
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
+    
     // ---------------------------------------------------------------------------------------------------------------------------
 }
 

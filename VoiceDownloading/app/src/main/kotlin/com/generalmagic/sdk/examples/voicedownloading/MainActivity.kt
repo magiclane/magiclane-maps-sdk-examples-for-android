@@ -141,7 +141,7 @@ class MainActivity: AppCompatActivity()
             val separator = DividerItemDecoration(applicationContext, (layoutManager as LinearLayoutManager).orientation)
             addItemDecoration(separator)
 
-            val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
+            val lateralPadding = resources.getDimension(R.dimen.big_padding).toInt()
             setPadding(lateralPadding, 0, lateralPadding, 0)
             
             itemAnimator = null

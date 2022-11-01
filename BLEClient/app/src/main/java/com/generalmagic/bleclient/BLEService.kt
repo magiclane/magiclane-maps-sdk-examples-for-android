@@ -55,6 +55,9 @@ class BLEService : Service()
     private lateinit var context: Context
     private lateinit var tag: String
     private var bleServiceObserver: IBLEServiceObserver? = null
+    private var turnInstructionSize = 0
+    private var turnInstructionDataOffset = 0
+    private var turnInstructionData = byteArrayOf()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
@@ -116,10 +119,12 @@ class BLEService : Service()
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic)
             }
 
+            /*
             if ((characteristic.properties or BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0)
             {
                 setCharacteristicNotification(characteristic, true)
             }
+            */
 
             if (status == BluetoothGatt.GATT_SUCCESS)
             {
@@ -176,8 +181,38 @@ class BLEService : Service()
         {
             if (TURN_INSTRUCTION == characteristic.uuid)
             {
-                intent.putExtra(EXTRA_TYPE, 0)
-                intent.putExtra(EXTRA_DATA, String(data))
+                if ((turnInstructionSize == 0) && (data.size == 1))
+                {
+                    turnInstructionDataOffset = 0
+                    turnInstructionSize = data[0].toInt()
+                    turnInstructionData = ByteArray(turnInstructionSize)
+
+                    return
+                }
+                else
+                {
+                    if ((turnInstructionDataOffset + data.size) <= turnInstructionData.size)
+                    {
+                        System.arraycopy(data, 0, turnInstructionData, turnInstructionDataOffset, data.size)
+                        turnInstructionDataOffset += data.size
+
+                        if (turnInstructionDataOffset == turnInstructionData.size)
+                        {
+                            turnInstructionSize = 0
+
+                            intent.putExtra(EXTRA_TYPE, 0)
+                            intent.putExtra(EXTRA_DATA, String(turnInstructionData))
+                        }
+                        else
+                        {
+                            return
+                        }
+                    }
+                    else
+                    {
+                        return
+                    }
+                }
             }
             else if (TURN_DISTANCE == characteristic.uuid)
             {
@@ -420,12 +455,9 @@ class BLEService : Service()
             bluetoothGatt?.setCharacteristicNotification(characteristic, enabled)
         }
 
-        if (TURN_INSTRUCTION == characteristic.uuid)
-        {
-            val descriptor = characteristic.getDescriptor(CLIENT_CONFIG)
-            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-            bluetoothGatt?.writeDescriptor(descriptor)
-        }
+        val descriptor = characteristic.getDescriptor(CLIENT_CONFIG)
+        descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+        bluetoothGatt?.writeDescriptor(descriptor)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------

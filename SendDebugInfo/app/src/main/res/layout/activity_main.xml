@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.generalmagic.sdk.examples.senddebuginfo.MainActivity">
+    tools:context=".MainActivity">
 
     <com.generalmagic.sdk.core.GemSurfaceView
         android:id="@+id/gem_surface"
@@ -26,14 +26,14 @@
         android:id="@+id/sendDebugInfo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="10dp"
+        android:layout_margin="@dimen/big_padding"
+        android:text="@string/button_text"
         android:visibility="gone"
         app:backgroundTint="@color/purple_500"
-        app:tint="@color/white"
-        android:text="Tap here to send Debug Info"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:tint="@color/white"
         tools:ignore="ContentDescription" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

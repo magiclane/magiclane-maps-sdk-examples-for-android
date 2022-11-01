@@ -37,6 +37,8 @@ import com.generalmagic.sdk.core.SocialOverlay
 import com.generalmagic.sdk.sensordatasource.PositionListener
 import com.generalmagic.sdk.sensordatasource.PositionService
 import com.generalmagic.sdk.sensordatasource.enums.EDataType
+import com.generalmagic.sdk.util.EStringIds
+import com.generalmagic.sdk.util.GemUtil
 import com.generalmagic.sdk.util.PermissionsHelper
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
@@ -50,13 +52,10 @@ class MainActivity : AppCompatActivity()
     // ---------------------------------------------------------------------------------------------------------------------------
     
     private lateinit var gemSurfaceView: GemSurfaceView
-    
     private lateinit var statusText: TextView
-    
     private lateinit var statusProgressBar: ProgressBar
 
     private val socialReportListener = ProgressListener.create()
-
     private lateinit var positionListener: PositionListener
 
     private val kRequestLocationPermissionCode = 110
@@ -67,7 +66,6 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        
 
         gemSurfaceView = findViewById(R.id.gem_surface)
         statusText = findViewById(R.id.status_text)
@@ -87,7 +85,8 @@ class MainActivity : AppCompatActivity()
             }
         }
 
-        SdkSettings.onApiTokenRejected = {/* 
+        SdkSettings.onApiTokenRejected = {
+            /* 
             The TOKEN you provided in the AndroidManifest.xml file was rejected.
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/sign in and generate one. 
@@ -177,7 +176,15 @@ class MainActivity : AppCompatActivity()
         val prepareIdOrError = SocialOverlay.prepareReporting()
         if (prepareIdOrError <= 0)
         {
-            val errorMsg = "Prepare error: ${GemError.getMessage(prepareIdOrError)}"
+            val errorMsg = if (prepareIdOrError == GemError.NotFound || prepareIdOrError == GemError.Required)
+            {
+                "Prepare error: ${GemUtil.getUIString(EStringIds.eStrGPSAccuracyIsNotGoodEnough)}"   
+            }
+            else
+            {
+                "Prepare error: ${GemError.getMessage(prepareIdOrError)}"
+            }
+            
             Util.postOnMain { showDialog(errorMsg) }
 
             return@execute
@@ -250,3 +257,5 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------------------------------------

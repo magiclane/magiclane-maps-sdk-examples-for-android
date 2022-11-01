@@ -23,7 +23,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.*
-import android.util.DisplayMetrics
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.generalmagic.bleclient1.SampleGattAttributes.CLIENT_CONFIG
@@ -57,8 +56,16 @@ class BLEService : Service()
     private lateinit var tag: String
     private var bleServiceObserver: IBLEServiceObserver? = null
     private var turnImageDataOffset = 0
+    private var turnImageLineSize = 0
+    private var minX = 0
+    private var minX1 = 0
+    private var maxX = 0
+    private var maxX1 = 0
     var turnImageSize = 0
     private var turnImageData = byteArrayOf()
+    private var turnInstructionSize = 0
+    private var turnInstructionDataOffset = 0
+    private var turnInstructionData = byteArrayOf()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
@@ -189,8 +196,38 @@ class BLEService : Service()
         {
             if (TURN_INSTRUCTION == characteristic.uuid)
             {
-                intent.putExtra(EXTRA_TYPE, 0)
-                intent.putExtra(EXTRA_DATA, String(data))
+                if ((turnInstructionSize == 0) && (data.size == 1))
+                {
+                    turnInstructionDataOffset = 0
+                    turnInstructionSize = data[0].toInt()
+                    turnInstructionData = ByteArray(turnInstructionSize)
+
+                    return
+                }
+                else
+                {
+                    if ((turnInstructionDataOffset + data.size) <= turnInstructionData.size)
+                    {
+                        System.arraycopy(data, 0, turnInstructionData, turnInstructionDataOffset, data.size)
+                        turnInstructionDataOffset += data.size
+
+                        if (turnInstructionDataOffset == turnInstructionData.size)
+                        {
+                            turnInstructionSize = 0
+
+                            intent.putExtra(EXTRA_TYPE, 0)
+                            intent.putExtra(EXTRA_DATA, String(turnInstructionData))
+                        }
+                        else
+                        {
+                            return
+                        }
+                    }
+                    else
+                    {
+                        return
+                    }
+                }
             }
             else if (TURN_DISTANCE == characteristic.uuid)
             {
@@ -199,13 +236,14 @@ class BLEService : Service()
             }
             else if (TURN_IMAGE == characteristic.uuid)
             {
-                if (data.size == 8)
+                if ((data.size == 8) && (turnImageLineSize == 0))
                 {
                     turnImageSize = read4BytesFromBuffer(data, 0)
                     turnImageData = ByteArray(read4BytesFromBuffer(data, 4))
                     turnImageDataOffset = 0
+                    return
                 }
-                else if (data.size == 1)
+                else if ((data.size == 1) && (turnImageLineSize == 0))
                 {
                     if (data[0].toInt() == 0)
                     {
@@ -218,6 +256,90 @@ class BLEService : Service()
                         return
                     }
                 }
+                else if ((data.size == 2) && (turnImageLineSize == 0))
+                {
+                    minX = data[0].toInt()
+                    maxX = data[1].toInt()
+                    minX1 = 0
+                    maxX1 = 0
+
+                    if (maxX == minX)
+                    {
+                        for (i in 0 until turnImageSize)
+                        {
+                            turnImageData[turnImageDataOffset++] = 0
+                        }
+                    }
+                    else if (maxX > minX)
+                    {
+                        turnImageLineSize = maxX - minX + 1
+
+                        for (i in 0 until minX)
+                        {
+                            turnImageData[turnImageDataOffset++] = 0
+                        }
+                    }
+
+                    if (turnImageDataOffset == turnImageData.size)
+                    {
+                        turnImageDataOffset = 0
+
+                        intent.putExtra(EXTRA_TYPE, 2)
+                        intent.putExtra(EXTRA_DATA, turnImageData)
+
+                        // Log.d(tag, "turnImageDataOffset == turnImageData.size!")
+                    }
+                    else
+                    {
+                        return
+                    }
+                }
+                else if ((data.size == 4) && (turnImageLineSize == 0))
+                {
+                    minX = data[0].toInt()
+                    minX1 = data[1].toInt()
+                    maxX1 = data[2].toInt()
+                    maxX = data[3].toInt()
+
+                    for (i in 0 until minX)
+                    {
+                        turnImageData[turnImageDataOffset++] = 0
+                    }
+
+                    if (minX == minX1)
+                    {
+                        for (i in minX1 .. maxX1)
+                        {
+                            turnImageData[turnImageDataOffset++] = 254.toByte()
+                        }
+
+                        if (maxX > maxX1)
+                        {
+                            turnImageLineSize = maxX - maxX1
+                        }
+
+                        minX1 = 0
+                        maxX1 = 0
+                    }
+                    else
+                    {
+                        turnImageLineSize = minX1 - minX
+                    }
+
+                    if (turnImageDataOffset == turnImageData.size)
+                    {
+                        turnImageDataOffset = 0
+
+                        intent.putExtra(EXTRA_TYPE, 2)
+                        intent.putExtra(EXTRA_DATA, turnImageData)
+
+                        // Log.d(tag, "turnImageDataOffset == turnImageData.size!")
+                    }
+                    else
+                    {
+                        return
+                    }
+                }
                 else
                 {
                     // Log.d(tag, "before turnImageDataOffset = $turnImageDataOffset, data.size = ${data.size}")
@@ -225,6 +347,33 @@ class BLEService : Service()
                     {
                         System.arraycopy(data, 0, turnImageData, turnImageDataOffset, data.size)
                         turnImageDataOffset += data.size
+                        turnImageLineSize -= data.size
+
+                        if (turnImageLineSize == 0)
+                        {
+                            if (maxX1 > 0)
+                            {
+                                for (i in minX1 .. maxX1)
+                                {
+                                    turnImageData[turnImageDataOffset++] = 254.toByte()
+                                }
+
+                                if (maxX > maxX1)
+                                {
+                                    turnImageLineSize = maxX - maxX1
+                                }
+
+                                minX1 = 0
+                                maxX1 = 0
+                            }
+                            else
+                            {
+                                for (i in (maxX + 1) until turnImageSize)
+                                {
+                                    turnImageData[turnImageDataOffset++] = 0
+                                }
+                            }
+                        }
 
                         if (turnImageDataOffset == turnImageData.size)
                         {
@@ -234,6 +383,10 @@ class BLEService : Service()
                             intent.putExtra(EXTRA_DATA, turnImageData)
 
                             // Log.d(tag, "turnImageDataOffset == turnImageData.size!")
+                        }
+                        else
+                        {
+                            return
                         }
                         /*
                         else
@@ -245,6 +398,7 @@ class BLEService : Service()
                     else
                     {
                         Log.d(tag, "exceed range!!!")
+                        return
                     }
                 }
             }

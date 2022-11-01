@@ -1,3 +1,5 @@
+// -------------------------------------------------------------------------------------------------
+
 /*
  * Copyright (C) 2019-2022, General Magic B.V.
  * All rights reserved.
@@ -8,15 +10,21 @@
  * license agreement you entered into with General Magic.
  */
 
+// -------------------------------------------------------------------------------------------------
+
 package com.generalmagic.sdk.examples.searchalongroute
 
+// -------------------------------------------------------------------------------------------------
+
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -35,10 +43,16 @@ import com.generalmagic.sdk.routesandnavigation.NavigationService
 import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity() {
+// -------------------------------------------------------------------------------------------------
+
+class MainActivity : AppCompatActivity()
+{
+    // ---------------------------------------------------------------------------------------------
+    
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var searchButton: FloatingActionButton
@@ -56,23 +70,23 @@ class MainActivity : AppCompatActivity() {
         onCompleted = onCompleted@{ results, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-            when (errorCode) {
-                GemError.NoError -> {
+            when (errorCode)
+            {
+                GemError.NoError ->
+                {
                     // Display results in AlertDialog
                     onSearchCompleted(results)
                 }
 
-                GemError.Cancel -> {
+                GemError.Cancel ->
+                {
                     // The search action was cancelled.
                 }
 
-                else -> {
+                else ->
+                {
                     // There was a problem at computing the search operation.
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Search service error: ${GemError.getMessage(errorCode)}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showDialog("Search service error: ${GemError.getMessage(errorCode)}")
                 }
             }
         }
@@ -119,9 +133,10 @@ class MainActivity : AppCompatActivity() {
         postOnMain = true
     )
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -144,43 +159,47 @@ class MainActivity : AppCompatActivity() {
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the generalmagic.com website, sign up/sign in and generate one. 
              */
-            Toast.makeText(this@MainActivity, "TOKEN REJECTED", Toast.LENGTH_SHORT).show()
+            showDialog("TOKEN REJECTED")
         }
 
-        if (!Util.isInternetConnected(this)) {
-            Toast.makeText(this, "You must be connected to the internet!", Toast.LENGTH_LONG).show()
+        if (!Util.isInternetConnected(this))
+        {
+            showDialog("You must be connected to the internet!")
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    override fun onBackPressed() {
+    override fun onBackPressed()
+    {
         finish()
         exitProcess(0)
     }
 
     private fun getNavRoute(): Route? = navigationService.getNavigationRoute(navigationListener)
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
-    private fun enableGPSButton() {
+    private fun enableGPSButton()
+    {
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.VISIBLE }
+                followCursorButton.visibility = View.VISIBLE
             }
 
             onEnterFollowingPosition = {
-                Util.postOnMain { followCursorButton.visibility = View.GONE }
+                followCursorButton.visibility = View.GONE
             }
 
             // Set on click action for the GPS button.
@@ -190,7 +209,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     private fun startSimulation() = SdkCall.execute {
         val waypoints = arrayListOf(
@@ -201,7 +220,7 @@ class MainActivity : AppCompatActivity() {
         navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
 
     private fun searchAlongRoute(route: Route) = SdkCall.execute {
         // Set the maximum number of results to 25.
@@ -211,9 +230,10 @@ class MainActivity : AppCompatActivity() {
         searchService.searchAlongRoute(route, EGenericCategoriesIDs.GasStation)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
     
-    private fun onSearchCompleted(results: ArrayList<Landmark>) {
+    private fun onSearchCompleted(results: ArrayList<Landmark>)
+    {
         val builder = AlertDialog.Builder(this)
 
         val convertView = layoutInflater.inflate(R.layout.dialog_list, null)
@@ -225,9 +245,9 @@ class MainActivity : AppCompatActivity() {
                 (layoutManager as LinearLayoutManager).orientation
             ))
 
-            setBackgroundResource(R.color.white)
+            setBackgroundResource(R.color.background_color)
 
-            val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
+            val lateralPadding = resources.getDimension(R.dimen.big_padding).toInt()
             setPadding(lateralPadding, 0, lateralPadding, 0)
             
             adapter = CustomAdapter(results)
@@ -237,31 +257,60 @@ class MainActivity : AppCompatActivity() {
         
         builder.create().show()
     }
+
+    // ---------------------------------------------------------------------------------------------
+
+    @SuppressLint("InflateParams")
+    private fun showDialog(text: String)
+    {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+            findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.message).text = text
+            findViewById<Button>(R.id.button).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            setCancelable(false)
+            setContentView(view)
+            show()
+        }
+    }
     
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ---------------------------------------------------------------------------------------------
     
-    inner class CustomAdapter(private val dataSet: ArrayList<Landmark>) : RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
-        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    inner class CustomAdapter(private val dataSet: ArrayList<Landmark>) : RecyclerView.Adapter<CustomAdapter.ViewHolder>()
+    {
+        private val imageSize = resources.getDimension(R.dimen.list_item_image_size).toInt()
+        
+        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
+        {
             private val text: TextView = view.findViewById(R.id.search_text)
+            private val image: ImageView = view.findViewById(R.id.image)
 
             fun bind(position: Int)
             {
                 text.text = SdkCall.execute { dataSet[position].name }
+                image.setImageBitmap(SdkCall.execute { dataSet[position].imageAsBitmap(imageSize) })
             }
         }
 
-        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
+        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder
+        {
             val view = LayoutInflater.from(viewGroup.context).inflate(R.layout.list_item, viewGroup, false)
-            
             return ViewHolder(view)
         }
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        override fun onBindViewHolder(holder: ViewHolder, position: Int)
+        {
             holder.bind(position)
         }
 
         override fun getItemCount(): Int = dataSet.size
     }
-    
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // ---------------------------------------------------------------------------------------------
 }
+
+// -------------------------------------------------------------------------------------------------

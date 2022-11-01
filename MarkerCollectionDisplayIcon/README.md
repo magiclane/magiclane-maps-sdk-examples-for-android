@@ -1,7 +1,7 @@
 ## Overview
 
 This example app demonstrates the following feature:
-- Present an interactive map supporting pan, zoom, rotate and tilt.
+- Shows usage of `MarkerCollection`.
 
 ## Requirements
 

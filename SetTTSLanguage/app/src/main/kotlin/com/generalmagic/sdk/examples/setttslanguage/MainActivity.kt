@@ -200,9 +200,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             
             addItemDecoration(DividerItemDecoration(applicationContext, (layoutManager as LinearLayoutManager).orientation))
 
-            setBackgroundResource(R.color.white)
+            setBackgroundResource(R.color.background_color)
             
-            val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
+            val lateralPadding = resources.getDimension(R.dimen.big_padding).toInt()
             setPadding(lateralPadding, 0, lateralPadding, 0)
         }
 
