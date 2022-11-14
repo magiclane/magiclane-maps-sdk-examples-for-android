@@ -28,6 +28,7 @@ import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.places.Landmark
+import com.generalmagic.sdk.routesandnavigation.Route
 import com.generalmagic.sdk.routesandnavigation.RoutingService
 import com.generalmagic.sdk.util.SdkCall
 import com.generalmagic.sdk.util.Util
@@ -43,6 +44,8 @@ class MainActivity : AppCompatActivity()
     private lateinit var progressBar: ProgressBar
     private lateinit var gemSurfaceView: GemSurfaceView
 
+    private var routesList = ArrayList<Route>()
+
     private val routingService = RoutingService(
         onStarted = {
             progressBar.visibility = View.VISIBLE
@@ -55,6 +58,7 @@ class MainActivity : AppCompatActivity()
             {
                 GemError.NoError ->
                 {
+                    routesList = routes
                     SdkCall.execute {
                         gemSurfaceView.mapView?.presentRoutes(routes, displayBubble = true)
                     }
@@ -106,7 +110,7 @@ class MainActivity : AppCompatActivity()
                         val route = routes[0]
                         gemSurfaceView.mapView?.apply {
                             preferences?.routes?.mainRoute = route
-                            centerOnRoute(route)
+                            centerOnRoutes(routesList)
                         }
                     }
                 }

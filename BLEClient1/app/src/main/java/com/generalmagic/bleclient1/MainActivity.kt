@@ -29,6 +29,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -43,6 +44,7 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.location.LocationManagerCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -120,9 +122,9 @@ class MainActivity: AppCompatActivity()
     private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsMap ->
         if (!permissionsMap.isNullOrEmpty())
         {
-            permissionsAreGranted = permissionsMap.entries.all { it.value }
+            val permissionsGranted = permissionsMap.entries.all { it.value }
 
-            if (permissionsAreGranted)
+            if (permissionsGranted)
             {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                 {
@@ -131,15 +133,32 @@ class MainActivity: AppCompatActivity()
                     finish()
                     overridePendingTransition(0, 0)
                 }
+                else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R)
+                {
+                    requestBackgroundLocationPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                }
                 else
                 {
                     startScanning()
+                    permissionsAreGranted = true
                 }
             }
             else
             {
                 showDialog(getString(R.string.error_no_permissions))
             }
+        }
+    }
+
+    private val requestBackgroundLocationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { permissionGranted ->
+        if (permissionGranted)
+        {
+            startScanning()
+            permissionsAreGranted = true
+        }
+        else
+        {
+            showDialog(getString(R.string.error_no_permissions))
         }
     }
     
@@ -191,6 +210,18 @@ class MainActivity: AppCompatActivity()
                 {
                     if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
                         != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN)
+                        != PackageManager.PERMISSION_GRANTED)
+                    {
+                        requestPermissions()
+                    }
+                    else
+                    {
+                        permissionsAreGranted = true
+                    }
+                }
+                else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R)
+                {
+                    if (checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                         != PackageManager.PERMISSION_GRANTED)
                     {
                         requestPermissions()
@@ -298,6 +329,15 @@ class MainActivity: AppCompatActivity()
                 scanning = true
                 startBLEScan()
                 progressBar.visibility = View.VISIBLE
+
+
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
+                {
+                    if (!isLocationEnabled(this))
+                    {
+                        showDialog("Please turn on your location in order to make scanning possible.")
+                    }
+                }
             }
         }
         else
@@ -494,7 +534,7 @@ class MainActivity: AppCompatActivity()
         }
         else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
         {
-            requestPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION))
+            requestPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
         }
         else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
         {
@@ -506,6 +546,15 @@ class MainActivity: AppCompatActivity()
         }
     }
     
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun isLocationEnabled(context: Context): Boolean
+    {
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return LocationManagerCompat.isLocationEnabled(locationManager)
+    }
+
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
     @SuppressLint("InflateParams")

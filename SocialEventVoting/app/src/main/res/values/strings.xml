@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">SocialEventVoting</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+    <string name="please_select">Please select any social event in order to display the event panel.</string>
+</resources>

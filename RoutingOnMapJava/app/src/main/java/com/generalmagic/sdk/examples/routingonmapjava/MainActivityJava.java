@@ -45,10 +45,10 @@ import java.util.ArrayList;
 @SuppressWarnings("ALL")
 public class MainActivityJava extends AppCompatActivity
 {
-    ProgressBar progressBar;
-    GemSurfaceView gemSurfaceView;
-
-    RoutingService routingService;
+    private ProgressBar progressBar;
+    private GemSurfaceView gemSurfaceView;
+    private RoutingService routingService;
+    private ArrayList<Route> routesList = new ArrayList<Route>();
 
     // ---------------------------------------------------------------------------------------------
 
@@ -70,6 +70,8 @@ public class MainActivityJava extends AppCompatActivity
             {
                 case GemError.NoError:
                 {
+                    routesList = routes;
+
                     GemCall.INSTANCE.execute(() ->
                     {
                         MapView mapView = gemSurfaceView.getMapView();
@@ -140,7 +142,7 @@ public class MainActivityJava extends AppCompatActivity
                        Route route = routes.get(0);
                        
                        gemSurfaceView.getMapView().getPreferences().getRoutes().setMainRoute(route);
-                       gemSurfaceView.getMapView().centerOnRoute(route, null, new Animation(EAnimation.Linear, null, null, null));
+                       gemSurfaceView.getMapView().centerOnRoutes(routesList, ERouteDisplayMode.Full, null, new Animation(EAnimation.Linear, null, null, null));
                    }
                    
                    return 0;

@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">DefinePersistentRoadblock</string>
+
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+
+    <string name="hint">Zoom in and tap on any road in order to place a roadblock for 1 minute.</string>
+</resources>

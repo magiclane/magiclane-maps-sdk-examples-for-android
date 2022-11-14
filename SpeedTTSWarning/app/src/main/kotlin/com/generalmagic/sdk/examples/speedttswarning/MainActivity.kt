@@ -341,7 +341,8 @@ class MainActivity: AppCompatActivity()
     
     // ---------------------------------------------------------------------------------------------
 
-    companion object {
+    companion object
+    {
         private const val REQUEST_PERMISSIONS = 110
     }
     

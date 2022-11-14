@@ -35,12 +35,15 @@ import com.generalmagic.sdk.core.GemError
 import com.generalmagic.sdk.core.GemSdk
 import com.generalmagic.sdk.core.GemSurfaceView
 import com.generalmagic.sdk.core.ImageDatabase
+import com.generalmagic.sdk.core.Rgba
 import com.generalmagic.sdk.core.SdkSettings
 import com.generalmagic.sdk.core.Size
 import com.generalmagic.sdk.core.Xy
 import com.generalmagic.sdk.d3scene.Animation
 import com.generalmagic.sdk.d3scene.EAnimation
 import com.generalmagic.sdk.d3scene.ECommonOverlayId
+import com.generalmagic.sdk.d3scene.EHighlightOptions
+import com.generalmagic.sdk.d3scene.HighlightRenderSettings
 import com.generalmagic.sdk.d3scene.MapSceneObject
 import com.generalmagic.sdk.places.Landmark
 import com.generalmagic.sdk.routesandnavigation.Route
@@ -76,6 +79,8 @@ class MainActivity : AppCompatActivity()
     private lateinit var followCursorButton: FloatingActionButton
     private lateinit var flyToRoutesButton: FloatingActionButton
 
+    private var routesList = ArrayList<Route>()
+
     private var imageSize = 0
 
     private val routingService = RoutingService(
@@ -90,6 +95,8 @@ class MainActivity : AppCompatActivity()
             {
                 GemError.NoError ->
                 {
+                    routesList = routes
+
                     SdkCall.execute {
                         gemSurfaceView.mapView?.presentRoutes(routes, displayBubble = true)
                         gemSurfaceView.mapView?.preferences?.routes?.mainRoute?.let { selectRoute(it) }
@@ -132,6 +139,7 @@ class MainActivity : AppCompatActivity()
             it.setOnClickListener {
                 SdkCall.execute {
                     gemSurfaceView.mapView?.let { mapView ->
+                        mapView.deactivateAllHighlights()
                         mapView.preferences?.routes?.mainRoute?.let { mainRoute ->
                             selectRoute(mainRoute)
                         }
@@ -167,6 +175,7 @@ class MainActivity : AppCompatActivity()
                 SdkCall.execute {
                     // tell the map view where the touch event happened
                     gemSurfaceView.mapView?.cursorScreenPosition = xy
+                    gemSurfaceView.mapView?.deactivateAllHighlights()
                     
                     val centerXy = Xy(gemSurfaceView.measuredWidth / 2, gemSurfaceView.measuredHeight / 2)
 
@@ -205,18 +214,40 @@ class MainActivity : AppCompatActivity()
                             )
                         }
 
-                        landmark.coordinates?.let {
-                            gemSurfaceView.mapView?.centerOnCoordinates(
-                                it,
-                                -1,
-                                centerXy,
-                                Animation(EAnimation.Linear),
-                                Double.MAX_VALUE,
-                                0.0
-                            )
-                        }
+                        val contour = landmark.getContourGeographicArea()
+                        if (contour != null && !contour.isEmpty())
+                        {
+                            contour.let {
+                                gemSurfaceView.mapView?.centerOnArea(
+                                    it,
+                                    -1,
+                                    centerXy,
+                                    Animation(EAnimation.Linear),
+                                )
 
-                        gemSurfaceView.mapView?.centerOnLocation(landmark)
+                                val displaySettings = HighlightRenderSettings(
+                                    EHighlightOptions.ShowContour,
+                                    Rgba(255, 98, 0, 255),
+                                    Rgba(255, 98, 0, 255),
+                                    0.75
+                                )
+
+                                gemSurfaceView.mapView?.activateHighlightLandmarks(landmark, displaySettings)
+                            }
+                        }
+                        else
+                        {
+                            landmark.coordinates?.let {
+                                gemSurfaceView.mapView?.centerOnCoordinates(
+                                    it,
+                                    -1,
+                                    centerXy,
+                                    Animation(EAnimation.Linear),
+                                    Double.MAX_VALUE,
+                                    0.0
+                                )
+                            }
+                        }
 
                         return@execute
                     }
@@ -440,7 +471,10 @@ class MainActivity : AppCompatActivity()
 
             // Set on click action for the GPS button.
             followCursorButton.setOnClickListener {
-                SdkCall.execute { followPosition() }
+                SdkCall.execute {
+                    deactivateAllHighlights()
+                    followPosition()
+                }
             }
         }
     }
@@ -499,7 +533,7 @@ class MainActivity : AppCompatActivity()
             preferences?.routes?.mainRoute = route
         }
 
-        gemSurfaceView.mapView?.centerOnRoute(route)
+        gemSurfaceView.mapView?.centerOnRoutes(routesList)
     }
     
     // ---------------------------------------------------------------------------------------------
