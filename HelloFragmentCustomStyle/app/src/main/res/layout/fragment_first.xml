@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.generalmagic.sdk.examples.hellofragmentcustomstyle.FirstFragment">
+    tools:context="com.magiclane.sdk.examples.hellofragmentcustomstyle.FirstFragment">
 
     <TextView
         android:id="@+id/textview_first"

@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.flytoarea'
+	namespace 'com.magiclane.sdk.examples.flytoarea'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.flytoarea"
+        applicationId "com.magiclane.sdk.examples.flytoarea"
         minSdkVersion 19
         targetSdkVersion 31
 

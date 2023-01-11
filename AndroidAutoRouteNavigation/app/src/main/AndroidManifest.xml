@@ -19,7 +19,7 @@
         android:theme="@style/Theme.GEMSdk">
 
         <meta-data
-            android:name="com.generalmagic.sdk.token"
+            android:name="com.magiclane.sdk.token"
             android:value="YOUR_TOKEN" />
 
         <activity

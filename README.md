@@ -1,6 +1,6 @@
 # Magic Lane - Maps SDK for Android demo applications
 
-Copyright (C) 2019-2022, Magic Lane B.V.  
+Copyright (C) 2019-2023, Magic Lane B.V.  
 All rights reserved.  
 Contact: info@magiclane.com
 
@@ -43,6 +43,7 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Multiple surfaces in Fragment](MultipleSurfacesInFragment) - Display a variable list of maps on an Android Fragment.
 * [Multiple surfaces in Fragment Recycler](MultipleSurfacesInFragmentRecycler) - Displaying a variable list of maps on an Android Fragment.
 * [Overlapped Maps](OverlappedMaps) - Display a second map view over the existing one.
+* [Projection](Projection) - Show various types of projections for landmarks.
 * [Public Transit Routing on Map](PublicTransitRoutingOnMap) - Calculate the public transport routes between 2 given landmarks; display all results on the map and fly to the main route, if exists.
 * [Range Finder](RangeFinder) - Calculate the routes between 2 given landmarks; display and fly to the first route in the resulting route list, if it exists.
 * [Route Alarms](RouteAlarms) - Start simulated navigation between 2 given landmarks if a route can be calculated.

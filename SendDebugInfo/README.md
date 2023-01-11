@@ -1,6 +1,6 @@
 ## Overview
 
-This example app shows how to send the app log and latest crash report, if any, to General Magic support
+This example app shows how to send the app log and latest crash report, if any, to Magic Lane support
 
 ## Requirements
 

@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.multiplesurfacesinfragmentrecycler'
+	namespace 'com.magiclane.sdk.examples.multiplesurfacesinfragmentrecycler'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.multiplesurfacesinfragmentrecycler"
+        applicationId "com.magiclane.sdk.examples.multiplesurfacesinfragmentrecycler"
         minSdkVersion 19
         targetSdkVersion 31
 

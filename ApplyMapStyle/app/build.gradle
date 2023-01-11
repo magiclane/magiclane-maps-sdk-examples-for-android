@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.applymapstyle'
+	namespace 'com.magiclane.sdk.examples.applymapstyle'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.applymapstyle"
+        applicationId "com.magiclane.sdk.examples.applymapstyle"
         minSdkVersion 19
         targetSdkVersion 31
 

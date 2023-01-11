@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.whatsnearby'
+	namespace 'com.magiclane.sdk.examples.whatsnearby'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.whatsnearby"
+        applicationId "com.magiclane.sdk.examples.whatsnearby"
         minSdkVersion 19
         targetSdkVersion 31
 

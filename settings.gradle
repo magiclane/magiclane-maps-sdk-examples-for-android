@@ -15,7 +15,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = 'generalmagic-maps-sdk-examples-for-android'
+rootProject.name = 'magiclane-maps-sdk-examples-for-android'
 
 rootDir.eachDir {
     if (new File(it, 'build.gradle').file) {

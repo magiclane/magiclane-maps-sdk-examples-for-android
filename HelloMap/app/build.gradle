@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.hellomap'
+	namespace 'com.magiclane.sdk.examples.hellomap'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.hellomap"
+        applicationId "com.magiclane.sdk.examples.hellomap"
         minSdkVersion 19
         targetSdkVersion 31
 

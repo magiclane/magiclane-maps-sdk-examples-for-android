@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.socialreport'
+	namespace 'com.magiclane.sdk.examples.socialreport'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.socialreport"
+        applicationId "com.magiclane.sdk.examples.socialreport"
         minSdkVersion 19
         targetSdkVersion 31
 

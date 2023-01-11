@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Projection</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+    <string name="hint">Please select any landmark on the map in order to display its projections.</string>
+    
+    <string name="lat">Latitude:</string>
+    <string name="lon">Longitude:</string>
+    <string name="x">X:</string>
+    <string name="y">Y:</string>
+    <string name="zone">Zone:</string>
+    <string name="words">Words:</string>
+    <string name="easting">Easting:</string>
+    <string name="northing">Northing:</string>
+    <string name="letters">Letters:</string>
+    <string name="hemisphere">Hemisphere:</string>
+    <string name="grid_reference">Grid reference:</string>
+
+    <string name="what_3_words_token">7KUZO5DI</string>
+</resources>

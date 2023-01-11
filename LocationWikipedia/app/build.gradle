@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.locationwikipedia'
+	namespace 'com.magiclane.sdk.examples.locationwikipedia'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.locationwikipedia"
+        applicationId "com.magiclane.sdk.examples.locationwikipedia"
         minSdkVersion 19
         targetSdkVersion 31
 

@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.routing'
+	namespace 'com.magiclane.sdk.examples.routing'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.routing"
+        applicationId "com.magiclane.sdk.examples.routing"
         minSdkVersion 27
         targetSdkVersion 31
 

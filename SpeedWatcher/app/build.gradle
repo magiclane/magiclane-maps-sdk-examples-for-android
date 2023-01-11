@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.speedwatcher'
+	namespace 'com.magiclane.sdk.examples.speedwatcher'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.speedwatcher"
+        applicationId "com.magiclane.sdk.examples.speedwatcher"
         minSdkVersion 19
         targetSdkVersion 31
 

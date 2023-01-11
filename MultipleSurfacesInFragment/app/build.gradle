@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.multiplesurfacesinfragment'
+	namespace 'com.magiclane.sdk.examples.multiplesurfacesinfragment'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.multiplesurfacesinfragment"
+        applicationId "com.magiclane.sdk.examples.multiplesurfacesinfragment"
         minSdkVersion 19
         targetSdkVersion 31
 

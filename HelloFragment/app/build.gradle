@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.hellofragment'
+	namespace 'com.magiclane.sdk.examples.hellofragment'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.hellofragment"
+        applicationId "com.magiclane.sdk.examples.hellofragment"
         minSdkVersion 19
         targetSdkVersion 31
 

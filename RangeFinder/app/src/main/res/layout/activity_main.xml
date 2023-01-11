@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/root_view"
-    tools:context="com.generalmagic.sdk.examples.rangefinder.MainActivity">
+    tools:context="com.magiclane.sdk.examples.rangefinder.MainActivity">
     
     <ScrollView
         android:id="@+id/range_container"
@@ -233,7 +233,7 @@
         
     </ScrollView>
 
-    <com.generalmagic.sdk.core.GemSurfaceView
+    <com.magiclane.sdk.core.GemSurfaceView
         android:id="@+id/gem_surface"
         android:layout_width="match_parent"
         android:layout_height="0dp"

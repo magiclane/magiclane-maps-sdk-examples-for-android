@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.voicedownloading'
+	namespace 'com.magiclane.sdk.examples.voicedownloading'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.voicedownloading"
+        applicationId "com.magiclane.sdk.examples.voicedownloading"
         minSdkVersion 19
         targetSdkVersion 31
 

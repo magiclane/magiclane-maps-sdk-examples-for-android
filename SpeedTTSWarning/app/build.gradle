@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    namespace 'com.generalmagic.sdk.examples.speedttswarning'
+    namespace 'com.magiclane.sdk.examples.speedttswarning'
     
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.speedttswarning"
+        applicationId "com.magiclane.sdk.examples.speedttswarning"
         minSdk 19
         targetSdk 33
         versionCode 1

@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.markercollectiondisplayicon'
+	namespace 'com.magiclane.sdk.examples.markercollectiondisplayicon'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.markercollectiondisplayicon"
+        applicationId "com.magiclane.sdk.examples.markercollectiondisplayicon"
         minSdkVersion 19
         targetSdkVersion 31
 

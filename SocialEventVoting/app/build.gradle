@@ -4,15 +4,16 @@ plugins {
 }
 
 android {
-    namespace 'com.generalmagic.sdk.examples.socialeventvoting'
-    compileSdk 32
+    namespace 'com.magiclane.sdk.examples.socialeventvoting'
+
+    compileSdkVersion 33
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.socialeventvoting"
-        minSdk 19
-        targetSdk 32
-        versionCode 1
-        versionName "1.0"
+        applicationId "com.magiclane.sdk.examples.socialeventvoting"
+        minSdkVersion 19
+        targetSdkVersion 33
+
+		multiDexEnabled true
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.routeterrainprofile'
+	namespace 'com.magiclane.sdk.examples.routeterrainprofile'
 
     compileSdkVersion 33
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.routeterrainprofile"
+        applicationId "com.magiclane.sdk.examples.routeterrainprofile"
         minSdkVersion 19
         targetSdkVersion 33
 

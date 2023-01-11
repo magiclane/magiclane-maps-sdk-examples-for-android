@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.generalmagic.sdk.examples.hellofragmentcustomstyle.SecondFragment">
+    tools:context="com.magiclane.sdk.examples.hellofragmentcustomstyle.SecondFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/container"
@@ -15,7 +15,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.generalmagic.sdk.core.GemSurfaceView
+        <com.magiclane.sdk.core.GemSurfaceView
             android:id="@+id/gem_surface"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

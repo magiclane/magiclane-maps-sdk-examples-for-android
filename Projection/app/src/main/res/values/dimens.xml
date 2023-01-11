@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="big_padding">10dp</dimen>
+    <dimen name="standard_text_size">16sp</dimen>
+    <dimen name="big_text_size">20sp</dimen>
+    <dimen name="close_button_size">30dp</dimen>
+    <dimen name="small_padding">5dp</dimen>
+    <dimen name="card_corner_radius">6dp</dimen>
+</resources>

@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.downloadingonboardmapsimulation'
+	namespace 'com.magiclane.sdk.examples.downloadingonboardmapsimulation'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.downloadingonboardmapsimulation"
+        applicationId "com.magiclane.sdk.examples.downloadingonboardmapsimulation"
         minSdkVersion 19
         targetSdkVersion 31
 

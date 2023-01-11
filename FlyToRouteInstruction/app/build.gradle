@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.flytorouteinstruction'
+	namespace 'com.magiclane.sdk.examples.flytorouteinstruction'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.flytorouteinstruction"
+        applicationId "com.magiclane.sdk.examples.flytorouteinstruction"
         minSdkVersion 19
         targetSdkVersion 31
 

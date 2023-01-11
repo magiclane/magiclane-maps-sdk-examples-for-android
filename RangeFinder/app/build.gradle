@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.rangefinder'
+	namespace 'com.magiclane.sdk.examples.rangefinder'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.rangefinder"
+        applicationId "com.magiclane.sdk.examples.rangefinder"
         minSdkVersion 19
         targetSdkVersion 31
 

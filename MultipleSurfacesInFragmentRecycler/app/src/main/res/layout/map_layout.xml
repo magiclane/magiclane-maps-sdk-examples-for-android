@@ -4,7 +4,7 @@
     android:layout_height="200dp"
     android:layout_margin="@dimen/mapButtonMargin">
 
-    <com.generalmagic.sdk.core.GemSurfaceView
+    <com.magiclane.sdk.core.GemSurfaceView
         android:id="@+id/surface"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>

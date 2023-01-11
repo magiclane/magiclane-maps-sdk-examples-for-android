@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.mapgestures'
+	namespace 'com.magiclane.sdk.examples.mapgestures'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.mapgestures"
+        applicationId "com.magiclane.sdk.examples.mapgestures"
         minSdkVersion 19
         targetSdkVersion 31
 

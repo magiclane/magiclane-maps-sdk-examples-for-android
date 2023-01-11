@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-	namespace 'com.generalmagic.sdk.examples.gpximport'
+	namespace 'com.magiclane.sdk.examples.gpximport'
 
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.generalmagic.sdk.examples.gpximport"
+        applicationId "com.magiclane.sdk.examples.gpximport"
         minSdkVersion 19
         targetSdkVersion 31
 
