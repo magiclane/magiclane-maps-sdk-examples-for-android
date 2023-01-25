@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">SpeedTTSWarningNavigation</string>
+    <string name="current_speed">Current speed</string>
+    <string name="not_applicable">N/A</string>
+    <string name="speed_limit">Speed limit</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+</resources>

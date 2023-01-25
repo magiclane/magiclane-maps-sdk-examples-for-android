@@ -182,9 +182,6 @@ class MainActivity : AppCompatActivity()
 
     fun applyFilter(filter: String)
     {
-        // Cancel any search that is in progress now.
-        cancelSearch()
-
         listView.adapter = CustomAdapter(arrayListOf(), 0)
         if (filter.trim().isNotEmpty())
         {
@@ -194,17 +191,12 @@ class MainActivity : AppCompatActivity()
         // Search the requested filter.
         search(filter.trim())
     }
-
-    // ---------------------------------------------------------------------------------------------
-
-    private fun cancelSearch()
-    {
-        SdkCall.execute { searchService.cancelSearch() }
-    }
-
+    
     // ---------------------------------------------------------------------------------------------
 
     private fun search(filter: String): Int = SdkCall.execute {
+        // Cancel any search that is in progress now.
+        searchService.cancelSearch()
         searchService.searchByFilter(filter)
     } ?: GemError.Cancel
 

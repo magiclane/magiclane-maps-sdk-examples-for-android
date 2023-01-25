@@ -114,14 +114,9 @@ class MainActivity : AppCompatActivity()
             // Get the map view.
             surfaceView.mapView?.let { mapView ->
                 // Change the compass icon rotation based on the map rotation at rendering.
-                mapView.onViewRendered =
-                    { _: EViewDataTransitionStatus, _: EViewCameraTransitionStatus ->
-                        SdkCall.execute {
-                            mapView.preferences?.rotationAngle?.let {
-                                compass.rotation = -it.toFloat()
-                            }
-                        }
-                    }
+                mapView.onMapAngleUpdated = {
+                    compass.rotation = -it.toFloat()
+                }
                 
                 // Align the map to north if the compass icon is pressed. 
                 compass.setOnClickListener {
