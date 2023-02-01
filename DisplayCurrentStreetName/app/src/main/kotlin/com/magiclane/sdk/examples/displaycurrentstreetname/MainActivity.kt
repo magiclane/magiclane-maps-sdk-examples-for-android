@@ -29,16 +29,13 @@ import androidx.core.view.isVisible
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.SdkSettings
-import com.magiclane.sdk.sensordatasource.DataSource
-import com.magiclane.sdk.sensordatasource.DataSourceFactory
-import com.magiclane.sdk.sensordatasource.DataSourceListener
-import com.magiclane.sdk.sensordatasource.ImprovedPositionData
 import com.magiclane.sdk.sensordatasource.enums.EDataType
 import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.magiclane.sdk.sensordatasource.*
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import kotlin.system.exitProcess
@@ -56,15 +53,10 @@ class MainActivity : AppCompatActivity()
 
     private var dataSource: DataSource? = null
     private val dataSourceListener = object : DataSourceListener() {
-        override fun onNewData(dataType: EDataType) {
-            if (dataType != EDataType.ImprovedPosition)
-                return
-
+        override fun onNewData(data: SenseData) {
             var text = ""
             SdkCall.execute execute@{
-                val lastData = dataSource?.getLatestData(dataType) ?: return@execute
-
-                val improvedPositionData = ImprovedPositionData(lastData)
+                val improvedPositionData = ImprovedPositionData(data)
                 val roadAddress = improvedPositionData.roadAddress ?: return@execute
 
                 roadAddress.format()?.let let@{

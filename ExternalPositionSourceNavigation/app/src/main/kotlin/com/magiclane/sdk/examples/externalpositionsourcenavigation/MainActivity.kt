@@ -191,8 +191,6 @@ class MainActivity : AppCompatActivity()
         SdkSettings.onMapDataReady = { mapReady ->
             if (mapReady)
             {
-                Log.d("cotcodacila", "mapReady")
-
                 var externalDataSource: ExternalDataSource?
 
                 var index = 0

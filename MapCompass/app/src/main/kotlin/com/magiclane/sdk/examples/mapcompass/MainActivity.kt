@@ -33,16 +33,13 @@ import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.EViewCameraTransitionStatus
 import com.magiclane.sdk.d3scene.EViewDataTransitionStatus
-import com.magiclane.sdk.sensordatasource.CompassData
-import com.magiclane.sdk.sensordatasource.DataSource
-import com.magiclane.sdk.sensordatasource.DataSourceFactory
-import com.magiclane.sdk.sensordatasource.DataSourceListener
 import com.magiclane.sdk.sensordatasource.enums.EDataType
 import com.magiclane.sdk.util.GemCall
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.magiclane.sdk.sensordatasource.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.exitProcess
 
@@ -59,6 +56,20 @@ class MainActivity : AppCompatActivity()
     private var isLiveHeadingEnabled = AtomicBoolean(false)
 
     var dataSource: DataSource? = null
+
+    var dataSourceListener = object : DataSourceListener()
+    {
+        override fun onNewData(data: SenseData)
+        {
+            GemCall.execute {
+                // smooth new compass data
+                val heading = headingSmoother.update(CompassData(data).heading)
+
+                // update map view based on the recent changes
+                surfaceView.mapView?.preferences?.rotationAngle = heading
+            }
+        }
+    }
 
     val headingSmoother = HeadingSmoother()
 
@@ -155,22 +166,7 @@ class MainActivity : AppCompatActivity()
         dataSource = DataSourceFactory.produceLive()
 
         // start listening for compass data
-        dataSource?.addListener(object : DataSourceListener()
-        {
-            override fun onNewData(dataType: EDataType)
-            {
-                GemCall.execute {
-                    dataSource?.getLatestData(dataType)?.let {
-
-                        // smooth new compass data
-                        val heading = headingSmoother.update(CompassData(it).heading)
-
-                        // update map view based on the recent changes
-                        surfaceView.mapView?.preferences?.rotationAngle = heading
-                    }
-                }
-            }
-        }, EDataType.Compass)
+        dataSource?.addListener(dataSourceListener, EDataType.Compass)
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -179,8 +175,11 @@ class MainActivity : AppCompatActivity()
      * Will stop listening for compass data.
      */
     private fun stopLiveHeading() = GemCall.execute {
-        dataSource?.release()
-        dataSource = null
+        dataSource?.let {
+            it.removeListener(dataSourceListener)
+            it.release()
+            dataSource = null
+        }
     }
 
     // ---------------------------------------------------------------------------------------------

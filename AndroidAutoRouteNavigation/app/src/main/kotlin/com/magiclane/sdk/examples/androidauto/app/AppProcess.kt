@@ -29,12 +29,7 @@ import com.magiclane.sdk.examples.androidauto.services.SearchInstance
 import com.magiclane.sdk.examples.androidauto.services.SettingsInstance
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
-import com.magiclane.sdk.sensordatasource.DataSource
-import com.magiclane.sdk.sensordatasource.DataSourceFactory
-import com.magiclane.sdk.sensordatasource.DataSourceListener
-import com.magiclane.sdk.sensordatasource.PositionData
-import com.magiclane.sdk.sensordatasource.PositionListener
-import com.magiclane.sdk.sensordatasource.PositionService
+import com.magiclane.sdk.sensordatasource.*
 import com.magiclane.sdk.sensordatasource.enums.EDataType
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.SdkImages
@@ -93,37 +88,6 @@ object AppProcess {
             }
         }
     }
-
-    private var datasource: DataSource? = null
-    private var positionListener: DataSourceListener? = null
-
-    fun waitForNextImprovedPosition(onEvent: (() -> Unit)) {
-        datasource = DataSourceFactory.produceLive()
-        if (datasource == null) {
-//            showToast("No datasource!")
-            return
-        }
-
-        positionListener = object : DataSourceListener() {
-            override fun onNewData(dataType: EDataType) {
-                if (dataType != EDataType.ImprovedPosition)
-                    return
-
-//                showToast("On valid position")
-                onEvent()
-
-                //  Stuff no longer needed
-                datasource?.removeListener(this)
-                datasource = null
-                positionListener = null
-            }
-        }
-
-        // listen for first valid position to start the nav
-//        showToast("Waiting for valid position")
-        datasource?.addListener(positionListener!!, EDataType.ImprovedPosition)
-    }
-
     fun waitForNextPosition(onPosition: (() -> Unit)) {
         val positionListener = object : PositionListener() {
             override fun onNewPosition(value: PositionData) {
