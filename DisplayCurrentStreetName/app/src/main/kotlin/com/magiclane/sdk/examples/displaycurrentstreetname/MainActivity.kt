@@ -60,9 +60,6 @@ class MainActivity : AppCompatActivity()
                 val roadAddress = improvedPositionData.roadAddress ?: return@execute
 
                 roadAddress.format()?.let let@{
-                    val df = DecimalFormat("#.##")
-                    df.roundingMode = RoundingMode.CEILING
-
                     if (it.isEmpty())
                     {
                         text = "Current street name not available."

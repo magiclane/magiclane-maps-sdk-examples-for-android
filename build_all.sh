@@ -75,8 +75,8 @@ for EXAMPLE_PATH in ${EXAMPLE_PROJECTS}; do
     cp "${MAPS_SDK_AAR}" "${EXAMPLE_PATH}/app/libs"
 done
 
-GRADLE_WRAPPER=$(find ${MY_DIR} -type f -executable -name gradlew -print -quit)
-${GRADLE_WRAPPER} --max-workers $(( ($(num_cpus) + 4 - 1) / 4 )) assembleAll 
+GRADLE_WRAPPER=$(find ${MY_DIR} -maxdepth 1 -type f -executable -name gradlew -print -quit)
+${GRADLE_WRAPPER} --max-workers=$(( ($(num_cpus) + 4 - 1) / 4 )) --no-watch-fs assembleAll 
 ${GRADLE_WRAPPER} --stop
 
 if [ -d "APK" ]; then
