@@ -76,13 +76,14 @@ for EXAMPLE_PATH in ${EXAMPLE_PROJECTS}; do
 done
 
 GRADLE_WRAPPER=$(find ${MY_DIR} -maxdepth 1 -type f -executable -name gradlew -print -quit)
-${GRADLE_WRAPPER} --max-workers=$(( ($(num_cpus) + 4 - 1) / 4 )) --no-watch-fs assembleAll 
+${GRADLE_WRAPPER} --no-parallel --no-watch-fs assembleAll 
 ${GRADLE_WRAPPER} --stop
 
 if [ -d "APK" ]; then
 	rm -rf "APK"
 fi
 mkdir APK
+
 for EXAMPLE_PATH in ${EXAMPLE_PROJECTS}; do
 	mkdir -p "APK/$(basename ${EXAMPLE_PATH})"
     cp "${EXAMPLE_PATH}/build/app/outputs/apk/release/app-release.apk" "APK/$(basename ${EXAMPLE_PATH})"
