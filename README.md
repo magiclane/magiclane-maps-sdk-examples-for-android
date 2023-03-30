@@ -13,8 +13,11 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Apply Map Style](ApplyMapStyle) - Get the map style items from the server; download and apply a map style.
 * [BLE Client](BLEClient) - BLE client for BLEServer example. It displays navigation instructions received from server.
 * [BLE Server](BLEServer) - Start simulated navigation between 2 given landmarks. Displays turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance. Acts like BLE server. Send navigation info (next turn image id, distance to next turn, next navigation instruction) to the BLE client.
-* [BLE Client1](BLEClient1) - BLE client for BLEServer example. It displays navigation instructions received from server. Turn images are transferred as bitmaps.
+* [BLE Client1](BLEClient1) - BLE client for BLEServer1 example. It displays navigation instructions received from server. Turn images are transferred as bitmaps.
 * [BLE Server1](BLEServer1) - Start simulated navigation between 2 given landmarks. Displays turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance. Acts like BLE server. Send navigation info (next turn image as bitmap, distance to next turn, next navigation instruction) to the BLE client.
+* [BLE Client2](BLEClient2) - BLE client for BLEServer2 example. It displays navigation instructions received from server. Turn images are transferred as IDs.
+* [BLE Server2](BLEServer2) - Start simulated navigation between 2 given landmarks. Displays turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance. Acts like BLE server. Send navigation info (next turn image as bitmap, distance to next turn, next navigation instruction) to the BLE client.
+* [Custom GPS Arrow](CustomGPSArrow) - Start simulated navigation between 2 given landmarks if a route can be calculated, using a custom GPS arrow.
 * [Define Persistent Roadlock](DefinePersistentRoadblock) - Make possible the definition of a persistent roadblock.
 * [Display Current Street Name](DisplayCurrentStreetName) - Fly to current coordinates. Display current street name, speed and road modifier.
 * [Downloaded Onboard Map Simulation](DownloadedOnboardMapSimulation) - Fully offline start simulation between 2 given landmarks if any route can be calculated.
