@@ -74,33 +74,19 @@ class MainActivity : AppCompatActivity()
                     }
                 }
 
-                mapView.onPinch = { start1: Xy, start2: Xy, end1: Xy, end2: Xy ->
+                mapView.onPinch = { start1: Xy, start2: Xy, end1: Xy, end2: Xy, center: Xy ->
                     SdkCall.execute {
                         Log.i(
                             "Gesture",
                             "onPinch from " +
                                     "(${start1.x}, ${start1.y}) and (${start2.x}, ${start2.y}) " +
                                     "to " +
-                                    "(${end1.x}, ${end1.y}) and (${end2.x}, ${end2.y})."
+                                    "(${end1.x}, ${end1.y}) and (${end2.x}, ${end2.y})" +
+                                    "center " +
+                                    "(${center.x}, ${center.y})."
                         )
                     }
                 }
-
-                mapView.onRotate =
-                    { start1: Xy, start2: Xy, end1: Xy, end2: Xy, center: Xy, deltaAngleDeg: Double ->
-                        SdkCall.execute {
-                            Log.i(
-                                "Gesture",
-                                "onRotate from " +
-                                        "(${start1.x}, ${start1.y}) and (${start2.x}, ${start2.y}) " +
-                                        "to " +
-                                        "(${end1.x}, ${end1.y}) and (${end2.x}, ${end2.y}) " +
-                                        "with center " +
-                                        "(${center.x}, ${center.y}) " +
-                                        "and $deltaAngleDeg degrees."
-                            )
-                        }
-                    }
 
                 mapView.onSwipe = { distX: Int, distY: Int, speedMMPerSec: Double ->
                     SdkCall.execute {

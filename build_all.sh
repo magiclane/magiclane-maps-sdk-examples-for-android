@@ -8,6 +8,8 @@
 # Information and shall use it only in accordance with the terms of the
 # license agreement you entered into with Magic Lane.
 
+declare GRADLE_WRAPPER=""
+
 function on_err()
 {
 	echo "Error on line $1"
@@ -24,6 +26,10 @@ function on_exit()
 			find "${EXAMPLE_PATH}" -type d -name ".gradle" -exec rm -rf {} +
 			find "${EXAMPLE_PATH}" -type f -name "*.aar" -exec rm {} +
 		done
+	fi
+
+	if [ -n "${GRADLE_WRAPPER}" ]; then
+		${GRADLE_WRAPPER} --stop
 	fi
 
 	if [ -d "${MY_DIR}/.gradle" ]; then
