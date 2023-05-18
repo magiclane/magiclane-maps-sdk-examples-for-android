@@ -54,6 +54,7 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Route Navigation](RouteNavigation) - Start navigation from the current position to a given landmark if any route can be calculated.
 * [Route Simulation](RouteSimulation) - Start simulation between 2 given landmarks if any route can be calculated.
 * [Route Simulation with Instructions](RouteSimulationWithInstructions) - Start simulation between 2 given landmarks. Displays turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance.
+* [Route Simulation without Map](RouteSimulationWithoutMap) - Start simulated navigation between 2 given landmarks. Displays turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance. No map is displayed.
 * [Route Terrain Profile](RouteTerrainProfile) - Calculate the routes between 2 given landmarks; display some of the route terrain profile details available for a route.
 * [Routing](Routing) - Calculate the routes between 2 given landmarks.
 * [Routing on Map](RoutingOnMap) - Calculate the routes between 2 given landmarks; display and fly to the first resulted route, if exists.

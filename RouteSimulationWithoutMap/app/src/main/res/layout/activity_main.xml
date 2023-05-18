@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:background="#E8E3E3">
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <include
+        android:id="@+id/navigation_top_panel"
+        layout="@layout/navigation_top_panel"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:visibility="gone"/>
+
+    <include
+        android:id="@+id/navigation_lane_panel"
+        layout="@layout/navigation_lane_panel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottom_panel"
+        android:layout_marginStart="@dimen/list_item_padding"
+        android:layout_marginEnd="@dimen/list_item_padding"
+        android:layout_marginBottom="@dimen/nav_top_panel_padding"
+        android:visibility="gone"/>
+
+    <include
+        android:id="@+id/navigation_speed_panel"
+        layout="@layout/navigation_speed_panel"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/nav_speed_panel_height"
+        android:layout_marginTop="@dimen/route_status_text_lateral_padding"
+        app:layout_constraintTop_toBottomOf="@id/navigation_top_panel"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="gone"/>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/bottom_panel"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/turn_image_size"
+        android:layout_margin="@dimen/big_padding"
+        android:background="@color/white"
+        android:elevation="@dimen/elevation_height"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:id="@+id/eta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/big_padding"
+            android:textColor="@color/black"
+            android:textSize="@dimen/instruction_text_size"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/rtt"
+            app:layout_constraintHorizontal_chainStyle="spread"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/rtt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/big_padding"
+            android:textColor="@color/black"
+            android:textSize="@dimen/instruction_text_size"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/rtd"
+            app:layout_constraintStart_toEndOf="@id/eta"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/rtd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/big_padding"
+            android:textColor="@color/black"
+            android:textSize="@dimen/instruction_text_size"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/rtt"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <TextView
+        android:id="@+id/current_street_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/white"
+        android:background="@drawable/rounded_background_black"
+        android:paddingStart="@dimen/big_padding"
+        android:paddingEnd="@dimen/big_padding"
+        android:paddingTop="@dimen/nav_demo_text_padding"
+        android:paddingBottom="@dimen/small_padding"
+        android:textSize="@dimen/big_text_size"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:visibility="gone"
+        android:gravity="center"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_marginBottom="@dimen/nav_top_panel_padding"
+        app:layout_constraintBottom_toTopOf="@id/bottom_panel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/current_road_code_image_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_background_black"
+        app:layout_constraintBottom_toTopOf="@id/bottom_panel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:padding="@dimen/small_padding"
+        android:layout_marginBottom="@dimen/nav_top_panel_padding"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/current_road_code_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxHeight="@dimen/current_road_code_height"
+            android:adjustViewBounds="true"
+            tools:ignore="ContentDescription" />
+
+    </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/followCursor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/big_padding"
+        android:visibility="gone"
+        app:backgroundTint="@color/purple_500"
+        app:tint="@color/white"
+        android:src="@drawable/ic_baseline_gps_fixed_24"
+        app:layout_constraintBottom_toTopOf="@id/bottom_panel"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="ContentDescription" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

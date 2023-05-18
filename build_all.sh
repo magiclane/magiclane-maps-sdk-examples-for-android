@@ -81,6 +81,13 @@ for EXAMPLE_PATH in ${EXAMPLE_PROJECTS}; do
     cp "${MAPS_SDK_AAR}" "${EXAMPLE_PATH}/app/libs"
 done
 
+GRADLE_OPTS="-Xms8g -Xmx8g"
+GRADLE_OPTS="${GRADLE_OPTS} -XX:+HeapDumpOnOutOfMemoryError"
+GRADLE_OPTS="${GRADLE_OPTS} -Dorg.gradle.daemon=false"
+GRADLE_OPTS="${GRADLE_OPTS} -Dkotlin.incremental=false"
+GRADLE_OPTS="${GRADLE_OPTS} -Dfile.encoding=UTF-8"
+export GRADLE_OPTS
+
 GRADLE_WRAPPER=$(find ${MY_DIR} -maxdepth 1 -type f -executable -name gradlew -print -quit)
 ${GRADLE_WRAPPER} --no-parallel --no-watch-fs assembleAll 
 ${GRADLE_WRAPPER} --stop

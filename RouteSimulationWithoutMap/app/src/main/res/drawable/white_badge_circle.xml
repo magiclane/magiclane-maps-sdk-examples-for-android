@@ -1,0 +1,22 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="ring"
+    android:useLevel="false"
+    android:thickness="@dimen/gem_badge_circle_thickness"
+    android:innerRadius="0dp"
+    >
+
+    <solid
+        android:color="#FFF"
+        />
+    <stroke
+        android:width="1dip"
+        android:color="#000" />
+
+    <padding
+        android:top="@dimen/gem_badge_circle_padding"
+        android:bottom="@dimen/gem_badge_circle_padding"
+	    android:left="@dimen/gem_badge_circle_padding"
+        android:right="@dimen/gem_badge_circle_padding"
+	/>
+
+</shape>

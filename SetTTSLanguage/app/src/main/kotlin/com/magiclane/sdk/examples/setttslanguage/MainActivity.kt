@@ -85,7 +85,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
-            if (!SoundPlayingService.ttsPlayerIsInitialized)
+            val ttsPlayerIsInitialized = SdkCall.execute { SoundPlayingService.ttsPlayerIsInitialized } ?: false
+
+            if (!ttsPlayerIsInitialized)
             {
                 SoundUtils.addTTSPlayerInitializationListener(this)
             }
