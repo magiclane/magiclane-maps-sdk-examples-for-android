@@ -26,6 +26,7 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Draw Polyline](DrawPolyline) - Create a polyline and its display settings; fly to the polyline.
 * [External Position Source Navigation](ExternalPositionSourceNavigation) - Navigate to a given landmark using an external data source (GPS positions are not coming from system. They are hardcoded in the app and they are provided to the SDK via an "ExternalDataSource" object)
 * [Favourites](Favourites) - Fly to a location and use UI to add or remove that landmark to/ from the favourites folder.
+* [Finger Route](FingerRoute) - Calculates a route that tries to follow finger movement on the map; render route on top of finger line.
 * [Fly to Area](FlyToArea) - Search for a landmark; fly to resulted landmark, if exists.
 * [Fly To Coordinates](FlyToCoordinates) - Fly to given coodinates.
 * [Fly to Route Instruction](FlyToRouteInstruction) - Calculate the routes between 2 given landmarks; display the first route on a map, if exists; fly to first route instruction, if exists.

@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">FingerRoute</string>
+    <string name="bike">Bike</string>
+    <string name="pedestrian">Pedestrian</string>
+    <string name="error">Error</string>
+    <string name="ok">Ok</string>
+</resources>

@@ -1,0 +1,10 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+	<item
+		android:gravity="fill"
+		android:drawable="@drawable/ic_brightness_1_gray_24dp"
+		/>
+	<item
+		android:gravity="fill"
+		android:drawable="@drawable/route"
+		/>
+</layer-list>
