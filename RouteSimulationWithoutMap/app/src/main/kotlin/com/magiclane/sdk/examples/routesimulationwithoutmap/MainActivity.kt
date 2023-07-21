@@ -333,7 +333,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                         }
                         trafficDelayInMinutes < ConstVals.BIG_TRAFFIC_DELAY_IN_MINUTES ->
                         {
-                            Color.argb(255, 100, 0, 255) // orange
+                            Color.argb(255, 255, 175, 63) // orange
                         }
                         else ->
                         {
