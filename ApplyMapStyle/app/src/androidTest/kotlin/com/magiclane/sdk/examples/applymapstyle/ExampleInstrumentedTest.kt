@@ -27,6 +27,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.magiclane.example.myapplication", appContext.packageName)
+        assertEquals("com.magiclane.sdk.examples.applymapstyle", appContext.packageName)
     }
 }

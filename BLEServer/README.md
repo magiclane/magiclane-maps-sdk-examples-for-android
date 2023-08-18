@@ -4,7 +4,7 @@ This example app demonstrates the following features:
 - Present a map.
 - Start simulated navigation between 2 given landmarks.
 - Displays turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance.
-- Acts like BLE server. Send navigation info (next turn image id, distance to next turn, next navigation instruction) to the BLE client.
+- Acts like BLE server. Send navigation info (next turn image ID, distance to next turn, next navigation instruction) to the BLE client.
 
 ## Requirements
 

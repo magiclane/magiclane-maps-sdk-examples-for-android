@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">BLEClient</string>
+    <string name="app_name">BLEClient2</string>
     <string name="ble_not_supported">BLE is not supported</string>
     <string name="turn_instruction">Turn instruction:</string>
     <string name="distance_to_turn">Distance to turn:</string>

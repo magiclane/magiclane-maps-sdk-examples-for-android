@@ -29,6 +29,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.magiclane.sdk.examples.myapplication", appContext.packageName)
+        assertEquals("com.magiclane.sdk.examples.androidauto", appContext.packageName)
     }
 }

@@ -14,4 +14,4 @@ dependencyResolutionManagement {
 }
 
 include ':app'
-rootProject.name = "BLEServer"
+rootProject.name = "BLEServer2"

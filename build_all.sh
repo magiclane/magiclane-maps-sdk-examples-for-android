@@ -64,7 +64,7 @@ fi
 set -euox pipefail
 
 MY_DIR="$(cd "$(dirname "$0")" && pwd)"
-pushd "${MY_DIR}" &>/dev/null || exit 1
+pushd "${MY_DIR}" &>/dev/null
 
 if [[ "$#" -eq 0 ]]; then
 	echo "You must provide local path to AAR"
@@ -102,4 +102,4 @@ for EXAMPLE_PATH in ${EXAMPLE_PROJECTS}; do
     cp "${EXAMPLE_PATH}/build/app/outputs/apk/release/app-release.apk" "APK/$(basename ${EXAMPLE_PATH})"
 done
 
-popd &>/dev/null || exit 1
+popd &>/dev/null

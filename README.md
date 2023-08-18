@@ -66,7 +66,8 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Set TTS Language](SetTTSLanguage) - Shows usage of `SoundPlayingService` class and setting TTS language.
 * [Social Event Voting](SocialEventVoting) - Presents a social event panel that displays the score of the event and the option to vote the event.
 * [Social Report](SocialReport) - Waits for a valid position. Submit a social report.
-* [Speed TTS Warning](SpeedTTSWarning) - Starts a navigation from the current position to a given landmark. Displays the current speed and the legal speed limit. Sends a TTS warning each time the current speed overcomes the legal speed limit.
+* [Speed TTS Warning Navigation](SpeedTTSWarningNavigation) - Starts a navigation from the current position to a given landmark. Displays the current speed and the legal speed limit. Sends a TTS warning each time the current speed overcomes the legal speed limit.
+* [Speed TTS Warning Tracking](SpeedTTSWarningTracking) - Displays the current speed and the legal speed limit. Sends a TTS warning each time the current speed overcomes the legal speed limit.
 * [Speed Watcher](SpeedWatcher) - Start simulation between 2 given landmarks. Display the current speed and the legal speed limit.
 * [Truck Profile](TruckProfile) - Calculate the truck routes between 2 given landmarks. Change the truck profile and recalculate routes depending on the new settings.
 * [Voice Downloading](VoiceDownloading) - Gather the list of available voices; download first available voice.

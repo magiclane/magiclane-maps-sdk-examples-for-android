@@ -19,8 +19,8 @@
         android:theme="@style/Theme.GEMSdk">
 
         <meta-data
-            android:name="com.generalmagic.sdk.token"
-            android:value="eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIzN2UxOTBjNS0zOWQ4LTQ3ZTItODMxNS04OWMxMzNkYjQwZGIiLCJleHAiOjE3MDQxNDY0MDAsImlzcyI6IkdlbmVyYWwgTWFnaWMiLCJqdGkiOiIyOGIyYmVmMS01ODcyLTQ3YmEtOTA5Yy0wMWEwZTc3NmQ4ZmIiLCJuYmYiOjE2NjE3ODUwNDN9.YPXX8qfY9UqdaZgAtnv-ipP60O7TgHM805VHPd7UF3SLn8CgQUkJALvwiPIVHNg3bPEng5VZW7Q4qKobbywuNw" />
+            android:name="com.magiclane.sdk.token"
+            android:value="YOUR_TOKEN" />
 
         <activity
             android:name=".MainActivity"
