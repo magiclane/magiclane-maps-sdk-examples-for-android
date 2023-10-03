@@ -64,13 +64,7 @@ class MainActivity: AppCompatActivity()
 
     private val flagBitmapsMap = HashMap<String, Bitmap?>()
 
-    private var mapsCatalogRequested = false
-
     private val kDefaultToken = "YOUR_TOKEN"
-
-    private var connected = false
-
-    private var mapReady = false
 
     private val progressListener = ProgressListener.create(
         onStarted = {
@@ -151,8 +145,6 @@ class MainActivity: AppCompatActivity()
         }
 
         val loadMaps = {
-            mapsCatalogRequested = true
-
             val loadMapsCatalog = {
                 SdkCall.execute {
                     // Call to the content store to asynchronously retrieve the list of maps.
@@ -166,7 +158,7 @@ class MainActivity: AppCompatActivity()
             {
                 loadMapsCatalog()
             }
-            else // if token is not present try to avoid content server requests limitation by delaying the voices catalog request
+            else // if token is not present try to avoid content server requests limitation by delaying the maps catalog request
             {
                 progressBar.visibility = View.VISIBLE
 
@@ -176,17 +168,8 @@ class MainActivity: AppCompatActivity()
             }
         }
 
-        SdkSettings.onMapDataReady = { it ->
-            mapReady = it
-            if (connected && mapReady && !mapsCatalogRequested)
-            {
-                loadMaps()
-            }
-        }
-
-        SdkSettings.onConnectionStatusUpdated = { it ->
-            connected = it
-            if (connected && mapReady && !mapsCatalogRequested)
+        SdkSettings.onConnectionStatusUpdated = { connected ->
+            if (connected)
             {
                 loadMaps()
             }
@@ -336,14 +319,18 @@ class MainActivity: AppCompatActivity()
         private fun getFlagBitmap(item: ContentStoreItem): Bitmap?
         {
             item.countryCodes?.let { codes ->
-                val isoCode = codes[0]
-                if (!flagBitmapsMap.containsKey(isoCode))
+                if (codes.isNotEmpty())
                 {
-                    val size = resources.getDimension(R.dimen.icon_size).toInt()
-                    flagBitmapsMap[isoCode] = MapDetails().getCountryFlag(isoCode)?.asBitmap(size, size)
-                }
+                    val isoCode = codes[0]
+                    if (!flagBitmapsMap.containsKey(isoCode))
+                    {
+                        val size = resources.getDimension(R.dimen.icon_size).toInt()
+                        flagBitmapsMap[isoCode] = MapDetails().getCountryFlag(isoCode)?.asBitmap(size, size)
+                    }
 
-                return flagBitmapsMap[isoCode]
+                    return flagBitmapsMap[isoCode]
+                }
+                return null
             }
             return null
         }

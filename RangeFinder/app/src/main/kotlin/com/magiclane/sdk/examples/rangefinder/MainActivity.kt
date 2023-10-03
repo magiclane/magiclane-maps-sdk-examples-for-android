@@ -538,7 +538,6 @@ class MainActivity: AppCompatActivity()
 
     private fun calculateRanges()
     {
-        
         currentTransportMode?.let { transportMode ->
             if (transportMode == ERouteTransportMode.Bicycle)
             {

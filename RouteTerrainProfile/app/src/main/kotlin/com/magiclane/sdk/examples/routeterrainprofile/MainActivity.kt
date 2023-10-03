@@ -204,7 +204,7 @@ class MainActivity : AppCompatActivity()
     @SuppressLint("SetTextI18n")
     private fun displayTerrainInfo(route: Route)
     {
-        // show the layout that containts the elevation views
+        // show the layout that contains the elevation views
         routeProfileContainer.visibility = View.VISIBLE
         
         // creates the instance of the class that operates the elevation data

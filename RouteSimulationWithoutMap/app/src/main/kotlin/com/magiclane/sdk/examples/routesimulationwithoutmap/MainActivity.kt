@@ -151,7 +151,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private var distToTrafficEvent = 0
     private var remainingDistInsideTrafficEvent = 0
     private var insideTrafficEvent = false
-    private var trafficEventtDescriptionText = ""
+    private var trafficEventDescriptionText = ""
     private var distanceToTrafficPrefixText = ""
     private var trafficDelayTimeText = ""
     private var trafficDelayTimeUnitText = ""
@@ -574,7 +574,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                             endOfSectionImage.visibility = View.GONE
                         }
 
-                        trafficEventDescription.text = trafficEventtDescriptionText
+                        trafficEventDescription.text = trafficEventDescriptionText
 
                         var prefix = distanceToTrafficPrefixText
                         if (prefix.isNotEmpty())
@@ -1107,7 +1107,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun updateTrafficEventInfo(trafficEvent: RouteTrafficEvent) = SdkCall.execute {
-        trafficEventtDescriptionText = trafficEvent.description ?: ""
+        trafficEventDescriptionText = trafficEvent.description ?: ""
 
         val distance = if (insideTrafficEvent)
         {
