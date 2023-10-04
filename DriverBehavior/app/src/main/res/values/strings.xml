@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Driver Behaviour</string>
+    <string name="instant">Instant Analysis</string>
+    <string name="ongoing">Ongoing Analysis</string>
+    <string name="last">Last Analysis</string>
+    <string name="combined">Combined Analysis</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+</resources>
