@@ -182,7 +182,7 @@ public class MainActivityJava extends AppCompatActivity
             waypoints.add(new Landmark("London", 51.5073204, -0.1276475));
             waypoints.add(new Landmark("Paris", 48.8566932, 2.3514616));
 
-            routingService.calculateRoute(waypoints, null, false, null, null);
+            routingService.calculateRoute(waypoints, null, false, null, null, null);
             return 0;
         });
     }

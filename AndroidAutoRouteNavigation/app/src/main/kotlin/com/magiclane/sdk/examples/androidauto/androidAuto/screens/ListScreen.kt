@@ -40,7 +40,7 @@ abstract class ListScreen(context: CarContext) : GemScreen(context) {
         val headerAction = UIActionModel.createAction(context, headerAction)
 
         builder.setTitle(title)
-        builder.setHeaderAction(headerAction)
+        headerAction?.let { builder.setHeaderAction(it) }
 
         builder.setLoading(isLoading)
         if (!isLoading) {

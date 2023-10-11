@@ -67,7 +67,7 @@ data class UIActionModel(
             return builder.build()
         }
 
-        internal fun createAction(context: CarContext, data: UIActionModel): Action {
+        internal fun createAction(context: CarContext, data: UIActionModel): Action? {
             var action = getStandardAction(data.standardType)
             if (action == null) {
                 var carIcon = Util.asCarIcon(context, data.icon)
@@ -77,7 +77,7 @@ data class UIActionModel(
 
                 action = createAction(carIcon, data.text, data.color, data.onClicked)
             }
-            return action!!
+            return action
         }
 
         fun getStandardAction(value: String?): Action? {

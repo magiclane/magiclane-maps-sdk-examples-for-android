@@ -12,23 +12,15 @@ package com.magiclane.sdk.examples.androidauto.util
 
 import android.annotation.SuppressLint
 import com.magiclane.sdk.d3scene.MapView
+import com.magiclane.sdk.examples.androidauto.R
+import com.magiclane.sdk.examples.androidauto.app.AppProcess
 import com.magiclane.sdk.places.AddressInfo
 import com.magiclane.sdk.places.EAddressField
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.SdkImages
-import com.magiclane.sdk.util.GemUtil
-import com.magiclane.sdk.util.EStringIds
-import com.magiclane.sdk.util.EStringIds.eStrUnknown
-import com.magiclane.sdk.util.EStringIds.eStringNodeNearby
-import com.magiclane.sdk.util.EStringIds.eStringUnnamedStreet
-import java.util.ArrayList
 
 internal object TextsUtil {
-    fun getUIString(stringIds: EStringIds): String = SdkCall.execute {
-        GemUtil.getUIString(stringIds)
-    } ?: ""
-
     fun fillLandmarkAddressInfo(
         mainView: MapView?,
         landmark: Landmark,
@@ -109,11 +101,11 @@ internal object TextsUtil {
         val nearSettlement = ""
 
         if (city.isNotEmpty()) {
-            nearCity.format(GemUtil.getUIString(eStringNodeNearby), city)
+            nearCity.format(AppProcess.getAppResources().getString(R.string.node_nearby), city)
         }
 
         if (settlement.isNotEmpty()) {
-            nearSettlement.format(GemUtil.getUIString(eStringNodeNearby), settlement)
+            nearSettlement.format(AppProcess.getAppResources().getString(R.string.node_nearby), settlement)
         }
 
         if (streetName.isNotEmpty() && name.isNotEmpty()) {
@@ -210,7 +202,7 @@ internal object TextsUtil {
                 text += ", $landmarkDescription"
             } else if (text.isEmpty()) {
                 if (bNameEmpty) {
-                    text = GemUtil.getUIString(eStringUnnamedStreet)
+                    text = AppProcess.getAppResources().getString(R.string.unnamed_street)
                     if (landmarkDescription.isNotEmpty()) {
                         text += ", $landmarkDescription"
                     }
@@ -320,7 +312,7 @@ internal object TextsUtil {
                 return@execute name
             }
 
-            name = getUIString(EStringIds.eStrUnknown)
+            name = AppProcess.getAppResources().getString(R.string.unknown)
             return@execute name
         } ?: ""
     }
@@ -387,7 +379,7 @@ internal object TextsUtil {
             return name
         }
 
-        name = GemUtil.getUIString(eStrUnknown)
+        name = AppProcess.getAppResources().getString(R.string.unknown)
         return name
     }
 

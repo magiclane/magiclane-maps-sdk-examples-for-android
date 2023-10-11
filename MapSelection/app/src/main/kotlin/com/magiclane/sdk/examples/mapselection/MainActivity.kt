@@ -19,8 +19,10 @@ package com.magiclane.sdk.examples.mapselection
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
@@ -30,11 +32,14 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
-import com.magiclane.sdk.core.ImageDatabase
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.Size
@@ -51,15 +56,9 @@ import com.magiclane.sdk.routesandnavigation.RoutingService
 import com.magiclane.sdk.sensordatasource.PositionListener
 import com.magiclane.sdk.sensordatasource.PositionService
 import com.magiclane.sdk.sensordatasource.enums.EDataType
-import com.magiclane.sdk.util.EStringIds
-import com.magiclane.sdk.util.GemUtil
-import com.magiclane.sdk.util.GemUtilImages
 import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
-import com.magiclane.sdk.util.SdkImages
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
@@ -183,9 +182,9 @@ class MainActivity : AppCompatActivity()
                     if (myPosition != null && isSameMapScene(myPosition, MapSceneObject.getDefPositionTracker().first!!))
                     {
                         showOverlayContainer(
-                            GemUtil.getUIString(EStringIds.eStrMyPosition),
+                            getString(R.string.my_position),
                             "",
-                            GemUtilImages.asBitmap(ImageDatabase().getImageById(SdkImages.UI.SearchForCurrentLocation.value), imageSize, imageSize)
+                            ContextCompat.getDrawable(this, R.drawable.ic_current_location_arrow)?.toBitmap(imageSize, imageSize)
                         )
 
                         myPosition.coordinates?.let {
@@ -523,11 +522,10 @@ class MainActivity : AppCompatActivity()
                 showOverlayContainer(
                     summary.toString(),
                     "",
-                    GemUtilImages.asBitmap(
-                        ImageDatabase().getImageById(SdkImages.UI.RouteShape2.value),
-                        imageSize,
-                        imageSize
-                    )
+                    ContextCompat.getDrawable(
+                        this@MainActivity,
+                        if (isDarkThemeOn()) R.drawable.ic_baseline_route_24_night else R.drawable.ic_baseline_route_24
+                    )?.toBitmap(imageSize, imageSize)
                 )
             }
             preferences?.routes?.mainRoute = route
@@ -536,6 +534,13 @@ class MainActivity : AppCompatActivity()
         gemSurfaceView.mapView?.centerOnRoutes(routesList)
     }
     
+    // ---------------------------------------------------------------------------------------------
+
+    private fun Context.isDarkThemeOn(): Boolean
+    {
+        return resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+    }
+
     // ---------------------------------------------------------------------------------------------
 
     companion object

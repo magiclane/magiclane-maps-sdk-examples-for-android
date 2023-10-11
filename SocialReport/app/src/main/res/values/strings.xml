@@ -2,4 +2,5 @@
     <string name="app_name">SocialReport</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+    <string name="gps_accuracy_not_good">GPS accuracy is not good enough. Make sure you are outdoors.</string>
 </resources>

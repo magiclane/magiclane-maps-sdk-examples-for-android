@@ -215,8 +215,8 @@ class MainActivity : AppCompatActivity()
 
     private fun calculateRoute() = SdkCall.execute {
         val waypoints = arrayListOf(
-            Landmark("Bucharest", 44.4268, 26.1025),
-            Landmark("Brasov", 45.6427, 25.5887)
+            Landmark("Brasov", 45.6427, 25.5887),
+            Landmark("Bucharest", 44.4268, 26.1025)
         )
 
         /* 

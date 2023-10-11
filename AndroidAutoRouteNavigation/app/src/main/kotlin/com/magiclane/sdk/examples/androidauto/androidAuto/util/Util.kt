@@ -60,7 +60,8 @@ object Util {
             return null
 
         actions.forEach { model ->
-            builder.addAction(UIActionModel.createAction(context, model))
+            val action = UIActionModel.createAction(context, model)
+            action?.let { builder.addAction(it) }
         }
 
         return builder.build()

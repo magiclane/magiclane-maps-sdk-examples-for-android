@@ -2,4 +2,27 @@
     <string name="app_name">RouteTerrainProfile</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+
+    <!-- Route profile strings -->
+    <string name="rating">Rating</string>
+    <string name="start_end_points">Start/End Points</string>
+    <string name="start_end_elevation">Start/End Elevation</string>
+    <string name="length">Length</string>
+    <string name="avg_grade">Avg grade</string>
+    <string name="elevation">Elevation</string>
+    <string name="climb_details">Climb Details</string>
+    <string name="ways">Ways</string>
+    <string name="surfaces">Surfaces</string>
+    <string name="steepness">Steepness</string>
+    <string name="asphalt">Asphalt</string>
+    <string name="paved">Paved</string>
+    <string name="unpaved">Unpaved</string>
+    <string name="unknown">Unknown</string>
+    <string name="motorway">Motorway</string>
+    <string name="state_road">State Road</string>
+    <string name="road">Road</string>
+    <string name="street">Street</string>
+    <string name="cycleway">Cycleway</string>
+    <string name="path">Path</string>
+    <string name="single_track">Single Track</string>
 </resources>

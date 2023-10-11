@@ -51,7 +51,7 @@ abstract class QuickLeftListScreen(context: CarContext) : GemScreen(context) {
         builder.setTitle(title)
 
         headerAction?.let {
-            builder.setHeaderAction(UIActionModel.createAction(context, it))
+            UIActionModel.createAction(context, it)?.let { it1 -> builder.setHeaderAction(it1) }
         }
 
         Util.getActionStrip(context, actionStripModelList)?.let { builder.setActionStrip(it) }

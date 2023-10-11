@@ -238,7 +238,7 @@ class MainActivity : AppCompatActivity()
         var wikipediaImagesCount = 0
         
         SdkCall.execute {
-            wikipediaTitleString = GemUtil.getUIString(EStringIds.eStrWikipedia)
+            wikipediaTitleString = getString(R.string.wikipedia)
             wikipediaDescriptionString = externalInfoService.wikiPageDescription.toString()
             wikipediaUrl = externalInfoService.wikiPageURL.toString()
             wikipediaImagesCount = externalInfoService.wikiImagesCount

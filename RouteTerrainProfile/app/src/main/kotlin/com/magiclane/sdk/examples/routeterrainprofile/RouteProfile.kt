@@ -17,8 +17,11 @@ package com.magiclane.sdk.examples.routeterrainprofile
 // -------------------------------------------------------------------------------------------------
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.content.res.Resources
 import android.graphics.Bitmap
+import android.graphics.BlendMode
+import android.graphics.BlendModeColorFilter
 import android.graphics.Color
 import android.graphics.PointF
 import android.view.MotionEvent
@@ -29,6 +32,7 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.magiclane.sdk.core.ImageDatabase
 import com.magiclane.sdk.core.Path
 import com.magiclane.sdk.core.Rect
@@ -437,8 +441,7 @@ class RouteProfile(
     private fun addSurfacesViews()
     {
         val surfaceTypesCount = surfacesTypes.size
-        var title = ""
-        SdkCall.execute { title = getSectionTitle(TRouteProfileSectionType.ESurfaces.ordinal) }
+        val title = getSectionTitle(TRouteProfileSectionType.ESteepnesses.ordinal)
         
         if (surfaceTypesCount > 0)
         {
@@ -472,8 +475,7 @@ class RouteProfile(
     private fun addRoadsViews()
     {
         val roadTypesCount = roadsTypes.size
-        var title = ""
-        SdkCall.execute { title = getSectionTitle(TRouteProfileSectionType.EWays.ordinal) }
+        val title = getSectionTitle(TRouteProfileSectionType.ESteepnesses.ordinal)
         
         if (roadTypesCount > 0)
         {
@@ -507,8 +509,7 @@ class RouteProfile(
     private fun addSteepnessViews()
     {
         val steepnessTypeCount = steepnessTypes.size
-        var title = ""
-        SdkCall.execute { title = getSectionTitle(TRouteProfileSectionType.ESteepnesses.ordinal) }
+        val title = getSectionTitle(TRouteProfileSectionType.ESteepnesses.ordinal)
         
         if (steepnessTypeCount > 0)
         {
@@ -1111,21 +1112,15 @@ class RouteProfile(
     private fun setDataForClimbDetailsTableView()
     {
         var chartVerticalBandsCount = 0
-        var climbDetailsText = ""
-        var ratingText = ""
-        var startEndPointsText = ""
-        var lengthText = ""
-        var startEndElevationText = ""
-        var avgGradeText = ""
+        val climbDetailsText = getSectionTitle(TRouteProfileSectionType.EClimbDetails.ordinal)
+        val ratingText = getClimbDetailsColumnText(TClimbDetailsInfoType.ERating)
+        val startEndPointsText = getClimbDetailsColumnText(TClimbDetailsInfoType.EStartEndPoints)
+        val lengthText = getClimbDetailsColumnText(TClimbDetailsInfoType.ELength)
+        val startEndElevationText = getClimbDetailsColumnText(TClimbDetailsInfoType.EStartEndElevation)
+        val avgGradeText = getClimbDetailsColumnText(TClimbDetailsInfoType.EAvgGrade)
         
         SdkCall.execute { 
             chartVerticalBandsCount = getElevationChartVerticalBandsCount()
-            climbDetailsText = getSectionTitle(TRouteProfileSectionType.EClimbDetails.ordinal)
-            ratingText = getClimbDetailsColumnText(TClimbDetailsInfoType.ERating)
-            startEndPointsText = getClimbDetailsColumnText(TClimbDetailsInfoType.EStartEndPoints)
-            lengthText = getClimbDetailsColumnText(TClimbDetailsInfoType.ELength)
-            startEndElevationText = getClimbDetailsColumnText(TClimbDetailsInfoType.EStartEndElevation)
-            avgGradeText = getClimbDetailsColumnText(TClimbDetailsInfoType.EAvgGrade)
         }
         
         if (chartVerticalBandsCount > 0)
@@ -1241,13 +1236,12 @@ class RouteProfile(
         for (i in 0 until surfaceTypesCount)
         {
             val initialLineValues = ArrayList<Entry>()
-            
+
+            val surfaceTypeName = getSurfaceText(i)
             var surfacePercentWidth = 0.0
-            var surfaceTypeName = ""
             var surfaceTypeColor = 0
             SdkCall.execute { 
                 surfacePercentWidth = getSurfacePercent(i)
-                surfaceTypeName = getSurfaceText(i)
                 surfaceTypeColor = getColor(getSurfaceColor(i))
             }
             
@@ -1287,13 +1281,12 @@ class RouteProfile(
         for (i in 0 until roadTypesCount)
         {
             val initialLineValues = ArrayList<Entry>()
-            
+
+            val roadTypeName = getRoadText(i)
             var roadTypePercentWidth = 0.0
-            var roadTypeName = ""
             var roadTypeColor = 0
             SdkCall.execute { 
                 roadTypePercentWidth = getRoadPercent(i)
-                roadTypeName = getRoadText(i)
                 roadTypeColor = getColor(getRoadColor(i))
             }
             
@@ -1388,8 +1381,7 @@ class RouteProfile(
         
         if (index in 0 until surfaceTypesCount)
         {
-            var surfaceTypeName = ""
-            SdkCall.execute { surfaceTypeName = getSurfaceText(index) }
+            val surfaceTypeName = getSurfaceText(index)
             highlightedSurface.text = surfaceTypeName
         }
     }
@@ -1417,9 +1409,7 @@ class RouteProfile(
         
         if (index in 0 until roadTypesCount)
         {
-            var roadTypeName = ""
-            SdkCall.execute { roadTypeName = getRoadText(index) }
-            highlightedRoad.text = roadTypeName
+            highlightedRoad.text = getRoadText(index)
         }
     }
     
@@ -1447,15 +1437,15 @@ class RouteProfile(
         if (index in 0 until steepnessTypesCount)
         {
             var steepnessTypeName = ""
-            var steepnessBmp: Bitmap? = null
+            val steepnessBmp = getSteepnessImage(index, steepnessIconSize, steepnessIconSize)
             
             SdkCall.execute { 
                 steepnessTypeName = getSteepnessText(index)
-                steepnessBmp = getSteepnessImage(index, steepnessIconSize, steepnessIconSize)
             }
             
             highlightedSteepness.text = steepnessTypeName
             steepnessImage.setImageBitmap(steepnessBmp)
+            steepnessImage.setColorFilter(if (parentActivity.isDarkThemeOn()) Color.WHITE else Color.BLACK)
         }
     }
     
@@ -2057,11 +2047,11 @@ class RouteProfile(
     
     private fun getClimbDetailsColumnText(type: TClimbDetailsInfoType) : String = when (type)
     {
-        TClimbDetailsInfoType.ERating -> GemUtil.getUIString(EStringIds.eStrRating)
-        TClimbDetailsInfoType.EStartEndPoints -> GemUtil.getUIString(EStringIds.eStartEndPoints)
-        TClimbDetailsInfoType.EStartEndElevation -> GemUtil.getUIString(EStringIds.eStrStartEndElevation)
-        TClimbDetailsInfoType.ELength -> GemUtil.getUIString(EStringIds.eStrLength)
-        TClimbDetailsInfoType.EAvgGrade -> GemUtil.getUIString(EStringIds.eStrAvgGrade)
+        TClimbDetailsInfoType.ERating -> parentActivity.resources.getString(R.string.rating)
+        TClimbDetailsInfoType.EStartEndPoints -> parentActivity.resources.getString(R.string.start_end_points)
+        TClimbDetailsInfoType.EStartEndElevation -> parentActivity.resources.getString(R.string.start_end_elevation)
+        TClimbDetailsInfoType.ELength -> parentActivity.resources.getString(R.string.length)
+        TClimbDetailsInfoType.EAvgGrade -> parentActivity.resources.getString(R.string.avg_grade)
     }
     
     // ---------------------------------------------------------------------------------------------
@@ -2260,17 +2250,15 @@ class RouteProfile(
             height
         )
 
-        TElevationProfileButtonType.EMinElevation.ordinal -> GemUtilImages.asBitmap(
-            SdkImages.UI.HeightProfile_Lowest_Point.value,
-            width,
-            height
-        )
+        TElevationProfileButtonType.EMinElevation.ordinal -> ContextCompat.getDrawable(
+            parentActivity,
+            R.drawable.ic_height_profile_lowest_point
+        )?.toBitmap(width, height)
 
-        TElevationProfileButtonType.EMaxElevation.ordinal -> GemUtilImages.asBitmap(
-            SdkImages.UI.HeightProfile_Highest_Point.value,
-            width,
-            height
-        )
+        TElevationProfileButtonType.EMaxElevation.ordinal -> ContextCompat.getDrawable(
+            parentActivity,
+            R.drawable.ic_height_profile_highest_point
+        )?.toBitmap(width, height)
         
         else -> null
     } 
@@ -2294,10 +2282,10 @@ class RouteProfile(
     
     private fun getSurfaceName(type: ESurfaceType) : String = when (type)
     {
-        ESurfaceType.Asphalt -> GemUtil.getUIString(EStringIds.eStrAsphalt)
-        ESurfaceType.Paved -> GemUtil.getUIString(EStringIds.eStrPaved)
-        ESurfaceType.Unpaved -> GemUtil.getUIString(EStringIds.eStrUnpaved)
-        ESurfaceType.Unknown -> GemUtil.getUIString(EStringIds.eStrUnknown)
+        ESurfaceType.Asphalt -> parentActivity.resources.getString(R.string.asphalt)
+        ESurfaceType.Paved -> parentActivity.resources.getString(R.string.paved)
+        ESurfaceType.Unpaved -> parentActivity.resources.getString(R.string.unpaved)
+        ESurfaceType.Unknown -> parentActivity.resources.getString(R.string.unknown)
         else -> ""
     }
     
@@ -2397,13 +2385,13 @@ class RouteProfile(
     
     private fun getRoadName(type: ERoadType) : String = when (type)
     {
-        ERoadType.Motorways -> GemUtil.getUIString(EStringIds.eStrMotorway)
-        ERoadType.StateRoad -> GemUtil.getUIString(EStringIds.eStrStateRoad)
-        ERoadType.Road -> GemUtil.getUIString(EStringIds.eStrRoad)
-        ERoadType.Street -> GemUtil.getUIString(EStringIds.eStrStreet)
-        ERoadType.Cycleway -> GemUtil.getUIString(EStringIds.eStrCycleway)
-        ERoadType.Path -> GemUtil.getUIString(EStringIds.eStrPath)
-        ERoadType.SingleTrack -> GemUtil.getUIString(EStringIds.eStrSingleTrack)
+        ERoadType.Motorways -> parentActivity.resources.getString(R.string.motorway)
+        ERoadType.StateRoad -> parentActivity.resources.getString(R.string.state_road)
+        ERoadType.Road -> parentActivity.resources.getString(R.string.road)
+        ERoadType.Street -> parentActivity.resources.getString(R.string.street)
+        ERoadType.Cycleway -> parentActivity.resources.getString(R.string.cycleway)
+        ERoadType.Path -> parentActivity.resources.getString(R.string.path)
+        ERoadType.SingleTrack -> parentActivity.resources.getString(R.string.single_track)
     }
     
     // ---------------------------------------------------------------------------------------------
@@ -2556,9 +2544,21 @@ class RouteProfile(
         
         return when (imageType)
         {
-            TSteepnessImageType.EUp -> GemUtilImages.asBitmap(SdkImages.UI.SteepnessUp.value, width, height)
-            TSteepnessImageType.EDown -> GemUtilImages.asBitmap(SdkImages.UI.SteepnessDown.value, width, height)
-            TSteepnessImageType.EPlain -> GemUtilImages.asBitmap(SdkImages.UI.SteepnessPlain.value, width, height)
+            TSteepnessImageType.EUp -> ContextCompat.getDrawable(
+                parentActivity,
+                R.drawable.ic_arrow_up_right
+            )?.toBitmap(width, height)
+            
+            TSteepnessImageType.EDown -> ContextCompat.getDrawable(
+                parentActivity,
+                R.drawable.ic_arrow_down_right
+            )?.toBitmap(width, height)
+            
+            TSteepnessImageType.EPlain -> ContextCompat.getDrawable(
+                parentActivity,
+                R.drawable.ic_arrow_right
+            )?.toBitmap(width, height)
+            
             TSteepnessImageType.EUnknown -> null
         }
     }
@@ -2800,11 +2800,11 @@ class RouteProfile(
     
     private fun getSectionTitle(section: Int): String = when (section)
     {
-        TRouteProfileSectionType.EElevation.ordinal -> GemUtil.getUIString(EStringIds.eStrElevation)
-        TRouteProfileSectionType.EClimbDetails.ordinal -> GemUtil.getUIString(EStringIds.eStrClimbDetails)
-        TRouteProfileSectionType.EWays.ordinal -> GemUtil.getUIString(EStringIds.eStrWays)
-        TRouteProfileSectionType.ESurfaces.ordinal -> GemUtil.getUIString(EStringIds.eStrSurfaces)
-        TRouteProfileSectionType.ESteepnesses.ordinal -> GemUtil.getUIString(EStringIds.eStrSteepness)
+        TRouteProfileSectionType.EElevation.ordinal -> parentActivity.resources.getString(R.string.elevation)
+        TRouteProfileSectionType.EClimbDetails.ordinal -> parentActivity.resources.getString(R.string.climb_details)
+        TRouteProfileSectionType.EWays.ordinal -> parentActivity.resources.getString(R.string.ways)
+        TRouteProfileSectionType.ESurfaces.ordinal -> parentActivity.resources.getString(R.string.surfaces)
+        TRouteProfileSectionType.ESteepnesses.ordinal -> parentActivity.resources.getString(R.string.steepness)
         else -> ""
     }
 

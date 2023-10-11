@@ -41,6 +41,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -75,7 +76,6 @@ import com.magiclane.sdk.util.EStringIds
 import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.GemUtilImages
 import com.magiclane.sdk.util.SdkCall
-import com.magiclane.sdk.util.SdkImages
 import com.magiclane.sdk.util.Util
 import com.magiclane.sound.SoundUtils
 import kotlin.math.max
@@ -270,7 +270,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                     }
                 }
 
-                endOfSectionBmp = GemUtilImages.asBitmap(SdkImages.UI.Traffic_EndOfSection_Square.value, navigationImageSize, navigationImageSize)
+                endOfSectionBmp = ContextCompat.getDrawable(this, R.drawable.end_of_traffic_section)?.toBitmap(navigationImageSize, navigationImageSize)  
 
                 navRoute = navigationService.getNavigationRoute()
             }
@@ -1123,14 +1123,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         distanceToTrafficText = distanceToTrafficPair.first
         distanceToTrafficUnitText = distanceToTrafficPair.second
 
-        val theFormat = if (insideTrafficEvent)
-        {
-            GemUtil.getUIString(EStringIds.eStrOutIn)
-        }
-        else
-        {
-            GemUtil.getUIString(EStringIds.eStrIn)
-        }
+        val theFormat = getString(if (insideTrafficEvent) R.string.out_in_str else R.string.in_str)
 
         distanceToTrafficPrefixText = String.format(theFormat, "").trim()
 

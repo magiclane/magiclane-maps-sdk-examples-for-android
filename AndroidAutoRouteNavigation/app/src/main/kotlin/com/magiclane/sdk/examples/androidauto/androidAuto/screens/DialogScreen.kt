@@ -40,11 +40,11 @@ abstract class DialogScreen(context: CarContext) : GemScreen(context) {
             val builder = LongMessageTemplate.Builder(message)
 
             builder.setTitle(title)
-            builder.setHeaderAction(headerAction)
+            headerAction?.let { builder.setHeaderAction(it) }
 
             actionStrip?.let { builder.setActionStrip(it) }
             actionsList.forEach { model ->
-                builder.addAction(UIActionModel.createAction(context, model))
+                UIActionModel.createAction(context, model)?.let { builder.addAction(it) }
             }
 
             return builder.build()
@@ -52,7 +52,7 @@ abstract class DialogScreen(context: CarContext) : GemScreen(context) {
             val builder = MessageTemplate.Builder(message)
 
             builder.setTitle(title)
-            builder.setHeaderAction(headerAction)
+            headerAction?.let { builder.setHeaderAction(it) }
 
             if (!isLoading)
                 icon?.let { builder.setIcon(it) }
@@ -60,7 +60,7 @@ abstract class DialogScreen(context: CarContext) : GemScreen(context) {
 
             actionStrip?.let { builder.setActionStrip(it) }
             actionsList.forEach { model ->
-                builder.addAction(UIActionModel.createAction(context, model))
+                UIActionModel.createAction(context, model)?.let { builder.addAction(it) }
             }
 
             return builder.build()

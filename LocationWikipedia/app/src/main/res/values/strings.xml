@@ -2,4 +2,5 @@
     <string name="app_name">LocationWikipedia</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+    <string name="wikipedia">Wikipedia</string>
 </resources>

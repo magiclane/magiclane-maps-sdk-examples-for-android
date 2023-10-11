@@ -53,7 +53,7 @@ abstract class SearchScreen(context: CarContext) : GemScreen(context) {
             val headerAction = UIActionModel.createAction(context, headerAction)
 
             Util.getActionStrip(context, actionStripModelList)?.let { builder.setActionStrip(it) }
-            builder.setHeaderAction(headerAction)
+            headerAction?.let { builder.setHeaderAction(it) }
             builder.setShowKeyboardByDefault(showKeyboardByDefault)
             builder.setLoading(isLoading)
 

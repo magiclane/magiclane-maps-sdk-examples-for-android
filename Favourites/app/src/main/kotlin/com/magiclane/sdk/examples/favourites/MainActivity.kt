@@ -25,6 +25,8 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
@@ -321,11 +323,11 @@ class MainActivity : AppCompatActivity()
         val bmp = SdkCall.execute {
             if (isFavourite)
             {
-                ImageDatabase().getImageById(SdkImages.UI.LocationDetails_AddToFavourites.value)?.asBitmap(imageSize, imageSize)
+                ContextCompat.getDrawable(this, R.drawable.baseline_star_24)?.toBitmap(imageSize, imageSize)
             }
             else
             {
-                ImageDatabase().getImageById(SdkImages.UI.LocationDetails_RemoveFromFavourites.value)?.asBitmap(imageSize, imageSize)
+                ContextCompat.getDrawable(this, R.drawable.baseline_star_border_24)?.toBitmap(imageSize, imageSize)
             }
         }
 

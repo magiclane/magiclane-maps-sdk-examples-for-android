@@ -13,13 +13,13 @@
 package com.magiclane.sdk.examples.androidauto.util
 
 import com.magiclane.sdk.core.GemError
+import com.magiclane.sdk.examples.androidauto.R
+import com.magiclane.sdk.examples.androidauto.app.AppProcess
 import com.magiclane.sdk.places.LandmarkList
 import com.magiclane.sdk.routesandnavigation.PTRoute
 import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.routesandnavigation.RouteBookmarks
 import com.magiclane.sdk.routesandnavigation.RoutePreferences
-import com.magiclane.sdk.util.GemUtil.getUIString
-import com.magiclane.sdk.util.EStringIds
 import com.magiclane.sdk.util.Util
 import kotlin.math.abs
 
@@ -175,7 +175,7 @@ class TripModel {
                 if (tripWptsCount > 2) {
                     // use "From A to B, via C" string
                     String.format(
-                        getUIString(EStringIds.eStrFromAToBViaC),
+                        AppProcess.getAppResources().getString(R.string.from_a_to_b_via_c),
                         departureName,
                         destinationName,
                         intermediateWptsName
@@ -183,7 +183,7 @@ class TripModel {
                 } else {
                     // use "From A to B" string
                     String.format(
-                        getUIString(EStringIds.eStrFromAtoB),
+                        AppProcess.getAppResources().getString(R.string.from_a_to_b),
                         departureName,
                         destinationName
                     )
@@ -192,13 +192,16 @@ class TripModel {
                 if (tripWptsCount > 1) {
                     // use "To B, via C" string
                     String.format(
-                        getUIString(EStringIds.eStrToBViaC),
+                        AppProcess.getAppResources().getString(R.string.to_b_via_c),
                         destinationName,
                         intermediateWptsName
                     )
                 } else {
                     // use "To B" string
-                    String.format(getUIString(EStringIds.eStrToB), destinationName)
+                    String.format(
+                        AppProcess.getAppResources().getString(R.string.to_b),
+                        destinationName
+                    )
                 }
             }
 

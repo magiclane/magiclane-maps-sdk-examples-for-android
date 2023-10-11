@@ -2,4 +2,6 @@
     <string name="app_name">RouteSimulationWithoutMap</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+    <string name="out_in_str">out in %s</string>
+    <string name="in_str">in %s</string>
 </resources>

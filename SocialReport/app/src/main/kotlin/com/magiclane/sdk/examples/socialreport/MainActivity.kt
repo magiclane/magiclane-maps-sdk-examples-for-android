@@ -27,6 +27,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -37,12 +38,9 @@ import com.magiclane.sdk.core.SocialOverlay
 import com.magiclane.sdk.sensordatasource.PositionListener
 import com.magiclane.sdk.sensordatasource.PositionService
 import com.magiclane.sdk.sensordatasource.enums.EDataType
-import com.magiclane.sdk.util.EStringIds
-import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -178,7 +176,7 @@ class MainActivity : AppCompatActivity()
         {
             val errorMsg = if (prepareIdOrError == GemError.NotFound || prepareIdOrError == GemError.Required)
             {
-                "Prepare error: ${GemUtil.getUIString(EStringIds.eStrGPSAccuracyIsNotGoodEnough)}"   
+                "Prepare error: ${getString(R.string.gps_accuracy_not_good)}"   
             }
             else
             {

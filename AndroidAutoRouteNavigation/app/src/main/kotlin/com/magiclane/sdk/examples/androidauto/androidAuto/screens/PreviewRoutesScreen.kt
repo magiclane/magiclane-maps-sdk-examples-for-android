@@ -60,7 +60,7 @@ abstract class PreviewRoutesScreen(context: CarContext) : GemScreen(context) {
         Util.getActionStrip(context, actionStripModelList)?.let { builder.setActionStrip(it) }
 
         val navigateAction = UIActionModel.createAction(context, navigateAction)
-        builder.setNavigateAction(navigateAction)
+        navigateAction?.let { builder.setNavigateAction(it) }
 
         try {
             return builder.build()
