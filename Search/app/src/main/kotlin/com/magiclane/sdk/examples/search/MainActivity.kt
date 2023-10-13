@@ -21,12 +21,14 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -34,8 +36,10 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.places.SearchService
+import com.magiclane.sdk.sensordatasource.PositionService
 import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
@@ -46,10 +50,12 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------
-    
+
     private lateinit var listView: RecyclerView
     private lateinit var progressBar: ProgressBar
+    private lateinit var noResultText: TextView
     private lateinit var toolbar: Toolbar
+    private var imageSize: Int = 0
 
     private var searchService = SearchService(
         onCompleted = { results, errorCode, _ ->
@@ -59,23 +65,15 @@ class MainActivity : AppCompatActivity()
                 GemError.NoError ->
                 {
                     // No error encountered, we can handle the results.
-                    if (results.isNotEmpty())
-                    {
-                        val imageSize = resources.getDimension(R.dimen.list_image_size).toInt()
-                        listView.adapter = CustomAdapter(results, imageSize)
-                    }
-                    else
-                    {
-                        // The search completed without errors, but there were no results found.
-                        showDialog("No results!")
-                    }
+                    refreshList(results)
+                    noResultText.isVisible = results.isEmpty()
                 }
 
                 GemError.Cancel ->
                 {
                     // The search action was cancelled.
                 }
-                
+
                 GemError.Busy ->
                 {
                     showDialog("Requested operation cannot be performed. Internal limit reached. Please use an API token in order to avoid this error.")
@@ -96,21 +94,28 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        imageSize = resources.getDimension(R.dimen.list_image_size).toInt()
         progressBar = findViewById(R.id.progressBar)
+        noResultText = findViewById(R.id.no_results_text)
         toolbar = findViewById(R.id.toolbar)
         listView = findViewById<RecyclerView?>(R.id.list_view).apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
-            addItemDecoration(DividerItemDecoration(applicationContext, (layoutManager as LinearLayoutManager).orientation))
+            addItemDecoration(
+                DividerItemDecoration(
+                    applicationContext,
+                    (layoutManager as LinearLayoutManager).orientation
+                )
+            )
             setBackgroundResource(R.color.background_color)
-            
+
             val lateralPadding = resources.getDimension(R.dimen.big_padding).toInt()
             setPadding(lateralPadding, 0, lateralPadding, 0)
+            adapter = CustomAdapter(arrayListOf(), imageSize)
         }
-        
         setSupportActionBar(toolbar)
 
-        findViewById<SearchView>(R.id.searchInput).apply {
+        findViewById<SearchView>(R.id.search_input).apply {
+
             setOnQueryTextListener(
                 object : SearchView.OnQueryTextListener
                 {
@@ -127,7 +132,7 @@ class MainActivity : AppCompatActivity()
                     }
                 }
             )
-            
+
             requestFocus()
         }
 
@@ -162,12 +167,19 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
+    override fun onPause()
+    {
+        super.onPause()
+        if (isFinishing)
+            GemSdk.release()
+    }
+    // ---------------------------------------------------------------------------------------------
+
     override fun onDestroy()
     {
         super.onDestroy()
 
         // Release the SDK.
-        GemSdk.release()
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -180,24 +192,45 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
+    @SuppressLint("NotifyDataSetChanged")
+    private fun refreshList(results: ArrayList<Landmark>)
+    {
+        (listView.adapter)?.let {
+            (it as CustomAdapter).dataSet = results
+            it.notifyDataSetChanged()
+        }
+    }
+    // ---------------------------------------------------------------------------------------------
+
     fun applyFilter(filter: String)
     {
-        listView.adapter = CustomAdapter(arrayListOf(), 0)
         if (filter.trim().isNotEmpty())
         {
             progressBar.visibility = View.VISIBLE
         }
-
         // Search the requested filter.
         search(filter.trim())
     }
-    
+
     // ---------------------------------------------------------------------------------------------
 
     private fun search(filter: String): Int = SdkCall.execute {
         // Cancel any search that is in progress now.
+        Log.d("SEARCH", filter)
         searchService.cancelSearch()
-        searchService.searchByFilter(filter)
+        if (filter.isBlank())
+        {
+            refreshList(arrayListOf())
+            noResultText.isVisible = false
+        }
+        val position = PositionService.position
+        if (position?.isValid() == true)
+            searchService.searchByFilter(filter, position.coordinates)
+        else
+        {
+            val centerLondon = Coordinates(51.5072, 0.1276)
+            searchService.searchByFilter(filter, centerLondon)
+        }
     } ?: GemError.Cancel
 
     // ---------------------------------------------------------------------------------------------
@@ -271,12 +304,12 @@ class MainActivity : AppCompatActivity()
  * This custom adapter is made to facilitate the displaying of the data from the model
  * and to decide how it is displayed.
  */
-class CustomAdapter(private val dataSet: ArrayList<Landmark>, private val imageSize: Int) :
-    RecyclerView.Adapter<CustomAdapter.ViewHolder>()
+class CustomAdapter(var dataSet: ArrayList<Landmark>, private val imageSize: Int) :
+    RecyclerView.Adapter<CustomAdapter.CustomViewHolder>()
 {
     // ---------------------------------------------------------------------------------------------
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
+    class CustomViewHolder(view: View) : RecyclerView.ViewHolder(view)
     {
         val textView: TextView = view.findViewById(R.id.text)
         val imageView: ImageView = view.findViewById(R.id.image)
@@ -284,17 +317,17 @@ class CustomAdapter(private val dataSet: ArrayList<Landmark>, private val imageS
 
     // ---------------------------------------------------------------------------------------------
 
-    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder
+    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): CustomViewHolder
     {
         val view = LayoutInflater.from(viewGroup.context)
             .inflate(R.layout.list_item, viewGroup, false)
 
-        return ViewHolder(view)
+        return CustomViewHolder(view)
     }
 
     // ---------------------------------------------------------------------------------------------
 
-    override fun onBindViewHolder(viewHolder: ViewHolder, position: Int)
+    override fun onBindViewHolder(viewHolder: CustomViewHolder, position: Int)
     {
         viewHolder.apply {
             textView.text = SdkCall.execute { dataSet[position].name }

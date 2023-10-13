@@ -16,7 +16,7 @@
         app:titleTextColor="@android:color/white">
 
         <SearchView
-            android:id="@+id/searchInput"
+            android:id="@+id/search_input"
             android:layout_width="match_parent"
             android:layout_height="@dimen/filter_height"
             android:layout_marginEnd="@dimen/filter_padding"
@@ -35,12 +35,26 @@
 
     </androidx.appcompat.widget.Toolbar>
 
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/list_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/toolbar" />
+
+    <TextView
+        android:id="@+id/no_results_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/big_padding"
+        android:textColor="@color/text_color"
+        android:text="@string/no_results"
+        android:textSize="@dimen/standard_text_size"
+        android:visibility="gone"
+        android:layout_gravity="center_vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar"/>
 
     <ProgressBar
         android:id="@+id/progressBar"

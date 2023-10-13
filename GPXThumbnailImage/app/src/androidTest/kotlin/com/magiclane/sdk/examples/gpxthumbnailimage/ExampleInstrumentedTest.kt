@@ -8,15 +8,13 @@
  * license agreement you entered into with Magic Lane.
  */
 
-package com.magiclane.sdk.examples.search
+package com.magiclane.sdk.examples.gpxthumbnailimage
 
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
-
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-
-import org.junit.Assert.*
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -29,6 +27,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.magiclane.sdk.examples.search", appContext.packageName)
+        assertEquals("com.magiclane.sdk.examples.myapplication", appContext.packageName)
     }
 }

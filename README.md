@@ -33,6 +33,7 @@ This set of individual, use-case based projects is designed to be cloned by deve
 * [Fly to Traffic](FlyToTraffic) - Calculate the routes between 2 given landmarks; display the first route on a map, if exists; fly to first traffic event available on route, if exists.
 * [GPX Import](GPXImport) - Import a GPX file and display the Path on the map; make a route out of the GPX file.
 * [GPX Route Simulation](GPXRouteSimulation) - Import a GPX file; Make a route based on the GPX and start a simulation.
+* [GPX Thumbnail Image](GPXThumbnailImage) - Calculate a route based on a GPX file and present a thumbnail image for it.
 * [Hello Fragment](HelloFragment) - Display a map on an Android Fragment.
 * [Hello Fragment Custom Style](HelloFragmentCustomStyle) - Display a map on an Android Fragment; apply custom style to a map.
 * [Hello Map](HelloMap) - Display a map.

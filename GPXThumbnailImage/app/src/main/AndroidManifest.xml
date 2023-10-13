@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.GEMSdk">
+
+        <meta-data
+            android:name="com.magiclane.sdk.token"
+            android:value="eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIzN2UxOTBjNS0zOWQ4LTQ3ZTItODMxNS04OWMxMzNkYjQwZGIiLCJleHAiOjE3MDg0NjY0MDAsImlzcyI6IkdlbmVyYWwgTWFnaWMiLCJqdGkiOiI4MjkyNWYxMS01ZTczLTQ2ZTktYjEzNy1kYjAxMmY5OWQwNGIiLCJuYmYiOjE2NjgxNjQyMTZ9.300QoOvVFfeLYvxvgfZviVcUyVBgAXqOJdxUqQrV0F4J4m8TY96N_r5zAicIDVRqXloh2v-LeKj2u_GtbOtj6Q" />
+
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

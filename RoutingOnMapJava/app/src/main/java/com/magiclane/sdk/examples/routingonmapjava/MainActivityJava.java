@@ -81,7 +81,7 @@ public class MainActivityJava extends AppCompatActivity
 
                             mapView.presentRoutes(routes, null, true,
                                 true, true, true,
-                                true, true, animation, null,
+                                true, true, animation,
                                 ERouteDisplayMode.Full, null);
                         }
 
