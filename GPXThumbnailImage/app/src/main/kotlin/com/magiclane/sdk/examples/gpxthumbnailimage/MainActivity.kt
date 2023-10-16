@@ -142,12 +142,16 @@ class MainActivity : AppCompatActivity()
             finish()
         }
 
-        gemOffscreenSurfaceView = GemOffscreenSurfaceView(mapWidth, mapHeight, resources.displayMetrics.densityDpi, onDefaultMapViewCreated = {
-            calculateRouteFromGPX()
-        },
+        gemOffscreenSurfaceView = GemOffscreenSurfaceView(mapWidth, mapHeight, resources.displayMetrics.densityDpi,
         onMapRendered = { bitmap ->
             mapBitmap = bitmap
         })
+        
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->  
+            if (!isReady) return@onMapDataReady
+
+            calculateRouteFromGPX()
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------

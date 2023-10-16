@@ -14,7 +14,7 @@
 
         <meta-data
             android:name="com.magiclane.sdk.token"
-            android:value="eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIzN2UxOTBjNS0zOWQ4LTQ3ZTItODMxNS04OWMxMzNkYjQwZGIiLCJleHAiOjE3MDg0NjY0MDAsImlzcyI6IkdlbmVyYWwgTWFnaWMiLCJqdGkiOiI4MjkyNWYxMS01ZTczLTQ2ZTktYjEzNy1kYjAxMmY5OWQwNGIiLCJuYmYiOjE2NjgxNjQyMTZ9.300QoOvVFfeLYvxvgfZviVcUyVBgAXqOJdxUqQrV0F4J4m8TY96N_r5zAicIDVRqXloh2v-LeKj2u_GtbOtj6Q" />
+            android:value="YOUR_TOKEN" />
 
         <activity
             android:name=".MainActivity"
