@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-	namespace 'com.magiclane.sdk.examples.search'
+    namespace 'com.magiclane.sdk.examples.search'
 
     compileSdkVersion 31
 

@@ -126,7 +126,7 @@ class MainActivityInstrumentedTests
     fun onTextChangedResultsShouldBeDisplayed()
     {
         onView(allOf(withId(R.id.search_input), isDisplayed())).perform(typeText("a"))
-        Thread.sleep(5000) //todo: make this wait for the SDK THREAD
+        Thread.sleep(5000)
         closeSoftKeyboard()
         onView(allOf(withId(R.id.list_view), isDisplayed()))
             .check(RecyclerViewItemCountAssertion(greaterThan(0)))
@@ -148,8 +148,9 @@ class MainActivityInstrumentedTests
     fun noResultTest()
     {
         onView(allOf(withId(R.id.search_input), isDisplayed())).perform(
-            typeText("yyqp")
+            typeText("yyqqp")
         )
+        Thread.sleep(1000)
         closeSoftKeyboard()
         onView(
             allOf(

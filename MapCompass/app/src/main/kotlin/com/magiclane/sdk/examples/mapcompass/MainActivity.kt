@@ -26,20 +26,17 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
-import com.magiclane.sdk.d3scene.EViewCameraTransitionStatus
-import com.magiclane.sdk.d3scene.EViewDataTransitionStatus
+import com.magiclane.sdk.sensordatasource.*
 import com.magiclane.sdk.sensordatasource.enums.EDataType
 import com.magiclane.sdk.util.GemCall
-import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.magiclane.sdk.sensordatasource.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.exitProcess
 
@@ -55,9 +52,9 @@ class MainActivity : AppCompatActivity()
     private lateinit var statusText: TextView
     private var isLiveHeadingEnabled = AtomicBoolean(false)
 
-    var dataSource: DataSource? = null
+    private var dataSource: DataSource? = null
 
-    var dataSourceListener = object : DataSourceListener()
+    private var dataSourceListener = object : DataSourceListener()
     {
         override fun onNewData(data: SenseData)
         {
