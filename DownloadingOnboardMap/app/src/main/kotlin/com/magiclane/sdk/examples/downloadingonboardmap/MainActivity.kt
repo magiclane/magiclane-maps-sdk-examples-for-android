@@ -96,9 +96,16 @@ class MainActivity: AppCompatActivity()
                                                                                    onProgress = { 
                                                                                        listView.adapter?.notifyItemChanged(0)
                                                                                    }, 
-                                                                                   onCompleted = { _, _ ->
+                                                                                   onCompleted = { errorCode, _ ->
                                                                                        listView.adapter?.notifyItemChanged(0)
-                                                                                       showStatusMessage("$itemName was downloaded.")
+                                                                                       if (errorCode == GemError.NoError)
+                                                                                       {
+                                                                                           showStatusMessage("$itemName was downloaded.")
+                                                                                       }
+                                                                                       else
+                                                                                       {
+                                                                                           showDialog("Download item error: ${GemError.getMessage(errorCode)}")
+                                                                                       }
                                                                                    })
 
                             // Start downloading the first map item.
@@ -160,16 +167,14 @@ class MainActivity: AppCompatActivity()
             }
             else // if token is not present try to avoid content server requests limitation by delaying the maps catalog request
             {
-                progressBar.visibility = View.VISIBLE
-
                 Handler(Looper.getMainLooper()).postDelayed({
                     loadMapsCatalog()
                 }, 3000)
             }
         }
 
-        SdkSettings.onConnectionStatusUpdated = { connected ->
-            if (connected)
+        SdkSettings.onMapDataReady = { mapReady ->
+            if (mapReady)
             {
                 loadMaps()
             }
@@ -193,6 +198,7 @@ class MainActivity: AppCompatActivity()
 
         if (!Util.isInternetConnected(this))
         {
+            progressBar.visibility = View.GONE
             showDialog("You must be connected to the internet!")
         }
     }

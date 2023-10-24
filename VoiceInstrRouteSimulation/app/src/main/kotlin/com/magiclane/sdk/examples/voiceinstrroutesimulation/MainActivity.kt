@@ -45,10 +45,7 @@ class MainActivity : AppCompatActivity()
     private lateinit var progressBar: ProgressBar
     private lateinit var followCursorButton: FloatingActionButton
     private val soundPreference = SoundPlayingPreferences()
-    private var voiceLoaded = false
     private val kDefaultToken = "YOUR_TOKEN"
-    private var connected = false
-    private var mapReady = false
     private val playingListener = object : SoundPlayingListener()
     {
         override fun notifyStart(hasProgress: Boolean)
@@ -113,7 +110,7 @@ class MainActivity : AppCompatActivity()
         progressBar.visibility = View.VISIBLE
 
         val loadVoice = {
-            voiceLoaded = true
+            progressBar.visibility = View.VISIBLE
 
             val type = EContentType.HumanVoice
             val countryCode = "DEU"
@@ -179,17 +176,8 @@ class MainActivity : AppCompatActivity()
             }
         }
 
-        SdkSettings.onMapDataReady = { it ->
-            mapReady = it
-            if (connected && mapReady && !voiceLoaded)
-            {
-                loadVoice()
-            }
-        }
-
-        SdkSettings.onConnectionStatusUpdated = { it ->
-            connected = it
-            if (connected && mapReady && !voiceLoaded)
+        SdkSettings.onMapDataReady = { mapReady ->
+            if (mapReady)
             {
                 loadVoice()
             }
@@ -206,6 +194,7 @@ class MainActivity : AppCompatActivity()
 
         if (!Util.isInternetConnected(this))
         {
+            progressBar.visibility = View.GONE
             showDialog("You must be connected to the internet!")
         }
     }
