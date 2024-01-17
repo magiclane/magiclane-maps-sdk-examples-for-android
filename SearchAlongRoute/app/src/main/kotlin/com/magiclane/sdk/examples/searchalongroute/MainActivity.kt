@@ -1,7 +1,7 @@
 // -------------------------------------------------------------------------------------------------
 
 /*
- * Copyright (C) 2019-2023, Magic Lane B.V.
+ * Copyright (C) 2019-2024, Magic Lane B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of Magic Lane
@@ -17,6 +17,7 @@ package com.magiclane.sdk.examples.searchalongroute
 // -------------------------------------------------------------------------------------------------
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -41,10 +42,14 @@ import com.magiclane.sdk.places.SearchService
 import com.magiclane.sdk.routesandnavigation.NavigationListener
 import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.routesandnavigation.Route
+import com.magiclane.sdk.sensordatasource.PositionService
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.magiclane.sdk.util.GemUtil
+import com.magiclane.sdk.util.GemUtilImages
+import com.magiclane.sdk.util.SdkImages
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
@@ -286,13 +291,57 @@ class MainActivity : AppCompatActivity()
         
         inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
         {
-            private val text: TextView = view.findViewById(R.id.search_text)
+            private val text: TextView = view.findViewById(R.id.text)
+            private val description: TextView = view.findViewById(R.id.description)
+            private val statusText: TextView = view.findViewById(R.id.status_text)
+            private val statusDescription: TextView = view.findViewById(R.id.status_description)
             private val image: ImageView = view.findViewById(R.id.image)
+            private val side: ImageView = view.findViewById(R.id.side)
 
             fun bind(position: Int)
             {
                 text.text = SdkCall.execute { dataSet[position].name }
+                description.text = GemUtil.getLandmarkDescription(dataSet[position], true)
                 image.setImageBitmap(SdkCall.execute { dataSet[position].imageAsBitmap(imageSize) })
+
+                var distance = Pair("", "")
+                var sideBmp: Bitmap? = null
+
+                SdkCall.execute {
+                    PositionService.improvedPosition?.let { improvedPosition ->
+                        if (improvedPosition.isValid())
+                        {
+                            distance = GemUtil.getDistText(improvedPosition.coordinates.getDistance(dataSet[position].coordinates!!).toInt(), SdkSettings.unitSystem)
+                        }
+                    }
+
+                    var sideIconId = 0
+                    val side = dataSet[position].findExtraInfo("gm_search_result_side = ")
+                    if (side.contentEquals("Left side", true))
+                    {
+                        sideIconId = SdkImages.Engine_Misc.Poi_ToLeft.value
+                    }
+
+                    if (side.contentEquals("Right side", true))
+                    {
+                        sideIconId = SdkImages.Engine_Misc.Poi_ToRight.value
+                    }
+
+                    if (sideIconId != 0)
+                    {
+                        sideBmp = GemUtilImages.asBitmap(sideIconId, imageSize, imageSize)
+                    }
+                }
+
+                statusText.text = distance.first
+                statusDescription.text = distance.second
+
+                sideBmp?.let {
+                    side.setImageBitmap(it)
+                    side.visibility = View.VISIBLE
+                } ?: run {
+                    side.visibility = View.GONE
+                }
             }
         }
 

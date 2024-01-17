@@ -6,12 +6,12 @@ plugins {
 android {
 	namespace 'com.magiclane.sdk.examples.applymapstyle'
 
-    compileSdkVersion 31
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.magiclane.sdk.examples.applymapstyle"
-        minSdkVersion 19
-        targetSdkVersion 31
+        minSdk 21
+        targetSdk 33
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

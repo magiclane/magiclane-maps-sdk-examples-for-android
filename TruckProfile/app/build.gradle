@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.magiclane.sdk.examples.truckprofile"
-        minSdk 19
+        minSdk 21
         targetSdk 32
         multiDexEnabled true
         versionCode 1

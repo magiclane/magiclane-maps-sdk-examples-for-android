@@ -1,7 +1,7 @@
 // -------------------------------------------------------------------------------------------------
 
 /*
- * Copyright (C) 2019-2023, Magic Lane B.V.
+ * Copyright (C) 2019-2024, Magic Lane B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of Magic Lane
@@ -26,6 +26,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.isVisible
@@ -33,6 +34,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.SdkSettings
@@ -40,6 +42,7 @@ import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.places.SearchService
 import com.magiclane.sdk.sensordatasource.PositionService
+import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
@@ -56,6 +59,7 @@ class MainActivity : AppCompatActivity()
     private lateinit var noResultText: TextView
     private lateinit var toolbar: Toolbar
     private var imageSize: Int = 0
+    private var reference: Coordinates? = null
 
     private var searchService = SearchService(
         onCompleted = { results, errorCode, _ ->
@@ -163,6 +167,13 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this /* lifecycle owner */, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                finish()
+                exitProcess(0)
+            }
+        })
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -170,24 +181,9 @@ class MainActivity : AppCompatActivity()
     override fun onPause()
     {
         super.onPause()
+
         if (isFinishing)
-            GemSdk.release()
-    }
-    // ---------------------------------------------------------------------------------------------
-
-    override fun onDestroy()
-    {
-        super.onDestroy()
-
-        // Release the SDK.
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
+            GemSdk.release() // Release the SDK.
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -223,14 +219,18 @@ class MainActivity : AppCompatActivity()
             refreshList(arrayListOf())
             noResultText.isVisible = false
         }
+
         val position = PositionService.position
-        if (position?.isValid() == true)
-            searchService.searchByFilter(filter, position.coordinates)
+        reference = if (position?.isValid() == true)
+        {
+            position.coordinates
+        }
         else
         {
-            val centerLondon = Coordinates(51.5072, 0.1276)
-            searchService.searchByFilter(filter, centerLondon)
+            Coordinates(51.5072, 0.1276) // center London
         }
+        
+        searchService.searchByFilter(filter, reference)
     } ?: GemError.Cancel
 
     // ---------------------------------------------------------------------------------------------
@@ -292,54 +292,66 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
+    /**
+     * This custom adapter is made to facilitate the displaying of the data from the model
+     * and to decide how it is displayed.
+     */
+    inner class CustomAdapter(var dataSet: ArrayList<Landmark>, private val imageSize: Int) :
+        RecyclerView.Adapter<CustomAdapter.CustomViewHolder>()
+    {
+        // -----------------------------------------------------------------------------------------
+
+        inner class CustomViewHolder(view: View) : RecyclerView.ViewHolder(view)
+        {
+            val textView: TextView = view.findViewById(R.id.text)
+            val description: TextView = view.findViewById(R.id.description)
+            val imageView: ImageView = view.findViewById(R.id.image)
+            val statusText: TextView = view.findViewById(R.id.status_text)
+            val statusDescription: TextView = view.findViewById(R.id.status_description)
+        }
+
+        // -----------------------------------------------------------------------------------------
+
+        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): CustomViewHolder
+        {
+            val view = LayoutInflater.from(viewGroup.context)
+                .inflate(R.layout.list_item, viewGroup, false)
+
+            return CustomViewHolder(view)
+        }
+
+        // -----------------------------------------------------------------------------------------
+
+        override fun onBindViewHolder(viewHolder: CustomViewHolder, position: Int)
+        {
+            viewHolder.apply {
+                SdkCall.execute {
+                    textView.text = dataSet[position].name
+                    description.text = GemUtil.getLandmarkDescription(dataSet[position], true)
+                    imageView.setImageBitmap(dataSet[position].imageAsBitmap(imageSize))
+
+                    val meters = reference?.let { dataSet[position].coordinates?.getDistance(it)?.toInt() ?: 0 } ?: 0
+                    val dist = GemUtil.getDistText(meters, EUnitSystem.Metric, true)
+
+                    statusText.text = dist.first
+                    statusDescription.text = dist.second
+                }
+            }
+        }
+
+        // -----------------------------------------------------------------------------------------
+
+        override fun getItemCount() = dataSet.size
+
+        // -----------------------------------------------------------------------------------------
+    }
+
+    // ---------------------------------------------------------------------------------------------
+
     companion object
     {
         private const val REQUEST_PERMISSIONS = 110
     }
-}
-
-// -------------------------------------------------------------------------------------------------
-
-/**
- * This custom adapter is made to facilitate the displaying of the data from the model
- * and to decide how it is displayed.
- */
-class CustomAdapter(var dataSet: ArrayList<Landmark>, private val imageSize: Int) :
-    RecyclerView.Adapter<CustomAdapter.CustomViewHolder>()
-{
-    // ---------------------------------------------------------------------------------------------
-
-    class CustomViewHolder(view: View) : RecyclerView.ViewHolder(view)
-    {
-        val textView: TextView = view.findViewById(R.id.text)
-        val imageView: ImageView = view.findViewById(R.id.image)
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): CustomViewHolder
-    {
-        val view = LayoutInflater.from(viewGroup.context)
-            .inflate(R.layout.list_item, viewGroup, false)
-
-        return CustomViewHolder(view)
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    override fun onBindViewHolder(viewHolder: CustomViewHolder, position: Int)
-    {
-        viewHolder.apply {
-            textView.text = SdkCall.execute { dataSet[position].name }
-            imageView.setImageBitmap(SdkCall.execute { dataSet[position].imageAsBitmap(imageSize) })
-        }
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    override fun getItemCount() = dataSet.size
-
-    // ---------------------------------------------------------------------------------------------
 }
 
 // -------------------------------------------------------------------------------------------------

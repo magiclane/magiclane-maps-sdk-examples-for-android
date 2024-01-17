@@ -1,7 +1,7 @@
 // -------------------------------------------------------------------------------------------------
 
 /*
- * Copyright (C) 2019-2023, Magic Lane B.V.
+ * Copyright (C) 2019-2024, Magic Lane B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of Magic Lane
@@ -17,12 +17,15 @@ package com.magiclane.sdk.examples.routealarms
 // -------------------------------------------------------------------------------------------------
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -40,18 +43,34 @@ import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.magiclane.sdk.core.Image
+import com.magiclane.sdk.core.SoundPlayingListener
+import com.magiclane.sdk.core.SoundPlayingPreferences
+import com.magiclane.sdk.core.SoundPlayingService
+import com.magiclane.sdk.d3scene.EHighlightOptions
+import com.magiclane.sdk.d3scene.HighlightRenderSettings
+import com.magiclane.sdk.places.Coordinates
+import com.magiclane.sdk.places.LandmarkList
+import com.magiclane.sdk.util.EStringIds
+import com.magiclane.sdk.util.GemUtil
+import com.magiclane.sdk.util.GemUtilImages
+import com.magiclane.sound.SoundUtils
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
 
-class MainActivity : AppCompatActivity()
+class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationListener
 {
     // ---------------------------------------------------------------------------------------------
     
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var followCursorButton: FloatingActionButton
+    private lateinit var alarmPanel: ConstraintLayout
     private lateinit var alarmText: TextView
+    private lateinit var alarmImage: ImageView
+    private var alarmImageSize = 0
+    private var safetyAlarmId = 0
 
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
@@ -71,21 +90,58 @@ class MainActivity : AppCompatActivity()
     private val alarmListener = AlarmListener.create(
         onOverlayItemAlarmsUpdated = {
             SdkCall.execute execute@{
+                // Get the overlay items that are present and relevant.
+                val alarmsList = alarmService?.overlayItemAlarms
+                if ((alarmsList == null) || (alarmsList.size == 0))
+                {
+                    return@execute
+                }
+
                 // Get the maximum distance until an alarm is reached.
                 val maxDistance = alarmService?.alarmDistance ?: 0.0
 
-                // Get the overlay items that are present and relevant.
-                val markerList = alarmService?.overlayItemAlarms
-                if (markerList == null || markerList.size == 0) return@execute
-
                 // Get the distance to the closest alarm marker.
-                val distance = markerList.getDistance(0)
+                val distance = alarmsList.getDistance(0)
                 if (distance <= maxDistance)
                 {
+                    var bmp: Bitmap? = null
+
+                    alarmsList.getItem(0)?.let { alarm ->
+                        val id = alarm.overlayUid
+                        if (id != safetyAlarmId)
+                        {
+                            if (safetyAlarmId != 0)
+                            {
+                                removeHighlightedAlarm()
+                            }
+
+                            safetyAlarmId = id
+
+                            alarm.image?.let { image ->
+                                bmp = GemUtilImages.asBitmap(image, alarmImageSize, alarmImageSize)
+
+                                alarm.coordinates?.let { coordinates ->
+                                    highlightAlarm(image, coordinates)
+                                }
+                            }
+
+                            if (SoundPlayingService.ttsPlayerIsInitialized)
+                            {
+                                val warning = String.format(GemUtil.getTTSString(EStringIds.eStrCaution), GemUtil.getTTSString(EStringIds.eStrSpeedCamera))
+                                SoundPlayingService.playText(warning, SoundPlayingListener(), SoundPlayingPreferences())
+                            }
+                        }
+                    }
+
                     // If you are close enough to the alarm item, notify the user.
                     Util.postOnMain {
-                        if (!alarmText.isVisible) alarmText.visibility = View.VISIBLE
+                        if (!alarmPanel.isVisible)
+                        {
+                            alarmPanel.visibility = View.VISIBLE
+                        }
+
                         alarmText.text = getString(R.string.alarm_text, distance.toInt())
+                        bmp?.let { alarmImage.setImageBitmap(it) }
                     }
 
                     // Remove the alarm listener if you want to notify only once.
@@ -95,7 +151,10 @@ class MainActivity : AppCompatActivity()
         },
         
         onOverlayItemAlarmsPassedOver = {
-            alarmText.visibility = View.GONE
+            alarmPanel.visibility = View.GONE
+            SdkCall.execute {
+                removeHighlightedAlarm()
+            }
         }
     )
 
@@ -120,6 +179,16 @@ class MainActivity : AppCompatActivity()
                     mapView.followPosition()
                 }
             }
+        },
+
+        onDestinationReached = {
+            SdkCall.execute {
+                gemSurfaceView.mapView?.let { mapView ->
+                    mapView.preferences?.routes?.clear()
+                }
+            }
+
+            followCursorButton.visibility = View.GONE
         }
     )
 
@@ -141,12 +210,18 @@ class MainActivity : AppCompatActivity()
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
+
+        SoundUtils.addTTSPlayerInitializationListener(this)
+
         setContentView(R.layout.activity_main)
 
         progressBar = findViewById(R.id.progressBar)
         gemSurfaceView = findViewById(R.id.gem_surface)
         followCursorButton = findViewById(R.id.followCursor)
+        alarmPanel = findViewById(R.id.alarm_panel)
         alarmText = findViewById(R.id.alarm_text)
+        alarmImage = findViewById(R.id.alarm_image)
+        alarmImageSize = resources.getDimensionPixelSize(R.dimen.alarm_image_size)
 
         /// MAGIC LANE
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
@@ -196,7 +271,10 @@ class MainActivity : AppCompatActivity()
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                followCursorButton.visibility = View.VISIBLE
+                if (SdkCall.execute { navigationService.isSimulationActive() } == true)
+                {
+                    followCursorButton.visibility = View.VISIBLE
+                }
             }
 
             onEnterFollowingPosition = {
@@ -263,6 +341,40 @@ class MainActivity : AppCompatActivity()
         }
     }
     
+    // ---------------------------------------------------------------------------------------------
+
+    private fun highlightAlarm(image: Image, coordinates: Coordinates)
+    {
+        gemSurfaceView.mapView?.let { mapView ->
+            val landmark = Landmark()
+            landmark.image = image
+            landmark.coordinates = coordinates
+
+            val lmkList = LandmarkList()
+            lmkList.add(landmark)
+
+            val displaySettings = HighlightRenderSettings().also { settings ->
+                settings.setOptions(EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value)
+            }
+
+            mapView.activateHighlightLandmarks(lmkList, displaySettings, 0)
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+
+    private fun removeHighlightedAlarm()
+    {
+        gemSurfaceView.mapView?.deactivateHighlight(0)
+    }
+
+    // ---------------------------------------------------------------------------------------------
+
+    override fun onTTSPlayerInitialized()
+    {
+        SoundPlayingService.setTTSLanguage("eng-USA")
+    }
+
     // ---------------------------------------------------------------------------------------------
 }
 

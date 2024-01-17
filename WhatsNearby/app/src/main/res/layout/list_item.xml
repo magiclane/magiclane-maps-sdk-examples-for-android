@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:minHeight="@dimen/item_height">
-    
+
     <ImageView
         android:id="@+id/image"
         android:layout_width="@dimen/landmark_image_size"
@@ -21,12 +21,37 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/big_padding"
-        android:textColor="@color/text_color"
+        android:layout_marginEnd="@dimen/big_padding"
+        android:paddingTop="@dimen/big_padding"
+        android:textDirection="locale"
         android:textSize="@dimen/standard_text_size"
+        android:maxLines="2"
+        android:ellipsize="end"
+        app:layout_constraintBottom_toTopOf="@id/description"
+        app:layout_constraintEnd_toStartOf="@id/status_text"
+        app:layout_constraintStart_toEndOf="@id/image"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.4"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_goneMarginBottom="@dimen/big_padding"
+        />
+
+    <TextView
+        android:id="@+id/description"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/big_padding"
+        android:layout_marginEnd="@dimen/big_padding"
+        android:paddingBottom="@dimen/big_padding"
+        android:textDirection="locale"
+        android:textSize="@dimen/small_text_size"
+        android:maxLines="2"
+        android:ellipsize="end"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/status_text"
         app:layout_constraintStart_toEndOf="@id/image"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/text"
+        />
 
     <TextView
         android:id="@+id/status_text"

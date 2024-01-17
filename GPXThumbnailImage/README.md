@@ -1,11 +1,11 @@
 ## Overview
 
-This example app demonstrates the following features:
-- Calculate a route based on a GPX file and present a thumbnail image for it.
+This example app demonstrates the following feature:
+- Present a thumbnail image for a route based on a GPX file without using a routing service.
 
 ## Requirements
 
-- Deployment target device must run min Android API 16.
+- Deployment target device must run min Android API 21.
 - Deployment target device must be connected to internet.
 
 ## Build instructions

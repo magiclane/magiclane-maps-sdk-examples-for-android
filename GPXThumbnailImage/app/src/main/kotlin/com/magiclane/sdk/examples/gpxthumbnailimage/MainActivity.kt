@@ -1,7 +1,7 @@
 // -------------------------------------------------------------------------------------------------------------------------------
 
 /*
- * Copyright (C) 2019-2023, Magic Lane B.V.
+ * Copyright (C) 2019-2024, Magic Lane B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of Magic Lane
@@ -17,32 +17,33 @@ package com.magiclane.sdk.examples.gpxthumbnailimage
 // -------------------------------------------------------------------------------------------------------------------------------
 
 import android.annotation.SuppressLint
-import android.graphics.Bitmap
 import android.os.Bundle
-import android.view.View
 import android.widget.Button
-import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import com.magiclane.sdk.core.GemError
-import com.magiclane.sdk.core.GemSdk
-import com.magiclane.sdk.core.Path
-import com.magiclane.sdk.core.ProgressListener
-import com.magiclane.sdk.core.SdkSettings
-import com.magiclane.sdk.routesandnavigation.ERouteTransportMode
-import com.magiclane.sdk.core.Rect
-import com.magiclane.sdk.routesandnavigation.RoutingService
-import com.magiclane.sdk.util.SdkCall
-import com.magiclane.sdk.util.Util
+import androidx.core.view.isVisible
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.magiclane.sdk.core.ErrorCode
+import com.google.android.material.imageview.ShapeableImageView
+import com.google.android.material.textview.MaterialTextView
 import com.magiclane.sdk.core.GemOffscreenSurfaceView
+import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.core.ImageDatabase
+import com.magiclane.sdk.core.Path
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.Rgba
+import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
-import com.magiclane.sdk.routesandnavigation.ELineType
-import com.magiclane.sdk.routesandnavigation.RouteRenderSettings
+import com.magiclane.sdk.d3scene.EHighlightOptions
+import com.magiclane.sdk.d3scene.EViewCameraTransitionStatus
+import com.magiclane.sdk.d3scene.EViewDataTransitionStatus
+import com.magiclane.sdk.d3scene.HighlightRenderSettings
+import com.magiclane.sdk.places.Landmark
+import com.magiclane.sdk.util.SdkCall
+import com.magiclane.sdk.util.SdkImages
+import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -50,77 +51,36 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
-    
+
+    private lateinit var mapThumbnailImageView: ShapeableImageView
     private lateinit var progressBar: ProgressBar
+    private lateinit var statusText: MaterialTextView
     private lateinit var gemOffscreenSurfaceView: GemOffscreenSurfaceView
-    private lateinit var mapView: ImageView
-    private var mapBitmap: Bitmap? = null
-    private var mapWidth = 0
-    private var mapHeight = 0
-    private var padding = 0
+    
+    private var screenshotTaken = false
 
-    private val routingService = RoutingService(
-        onStarted = {
-            progressBar.visibility = View.VISIBLE
-        },
+    private val thumbnailWidth by lazy { 
+        resources.getDimension(R.dimen.thumbnail_width).toInt()
+    }
 
-        onCompleted = { routes, errorCode, _ ->
-            when (errorCode)
-            {
-                GemError.NoError ->
-                {
-                    if (routes.isNotEmpty())
-                    {
-                        SdkCall.execute {
-                            val routeRenderSettings = RouteRenderSettings()
-                            routeRenderSettings.innerColor = Rgba.blue()
-                            routeRenderSettings.outerColor = Rgba.blue()
-                            routeRenderSettings.innerSize = 1.0
-                            routeRenderSettings.outerSize = 0.0
-                            routeRenderSettings.lineType = ELineType.LT_Solid
+    private val thumbnailHeight by lazy {
+        resources.getDimension(R.dimen.thumbnail_height).toInt()
+    }
 
-                            gemOffscreenSurfaceView.mapView?.presentRoute(routes[0],
-                                                                          animation = Animation(listener = ProgressListener.create(onCompleted = { _: ErrorCode, _: String ->
-                                                                                                                                   Util.postOnMainDelayed ({
-                                                                                                                                        progressBar.visibility = View.GONE
-                                                                                                                                        mapView.setImageBitmap(mapBitmap)
-                                                                                                                                    }, 1000)
-                                                                                                                                  }),
-                                                                                                 animation = EAnimation.Linear,
-                                                                                                 duration = 100),
-                                                                           edgeAreaInsets = Rect(padding, padding, padding, padding),
-                                                                           routeRenderSettings = routeRenderSettings)
-                        }
-                    }
-                }
-                GemError.Cancel ->
-                {
-                    progressBar.visibility = View.GONE
-                    // No action.
-                }
-                else ->
-                {
-                    progressBar.visibility = View.GONE
-                    // There was a problem at computing the routing operation.
-                    showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
-                }
-            }
-        }
-    )
-
+    private val padding by lazy {
+        resources.getDimension(R.dimen.padding).toInt()
+    }
+    
     // ---------------------------------------------------------------------------------------------------------------------------
-
+    
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        mapView = findViewById(R.id.map_view)
-        mapWidth = resources.getDimensionPixelSize(R.dimen.map_width)
-        mapHeight = resources.getDimensionPixelSize(R.dimen.map_height)
-        padding = resources.getDimensionPixelSize(R.dimen.padding)
-
-        progressBar = findViewById(R.id.progressBar)
+        
+        mapThumbnailImageView = findViewById(R.id.map_thumbnail_image)
+        progressBar = findViewById(R.id.progress_bar)
+        statusText = findViewById(R.id.status_text)
 
         SdkSettings.onApiTokenRejected = {
             /* 
@@ -133,7 +93,9 @@ class MainActivity : AppCompatActivity()
 
         if (!Util.isInternetConnected(this))
         {
-            showDialog("You must be connected to the internet!")
+            showDialog("You must be connected to the internet!") {
+                exitProcess(0)
+            }
         }
 
         if (!GemSdk.initSdkWithDefaults(this))
@@ -142,57 +104,110 @@ class MainActivity : AppCompatActivity()
             finish()
         }
 
-        gemOffscreenSurfaceView = GemOffscreenSurfaceView(mapWidth, mapHeight, resources.displayMetrics.densityDpi,
-        onMapRendered = { bitmap ->
-            mapBitmap = bitmap
-        })
+        gemOffscreenSurfaceView = GemOffscreenSurfaceView(
+            thumbnailWidth,
+            thumbnailHeight,
+            resources.displayMetrics.densityDpi
+        )
         
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->  
+        statusText.text = getString(R.string.waiting_for_data)
+        
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
-            calculateRouteFromGPX()
+            statusText.text = getString(R.string.map_data_ready)
+            
+            SdkCall.execute {
+                val gpxAssetsFileName = "gpx/test_route.gpx"
+
+                // Opens GPX input stream.
+                val input = applicationContext.resources.assets.open(gpxAssetsFileName)
+
+                // Produce a Path based on the data in the buffer.
+                val path = Path.produceWithGpx(input) ?: return@execute
+                
+                showPath(path)
+                
+                gemOffscreenSurfaceView.mapView?.let { mapView ->
+                    mapView.preferences?.mapLabelsFading = false
+                    mapView.onViewRendered = onViewRendered@{ tivStatus, camStatus ->
+                        if (screenshotTaken) return@onViewRendered
+
+                        if (tivStatus == EViewDataTransitionStatus.Complete && camStatus == EViewCameraTransitionStatus.Stationary)
+                        {
+                            Util.postOnMain { statusText.text = getString(R.string.taking_screenshot) }
+                            gemOffscreenSurfaceView.takeScreenshot { bitmap ->
+                                Util.postOnMain {
+                                    mapThumbnailImageView.setImageBitmap(bitmap)
+                                    progressBar.isVisible = false
+                                    statusText.text = getString(R.string.screenshot_taken)
+                                }
+                                screenshotTaken = true
+                            }
+
+                            gemOffscreenSurfaceView.mapView?.onViewRendered = null
+                        }
+                    }
+                }
+            }
+        }
+
+        onBackPressedDispatcher.addCallback(this /* lifecycle owner */, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Back is pressed... Finishing the activity
+                finish()
+                exitProcess(0)
+            }
+        })
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
+    private fun showPath(path: Path)
+    {
+        gemOffscreenSurfaceView.mapView?.let { mapView ->
+            val coordinatesList = path.coordinates
+            if (!coordinatesList.isNullOrEmpty())
+            {
+                val departureLmk = Landmark("", coordinatesList.first()).also { 
+                    it.image = ImageDatabase().getImageById(SdkImages.Core.Waypoint_Start.value)
+                }
+                val destinationLmk = Landmark("", coordinatesList.last()).also {
+                    it.image = ImageDatabase().getImageById(SdkImages.Core.Waypoint_Finish.value)
+                }
+                
+                val highlightSettings = HighlightRenderSettings().also { 
+                    it.options = EHighlightOptions.ShowLandmark
+                    it.imageSize = 4.0
+                }
+                
+                mapView.activateHighlightLandmarks(arrayListOf(departureLmk, destinationLmk), highlightSettings)
+            }
+
+            val pathCollection = mapView.preferences?.paths
+            pathCollection?.add(
+                path,
+                colorBorder = Rgba.black(),
+                colorInner = Rgba.orange(),
+                szBorder = 0.5,
+                szInner = 1.0
+            )
+            
+            path.area?.let { area -> 
+                val margin = 2 * padding
+                mapView.centerOnRectArea(
+                    area = area,
+                    viewRc = Rect(margin, margin, thumbnailWidth - margin, thumbnailHeight - margin),
+                    animation = Animation(EAnimation.Linear, 10)
+                )
+            }
         }
     }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onDestroy()
-    {
-        super.onDestroy()
-
-        gemOffscreenSurfaceView.destroy()
-
-        // Deinitialize the SDK.
-        GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    private fun calculateRouteFromGPX() = SdkCall.execute {
-        val gpxAssetsFilename = "gpx/test_route.gpx"
-
-        // Opens GPX input stream.
-        val input = applicationContext.resources.assets.open(gpxAssetsFilename)
-
-        // Produce a Path based on the data in the buffer.
-        val track = Path.produceWithGpx(input/*.readBytes()*/) ?: return@execute
-
-        // Set the transport mode to bike and calculate the route.
-        routingService.calculateRoute(track, ERouteTransportMode.Car)
-    }
-
+    
     // ---------------------------------------------------------------------------------------------------------------------------
 
     @SuppressLint("InflateParams")
-    private fun showDialog(text: String)
+    private fun showDialog(text: String, dialogButtonCallback : () -> Unit = {})
     {
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
@@ -200,6 +215,7 @@ class MainActivity : AppCompatActivity()
             findViewById<TextView>(R.id.message).text = text
             findViewById<Button>(R.id.button).setOnClickListener {
                 dialog.dismiss()
+                dialogButtonCallback()
             }
         }
         dialog.apply {

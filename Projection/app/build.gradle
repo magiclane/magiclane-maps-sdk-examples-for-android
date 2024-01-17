@@ -6,12 +6,12 @@ plugins {
 android {
     namespace 'com.magiclane.sdk.examples.projection'
 
-    compileSdkVersion 33
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.magiclane.sdk.examples.projection"
-        minSdkVersion 19
-        targetSdkVersion 33
+        minSdk 21
+        targetSdk 33
 
 		multiDexEnabled true
 

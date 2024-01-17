@@ -1,7 +1,7 @@
 // -------------------------------------------------------------------------------------------------
 
 /*
- * Copyright (C) 2019-2023, Magic Lane B.V.
+ * Copyright (C) 2019-2024, Magic Lane B.V.
  * All rights reserved.
  *
  * This software is confidential and proprietary information of Magic Lane
@@ -274,8 +274,9 @@ class CustomAdapter(
     {
         val image: ImageView = view.findViewById(R.id.image)
         val text: TextView = view.findViewById(R.id.text)
+        val description: TextView = view.findViewById(R.id.description)
         val status: TextView = view.findViewById(R.id.status_text)
-        val description: TextView = view.findViewById(R.id.status_description)
+        val statusDescription: TextView = view.findViewById(R.id.status_description)
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -297,8 +298,9 @@ class CustomAdapter(
         viewHolder.run {
             image.setImageBitmap(dataSet[position].imageAsBitmap(imageSize))
             text.text = dataSet[position].name
+            description.text = GemUtil.getLandmarkDescription(dataSet[position], true)
             status.text = dist.first
-            description.text = dist.second
+            statusDescription.text = dist.second
         }
     } ?: Unit
 

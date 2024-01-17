@@ -1,30 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:minHeight="@dimen/item_height"
-    tools:ignore="UseCompoundDrawables">
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+xmlns:tools="http://schemas.android.com/tools"
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:layoutDirection="locale"
+android:minHeight="@dimen/list_cell_min_height"
+tools:visibility="visible">
 
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/image"
         android:layout_width="@dimen/list_item_image_size"
         android:layout_height="@dimen/list_item_image_size"
-        android:layout_gravity="center_vertical"
-        android:layout_marginStart="@dimen/big_padding"
-        tools:ignore="ContentDescription" />
-
-    <TextView
-        android:id="@+id/search_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:layout_marginStart="@dimen/big_padding"
-        android:textColor="@color/text_color"
-        android:textSize="@dimen/standard_text_size"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="ContentDescription"
+        />
 
-</LinearLayout>
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/side"
+        android:layout_width="@dimen/list_item_image_size"
+        android:layout_height="@dimen/list_item_image_size"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="ContentDescription"
+        />
+
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/list_item_padding"
+        android:layout_marginEnd="@dimen/list_item_padding"
+        android:paddingTop="@dimen/list_item_padding"
+        android:textDirection="locale"
+        android:textSize="@dimen/standard_text_size"
+        android:maxLines="2"
+        android:ellipsize="end"
+        app:layout_constraintBottom_toTopOf="@id/description"
+        app:layout_constraintEnd_toStartOf="@id/status_text"
+        app:layout_constraintStart_toEndOf="@id/image"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.4"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_goneMarginBottom="@dimen/list_item_padding"
+       />
+
+    <TextView
+        android:id="@+id/description"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/list_item_padding"
+        android:layout_marginEnd="@dimen/list_item_padding"
+        android:paddingBottom="@dimen/list_item_padding"
+        android:textDirection="locale"
+        android:textSize="@dimen/small_text_size"
+        android:maxLines="2"
+        android:ellipsize="end"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/status_text"
+        app:layout_constraintStart_toEndOf="@id/image"
+        app:layout_constraintTop_toBottomOf="@id/text"
+        />
+
+    <TextView
+        android:id="@+id/status_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/list_item_padding"
+        android:paddingTop="@dimen/list_item_padding"
+        android:textDirection="locale"
+        android:textSize="@dimen/standard_text_size"
+        app:layout_constraintBottom_toTopOf="@id/status_description"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.4"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_goneMarginBottom="@dimen/list_item_padding"
+        />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/status_description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/list_item_padding"
+        android:paddingBottom="@dimen/list_item_padding"
+        android:textDirection="locale"
+        android:textSize="@dimen/small_text_size"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/status_text"
+        />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

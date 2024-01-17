@@ -2,5 +2,5 @@
     <string name="app_name">RouteAlarms</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
-    <string name="alarm_text">Speed camera in %d m</string>
+    <string name="alarm_text">%d m</string>
 </resources>
