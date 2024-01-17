@@ -94,6 +94,7 @@ class MainActivity: AppCompatActivity()
                 GemError.NoError ->
                 {
                     SdkCall.execute {
+                        gemSurfaceView.mapView?.hideRoutes()
                         gemSurfaceView.mapView?.presentRoutes(routes, displayBubble = true)
                     }
                     showScrollableRangesList()
