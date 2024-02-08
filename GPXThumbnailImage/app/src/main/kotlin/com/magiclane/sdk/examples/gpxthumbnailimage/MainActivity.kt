@@ -27,6 +27,7 @@ import androidx.core.view.isVisible
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.textview.MaterialTextView
+import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemOffscreenSurfaceView
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.ImageDatabase
@@ -36,10 +37,12 @@ import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
+import com.magiclane.sdk.d3scene.ECommonOverlayId
 import com.magiclane.sdk.d3scene.EHighlightOptions
 import com.magiclane.sdk.d3scene.EViewCameraTransitionStatus
 import com.magiclane.sdk.d3scene.EViewDataTransitionStatus
 import com.magiclane.sdk.d3scene.HighlightRenderSettings
+import com.magiclane.sdk.d3scene.OverlayService
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.SdkImages
@@ -129,24 +132,9 @@ class MainActivity : AppCompatActivity()
                 showPath(path)
                 
                 gemOffscreenSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.mapLabelsFading = false
-                    mapView.onViewRendered = onViewRendered@{ tivStatus, camStatus ->
-                        if (screenshotTaken) return@onViewRendered
-
-                        if (tivStatus == EViewDataTransitionStatus.Complete && camStatus == EViewCameraTransitionStatus.Stationary)
-                        {
-                            Util.postOnMain { statusText.text = getString(R.string.taking_screenshot) }
-                            gemOffscreenSurfaceView.takeScreenshot { bitmap ->
-                                Util.postOnMain {
-                                    mapThumbnailImageView.setImageBitmap(bitmap)
-                                    progressBar.isVisible = false
-                                    statusText.text = getString(R.string.screenshot_taken)
-                                }
-                                screenshotTaken = true
-                            }
-
-                            gemOffscreenSurfaceView.mapView?.onViewRendered = null
-                        }
+                    mapView.preferences?.apply {
+                        mapLabelsFading = false
+                        trafficVisibility = false
                     }
                 }
             }
@@ -198,7 +186,35 @@ class MainActivity : AppCompatActivity()
                 mapView.centerOnRectArea(
                     area = area,
                     viewRc = Rect(margin, margin, thumbnailWidth - margin, thumbnailHeight - margin),
-                    animation = Animation(EAnimation.Linear, 10)
+                    animation = Animation(EAnimation.Linear, 10, onCompleted = onCompleted@{ errorCode, _ ->
+                        if (errorCode != GemError.NoError) return@onCompleted
+
+                        SdkCall.execute {
+                            OverlayService().apply {
+                                disableOverlay(ECommonOverlayId.SocialReports.value)
+                                disableOverlay(ECommonOverlayId.Safety.value)
+                            }
+
+                            mapView.onViewRendered = onViewRendered@{ tivStatus, camStatus ->
+                                if (screenshotTaken) return@onViewRendered
+
+                                if (tivStatus == EViewDataTransitionStatus.Complete && camStatus == EViewCameraTransitionStatus.Stationary)
+                                {
+                                    Util.postOnMain { statusText.text = getString(R.string.taking_screenshot) }
+                                    gemOffscreenSurfaceView.takeScreenshot { bitmap ->
+                                        Util.postOnMain {
+                                            mapThumbnailImageView.setImageBitmap(bitmap)
+                                            progressBar.isVisible = false
+                                            statusText.text = getString(R.string.screenshot_taken)
+                                        }
+                                        screenshotTaken = true
+                                    }
+
+                                    gemOffscreenSurfaceView.mapView?.onViewRendered = null
+                                }
+                            }
+                        }
+                    })
                 )
             }
         }
