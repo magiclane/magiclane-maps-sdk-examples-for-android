@@ -28,10 +28,14 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.magiclane.sdk.core.EGenericCategoriesIDs
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemError
@@ -54,6 +58,13 @@ import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity()
 {
+    companion object
+    {
+        private const val REQUEST_PERMISSIONS = 110
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        const val RESOURCE = "GLOBAL"
+    }
+
     private lateinit var listView: RecyclerView
     private lateinit var progressBar: ProgressBar
     private var imageSize = 0
@@ -65,7 +76,6 @@ class MainActivity : AppCompatActivity()
 
         onCompleted = onCompleted@{ results, errorCode, _ ->
             progressBar.visibility = View.GONE
-
             when (errorCode)
             {
                 GemError.NoError ->
@@ -79,6 +89,7 @@ class MainActivity : AppCompatActivity()
                     }
 
                     listView.adapter = CustomAdapter(reference, results, imageSize)
+                    decrement()
                 }
 
                 GemError.Cancel ->
@@ -105,7 +116,7 @@ class MainActivity : AppCompatActivity()
         setContentView(R.layout.activity_main)
 
         imageSize = resources.getDimension(R.dimen.landmark_image_size).toInt()
-        
+
         listView = findViewById(R.id.list_view)
         progressBar = findViewById(R.id.progressBar)
         val layoutManager = LinearLayoutManager(this)
@@ -117,6 +128,8 @@ class MainActivity : AppCompatActivity()
         listView.setBackgroundResource(R.color.background_color)
         val lateralPadding = resources.getDimension(R.dimen.big_padding).toInt()
         listView.setPadding(lateralPadding, 0, lateralPadding, 0)
+
+        increment()
 
         /// MAGIC LANE
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
@@ -153,6 +166,15 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true)
+        {
+            override fun handleOnBackPressed()
+            {
+                finish()
+                exitProcess(0)
+            }
+        })
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -163,14 +185,6 @@ class MainActivity : AppCompatActivity()
 
         // Release the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -246,6 +260,7 @@ class MainActivity : AppCompatActivity()
     @SuppressLint("InflateParams")
     private fun showDialog(text: String)
     {
+        decrement()
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
             findViewById<TextView>(R.id.title).text = getString(R.string.error)
@@ -263,12 +278,24 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
-    companion object
+    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    fun getActivityIdlingResource(): IdlingResource
     {
-        private const val REQUEST_PERMISSIONS = 110
+        return mainActivityIdlingResource
     }
 
     // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
+    //endregion ---------------------------------------------------------------------------------------------
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -278,7 +305,7 @@ class MainActivity : AppCompatActivity()
  * and to decide how it is displayed.
  */
 class CustomAdapter(
-    private val reference: Coordinates, 
+    private val reference: Coordinates,
     private val dataSet: ArrayList<Landmark>,
     private val imageSize: Int
 ) : RecyclerView.Adapter<CustomAdapter.ViewHolder>()
@@ -322,8 +349,6 @@ class CustomAdapter(
     // ---------------------------------------------------------------------------------------------
 
     override fun getItemCount() = dataSet.size
-
-    // ---------------------------------------------------------------------------------------------
 }
 
 // -------------------------------------------------------------------------------------------------

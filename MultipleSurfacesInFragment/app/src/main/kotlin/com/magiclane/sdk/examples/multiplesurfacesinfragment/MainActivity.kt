@@ -17,6 +17,7 @@ package com.magiclane.sdk.examples.multiplesurfacesinfragment
 // -------------------------------------------------------------------------------------------------------------------------------
 
 import android.os.Bundle
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.magiclane.sdk.core.GemSdk
 
@@ -25,11 +26,15 @@ import com.magiclane.sdk.core.GemSdk
 class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
-    
+
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -40,13 +45,6 @@ class MainActivity : AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------

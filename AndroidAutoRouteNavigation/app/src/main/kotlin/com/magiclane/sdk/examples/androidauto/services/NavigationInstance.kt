@@ -24,6 +24,7 @@ import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.GemUtil
 
+@Suppress("unused")
 object NavigationInstance {
     val service: NavigationService = NavigationService()
     val listeners = mutableListOf<NavigationListener>()

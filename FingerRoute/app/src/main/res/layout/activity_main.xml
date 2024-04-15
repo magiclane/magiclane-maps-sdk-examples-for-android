@@ -21,11 +21,89 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <include layout="@layout/content_main"
-     android:layout_width="match_parent"
-     android:layout_height="0dp"
-     app:layout_constraintTop_toBottomOf="@id/app_bar"
-     app:layout_constraintBottom_toBottomOf="parent"
-     android:id="@+id/content_main" />
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/content_main"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/app_bar">
+
+        <com.magiclane.sdk.core.GemSurfaceView
+            android:id="@+id/gem_surface"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/top_left_button"
+            style="@style/Widget.Material3.Button.IconButton.Filled"
+            android:layout_width="@dimen/map_button_size"
+            android:layout_height="@dimen/map_button_size"
+            android:layout_marginStart="@dimen/map_buttons_margin"
+            android:layout_marginTop="@dimen/map_buttons_margin"
+            android:backgroundTint="@color/gray"
+            app:icon="@drawable/touch"
+            app:iconGravity="textTop"
+            app:elevation="@dimen/map_button_elevation"
+            android:elevation="@dimen/map_button_elevation"
+            app:iconSize="@dimen/map_button_icon"
+            app:iconTint="@color/white"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="ContentDescription" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/top_right_button"
+            style="@style/Widget.Material3.Button.IconButton.Filled"
+            android:layout_width="@dimen/map_button_size"
+            android:layout_height="@dimen/map_button_size"
+            android:layout_marginTop="@dimen/map_buttons_margin"
+            android:layout_marginEnd="@dimen/map_buttons_margin"
+            android:backgroundTint="@color/gray"
+            app:icon="@drawable/route"
+            app:iconGravity="textTop"
+            app:elevation="@dimen/map_button_elevation"
+            android:elevation="@dimen/map_button_elevation"
+            app:iconSize="@dimen/map_button_icon"
+            app:iconTint="@color/white"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="ContentDescription" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/bottom_left_button"
+            style="@style/Widget.Material3.Button.IconButton.Filled"
+            android:layout_width="@dimen/map_button_size"
+            android:layout_height="@dimen/map_button_size"
+            android:layout_marginStart="@dimen/map_buttons_margin"
+            android:layout_marginBottom="@dimen/map_buttons_margin"
+            android:visibility="gone"
+            android:backgroundTint="@color/white"
+            app:icon="@drawable/share"
+            app:iconGravity="textTop"
+            app:elevation="@dimen/map_button_elevation"
+            android:elevation="@dimen/map_button_elevation"
+            app:iconSize="@dimen/map_button_icon"
+            app:iconTint="@color/gray"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:ignore="ContentDescription" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

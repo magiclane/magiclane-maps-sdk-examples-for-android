@@ -17,6 +17,7 @@ package com.magiclane.sdk.examples.mapperspectivechange
 // -------------------------------------------------------------------------------------------------------------------------------
 
 import android.os.Bundle
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -72,6 +73,11 @@ class MainActivity : AppCompatActivity()
                 }
             }
         }
+
+        onBackPressedDispatcher.addCallback(this){
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -83,15 +89,6 @@ class MainActivity : AppCompatActivity()
         // Deinitialize the SDK.
         GemSdk.release()
     }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
-    }
-
     // ---------------------------------------------------------------------------------------------------------------------------
 }
 

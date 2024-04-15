@@ -25,25 +25,35 @@ import android.widget.Button
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.magiclane.sdk.examples.multiplesurfacesinfragmentrecycler.data.MapItem
+import java.util.Date
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
 class SecondFragment : Fragment()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
-    
-    private val maxSurfacesCount = 9
-    private val list = arrayListOf(0, 1, 2, 3)
+
+    private val maxSurfacesCount = 20
 
     private lateinit var recycler: RecyclerView
+    private lateinit var mapAdapter: CustomAdapter
+
+    val viewModel by activityViewModels<MainActivityViewModel>()
+
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View?
     {
         return inflater.inflate(R.layout.fragment_second, container, false)
     }
@@ -58,20 +68,23 @@ class SecondFragment : Fragment()
             findNavController().navigate(R.id.action_SecondFragment_to_FirstFragment)
         }
 
-        recycler = view.findViewById<RecyclerView>(R.id.list).apply { 
+        recycler = view.findViewById<RecyclerView>(R.id.list).apply {
             itemAnimator = null
             layoutManager = LinearLayoutManager(requireContext())
-            adapter = CustomAdapter(list)
+            mapAdapter = CustomAdapter().also { it.submitList(viewModel.list) }
+            adapter = mapAdapter
+            recycledViewPool.setMaxRecycledViews(1, 0)
+            setItemViewCacheSize(5)
         }
 
-        val leftBtn = view.findViewById<FloatingActionButton>(R.id.bottomLeftButton)
+        val leftBtn = view.findViewById<FloatingActionButton>(R.id.bottom_left_button)
         leftBtn.visibility = View.VISIBLE
         buttonAsDelete(requireContext(), leftBtn)
         {
             deleteLastSurface()
         }
 
-        val rightBtn = view.findViewById<FloatingActionButton>(R.id.bottomRightButton)
+        val rightBtn = view.findViewById<FloatingActionButton>(R.id.bottom_right_button)
         rightBtn.visibility = View.VISIBLE
         buttonAsAdd(requireContext(), rightBtn)
         {
@@ -83,45 +96,25 @@ class SecondFragment : Fragment()
 
     private fun addSurface()
     {
-        if (list.size >= maxSurfacesCount)
-        {
-            return
+        viewModel.list.apply {
+            if (viewModel.list.size >= maxSurfacesCount) return
+            add(MapItem(lastIndex + 1, Date()))
+            mapAdapter.submitList(this.toMutableList())
         }
-
-        list.add(list.lastIndex + 1)
-        recycler.adapter?.notifyItemInserted(list.lastIndex)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun deleteLastSurface()
     {
-        if (list.size == 0) return
-        list.removeLast()
-        recycler.adapter?.notifyItemRemoved(list.lastIndex + 1)
+        viewModel.list.apply {
+            if (size == 0) return
+            removeLast()
+            mapAdapter.submitList(this.toMutableList())
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
-
-    class CustomAdapter(private val dataSet: ArrayList<Int>) : RecyclerView.Adapter<CustomAdapter.ViewHolder>()
-    {
-        class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
-
-        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder
-        {
-            val view = LayoutInflater.from(viewGroup.context)
-                .inflate(R.layout.map_layout, viewGroup, false)
-
-            val result = ViewHolder(view)
-            result.setIsRecyclable(false)
-
-            return result
-        }
-
-        override fun getItemCount() = dataSet.size
-
-        override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) = Unit
-    }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 

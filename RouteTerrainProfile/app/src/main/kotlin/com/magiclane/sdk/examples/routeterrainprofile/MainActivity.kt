@@ -24,10 +24,13 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.widget.NestedScrollView
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -39,14 +42,27 @@ import com.magiclane.sdk.routesandnavigation.RoutingService
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.d3scene.Animation
+import com.magiclane.sdk.d3scene.EAnimation
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
 
 class MainActivity : AppCompatActivity()
 {
+
+
     // ---------------------------------------------------------------------------------------------
-    
+    companion object
+    {
+        const val RESOURCE = "GLOBAL"
+    }
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
+
+    @VisibleForTesting
+    lateinit var routingProfile : RouteProfile
+
     lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var routeProfileContainer: NestedScrollView
     private lateinit var progressBar: ProgressBar
@@ -81,6 +97,7 @@ class MainActivity : AppCompatActivity()
                         else
                         {
                             showDialog("Route terrain profile is not available!")
+                            decrement()
                         }
                     }
                 }
@@ -89,12 +106,14 @@ class MainActivity : AppCompatActivity()
                 {
                     // The routing action was cancelled.
                     showDialog("The routing action was cancelled.")
+                    decrement()
                 }
 
                 else ->
                 {
                     // There was a problem at computing the routing operation.
                     showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
+                    decrement()
                 }
             }
         }
@@ -106,7 +125,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        
+        increment()
         gemSurfaceView = findViewById(R.id.gem_surface_view)
         routeProfileContainer = findViewById(R.id.route_profile_scroll_view)
         progressBar = findViewById(R.id.progressBar)
@@ -183,7 +202,7 @@ class MainActivity : AppCompatActivity()
     
     fun flyToRoute(route: Route?)
     {
-        route?.let { gemSurfaceView.mapView?.centerOnRoute(it) }
+        route?.let { gemSurfaceView.mapView?.centerOnRoute(it, animation = Animation(animation = EAnimation.Linear, duration = 200)) }
     }
     
     // ---------------------------------------------------------------------------------------------
@@ -208,7 +227,8 @@ class MainActivity : AppCompatActivity()
         routeProfileContainer.visibility = View.VISIBLE
         
         // creates the instance of the class that operates the elevation data
-        RouteProfile(this, route)
+        routingProfile =  RouteProfile(this, route)
+        decrement()
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -318,7 +338,19 @@ class MainActivity : AppCompatActivity()
             }
         }
     }
-    
+    // ---------------------------------------------------------------------------------------------
+
+    @VisibleForTesting
+    fun getActivityIdlingResource(): IdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
     // ---------------------------------------------------------------------------------------------
 }
 

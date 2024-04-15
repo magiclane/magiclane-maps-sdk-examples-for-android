@@ -18,6 +18,7 @@ package com.magiclane.sdk.examples.hellosdk
 
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.SdkSettings
@@ -48,6 +49,14 @@ class MainActivity : AppCompatActivity()
             // The SDK initialization was not completed.
             finish()
         }
+
+        onBackPressedDispatcher.addCallback(this,object : OnBackPressedCallback(true){
+            override fun handleOnBackPressed()
+            {
+                finish()
+                exitProcess(0)
+            }
+        })
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -58,14 +67,6 @@ class MainActivity : AppCompatActivity()
 
         // Release the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------

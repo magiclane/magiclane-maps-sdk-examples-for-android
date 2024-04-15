@@ -25,7 +25,10 @@ import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.*
@@ -54,6 +57,16 @@ class MainActivity: AppCompatActivity()
     private var wasSpeedWarningPlayed = false
     
     private var alarmService: AlarmService? = null
+
+    //region members for testing
+    companion object
+    {
+        private const val REQUEST_PERMISSIONS = 110
+        const val RESOURCE = "GLOBAL"
+    }
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
+    //endregion
 
     // Define a position listener tht will help us get the current speed.
     private val positionListener = object : PositionListener()
@@ -145,6 +158,11 @@ class MainActivity: AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this){
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -155,15 +173,6 @@ class MainActivity: AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -218,11 +227,11 @@ class MainActivity: AppCompatActivity()
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                followCursorButton.visibility = View.VISIBLE
+                followCursorButton.isVisible = true
             }
 
             onEnterFollowingPosition = {
-                followCursorButton.visibility = View.GONE
+                followCursorButton.isVisible = false
             }
 
             // Set on click action for the GPS button.
@@ -263,11 +272,6 @@ class MainActivity: AppCompatActivity()
     }
 
     // ---------------------------------------------------------------------------------------------
-
-    companion object
-    {
-        private const val REQUEST_PERMISSIONS = 110
-    }
 
     // ---------------------------------------------------------------------------------------------
 }

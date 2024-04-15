@@ -22,7 +22,11 @@ import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.ProgressListener
@@ -42,7 +46,13 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------
-    
+    companion object
+    {
+        const val RESOURCE = "GLOBAL"
+    }
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
+
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var followCursorButton: FloatingActionButton
@@ -70,6 +80,13 @@ class MainActivity : AppCompatActivity()
 
                     enableGPSButton()
                     mapView.followPosition()
+                }
+            }
+        },
+        onDestinationReached = {_ ->
+            SdkCall.execute {
+                gemSurfaceView.mapView?.let { mapView ->
+                    mapView.preferences?.routes?.clear()
                 }
             }
         }
@@ -120,6 +137,10 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -134,20 +155,16 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
     private fun enableGPSButton()
     {
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                followCursorButton.visibility = View.VISIBLE
+                val isSimulationActive = SdkCall.execute { NavigationService().isSimulationActive() } ?: false
+                if (isSimulationActive)
+                {
+                    followCursorButton.visibility = View.VISIBLE
+                }
             }
 
             onEnterFollowingPosition = {
@@ -192,6 +209,18 @@ class MainActivity : AppCompatActivity()
         }
     }
 
+    // ---------------------------------------------------------------------------------------------
+    @VisibleForTesting
+    fun getActivityIdlingResource(): IdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
     // ---------------------------------------------------------------------------------------------
 }
 

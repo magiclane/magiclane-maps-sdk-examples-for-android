@@ -153,7 +153,7 @@ class ClimbTableDataAdapter(context: Context?, data: List<Climb?>?, tableView: T
     {
         val view = layoutInflater.inflate(R.layout.cell_single_text, parentView, false)
         val textView = view.findViewById<TextView>(R.id.text)
-        setColor(climb, view)
+        setColor(climb, parentView)
         textView.apply {
             text = value
             setTextColor(Color.BLACK)

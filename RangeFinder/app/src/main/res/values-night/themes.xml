@@ -1,16 +1,36 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.GEMSdk" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+    <style name="Theme.GEMSdk" parent="Theme.Material3.Light.NoActionBar">
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_200</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
-        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorPrimary">#cfbdff</item>
+        <item name="colorOnPrimary">#3a0093</item>
+        <item name="colorPrimaryContainer">#5300cd</item>
+        <item name="colorOnPrimaryContainer">#e8ddff</item>
         <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_200</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+        <item name="colorSecondary">#17dec9</item>
+        <item name="colorOnSecondary">#003731</item>
+        <item name="colorSecondaryContainer">#005048</item>
+        <item name="colorOnSecondaryContainer">#4ffbe5</item>
+        <!-- Tertiary brand color. -->
+        <item name="colorTertiary">#d7baff</item>
+        <item name="colorOnTertiary">#3f1c6e</item>
+        <item name="colorTertiaryContainer">#563587</item>
+        <item name="colorOnTertiaryContainer">#eddcff</item>
+        <!-- Neutral brand color. -->
+        <item name="android:colorBackground">#1c1b1e</item>
+        <item name="colorOnBackground">#e6e1e6</item>
+        <item name="colorSurface">#1c1b1e</item>
+        <item name="colorOnSurface">#e6e1e6</item>
+        <item name="colorOutline">#948f99</item>
+        <item name="colorSurfaceVariant">#49454e</item>
+        <item name="colorOnSurfaceVariant">#cac4cf</item>
+
+        <!-- Error brand color. -->
+        <item name="colorError">#ffb4ab</item>
+        <item name="colorOnError">#690005</item>
+        <item name="colorErrorContainer">#93000a</item>
+        <item name="colorOnErrorContainer">#ffdad6</item>
+
+        <item name="android:statusBarColor"  tools:targetApi="l">#1c1b1e</item>
     </style>
 </resources>

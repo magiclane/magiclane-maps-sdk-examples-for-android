@@ -69,7 +69,10 @@ class BLEService : Service()
 
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int)
         {
-            Log.i(tag, "BluetoothGattCallback.onConnectionStateChange(): newState = $newState, status = $status")
+            Log.i(
+                tag,
+                "BluetoothGattCallback.onConnectionStateChange(): newState = $newState, status = $status"
+            )
 
             val intentAction: String
             if (newState == BluetoothProfile.STATE_CONNECTED)
@@ -77,13 +80,23 @@ class BLEService : Service()
                 intentAction = ACTION_GATT_CONNECTED
                 connectionState = STATE_CONNECTED
                 broadcastUpdate(intentAction)
-                Log.i(tag, "Connected to GATT server.") // Attempts to discover services after successful connection.
+                Log.i(
+                    tag,
+                    "Connected to GATT server."
+                ) // Attempts to discover services after successful connection.
                 if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.S) ||
-                    (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED))
+                    (ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    ) == PackageManager.PERMISSION_GRANTED)
+                )
                 {
                     bluetoothGatt?.let {
                         val result = it.discoverServices()
-                        Log.i(tag, "BluetoothGattCallback.onConnectionStateChange(): attempting to start service discovery:" + result)
+                        Log.i(
+                            tag,
+                            "BluetoothGattCallback.onConnectionStateChange(): attempting to start service discovery:" + result
+                        )
                     }
                 }
             }
@@ -91,7 +104,10 @@ class BLEService : Service()
             {
                 intentAction = ACTION_GATT_DISCONNECTED
                 connectionState = STATE_DISCONNECTED
-                Log.i(tag, "BluetoothGattCallback.onConnectionStateChange(): disconnected from GATT server, status = $status")
+                Log.i(
+                    tag,
+                    "BluetoothGattCallback.onConnectionStateChange(): disconnected from GATT server, status = $status"
+                )
                 broadcastUpdate(intentAction)
             }
         }
@@ -112,7 +128,11 @@ class BLEService : Service()
 
         // -----------------------------------------------------------------------------------------------------------------------
 
-        override fun onCharacteristicRead(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int)
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        )
         {
             if (status == BluetoothGatt.GATT_SUCCESS)
             {
@@ -134,7 +154,10 @@ class BLEService : Service()
 
         // -----------------------------------------------------------------------------------------------------------------------
 
-        override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic)
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic
+        )
         {
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic)
         }
@@ -144,13 +167,20 @@ class BLEService : Service()
         override fun onServiceChanged(gatt: BluetoothGatt)
         {
             if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.S) ||
-                (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED))
+                (ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) == PackageManager.PERMISSION_GRANTED)
+            )
             {
                 bluetoothGatt?.let {
                     Log.i(tag, "BluetoothGattCallback.onServiceChanged(): try to reconnect")
 
                     it.disconnect()
-                    Handler(Looper.getMainLooper()).postDelayed({connect(bluetoothDeviceAddress)}, 1000)
+                    Handler(Looper.getMainLooper()).postDelayed(
+                        { connect(bluetoothDeviceAddress) },
+                        1000
+                    )
                 }
             }
         }
@@ -193,7 +223,13 @@ class BLEService : Service()
                 {
                     if ((turnInstructionDataOffset + data.size) <= turnInstructionData.size)
                     {
-                        System.arraycopy(data, 0, turnInstructionData, turnInstructionDataOffset, data.size)
+                        System.arraycopy(
+                            data,
+                            0,
+                            turnInstructionData,
+                            turnInstructionDataOffset,
+                            data.size
+                        )
                         turnInstructionDataOffset += data.size
 
                         if (turnInstructionDataOffset == turnInstructionData.size)
@@ -235,7 +271,7 @@ class BLEService : Service()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    inner class LocalBinder: Binder()
+    inner class LocalBinder : Binder()
     {
         val service: BLEService
             get() = this@BLEService
@@ -322,12 +358,17 @@ class BLEService : Service()
         // Previously connected device.  Try to reconnect.
         if ((bluetoothDeviceAddress != null) &&
             (address == bluetoothDeviceAddress) &&
-            (bluetoothGatt != null))
+            (bluetoothGatt != null)
+        )
         {
             Log.d(tag, "Trying to use an existing mBluetoothGatt for connection.")
 
             if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.S) ||
-                (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED))
+                (ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) == PackageManager.PERMISSION_GRANTED)
+            )
             {
                 return if (bluetoothGatt?.connect() == true)
                 {
@@ -377,7 +418,11 @@ class BLEService : Service()
         }
 
         if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.S) ||
-            (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED))
+            (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED)
+        )
         {
             bluetoothGatt?.disconnect()
             bluetoothGatt?.close()
@@ -393,7 +438,11 @@ class BLEService : Service()
     fun close()
     {
         if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.S) ||
-            (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED))
+            (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED)
+        )
         {
             bluetoothGatt?.close()
         }
@@ -402,7 +451,7 @@ class BLEService : Service()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
-    
+
     /**
      * Request a read on a given `BluetoothGattCharacteristic`. The read result is reported
      * asynchronously through the `BluetoothGattCallback#onCharacteristicRead(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)`
@@ -424,17 +473,27 @@ class BLEService : Service()
             return
         }
 
-        Log.d(tag, "readCharacteristic(): uuid = " + SampleGattAttributes.lookup(characteristic.uuid.toString(), characteristic.uuid.toString()))
-        
+        Log.d(
+            tag,
+            "readCharacteristic(): uuid = " + SampleGattAttributes.lookup(
+                characteristic.uuid.toString(),
+                characteristic.uuid.toString()
+            )
+        )
+
         if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.S) ||
-            (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED))
+            (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED)
+        )
         {
             bluetoothGatt?.readCharacteristic(characteristic)
         }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
-    
+
     /**
      * Enables or disables notification on a give characteristic.
      *
@@ -450,14 +509,27 @@ class BLEService : Service()
         }
 
         if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.S) ||
-            (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED))
+            (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED)
+        )
         {
             bluetoothGatt?.setCharacteristicNotification(characteristic, enabled)
         }
 
         val descriptor = characteristic.getDescriptor(CLIENT_CONFIG)
-        descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-        bluetoothGatt?.writeDescriptor(descriptor)
+        @Suppress("DEPRECATION")
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
+        {
+            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            bluetoothGatt?.writeDescriptor(descriptor)
+        }
+        else
+            bluetoothGatt?.writeDescriptor(
+                descriptor,
+                BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            )
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -478,10 +550,16 @@ class BLEService : Service()
         private const val STATE_DISCONNECTED = 0
         private const val STATE_CONNECTING = 1
         private const val STATE_CONNECTED = 2
-        const val ACTION_GATT_CONNECTED = "com.magiclane.sdk.examples.bleclient.ACTION_GATT_CONNECTED"
-        const val ACTION_GATT_DISCONNECTED = "com.magiclane.sdk.examples.bleclient.ACTION_GATT_DISCONNECTED"
-        const val ACTION_GATT_SERVICES_DISCOVERED = "com.magiclane.sdk.examples.bleclient.ACTION_GATT_SERVICES_DISCOVERED"
-        const val ACTION_DATA_AVAILABLE = "com.magiclane.sdk.examples.bleclient.ACTION_DATA_AVAILABLE"
+
+        const val ACTION_GATT_CONNECTED =
+            "com.magiclane.sdk.examples.bleclient.ACTION_GATT_CONNECTED"
+        const val ACTION_GATT_DISCONNECTED =
+            "com.magiclane.sdk.examples.bleclient.ACTION_GATT_DISCONNECTED"
+        const val ACTION_GATT_SERVICES_DISCOVERED =
+            "com.magiclane.sdk.examples.bleclient.ACTION_GATT_SERVICES_DISCOVERED"
+        const val ACTION_DATA_AVAILABLE =
+            "com.magiclane.sdk.examples.bleclient.ACTION_DATA_AVAILABLE"
+
         const val EXTRA_DATA = "com.magiclane.sdk.examples.bleclient.EXTRA_DATA"
         const val EXTRA_TYPE = "com.magiclane.sdk.examples.bleclient.EXTRA_TYPE"
     }

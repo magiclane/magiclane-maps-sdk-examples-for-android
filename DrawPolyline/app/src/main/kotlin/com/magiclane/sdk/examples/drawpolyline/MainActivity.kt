@@ -20,6 +20,8 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -31,6 +33,7 @@ import com.magiclane.sdk.d3scene.MarkerCollectionRenderSettings
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.Rgba
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -38,8 +41,9 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
-    
-    private lateinit var gemSurfaceView: GemSurfaceView
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    lateinit var gemSurfaceView: GemSurfaceView
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
@@ -68,6 +72,11 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this){
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -78,14 +87,6 @@ class MainActivity : AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed() 
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -132,7 +133,13 @@ class MainActivity : AppCompatActivity()
             markerCollection.add(marker)
 
             // Make a list of settings that will decide how each marker collection will be displayed on the map.
-            val settings = MarkerCollectionRenderSettings()
+            val settings = MarkerCollectionRenderSettings(
+                polylineInnerColor = Rgba.magenta(),
+                polylineOuterColor = Rgba.black()
+            ).apply {
+                polylineInnerSize = 1.25
+                polylineOuterSize = 0.75
+            }
 
             // Add the collection to the desired map view so it can be displayed.
             mapView.preferences?.markers?.add(markerCollection, settings)

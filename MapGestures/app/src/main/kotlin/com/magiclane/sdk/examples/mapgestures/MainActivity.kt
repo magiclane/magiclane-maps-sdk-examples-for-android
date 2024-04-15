@@ -21,7 +21,11 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.SdkSettings
@@ -35,7 +39,9 @@ import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity()
 {
-    private lateinit var gemSurfaceView: GemSurfaceView
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    lateinit var gemSurfaceView: GemSurfaceView
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
@@ -43,7 +49,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        increment()
         gemSurfaceView = findViewById(R.id.gem_surface)
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
@@ -111,6 +117,7 @@ class MainActivity : AppCompatActivity()
                     }
                 }
             }
+            decrement()
         }
 
         SdkSettings.onApiTokenRejected = {
@@ -126,6 +133,11 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this){
+            finish()
+            exitProcess(0)
+        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------------
@@ -136,14 +148,6 @@ class MainActivity : AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // -------------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // -------------------------------------------------------------------------------------------------------------------------------
@@ -166,7 +170,30 @@ class MainActivity : AppCompatActivity()
         }
     }
     
-    // -------------------------------------------------------------------------------------------------------------------------------
+    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    companion object
+    {
+        const val RESOURCE = "GLOBAL"
+    }
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
+
+
+    @VisibleForTesting
+    fun getActivityIdlingResource(): IdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
+    //endregion ---------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
 }
 
 // -----------------------------------------------------------------------------------------------------------------------------------

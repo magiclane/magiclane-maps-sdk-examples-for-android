@@ -15,6 +15,7 @@
 
 package com.magiclane.sdk.examples.search
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.view.View
@@ -29,17 +30,18 @@ import androidx.test.espresso.NoMatchingViewException
 import androidx.test.espresso.ViewAssertion
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.BoundedMatcher
 import androidx.test.espresso.matcher.ViewMatchers.assertThat
-import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
 import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withParentIndex
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import org.hamcrest.Description
+import androidx.test.rule.GrantPermissionRule
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.hamcrest.Matcher
 import org.hamcrest.Matchers.greaterThan
 import org.hamcrest.core.AllOf.allOf
@@ -55,59 +57,44 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4ClassRunner::class)
 class MainActivityInstrumentedTests
 {
+    companion object{
+        const val WAIT_TIME = 15000L
+    }
+
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val mainIntent = Intent(context, MainActivity::class.java)
 
     @get:Rule
     val activityRule = ActivityScenarioRule<MainActivity>(mainIntent)
 
+    @Rule
+    @JvmField
+    val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(
+        Manifest.permission.INTERNET,
+        Manifest.permission.ACCESS_NETWORK_STATE,
+        Manifest.permission.ACCESS_COARSE_LOCATION,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    )
+
     @Before
     fun beforeTest()
     {
         activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        Thread.sleep(3000)
+        runBlocking { delay(2000) }
     }
 
     @After
     fun afterTest()
     {
-        activityRule.scenario.moveToState(Lifecycle.State.DESTROYED)
+        //activityRule.scenario.moveToState(Lifecycle.State.DESTROYED)
         activityRule.scenario.close()
     }
 
     @Test
-    fun firstItemMustContainSubstringOfSearch()
-    {
+    fun firstItemMustContainSubstringOfSearch() {
         onView(allOf(withId(R.id.search_input), isDisplayed())).perform(typeText("London"))
-        Thread.sleep(3000)
-        onView(
-            hasItemAtPosition(
-                hasDescendant(
-                    allOf(
-                        isAssignableFrom(TextView::class.java),
-                        withText("London")
-                    )
-                ), 0
-            )
-        ).check(matches(isDisplayed()));
-    }
-
-    private fun hasItemAtPosition(matcher: Matcher<View?>, position: Int): Matcher<View?>?
-    {
-        return object : BoundedMatcher<View?, RecyclerView>(RecyclerView::class.java)
-        {
-            override fun describeTo(description: Description)
-            {
-                description.appendText("has item at position $position: ")
-                matcher.describeTo(description)
-            }
-
-            override fun matchesSafely(recyclerView: RecyclerView): Boolean
-            {
-                val viewHolder = recyclerView.findViewHolderForAdapterPosition(position)
-                return matcher.matches(viewHolder!!.itemView)
-            }
-        }
+        runBlocking { delay(WAIT_TIME) }
+        onView(allOf(withParentIndex(0),isAssignableFrom(TextView::class.java), withText("London"))).check(matches(isDisplayed()))
     }
 
     @Test
@@ -126,7 +113,7 @@ class MainActivityInstrumentedTests
     fun onTextChangedResultsShouldBeDisplayed()
     {
         onView(allOf(withId(R.id.search_input), isDisplayed())).perform(typeText("a"))
-        Thread.sleep(5000)
+        runBlocking { delay(WAIT_TIME) }
         closeSoftKeyboard()
         onView(allOf(withId(R.id.list_view), isDisplayed()))
             .check(RecyclerViewItemCountAssertion(greaterThan(0)))
@@ -150,7 +137,7 @@ class MainActivityInstrumentedTests
         onView(allOf(withId(R.id.search_input), isDisplayed())).perform(
             typeText("yyqqp")
         )
-        Thread.sleep(1000)
+        runBlocking { delay(WAIT_TIME) }
         closeSoftKeyboard()
         onView(
             allOf(
@@ -183,14 +170,8 @@ class MainActivityInstrumentedTests
         }
     }
 
-    class SearchViewTextAssertionAssistant : ViewAssertion
+    class SearchViewTextAssertionAssistant(private val matcher: Matcher<String>) : ViewAssertion
     {
-        private val matcher: Matcher<String>
-
-        constructor(matcher: Matcher<String>)
-        {
-            this.matcher = matcher
-        }
 
         override fun check(view: View?, noViewFoundException: NoMatchingViewException?)
         {

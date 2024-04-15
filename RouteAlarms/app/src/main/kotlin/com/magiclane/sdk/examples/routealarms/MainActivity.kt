@@ -24,36 +24,40 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
+import com.magiclane.sdk.core.Image
 import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.core.SoundPlayingListener
+import com.magiclane.sdk.core.SoundPlayingPreferences
+import com.magiclane.sdk.core.SoundPlayingService
 import com.magiclane.sdk.d3scene.ECommonOverlayId
+import com.magiclane.sdk.d3scene.EHighlightOptions
+import com.magiclane.sdk.d3scene.HighlightRenderSettings
 import com.magiclane.sdk.d3scene.OverlayService
+import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
+import com.magiclane.sdk.places.LandmarkList
 import com.magiclane.sdk.routesandnavigation.AlarmListener
 import com.magiclane.sdk.routesandnavigation.AlarmService
 import com.magiclane.sdk.routesandnavigation.NavigationListener
 import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.routesandnavigation.Route
-import com.magiclane.sdk.util.SdkCall
-import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.magiclane.sdk.core.Image
-import com.magiclane.sdk.core.SoundPlayingListener
-import com.magiclane.sdk.core.SoundPlayingPreferences
-import com.magiclane.sdk.core.SoundPlayingService
-import com.magiclane.sdk.d3scene.EHighlightOptions
-import com.magiclane.sdk.d3scene.HighlightRenderSettings
-import com.magiclane.sdk.places.Coordinates
-import com.magiclane.sdk.places.LandmarkList
 import com.magiclane.sdk.util.EStringIds
 import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.GemUtilImages
+import com.magiclane.sdk.util.SdkCall
+import com.magiclane.sdk.util.Util
 import com.magiclane.sound.SoundUtils
 import kotlin.system.exitProcess
 
@@ -62,7 +66,7 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationListener
 {
     // ---------------------------------------------------------------------------------------------
-    
+
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var followCursorButton: FloatingActionButton
@@ -71,6 +75,14 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private lateinit var alarmImage: ImageView
     private var alarmImageSize = 0
     private var safetyAlarmId = 0
+
+    companion object
+    {
+        const val RESOURCE = "GLOBAL"
+    }
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
+    private var alarmIdlingResource = CountingIdlingResource(RESOURCE, true)
 
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
@@ -127,8 +139,15 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
                             if (SoundPlayingService.ttsPlayerIsInitialized)
                             {
-                                val warning = String.format(GemUtil.getTTSString(EStringIds.eStrCaution), GemUtil.getTTSString(EStringIds.eStrSpeedCamera))
-                                SoundPlayingService.playText(warning, SoundPlayingListener(), SoundPlayingPreferences())
+                                val warning = String.format(
+                                    GemUtil.getTTSString(EStringIds.eStrCaution),
+                                    GemUtil.getTTSString(EStringIds.eStrSpeedCamera)
+                                )
+                                SoundPlayingService.playText(
+                                    warning,
+                                    SoundPlayingListener(),
+                                    SoundPlayingPreferences()
+                                )
                             }
                         }
                     }
@@ -148,8 +167,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                     // alarmService?.setAlarmListener(null)
                 }
             }
+            if (!alarmIdlingResource.isIdleNow)
+                alarmIdlingResource.decrement()
         },
-        
+
         onOverlayItemAlarmsPassedOver = {
             alarmPanel.visibility = View.GONE
             SdkCall.execute {
@@ -177,6 +198,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
                     enableGPSButton()
                     mapView.followPosition()
+                    mainActivityIdlingResource.decrement()
                 }
             }
         },
@@ -214,7 +236,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         SoundUtils.addTTSPlayerInitializationListener(this)
 
         setContentView(R.layout.activity_main)
-
+        mainActivityIdlingResource.increment()
+        alarmIdlingResource.increment()
         progressBar = findViewById(R.id.progressBar)
         gemSurfaceView = findViewById(R.id.gem_surface)
         followCursorButton = findViewById(R.id.followCursor)
@@ -244,6 +267,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -254,14 +282,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -296,16 +316,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         SdkCall.execute {
             alarmService = AlarmService.produce(alarmListener)
             alarmService?.alarmDistance = 500.0 // meters
-            val availableOverlays = OverlayService().getAvailableOverlays(null)?.first
-            if (availableOverlays != null)
-            {
-                for (item in availableOverlays)
-                {
-                    if (item.uid == overlay.value)
-                    {
-                        alarmService?.overlays?.add(item.uid)
-                    }
-                }
+            OverlayService().getAvailableOverlays(null)?.first?.let { list ->
+                alarmService?.overlays?.add(ArrayList(list.filter { it.uid == overlay.value }))
             }
         }
     }
@@ -340,7 +352,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------
 
     private fun highlightAlarm(image: Image, coordinates: Coordinates)
@@ -376,6 +388,18 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     }
 
     // ---------------------------------------------------------------------------------------------
+
+    @VisibleForTesting
+    fun getActivityIdlingResource(): IdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    @VisibleForTesting
+    fun getAlarmIdlingResource(): IdlingResource
+    {
+        return alarmIdlingResource
+    }
 }
 
 // -------------------------------------------------------------------------------------------------

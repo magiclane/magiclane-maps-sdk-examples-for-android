@@ -43,8 +43,7 @@ import java.util.ArrayList;
 // -------------------------------------------------------------------------------------------------
 
 @SuppressWarnings("ALL")
-public class MainActivityJava extends AppCompatActivity
-{
+public class MainActivityJava extends AppCompatActivity {
     private ProgressBar progressBar;
     private GemSurfaceView gemSurfaceView;
     private RoutingService routingService;
@@ -52,8 +51,7 @@ public class MainActivityJava extends AppCompatActivity
 
     // ---------------------------------------------------------------------------------------------
 
-    public MainActivityJava()
-    {
+    public MainActivityJava() {
         routingService = new RoutingService();
 
         routingService.setOnStarted(hasProgress ->
@@ -66,36 +64,31 @@ public class MainActivityJava extends AppCompatActivity
         {
             progressBar.setVisibility(View.GONE);
 
-            switch (errorCode)
-            {
-                case GemError.NoError:
-                {
+            switch (errorCode) {
+                case GemError.NoError: {
                     routesList = routes;
 
                     GemCall.INSTANCE.execute(() ->
                     {
                         MapView mapView = gemSurfaceView.getMapView();
-                        if (mapView != null)
-                        {
+                        if (mapView != null) {
                             Animation animation = new Animation(EAnimation.Linear, 1000, null, null);
 
                             mapView.presentRoutes(routes, null, true,
-                                true, true, true,
-                                true, true, animation,
-                                ERouteDisplayMode.Full, null);
+                                    true, true, true,
+                                    true, true, animation,
+                                    ERouteDisplayMode.Full, null);
                         }
 
                         return null;
                     });
                     break;
                 }
-                case GemError.Cancel:
-                {
+                case GemError.Cancel: {
                     // The routing action was cancelled.
                     break;
                 }
-                default:
-                {
+                default: {
                     // There was a problem at computing the routing operation.
                     showDialog("Routing service error: ${GemError.getMessage(errorCode)}");
                 }
@@ -107,14 +100,13 @@ public class MainActivityJava extends AppCompatActivity
     // ---------------------------------------------------------------------------------------------
 
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_java);
 
         progressBar = findViewById(R.id.progressBar);
         gemSurfaceView = findViewById(R.id.gem_surface);
-        
+
         SdkSettings.INSTANCE.setOnMapDataReady(isReady ->
         {
             if (!isReady)
@@ -124,33 +116,32 @@ public class MainActivityJava extends AppCompatActivity
             calculateRoute();
 
             // onTouch event callback
-            gemSurfaceView.getMapView().setOnTouch((xy -> 
+            gemSurfaceView.getMapView().setOnTouch((xy ->
             {
                 // xy are the coordinates of the touch event
                 GemCall.INSTANCE.execute(() ->
                 {
                     // tell the map view where the touch event happened
-                   gemSurfaceView.getMapView().setCursorScreenPosition(xy);
+                    gemSurfaceView.getMapView().setCursorScreenPosition(xy);
 
                     // get the visible routes at the touch event point
-                   ArrayList<Route> routes = gemSurfaceView.getMapView().getCursorSelectionRoutes();
+                    ArrayList<Route> routes = gemSurfaceView.getMapView().getCursorSelectionRoutes();
 
                     // check if there is any route
-                   if (routes != null && !routes.isEmpty())
-                   {
-                       // set the touched route as the main route and center on it
-                       Route route = routes.get(0);
-                       
-                       gemSurfaceView.getMapView().getPreferences().getRoutes().setMainRoute(route);
-                       gemSurfaceView.getMapView().centerOnRoutes(routesList, ERouteDisplayMode.Full, null, new Animation(EAnimation.Linear, null, null, null));
-                   }
-                   
-                   return 0;
+                    if (routes != null && !routes.isEmpty()) {
+                        // set the touched route as the main route and center on it
+                        Route route = routes.get(0);
+
+                        gemSurfaceView.getMapView().getPreferences().getRoutes().setMainRoute(route);
+                        gemSurfaceView.getMapView().centerOnRoutes(routesList, ERouteDisplayMode.Full, null, new Animation(EAnimation.Linear, null, null, null));
+                    }
+
+                    return 0;
                 });
 
                 return null;
             }));
-            
+
             return null;
         });
 
@@ -164,9 +155,8 @@ public class MainActivityJava extends AppCompatActivity
             showDialog("TOKEN REJECTED");
             return null;
         });
-        
-        if (!Util.INSTANCE.isInternetConnected(this))
-        {
+
+        if (!Util.INSTANCE.isInternetConnected(this)) {
             showDialog("You must be connected to the internet!");
         }
     }
@@ -174,8 +164,7 @@ public class MainActivityJava extends AppCompatActivity
     // ---------------------------------------------------------------------------------------------
 
 
-    private void calculateRoute()
-    {
+    private void calculateRoute() {
         GemCall.INSTANCE.execute(() ->
         {
             ArrayList<Landmark> waypoints = new ArrayList<>();
@@ -188,26 +177,25 @@ public class MainActivityJava extends AppCompatActivity
     }
 
     // ---------------------------------------------------------------------------------------------
-    
-    private void showDialog(String text)
-    {
+
+    private void showDialog(String text) {
         BottomSheetDialog dialog = new BottomSheetDialog(this);
-        
+
         View view = getLayoutInflater().inflate(R.layout.dialog_layout, null);
-        
+
         TextView title = view.findViewById(R.id.title);
         TextView message = view.findViewById(R.id.message);
         Button button = view.findViewById(R.id.button);
-        
+
         title.setText(getString(R.string.error));
         message.setText(text);
         button.setOnClickListener(v -> dialog.dismiss());
-        
+
         dialog.setCancelable(false);
         dialog.setContentView(view);
         dialog.show();
     }
-    
+
     // ---------------------------------------------------------------------------------------------
 }
 

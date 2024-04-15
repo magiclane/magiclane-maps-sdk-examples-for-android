@@ -28,6 +28,7 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -50,7 +51,7 @@ import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
-class MainActivity: AppCompatActivity()
+class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
 
@@ -91,36 +92,44 @@ class MainActivity: AppCompatActivity()
 
                             // Define a listener to the progress of the map download action.
                             val downloadProgressListener = ProgressListener.create(onStarted = {
-                                                                                        showStatusMessage("Started downloading $itemName.")
-                                                                                   },
-                                                                                   onProgress = { 
-                                                                                       listView.adapter?.notifyItemChanged(0)
-                                                                                   }, 
-                                                                                   onCompleted = { errorCode, _ ->
-                                                                                       listView.adapter?.notifyItemChanged(0)
-                                                                                       if (errorCode == GemError.NoError)
-                                                                                       {
-                                                                                           showStatusMessage("$itemName was downloaded.")
-                                                                                       }
-                                                                                       else
-                                                                                       {
-                                                                                           showDialog("Download item error: ${GemError.getMessage(errorCode)}")
-                                                                                       }
-                                                                                   })
+                                showStatusMessage("Started downloading $itemName.")
+                            },
+                                onProgress = {
+                                    listView.adapter?.notifyItemChanged(0)
+                                },
+                                onCompleted = { errorCode, _ ->
+                                    listView.adapter?.notifyItemChanged(0)
+                                    if (errorCode == GemError.NoError)
+                                        showStatusMessage("$itemName was downloaded.")
+                                    else
+                                        showDialog(
+                                            "Download item error: ${
+                                                GemError.getMessage(
+                                                    errorCode
+                                                )
+                                            }"
+                                        )
+                                })
 
                             // Start downloading the first map item.
                             SdkCall.execute {
-                                mapItem.asyncDownload(downloadProgressListener, GemSdk.EDataSavePolicy.UseDefault, true)
+                                mapItem.asyncDownload(
+                                    downloadProgressListener,
+                                    GemSdk.EDataSavePolicy.UseDefault,
+                                    true
+                                )
                             }
                         }
 
                         displayList(models)
                     }
                 }
+
                 GemError.Cancel ->
                 {
                     // The action was cancelled.
                 }
+
                 else ->
                 {
                     // There was a problem at retrieving the content store items.
@@ -136,18 +145,21 @@ class MainActivity: AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        
-        progressBar = findViewById(R.id.progressBar)
+
+        progressBar = findViewById(R.id.progress_bar)
         statusText = findViewById(R.id.status_text)
         listView = findViewById<RecyclerView?>(R.id.list_view).apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
 
-            val separator = DividerItemDecoration(applicationContext, (layoutManager as LinearLayoutManager).orientation)
+            val separator = DividerItemDecoration(
+                applicationContext,
+                (layoutManager as LinearLayoutManager).orientation
+            )
             addItemDecoration(separator)
 
             val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
             setPadding(lateralPadding, 0, lateralPadding, 0)
-            
+
             itemAnimator = null
         }
 
@@ -201,6 +213,11 @@ class MainActivity: AppCompatActivity()
             progressBar.visibility = View.GONE
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this){
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -211,14 +228,6 @@ class MainActivity: AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -251,7 +260,7 @@ class MainActivity: AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun showStatusMessage(text: String)
@@ -264,8 +273,9 @@ class MainActivity: AppCompatActivity()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
-    
-    inner class CustomAdapter(private val dataSet: ArrayList<ContentStoreItem>): RecyclerView.Adapter<CustomAdapter.ViewHolder>()
+
+    inner class CustomAdapter(private val dataSet: ArrayList<ContentStoreItem>) :
+        RecyclerView.Adapter<CustomAdapter.ViewHolder>()
     {
         // -----------------------------------------------------------------------------------------------------------------------
 
@@ -277,22 +287,24 @@ class MainActivity: AppCompatActivity()
             val progressBar: ProgressBar = view.findViewById(R.id.item_progress_bar)
             val statusImageView: ImageView = view.findViewById(R.id.status_icon)
         }
-        
+
         // -----------------------------------------------------------------------------------------------------------------------
 
         override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder
         {
-            val view = LayoutInflater.from(viewGroup.context).inflate(R.layout.list_item, viewGroup, false)
+            val view =
+                LayoutInflater.from(viewGroup.context).inflate(R.layout.list_item, viewGroup, false)
             return ViewHolder(view)
         }
-        
+
         // -----------------------------------------------------------------------------------------------------------------------
 
         override fun onBindViewHolder(viewHolder: ViewHolder, position: Int)
         {
             viewHolder.apply {
                 text.text = SdkCall.execute { dataSet[position].name }
-                description.text = SdkCall.execute { GemUtil.formatSizeAsText(dataSet[position].totalSize) }
+                description.text =
+                    SdkCall.execute { GemUtil.formatSizeAsText(dataSet[position].totalSize) }
                 imageView.setImageBitmap(SdkCall.execute { getFlagBitmap(dataSet[position]) })
 
                 statusImageView.visibility = View.GONE
@@ -308,14 +320,15 @@ class MainActivity: AppCompatActivity()
                     EContentStoreItemStatus.DownloadRunning ->
                     {
                         progressBar.visibility = View.VISIBLE
-                        progressBar.progress = SdkCall.execute { dataSet[position].downloadProgress } ?: 0
+                        progressBar.progress =
+                            SdkCall.execute { dataSet[position].downloadProgress } ?: 0
                     }
 
                     else -> return
                 }
             }
         }
-        
+
         // -----------------------------------------------------------------------------------------------------------------------
 
         override fun getItemCount() = dataSet.size
@@ -331,7 +344,8 @@ class MainActivity: AppCompatActivity()
                     if (!flagBitmapsMap.containsKey(isoCode))
                     {
                         val size = resources.getDimension(R.dimen.icon_size).toInt()
-                        flagBitmapsMap[isoCode] = MapDetails().getCountryFlag(isoCode)?.asBitmap(size, size)
+                        flagBitmapsMap[isoCode] =
+                            MapDetails().getCountryFlag(isoCode)?.asBitmap(size, size)
                     }
 
                     return flagBitmapsMap[isoCode]
@@ -343,9 +357,8 @@ class MainActivity: AppCompatActivity()
 
         // -----------------------------------------------------------------------------------------------------------------------
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 }
 
 // -------------------------------------------------------------------------------------------------------------------------------
-

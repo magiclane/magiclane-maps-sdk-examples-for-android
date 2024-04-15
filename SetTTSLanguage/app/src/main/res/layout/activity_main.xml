@@ -17,22 +17,24 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="spread">
 
-        <TextView
-            android:id="@+id/language_text"
-            android:textSize="@dimen/language_text_size"
-            android:text="@string/language"
-            android:gravity="center"
+        <Button
+            android:id="@+id/choose_language_button"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="@dimen/big_padding"
+            android:text="@string/language"
+            android:textSize="@dimen/font_standard"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/language_value"
-            android:textSize="@dimen/current_language_text_size"
-            android:textStyle="bold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/big_padding"
             android:gravity="center"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:textSize="@dimen/font_big"
+            android:textStyle="bold" />
 
     </LinearLayout>
 
@@ -40,11 +42,11 @@
         android:id="@+id/play_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:padding="@dimen/big_padding"
         android:text="@string/play"
-        android:textSize="@dimen/current_language_text_size"
+        android:textSize="@dimen/font_standard"
         android:textStyle="bold"
         android:visibility="gone"
-        android:padding="@dimen/big_padding"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

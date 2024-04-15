@@ -104,6 +104,7 @@ class MainActivity : AppCompatActivity()
                     Util.postOnMain { hideVotingPanel() }
                 }
             }
+
         }
         
         SdkSettings.onApiTokenRejected = {

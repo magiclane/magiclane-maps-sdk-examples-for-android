@@ -24,7 +24,6 @@ import com.magiclane.sdk.core.DataBuffer
 import com.magiclane.sdk.core.ErrorCode
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.Image
-import com.magiclane.sdk.core.ImageDatabase
 import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.MapCamera
@@ -40,9 +39,7 @@ import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.EImageFileFormat
 import com.magiclane.sdk.sensordatasource.*
-import com.magiclane.sdk.sensordatasource.enums.EDataType
 import com.magiclane.sdk.util.SdkCall
-import com.magiclane.sdk.util.SdkImages
 import com.magiclane.sdk.util.Util
 import java.io.ByteArrayOutputStream
 

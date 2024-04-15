@@ -29,7 +29,6 @@ typealias OnToggleChanged = ((Boolean) -> Unit)
 
 typealias Parameter = Pair<String, String>
 
-@Suppress("FunctionName")
 inline fun <reified T> ArrayList(size: Int, factory: ((Int) -> T)): ArrayList<T> {
     val result = ArrayList<T>()
     for (i in 0 until size)

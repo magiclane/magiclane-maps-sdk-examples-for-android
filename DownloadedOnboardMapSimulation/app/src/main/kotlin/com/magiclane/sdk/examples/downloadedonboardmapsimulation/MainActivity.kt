@@ -28,9 +28,13 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -46,28 +50,24 @@ import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.magiclane.sdk.examples.downloadedonboardmapsimulation.databinding.ActivityMainBinding
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
 class MainActivity : AppCompatActivity()
 {
+    //region members for testing
+    companion object
+    {
+        const val NAV_IDLE_RESOURCE = "GLOBAL"
+    }
+
+    private var navigationIdlingResource = CountingIdlingResource(NAV_IDLE_RESOURCE, true)
+    //endregion
     // ---------------------------------------------------------------------------------------------------------------------------
-    
-    private lateinit var gemSurfaceView: GemSurfaceView
-    private lateinit var progressBar: ProgressBar
-    private lateinit var followCursorButton: FloatingActionButton
 
-    private lateinit var topPanel: ConstraintLayout
-    private lateinit var navInstruction: TextView
-    private lateinit var navInstructionDistance: TextView
-    private lateinit var navInstructionIcon: ImageView
-    private lateinit var statusText: TextView
-
-    private lateinit var bottomPanel: ConstraintLayout
-    private lateinit var eta: TextView
-    private lateinit var rtt: TextView
-    private lateinit var rtd: TextView
+    private lateinit var binding: ActivityMainBinding
 
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
@@ -82,7 +82,7 @@ class MainActivity : AppCompatActivity()
     private val navigationListener: NavigationListener = NavigationListener.create(
         onNavigationStarted = {
             SdkCall.execute {
-                gemSurfaceView.mapView?.let { mapView ->
+                binding.gemSurfaceView.mapView?.let { mapView ->
                     mapView.preferences?.enableCursor = false
                     navRoute?.let { route ->
                         mapView.presentRoute(route)
@@ -93,8 +93,8 @@ class MainActivity : AppCompatActivity()
                 }
             }
 
-            topPanel.visibility = View.VISIBLE
-            bottomPanel.visibility = View.VISIBLE
+            binding.topPanel.isVisible = true
+            binding.bottomPanel.isVisible = true
 
             showStatusMessage("Simulation started.")
         },
@@ -122,17 +122,16 @@ class MainActivity : AppCompatActivity()
             }
 
             // Update the navigation panels info.
-            navInstruction.text = instrText
-            navInstructionIcon.setImageBitmap(instrIcon)
-            navInstructionDistance.text = instrDistance
+            binding.apply{
+                navInstruction.text = instrText
+                navInstructionIcon.setImageBitmap(instrIcon)
+                navInstructionDistance.text = instrDistance
 
-            eta.text = etaText
-            rtt.text = rttText
-            rtd.text = rtdText
-
-            if (statusText.isVisible)
-            {
-                statusText.visibility = View.GONE
+                eta.text = etaText
+                rtt.text = rttText
+                rtd.text = rtdText
+                
+                statusText.isVisible = false
             }
         }
     )
@@ -140,11 +139,11 @@ class MainActivity : AppCompatActivity()
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
         onStarted = {
-            progressBar.visibility = View.VISIBLE
+            binding.progressBar.isVisible = true
             showStatusMessage("Routing process started.")
         },
         onCompleted = { _, _ ->
-            progressBar.visibility = View.GONE
+            binding.progressBar.isVisible = false
             showStatusMessage("Routing process completed.")
         },
         postOnMain = true
@@ -155,22 +154,8 @@ class MainActivity : AppCompatActivity()
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        gemSurfaceView = findViewById(R.id.gem_surface)
-        progressBar = findViewById(R.id.progressBar)
-        followCursorButton = findViewById(R.id.followCursor)
-
-        topPanel = findViewById(R.id.top_panel)
-        navInstruction = findViewById(R.id.nav_instruction)
-        navInstructionDistance = findViewById(R.id.instr_distance)
-        navInstructionIcon = findViewById(R.id.nav_icon)
-        statusText = findViewById(R.id.status_text)
-
-        bottomPanel = findViewById(R.id.bottom_panel)
-        eta = findViewById(R.id.eta)
-        rtt = findViewById(R.id.rtt)
-        rtd = findViewById(R.id.rtd)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         /// MAGIC LANE
         SdkSettings.onApiTokenRejected = {
@@ -182,10 +167,15 @@ class MainActivity : AppCompatActivity()
             showDialog("TOKEN REJECTED")
         }
 
-        gemSurfaceView.onSdkInitSucceeded = {
+        binding.gemSurfaceView.onSdkInitSucceeded = {
 
             // Defines an action that should be done when the the sdk had been loaded.
             startSimulation()
+        }
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
         }
     }
 
@@ -197,14 +187,6 @@ class MainActivity : AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed() 
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -226,42 +208,41 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun showStatusMessage(text: String)
     {
-        if (!statusText.isVisible)
-        {
-            statusText.visibility = View.VISIBLE
-        }
-        statusText.text = text
+        binding.statusText.isVisible = true
+        binding.statusText.text = text
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun enableGPSButton() 
+    private fun enableGPSButton()
     {
         // Set actions for entering/ exiting following position mode.
-        gemSurfaceView.mapView?.apply {
-            onExitFollowingPosition = {
-                followCursorButton.visibility = View.VISIBLE
-            }
+        binding.apply {
+            gemSurfaceView.mapView?.apply {
+                onExitFollowingPosition = {
+                    followCursorButton.isVisible = true
+                }
 
-            onEnterFollowingPosition = {
-                followCursorButton.visibility = View.GONE
-            }
+                onEnterFollowingPosition = {
+                    followCursorButton.isVisible = false
+                }
 
-            // Set on click action for the GPS button.
-            followCursorButton.setOnClickListener {
-                SdkCall.execute { followPosition() }
+                // Set on click action for the GPS button.
+                followCursorButton.setOnClickListener {
+                    SdkCall.execute { followPosition() }
+                }
             }
         }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun NavigationInstruction.getDistanceInMeters(): String 
+    private fun NavigationInstruction.getDistanceInMeters(): String
     {
         return GemUtil.getDistText(
             this.timeDistanceToNextTurn?.totalDistance ?: 0, EUnitSystem.Metric
@@ -272,7 +253,7 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun Route.getEta(): String 
+    private fun Route.getEta(): String
     {
         val etaNumber = this.getTimeDistance(true)?.totalTime ?: 0
 
@@ -284,7 +265,7 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun Route.getRtt(): String 
+    private fun Route.getRtt(): String
     {
         return GemUtil.getTimeText(
             this.getTimeDistance(true)?.totalTime ?: 0
@@ -295,7 +276,7 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun Route.getRtd(): String 
+    private fun Route.getRtd(): String
     {
         return GemUtil.getDistText(
             this.getTimeDistance(true)?.totalDistance ?: 0, EUnitSystem.Metric
@@ -319,6 +300,13 @@ class MainActivity : AppCompatActivity()
         )
     }
 
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------------------
+    @VisibleForTesting
+    fun getNavIdlingResource(): IdlingResource = navigationIdlingResource
+    //endregion ---------------------------------------------------------------------------------------------
     // ---------------------------------------------------------------------------------------------------------------------------
 }
 

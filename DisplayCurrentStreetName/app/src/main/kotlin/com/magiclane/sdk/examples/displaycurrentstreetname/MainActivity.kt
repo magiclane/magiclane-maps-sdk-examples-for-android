@@ -21,23 +21,21 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.sensordatasource.*
 import com.magiclane.sdk.sensordatasource.enums.EDataType
 import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.magiclane.sdk.sensordatasource.*
-import java.math.RoundingMode
-import java.text.DecimalFormat
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -54,7 +52,7 @@ class MainActivity : AppCompatActivity()
     private var dataSource: DataSource? = null
     private val dataSourceListener = object : DataSourceListener() {
         override fun onNewData(data: SenseData) {
-            var text = ""
+            var txt = ""
             SdkCall.execute execute@{
                 val improvedPositionData = ImprovedPositionData(data)
                 val roadAddress = improvedPositionData.roadAddress ?: return@execute
@@ -62,26 +60,23 @@ class MainActivity : AppCompatActivity()
                 roadAddress.format()?.let let@{
                     if (it.isEmpty())
                     {
-                        text = "Current street name not available."
+                        txt = "Current street name not available."
                         return@let   
                     }
 
-                    text = "Current street name: $it"
+                    txt = "Current street name: $it"
                     
                     val speedLimit = (improvedPositionData.roadSpeedLimit * 3.6).toInt()
                     if (speedLimit != 0)
                     {
-                        text += "\nRoad speed limit: $speedLimit km/h"
+                        txt += "\nRoad speed limit: $speedLimit km/h"
                     }
                 }
             }
             Util.postOnMain { 
-                currentStreetNameView.apply { 
-                    if (!isVisible)
-                    {
-                        visibility = View.VISIBLE
-                    }
-                    this.text = text
+                currentStreetNameView.apply {
+                    isVisible = true
+                    text = txt
                 } 
             }
         }
@@ -94,9 +89,10 @@ class MainActivity : AppCompatActivity()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+
         gemSurfaceView = findViewById(R.id.gem_surface)
         currentStreetNameView = findViewById(R.id.current_street_name)
-        followCursorButton = findViewById(R.id.followCursor)
+        followCursorButton = findViewById(R.id.follow_cursor_button)
 
         gemSurfaceView.onDefaultMapViewCreated = {
             enableGPSButton()
@@ -118,6 +114,12 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+        
+        onBackPressedDispatcher.addCallback(this){
+            finish()
+            exitProcess(0)
+        }
+        
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -128,14 +130,6 @@ class MainActivity : AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -178,11 +172,11 @@ class MainActivity : AppCompatActivity()
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                followCursorButton.visibility = View.VISIBLE
+                followCursorButton.isVisible = true
             }
 
             onEnterFollowingPosition = {
-                followCursorButton.visibility = View.GONE
+                followCursorButton.isVisible = false
             }
 
             // Set on click action for the GPS button.
@@ -236,8 +230,6 @@ class MainActivity : AppCompatActivity()
     {
         private const val REQUEST_PERMISSIONS = 110
     }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
 }
 
 // -------------------------------------------------------------------------------------------------------------------------------

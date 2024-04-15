@@ -197,7 +197,7 @@
                     android:layout_marginBottom="@dimen/nav_top_panel_padding"
                     tools:ignore="ContentDescription" />
 
-                <ImageView android:id="@+id/end_of_section"
+                <ImageView android:id="@+id/end_of_section_image"
                     android:layout_width="@dimen/nav_top_panel_traffic_img_size"
                     android:layout_height="@dimen/nav_top_panel_traffic_img_size"
                     android:layout_gravity="center_vertical"

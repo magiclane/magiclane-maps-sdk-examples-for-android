@@ -25,6 +25,7 @@ import androidx.car.app.model.CarIcon
 import androidx.core.graphics.drawable.IconCompat
 import com.magiclane.sdk.examples.androidauto.androidAuto.model.UIActionModel
 
+@Suppress("unused")
 object Util {
     fun asCarIcon(context: CarContext, value: Bitmap?, color: CarColor? = null): CarIcon? {
         value ?: return null

@@ -20,19 +20,19 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.WindowCompat
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
-import android.view.View
 import android.widget.Button
-import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import com.magiclane.sdk.examples.fingerroute.databinding.ActivityMainBinding
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.isVisible
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.DataBuffer
 import com.magiclane.sdk.core.EPathFileFormat
@@ -48,13 +48,11 @@ import com.magiclane.sdk.d3scene.MapView
 import com.magiclane.sdk.d3scene.Marker
 import com.magiclane.sdk.d3scene.MarkerCollection
 import com.magiclane.sdk.d3scene.MarkerCollectionRenderSettings
-import com.magiclane.sdk.examples.fingerroute.CoroutinesAsyncTask
+import com.magiclane.sdk.examples.fingerroute.databinding.ActivityMainBinding
 import com.magiclane.sdk.routesandnavigation.ERouteTransportMode
 import com.magiclane.sdk.routesandnavigation.RoutingService
 import com.magiclane.sdk.util.GEMLog
-import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
-import com.magiclane.sdk.util.Util
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.system.exitProcess
@@ -65,17 +63,24 @@ class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
 
+    companion object
+    {
+        private const val emailAddress = "support@magiclane.com"
+        private const val emailSubject = "Finger route GPX"
+    }
+
+    enum class TopLeftButtonState
+    {
+        ROUTING_ON,
+        ROUTING_OFF,
+        CANCEL_ROUTING
+    }
+
     private lateinit var binding: ActivityMainBinding
 
     private lateinit var mapSurface: GemSurfaceView
 
     private lateinit var progressBar: ProgressBar
-
-    private lateinit var topLeftButton: ImageView
-
-    private lateinit var topRightButton: ImageView
-
-    private lateinit var bottomLeftButton: ImageView
 
     private lateinit var path: Path
 
@@ -83,26 +88,24 @@ class MainActivity : AppCompatActivity()
         set(value)
         {
             field = value
-            if (value)
-            {
-                topLeftButton.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.cancel_button))
-            }
-            else
+            setupTopLeftButton(
+                if (value) TopLeftButtonState.CANCEL_ROUTING
+                else TopLeftButtonState.ROUTING_OFF
+            )
+            if (!value)
             {
                 fingerRouteMode = false
-                topLeftButton.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.finger_mode_button_gray))
-                topRightButton.visibility = View.GONE
-                bottomLeftButton.visibility = View.GONE
+                binding.topRightButton.isVisible = false
+                binding.bottomLeftButton.isVisible = false
 
                 SdkCall.execute {
                     val mapRoutes = mapSurface.mapView?.preferences?.routes
                     mapRoutes?.let {
-                        it.clear()
-
                         polylineCollection.clear()
-                        mapSurface.mapView?.preferences?.markers?.add(polylineCollection, polylineSettings)
-                    } ?: run {
-                        routingService.cancelRoute()
+                        if (it.size > 0)
+                            it.clear()
+                        else
+                            routingService.cancelRoute()
                     }
                 }
             }
@@ -124,12 +127,12 @@ class MainActivity : AppCompatActivity()
 
     private val routingService = RoutingService(
         onStarted = {
-            progressBar.visibility = View.VISIBLE
+            progressBar.isVisible = true
             routingIsActive = true
         },
 
         onCompleted = onCompleted@{ routes, error, _ ->
-            progressBar.visibility = View.GONE
+            progressBar.isVisible = false
 
             when (error)
             {
@@ -138,21 +141,26 @@ class MainActivity : AppCompatActivity()
                     SdkCall.execute {
                         if (routes.isNotEmpty())
                         {
-                            mapSurface.mapView?.presentRoute(routes[0], edgeAreaInsets = Rect(inset, 2 * inset, inset, 2 * inset))
+                            mapSurface.mapView?.presentRoute(
+                                routes[0],
+                                edgeAreaInsets = Rect(inset, 2 * inset, inset, 2 * inset)
+                            )
                         }
                     }
 
                     fingerRouteIsVisible = true
-                    topRightButton.visibility = View.VISIBLE
-                    topRightButton.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.toggle_finger_line_visibility_button_green))
-                    bottomLeftButton.visibility = View.VISIBLE
+                    binding.topRightButton.isVisible = true
+                    setupLiningButton(true)
+                    binding.bottomLeftButton.isVisible = true
                 }
+
                 GemError.Cancel ->
                 {
                     // The routing action was cancelled.
                     showDialog("The routing action was cancelled.")
                     routingIsActive = false
                 }
+
                 else ->
                 {
                     // There was a problem at computing the routing operation.
@@ -165,7 +173,12 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private class ShareGPXTask(val activity: Activity, val email: String, val subject: String, val gpxFile: File) : CoroutinesAsyncTask<Void, Void, Intent>()
+    private class ShareGPXTask(
+        val activity: Activity,
+        val email: String,
+        val subject: String,
+        val gpxFile: File
+    ) : CoroutinesAsyncTask<Void, Void, Intent>()
     {
         override fun doInBackground(vararg params: Void?): Intent
         {
@@ -179,7 +192,13 @@ class MainActivity : AppCompatActivity()
 
             try
             {
-                uris.add(FileProvider.getUriForFile(activity, activity.packageName + ".provider", gpxFile))
+                uris.add(
+                    FileProvider.getUriForFile(
+                        activity,
+                        activity.packageName + ".provider",
+                        gpxFile
+                    )
+                )
             }
             catch (e: Exception)
             {
@@ -203,9 +222,9 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun shareGPXFile(a: Activity, email: String, subject: String, gpxFile: File)
+    private fun shareGPXFile(a: Activity, gpxFile: File)
     {
-        ShareGPXTask(a, email, subject, gpxFile).execute(null)
+        ShareGPXTask(a, emailAddress, emailSubject, gpxFile).execute(null)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -220,15 +239,9 @@ class MainActivity : AppCompatActivity()
 
         setSupportActionBar(binding.toolbar)
 
-        mapSurface = binding.contentMain.gemSurface
+        mapSurface = binding.gemSurface
 
-        progressBar = binding.contentMain.progressBar
-
-        topLeftButton = binding.contentMain.topLeftButton
-
-        topRightButton = binding.contentMain.topRightButton
-
-        bottomLeftButton = binding.contentMain.bottomLeftButton
+        progressBar = binding.progressBar
 
         inset = resources.getDimension(R.dimen.inset).toInt()
 
@@ -250,44 +263,12 @@ class MainActivity : AppCompatActivity()
             {
                 event?.let {
                     fingerPolyline.add(Pair(it.x, it.y))
-
                     if (it.action == MotionEvent.ACTION_UP)
                     {
-                        SdkCall.execute {
-                            mapSurface.mapView?.let { mapView ->
-                                polylineCollection.clear()
-
-                                Marker().apply {
-                                    for (point in fingerPolyline)
-                                    {
-                                        mapView.transformScreenToWgs(Xy(point.first, point.second))?.let { coordinates ->
-                                            add(coordinates)
-                                        }
-                                    }
-
-                                    polylineCollection.add(this)
-
-                                    val coordinatesList = getCoordinates(0)
-                                    coordinatesList?.let { coordinates ->
-                                        path = Path.produceWithCoords(coordinates)
-                                        val waypoints = arrayListOf(path.toLandmark())
-                                        val error = routingService.calculateRoute(waypoints, transportMode)
-                                        if (error != GemError.NoError)
-                                        {
-                                            showDialog("Routing service error: ${GemError.getMessage(error)}")
-                                            topLeftButton.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.finger_mode_button_gray))
-                                        }
-
-                                        fingerRouteMode = false
-                                    }
-                                }
-                            }
-                        }
-
+                        prepareMarker()
                         fingerPolyline.clear()
                     }
                 }
-
                 false
             }
             else
@@ -296,52 +277,44 @@ class MainActivity : AppCompatActivity()
             }
         }
 
-        topLeftButton.apply {
-            setOnClickListener {
-                if (routingIsActive)
-                {
-                    routingIsActive = false
-                }
-                else
-                {
-                    fingerRouteMode = !fingerRouteMode
-                    val drawable = if (fingerRouteMode)
-                    {
-                        ContextCompat.getDrawable(this@MainActivity, R.drawable.finger_mode_button_green)
-                    }
+        binding.topLeftButton.setOnClickListener {
+            if (routingIsActive)
+                routingIsActive = false
+            else
+            {
+                fingerRouteMode = !fingerRouteMode
+                setupTopLeftButton(
+                    if (fingerRouteMode)
+                        TopLeftButtonState.ROUTING_ON
                     else
-                    {
-                        ContextCompat.getDrawable(this@MainActivity, R.drawable.finger_mode_button_gray)
-                    }
+                        TopLeftButtonState.ROUTING_OFF
+                )
+            }
+        }
 
-                    setImageDrawable(drawable)
+        binding.topRightButton.setOnClickListener {
+            fingerRouteIsVisible = !fingerRouteIsVisible
+            setupLiningButton(fingerRouteIsVisible)
+            if (fingerRouteIsVisible)
+            {
+                SdkCall.execute {
+                    mapSurface.mapView?.preferences?.markers?.add(
+                        polylineCollection,
+                        polylineSettings
+                    )
+                }
+            }
+            else
+            {
+                SdkCall.execute {
+                    mapSurface.mapView?.preferences?.markers?.removeCollection(
+                        polylineCollection
+                    )
                 }
             }
         }
 
-        topRightButton.apply {
-            setOnClickListener {
-                fingerRouteIsVisible = !fingerRouteIsVisible
-                val drawable = if (fingerRouteIsVisible)
-                {
-                    SdkCall.execute {
-                        mapSurface.mapView?.preferences?.markers?.add(polylineCollection, polylineSettings)
-                    }
-                    ContextCompat.getDrawable(this@MainActivity, R.drawable.toggle_finger_line_visibility_button_green)
-                }
-                else
-                {
-                    SdkCall.execute {
-                        mapSurface.mapView?.preferences?.markers?.removeCollection(polylineCollection)
-                    }
-                    ContextCompat.getDrawable(this@MainActivity, R.drawable.toggle_finger_line_visibility_button_gray)
-                }
-
-                setImageDrawable(drawable)
-            }
-        }
-
-        bottomLeftButton.setOnClickListener {
+        binding.bottomLeftButton.setOnClickListener {
             SdkCall.execute {
                 path.exportAs(EPathFileFormat.Gpx)?.let { dataBuffer ->
                     dataBuffer.bytes?.let {
@@ -352,10 +325,18 @@ class MainActivity : AppCompatActivity()
                             fos.write(it, 0, it.size)
                         }
 
-                        shareGPXFile(this@MainActivity, "support@magiclane.com", "Finger route GPX", file)
+                        shareGPXFile(
+                            this@MainActivity,
+                            file
+                        )
                     }
                 }
             }
+        }
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
         }
     }
 
@@ -380,12 +361,14 @@ class MainActivity : AppCompatActivity()
                 transportMode = ERouteTransportMode.Bicycle
                 true
             }
+
             R.id.action_pedestrian ->
             {
                 item.isChecked = true
                 transportMode = ERouteTransportMode.Pedestrian
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -402,19 +385,10 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
     private fun showDialog(text: String)
     {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
+        val view = layoutInflater.inflate(R.layout.dialog_layout, binding.root, false).apply {
             findViewById<TextView>(R.id.title).text = getString(R.string.error)
             findViewById<TextView>(R.id.message).text = text
             findViewById<Button>(R.id.button).setOnClickListener {
@@ -442,6 +416,88 @@ class MainActivity : AppCompatActivity()
 
         // Apply style.
         mapView?.preferences?.setMapStyleByDataBuffer(DataBuffer(data))
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun prepareMarker() = SdkCall.execute {
+        mapSurface.mapView?.let { mapView ->
+            polylineCollection.clear()
+            Marker().run {
+
+                for (point in fingerPolyline)
+                    mapView.transformScreenToWgs(Xy(point.first, point.second))
+                        ?.let { coordinates -> add(coordinates) }
+
+                polylineCollection.add(this)
+
+                val coordinatesList = getCoordinates(0)
+                coordinatesList?.let { coordinates ->
+                    path = Path.produceWithCoords(coordinates)
+                    val waypoints = arrayListOf(path.toLandmark())
+                    val error =
+                        routingService.calculateRoute(waypoints, transportMode)
+                    if (error != GemError.NoError)
+                    {
+                        showDialog(
+                            "Routing service error: ${
+                                GemError.getMessage(
+                                    error
+                                )
+                            }"
+                        )
+                        setupTopLeftButton(TopLeftButtonState.ROUTING_OFF)
+                    }
+                    fingerRouteMode = false
+                }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun setupTopLeftButton(state: TopLeftButtonState)
+    {
+        binding.topLeftButton.icon = ResourcesCompat.getDrawable(
+            resources, when (state)
+            {
+                TopLeftButtonState.ROUTING_ON, TopLeftButtonState.ROUTING_OFF -> R.drawable.touch
+                TopLeftButtonState.CANCEL_ROUTING -> R.drawable.ic_close_24
+            }, theme
+        )
+
+        binding.topLeftButton.iconTint = ContextCompat.getColorStateList(
+            this@MainActivity,
+            when (state)
+            {
+                TopLeftButtonState.ROUTING_ON, TopLeftButtonState.ROUTING_OFF -> R.color.white
+                TopLeftButtonState.CANCEL_ROUTING -> R.color.red
+            }
+        )
+
+        binding.topLeftButton.setBackgroundColor(
+            ContextCompat.getColor(
+                this@MainActivity,
+                when (state)
+                {
+                    TopLeftButtonState.ROUTING_ON -> R.color.green
+                    TopLeftButtonState.ROUTING_OFF -> R.color.gray
+                    TopLeftButtonState.CANCEL_ROUTING -> R.color.white
+                }
+            )
+        )
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun setupLiningButton(isActive: Boolean)
+    {
+        binding.topRightButton.setBackgroundColor(
+            ContextCompat.getColor(
+                this@MainActivity,
+                if (isActive) R.color.green else R.color.gray
+            )
+        )
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------

@@ -12,6 +12,7 @@
 
 // -------------------------------------------------------------------------------------------------
 
+@file:Suppress("unused")
 package com.magiclane.sdk.examples.fingerroute
 
 // -------------------------------------------------------------------------------------------------
@@ -21,6 +22,7 @@ import java.util.concurrent.Executors
 
 // -------------------------------------------------------------------------------------------------
 
+@Suppress("MemberVisibilityCanBePrivate")
 abstract class CoroutinesAsyncTask<Params, Progress, Result>
 {
     // ---------------------------------------------------------------------------------------------
@@ -32,7 +34,7 @@ abstract class CoroutinesAsyncTask<Params, Progress, Result>
 
     // ---------------------------------------------------------------------------------------------
 
-    var status: Status = Status.PENDING
+    var status = Status.PENDING
     private var preJob: Job? = null
     private var bgJob: Deferred<Result>? = null
     abstract fun doInBackground(vararg params: Params?): Result
@@ -86,7 +88,7 @@ abstract class CoroutinesAsyncTask<Params, Progress, Result>
         status = Status.RUNNING
 
         // it can be used to setup UI - it should have access to Main Thread
-        GlobalScope.launch(Dispatchers.Main)
+        CoroutineScope(Dispatchers.IO).launch(Dispatchers.Main)
         {
             preJob = launch(Dispatchers.Main)
             {
@@ -123,7 +125,7 @@ abstract class CoroutinesAsyncTask<Params, Progress, Result>
             status = Status.FINISHED
             if (bgJob?.isCompleted == true)
             {
-                GlobalScope.launch(Dispatchers.Main)
+                CoroutineScope(Dispatchers.IO).launch(Dispatchers.Main)
                 {
                     onCancelled(bgJob?.await())
                 }
@@ -138,7 +140,7 @@ abstract class CoroutinesAsyncTask<Params, Progress, Result>
     fun publishProgress(vararg progress: Progress)
     {
         //need to update main thread
-        GlobalScope.launch(Dispatchers.Main)
+        CoroutineScope(Dispatchers.IO).launch(Dispatchers.Main)
         {
             if (!isCancelled)
             {

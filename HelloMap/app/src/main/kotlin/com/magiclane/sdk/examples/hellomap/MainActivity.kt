@@ -17,6 +17,7 @@ package com.magiclane.sdk.examples.hellomap
 // -------------------------------------------------------------------------------------------------------------------------------
 
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.magiclane.sdk.core.GemSdk
 import kotlin.system.exitProcess
@@ -31,6 +32,13 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true){
+            override fun handleOnBackPressed()
+            {
+                finish()
+                exitProcess(0)
+            }
+        })
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -41,14 +49,6 @@ class MainActivity : AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------

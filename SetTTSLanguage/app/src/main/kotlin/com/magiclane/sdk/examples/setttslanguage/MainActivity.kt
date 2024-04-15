@@ -27,10 +27,14 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.SoundPlayingListener
@@ -50,12 +54,20 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationListener
 {
     // ---------------------------------------------------------------------------------------------------------------------------
-    
+
+    // ---------------------------------------------------------------------------------------------
+    companion object
+    {
+        const val RESOURCE = "GLOBAL"
+    }
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
     private lateinit var progressBar: ProgressBar
     private lateinit var selectedLanguageTextView: TextView
-    private lateinit var languageContainer: LinearLayout
+    private lateinit var languageButton: Button
     private lateinit var playButton: Button
-    
+    private lateinit var languageContainer: LinearLayout
+
     private var selectedLanguageIndex = 0
     private var ttsLanguages = ArrayList<TTSLanguage>()
 
@@ -68,16 +80,30 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         progressBar = findViewById(R.id.progressBar)
         selectedLanguageTextView = findViewById(R.id.language_value)
-        languageContainer = findViewById(R.id.language_container)
+        languageButton = findViewById(R.id.choose_language_button)
         playButton = findViewById(R.id.play_button)
-        
-        languageContainer.setOnClickListener { 
-            onLanguageContainerClicked()
+        languageContainer = findViewById(R.id.language_container)
+
+        increment()
+        languageButton.setOnClickListener {
+            onLanguageButtonClicked()
         }
-        
+
         playButton.setOnClickListener {
             SdkCall.execute {
-                SoundPlayingService.playText(GemUtil.getTTSString(EStringIds.eStrMindYourSpeed), SoundPlayingListener(), SoundPlayingPreferences())
+                SoundPlayingService.playText(
+                    GemUtil.getTTSString(EStringIds.eStrMindYourSpeed),
+                   /* SoundPlayingListener()*/
+                    object : SoundPlayingListener()
+                    {
+                        override fun notifyComplete(errorCode: Int, hint: String)
+                        {
+                            increment()
+                            super.notifyComplete(errorCode, hint)
+                        }
+                    },
+                    SoundPlayingPreferences()
+                )
             }
         }
 
@@ -85,7 +111,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
-            val ttsPlayerIsInitialized = SdkCall.execute { SoundPlayingService.ttsPlayerIsInitialized } ?: false
+            val ttsPlayerIsInitialized =
+                SdkCall.execute { SoundPlayingService.ttsPlayerIsInitialized } ?: false
 
             if (!ttsPlayerIsInitialized)
             {
@@ -95,6 +122,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             {
                 loadTTSLanguages()
             }
+            decrement()
         }
 
         SdkSettings.onApiTokenRejected = {
@@ -112,10 +140,15 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             // The SDK initialization was not completed.
             finish()
         }
-        
+
         if (!Util.isInternetConnected(this))
         {
             showDialog("You must be connected to the internet!")
+        }
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
         }
     }
 
@@ -129,14 +162,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         // Release the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -170,40 +195,48 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private fun loadTTSLanguages()
     {
+        increment()
         SdkCall.execute {
             ttsLanguages = SoundPlayingService.getTTSLanguages()
         }
 
         runOnUiThread {
-            onTTSLanguagesLoaded()   
+            onTTSLanguagesLoaded()
         }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
-    
+
     private fun onTTSLanguagesLoaded()
     {
         selectedLanguageTextView.text = ttsLanguages[selectedLanguageIndex].name
         SoundPlayingService.setTTSLanguage(ttsLanguages[selectedLanguageIndex].code)
-        progressBar.visibility = View.GONE
-        languageContainer.visibility = View.VISIBLE
-        playButton.visibility = View.VISIBLE
+        progressBar.isVisible = false
+        languageContainer.isVisible = true
+        playButton.isVisible = true
+        decrement()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
-    
-    private fun onLanguageContainerClicked()
+
+    private fun onLanguageButtonClicked()
     {
+        increment()
         val builder = AlertDialog.Builder(this)
 
         val convertView = layoutInflater.inflate(R.layout.dialog_list, null)
         val listView = convertView.findViewById<RecyclerView>(R.id.list_view).apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
-            
-            addItemDecoration(DividerItemDecoration(applicationContext, (layoutManager as LinearLayoutManager).orientation))
+
+            addItemDecoration(
+                DividerItemDecoration(
+                    applicationContext,
+                    (layoutManager as LinearLayoutManager).orientation
+                )
+            )
 
             setBackgroundResource(R.color.background_color)
-            
+
             val lateralPadding = resources.getDimension(R.dimen.big_padding).toInt()
             setPadding(lateralPadding, 0, lateralPadding, 0)
         }
@@ -214,23 +247,28 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         builder.setView(convertView)
 
         val dialog = builder.create()
+        dialog.setOnShowListener {
+            decrement()
+        }
         dialog.show()
-
         adapter.dialog = dialog
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
     /**
      * This custom adapter is made to facilitate the displaying of the data from the model
      * and to decide how it is displayed.
      */
-    inner class CustomAdapter(private val selectedIndex: Int, private val dataSet: ArrayList<TTSLanguage>): RecyclerView.Adapter<CustomAdapter.ViewHolder>()
+    inner class CustomAdapter(
+        private val selectedIndex: Int,
+        private val dataSet: ArrayList<TTSLanguage>
+    ) : RecyclerView.Adapter<CustomAdapter.ViewHolder>()
     {
         // -----------------------------------------------------------------------------------------------------------------------
 
         var dialog: AlertDialog? = null
-        
+
         // -----------------------------------------------------------------------------------------------------------------------
 
         inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
@@ -238,7 +276,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             private val text: TextView = view.findViewById(R.id.text)
             private val status: TextView = view.findViewById(R.id.status_text)
             private val radioButton: RadioButton = view.findViewById(R.id.radioButton)
-            
+
             fun bind(position: Int)
             {
                 radioButton.isChecked = position == selectedIndex
@@ -258,7 +296,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder
         {
-            val view = LayoutInflater.from(viewGroup.context).inflate(R.layout.list_item, viewGroup, false)
+            val view =
+                LayoutInflater.from(viewGroup.context).inflate(R.layout.list_item, viewGroup, false)
 
             return ViewHolder(view)
         }
@@ -276,6 +315,19 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         // -----------------------------------------------------------------------------------------------------------------------
     }
+
+    @VisibleForTesting
+    fun getActivityIdlingResource(): CountingIdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
+    // ---------------------------------------------------------------------------------------------
 
     // ---------------------------------------------------------------------------------------------------------------------------
 }

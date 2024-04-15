@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">SetTTSLanguage</string>
-    <string name="play">Play</string>
-    <string name="language">Language (tap here to select a new one)</string>
+    <string name="play">Play sound</string>
+    <string name="language">Click to select new language</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
 </resources>

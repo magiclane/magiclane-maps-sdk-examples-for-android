@@ -121,7 +121,7 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver
                 if (it.initialize(this@NavigationActivity, this@NavigationActivity))
                 {
                     // Automatically connects to the device upon successful start-up initialization.
-                    Handler(Looper.getMainLooper()).post{
+                    Handler(Looper.getMainLooper()).post {
                         it.connect(deviceAddress)
                     }
                 }
@@ -155,229 +155,263 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver
         override fun onReceive(context: Context, intent: Intent)
         {
             val action = intent.action
-            if (BLEService.ACTION_GATT_CONNECTED == action)
-            {
-                updateConnectionState(R.string.connected)
-            }
-            else if (BLEService.ACTION_GATT_DISCONNECTED == action)
-            {
-                updateConnectionState(R.string.disconnected)
-                clearUI()
-            }
-            else if (BLEService.ACTION_GATT_SERVICES_DISCOVERED == action)
-            {
-                // Show all the supported services and characteristics on the user interface.
-                parseGattServices(bluetoothLeService?.supportedGattServices)
-            }
-            else if (BLEService.ACTION_DATA_AVAILABLE == action)
-            {
-                val type = intent.getIntExtra(BLEService.EXTRA_TYPE, -1)
 
-                Log.d(tag, "receive data, type = $type")
-
-                if (type == 0)
+            when (action)
+            {
+                BLEService.ACTION_GATT_CONNECTED ->
                 {
-                    topPanel.visibility = View.VISIBLE
-                    navInstruction.text = intent.getStringExtra(BLEService.EXTRA_DATA)
+                    updateConnectionState(R.string.connected)
                 }
-                else if (type == 1)
+
+                BLEService.ACTION_GATT_DISCONNECTED ->
                 {
-                    topPanel.visibility = View.VISIBLE
-                    navInstructionDistance.text = intent.getStringExtra(BLEService.EXTRA_DATA)
+                    updateConnectionState(R.string.disconnected)
+                    clearUI()
                 }
-                else if (type == 2)
+
+                BLEService.ACTION_GATT_SERVICES_DISCOVERED ->
                 {
-                    val data = intent.getByteArrayExtra(BLEService.EXTRA_DATA)
+                    // Show all the supported services and characteristics on the user interface.
+                    parseGattServices(bluetoothLeService?.supportedGattServices)
+                }
 
-                    Log.d(tag, "parse turn image data, data.size = ${data?.size}")
+                BLEService.ACTION_DATA_AVAILABLE ->
+                {
+                    val type = intent.getIntExtra(BLEService.EXTRA_TYPE, -1)
+                    Log.d(tag, "receive data, type = $type")
 
-                    if ((data != null) && (data.size == 4))
-                    {
-                        Log.d(tag, "get turn image icon, data[0] = ${data[0]}")
+                    when(type){
+                        0->{
+                            topPanel.visibility = View.VISIBLE
+                            navInstruction.text = intent.getStringExtra(BLEService.EXTRA_DATA)
+                        }
+                        1->{
+                            topPanel.visibility = View.VISIBLE
+                            navInstructionDistance.text = intent.getStringExtra(BLEService.EXTRA_DATA)
+                        }
+                        2->{
+                            val data = intent.getByteArrayExtra(BLEService.EXTRA_DATA)
 
-                        var imageId = 0
-                        when (data[0].toInt())
-                        {
-                            ETurnEvent.Straight.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_keep_going
-                            }
-                            ETurnEvent.Right.value, ETurnEvent.Right1.value, ETurnEvent.Right2.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_turn_right
-                            }
-                            ETurnEvent.Left.value, ETurnEvent.Left1.value, ETurnEvent.Left2.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_turn_left
-                            }
-                            ETurnEvent.LightLeft.value, ETurnEvent.LightLeft1.value, ETurnEvent.LightLeft2.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_keep_left
-                            }
-                            ETurnEvent.LightRight.value, ETurnEvent.LightRight1.value, ETurnEvent.LightRight2.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_keep_right
-                            }
-                            ETurnEvent.SharpRight.value, ETurnEvent.SharpRight1.value, ETurnEvent.SharpRight2.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_turn_hard_right
-                            }
-                            ETurnEvent.SharpLeft.value, ETurnEvent.SharpLeft1.value, ETurnEvent.SharpLeft2.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_turn_hard_left
-                            }
-                            ETurnEvent.RoundaboutExitRight.value ->
-                            {
-                                imageId = R.drawable.ic_nav_roundabout_exit_ccw
-                            }
-                            ETurnEvent.Roundabout.value ->
-                            {
-                                imageId = R.drawable.ic_nav_roundabout_fallback
-                            }
-                            ETurnEvent.RoundRight.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_uturn
-                            }
-                            ETurnEvent.RoundLeft.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_uturn
-                            }
-                            ETurnEvent.ExitRight.value, ETurnEvent.ExitRight1.value, ETurnEvent.ExitRight2.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_fork_right
-                            }
-                            ETurnEvent.ExitLeft.value, ETurnEvent.ExitLeft1.value, ETurnEvent.ExitLeft2.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_fork_left
-                            }
-                            ETurnEvent.RoundaboutExitLeft.value ->
-                            {
-                                imageId = R.drawable.ic_nav_roundabout_exit_cw
-                            }
-                            ETurnEvent.IntoRoundabout.value ->
-                            {
-                                val entrance = data[1].toInt()
-                                val exit = data[2].toInt()
-                                val rightSide = data[3].toInt() == 1
+                            Log.d(tag, "parse turn image data, data.size = ${data?.size}")
 
-                                if (entrance == 6)
+                            if ((data != null) && (data.size == 4))
+                            {
+                                Log.d(tag, "get turn image icon, data[0] = ${data[0]}")
+
+                                var imageId = 0
+                                when (data[0].toInt())
                                 {
-                                    imageId = when (exit)
+                                    ETurnEvent.Straight.value ->
                                     {
-                                        12 ->
+                                        imageId = R.drawable.ic_nav_arrow_keep_going
+                                    }
+
+                                    ETurnEvent.Right.value, ETurnEvent.Right1.value, ETurnEvent.Right2.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_turn_right
+                                    }
+
+                                    ETurnEvent.Left.value, ETurnEvent.Left1.value, ETurnEvent.Left2.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_turn_left
+                                    }
+
+                                    ETurnEvent.LightLeft.value, ETurnEvent.LightLeft1.value, ETurnEvent.LightLeft2.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_keep_left
+                                    }
+
+                                    ETurnEvent.LightRight.value, ETurnEvent.LightRight1.value, ETurnEvent.LightRight2.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_keep_right
+                                    }
+
+                                    ETurnEvent.SharpRight.value, ETurnEvent.SharpRight1.value, ETurnEvent.SharpRight2.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_turn_hard_right
+                                    }
+
+                                    ETurnEvent.SharpLeft.value, ETurnEvent.SharpLeft1.value, ETurnEvent.SharpLeft2.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_turn_hard_left
+                                    }
+
+                                    ETurnEvent.RoundaboutExitRight.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_roundabout_exit_ccw
+                                    }
+
+                                    ETurnEvent.Roundabout.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_roundabout_fallback
+                                    }
+
+                                    ETurnEvent.RoundRight.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_uturn
+                                    }
+
+                                    ETurnEvent.RoundLeft.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_uturn
+                                    }
+
+                                    ETurnEvent.ExitRight.value, ETurnEvent.ExitRight1.value, ETurnEvent.ExitRight2.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_fork_right
+                                    }
+
+                                    ETurnEvent.ExitLeft.value, ETurnEvent.ExitLeft1.value, ETurnEvent.ExitLeft2.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_fork_left
+                                    }
+
+                                    ETurnEvent.RoundaboutExitLeft.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_roundabout_exit_cw
+                                    }
+
+                                    ETurnEvent.IntoRoundabout.value ->
+                                    {
+                                        val entrance = data[1].toInt()
+                                        val exit = data[2].toInt()
+                                        val rightSide = data[3].toInt() == 1
+
+                                        if (entrance == 6)
                                         {
-                                            if (rightSide)
+                                            imageId = when (exit)
                                             {
-                                                R.drawable.ic_nav_roundabout_ccw1_1
-                                            }
-                                            else
-                                            {
-                                                R.drawable.ic_nav_roundabout_cw1_1
+                                                12 ->
+                                                {
+                                                    if (rightSide)
+                                                    {
+                                                        R.drawable.ic_nav_roundabout_ccw1_1
+                                                    }
+                                                    else
+                                                    {
+                                                        R.drawable.ic_nav_roundabout_cw1_1
+                                                    }
+                                                }
+
+                                                10, 11 ->
+                                                {
+                                                    if (rightSide)
+                                                    {
+                                                        R.drawable.ic_nav_roundabout_ccw2_2
+                                                    }
+                                                    else
+                                                    {
+                                                        R.drawable.ic_nav_roundabout_cw1_2
+                                                    }
+                                                }
+
+                                                1, 2 ->
+                                                {
+                                                    if (rightSide)
+                                                    {
+                                                        R.drawable.ic_nav_roundabout_ccw1_2
+                                                    }
+                                                    else
+                                                    {
+                                                        R.drawable.ic_nav_roundabout_cw2_2
+                                                    }
+                                                }
+
+                                                7, 8, 9 ->
+                                                {
+                                                    if (rightSide)
+                                                    {
+                                                        R.drawable.ic_nav_roundabout_ccw3_3
+                                                    }
+                                                    else
+                                                    {
+                                                        R.drawable.ic_nav_roundabout_cw1_3
+                                                    }
+                                                }
+
+                                                3, 4, 5 ->
+                                                {
+                                                    if (rightSide)
+                                                    {
+                                                        R.drawable.ic_nav_roundabout_ccw1_3
+                                                    }
+                                                    else
+                                                    {
+                                                        R.drawable.ic_nav_roundabout_cw3_3
+                                                    }
+                                                }
+
+                                                else ->
+                                                {
+                                                    R.drawable.ic_nav_roundabout_fallback
+                                                }
                                             }
                                         }
-                                        10, 11 ->
+                                        else
                                         {
-                                            if (rightSide)
-                                            {
-                                                R.drawable.ic_nav_roundabout_ccw2_2
-                                            }
-                                            else
-                                            {
-                                                R.drawable.ic_nav_roundabout_cw1_2
-                                            }
-                                        }
-                                        1, 2 ->
-                                        {
-                                            if (rightSide)
-                                            {
-                                                R.drawable.ic_nav_roundabout_ccw1_2
-                                            }
-                                            else
-                                            {
-                                                R.drawable.ic_nav_roundabout_cw2_2
-                                            }
-                                        }
-                                        7, 8, 9 ->
-                                        {
-                                            if (rightSide)
-                                            {
-                                                R.drawable.ic_nav_roundabout_ccw3_3
-                                            }
-                                            else
-                                            {
-                                                R.drawable.ic_nav_roundabout_cw1_3
-                                            }
-                                        }
-                                        3, 4, 5 ->
-                                        {
-                                            if (rightSide)
-                                            {
-                                                R.drawable.ic_nav_roundabout_ccw1_3
-                                            }
-                                            else
-                                            {
-                                                R.drawable.ic_nav_roundabout_cw3_3
-                                            }
-                                        }
-                                        else ->
-                                        {
-                                            R.drawable.ic_nav_roundabout_fallback
+                                            imageId = R.drawable.ic_nav_roundabout_fallback
                                         }
                                     }
+
+                                    ETurnEvent.StayOn.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_keep_going
+                                    }
+
+                                    ETurnEvent.BoatFerry.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_boat
+                                    }
+
+                                    ETurnEvent.RailFerry.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_train
+                                    }
+
+                                    ETurnEvent.LeftRight.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_turn_left
+                                    }
+
+                                    ETurnEvent.RightLeft.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_turn_right
+                                    }
+
+                                    ETurnEvent.KeepLeft.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_keep_left
+                                    }
+
+                                    ETurnEvent.KeepRight.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_keep_right
+                                    }
+
+                                    ETurnEvent.Start.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_start
+                                    }
+
+                                    ETurnEvent.Intermediate.value, ETurnEvent.Stop.value ->
+                                    {
+                                        imageId = R.drawable.ic_nav_arrow_finish
+                                    }
+                                }
+
+                                if (imageId != 0)
+                                {
+                                    topPanel.visibility = View.VISIBLE
+                                    navInstructionIcon.setImageResource(imageId)
+                                    navInstructionIcon.setColorFilter(Color.WHITE)
                                 }
                                 else
                                 {
-                                    imageId = R.drawable.ic_nav_roundabout_fallback
+                                    topPanel.visibility = View.GONE
                                 }
                             }
-                            ETurnEvent.StayOn.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_keep_going
-                            }
-                            ETurnEvent.BoatFerry.value ->
-                            {
-                                imageId = R.drawable.ic_nav_boat
-                            }
-                            ETurnEvent.RailFerry.value ->
-                            {
-                                imageId = R.drawable.ic_nav_train
-                            }
-                            ETurnEvent.LeftRight.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_turn_left
-                            }
-                            ETurnEvent.RightLeft.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_turn_right
-                            }
-                            ETurnEvent.KeepLeft.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_keep_left
-                            }
-                            ETurnEvent.KeepRight.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_keep_right
-                            }
-                            ETurnEvent.Start.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_start
-                            }
-                            ETurnEvent.Intermediate.value, ETurnEvent.Stop.value ->
-                            {
-                                imageId = R.drawable.ic_nav_arrow_finish
-                            }
                         }
-
-                        if (imageId != 0)
-                        {
-                            topPanel.visibility = View.VISIBLE
-                            navInstructionIcon.setImageResource(imageId)
-                            navInstructionIcon.setColorFilter(Color.WHITE)
-                        }
-                        else
-                        {
-                            topPanel.visibility = View.GONE
-                        }
+                        else->{}
                     }
                 }
             }
@@ -388,7 +422,13 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver
 
     override fun onCharacteristicRead(gattCharacteristic: BluetoothGattCharacteristic)
     {
-        Log.d(tag, "onCharacteristicRead(): uuid = " + SampleGattAttributes.lookup(gattCharacteristic.uuid.toString(), gattCharacteristic.uuid.toString()))
+        Log.d(
+            tag,
+            "onCharacteristicRead(): uuid = " + SampleGattAttributes.lookup(
+                gattCharacteristic.uuid.toString(),
+                gattCharacteristic.uuid.toString()
+            )
+        )
 
         val nextUUIDToRead = when (gattCharacteristic.uuid)
         {
@@ -396,10 +436,12 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver
             {
                 SampleGattAttributes.TURN_DISTANCE
             }
+
             SampleGattAttributes.TURN_DISTANCE ->
             {
                 SampleGattAttributes.TURN_INSTRUCTION
             }
+
             else ->
             {
                 for (characteristic in characteristics)
@@ -417,7 +459,8 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver
         for (characteristic in characteristics)
         {
             if (characteristic.uuid == nextUUIDToRead &&
-                (characteristic.properties or BluetoothGattCharacteristic.PROPERTY_READ) > 0)
+                (characteristic.properties or BluetoothGattCharacteristic.PROPERTY_READ) > 0
+            )
             {
                 Handler(Looper.getMainLooper()).post {
                     bluetoothLeService?.readCharacteristic(characteristic)
@@ -450,7 +493,8 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver
         navInstructionIcon = findViewById(R.id.nav_icon)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = intent.getStringExtra(EXTRAS_DEVICE_NAME).plus(" - ").plus(getString(R.string.disconnected))
+        supportActionBar?.title = intent.getStringExtra(EXTRAS_DEVICE_NAME).plus(" - ")
+            .plus(getString(R.string.disconnected))
 
         val gattServiceIntent = Intent(this, BLEService::class.java)
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE)
@@ -496,7 +540,8 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver
     private fun updateConnectionState(resourceId: Int)
     {
         runOnUiThread {
-            supportActionBar?.title = intent.getStringExtra(EXTRAS_DEVICE_NAME).plus(" - ").plus(getString(resourceId))
+            supportActionBar?.title =
+                intent.getStringExtra(EXTRAS_DEVICE_NAME).plus(" - ").plus(getString(resourceId))
         }
     }
 
@@ -518,7 +563,8 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver
                     for (gattCharacteristic in characteristics)
                     {
                         if ((gattCharacteristic.uuid == SampleGattAttributes.TURN_IMAGE) &&
-                            ((gattCharacteristic.properties or BluetoothGattCharacteristic.PROPERTY_READ) > 0))
+                            ((gattCharacteristic.properties or BluetoothGattCharacteristic.PROPERTY_READ) > 0)
+                        )
                         {
                             bluetoothLeService?.readCharacteristic(gattCharacteristic)
                             break

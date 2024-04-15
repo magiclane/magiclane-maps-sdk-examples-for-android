@@ -23,14 +23,20 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
-import android.widget.SeekBar
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatSeekBar
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.slider.Slider
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -43,9 +49,8 @@ import com.magiclane.sdk.routesandnavigation.RoutingService
 import com.magiclane.sdk.routesandnavigation.TruckProfile
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
+
 
 // -------------------------------------------------------------------------------------------------
 
@@ -55,10 +60,10 @@ class MainActivity : AppCompatActivity()
 
     enum class ETruckProfileSettings
     {
-        Width,
+        Weight,
         Height,
         Length,
-        Weight,
+        Width,
         AxleWeight,
         MaxSpeed
     }
@@ -72,6 +77,17 @@ class MainActivity : AppCompatActivity()
     }
 
     // ---------------------------------------------------------------------------------------------
+    enum class ETruckProfileUnitConverters(val unit: Float)
+    {
+        Weight(1000f),
+        Height(100f),
+        Length(100f),
+        Width(100f),
+        AxleWeight(1000f),
+        MaxSpeed(0.27778f)
+    }
+
+    // ---------------------------------------------------------------------------------------------
 
     data class TruckProfileSettingsModel(
         var title: String = "",
@@ -82,69 +98,80 @@ class MainActivity : AppCompatActivity()
         var minIntValue: Int = 0,
         var currentIntValue: Int = 0,
         var maxIntValue: Int = 0,
-        var minDoubleValue: Double = 0.0,
-        var currentDoubleValue: Double = 0.0,
-        var maxDoubleValue: Double = 0.0,
+        var minDoubleValue: Float = 0f,
+        var currentDoubleValue: Float = 0f,
+        var maxDoubleValue: Float = 0f,
         var unit: String = ""
     )
 
     // ---------------------------------------------------------------------------------------------
 
+    companion object
+    {
+        const val RESOURCE = "GLOBAL"
+    }
+
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var settingsButtons: FloatingActionButton
+    private lateinit var preferencesTruckProfile: TruckProfile
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
 
     private var routesList = ArrayList<Route>()
 
     private val adapter = TruckProfileSettingsAdapter(getInitialDataSet())
 
     private var waypoints = arrayListOf<Landmark>()
-    
+
     private val routingService = RoutingService(
         onStarted = {
-            progressBar.visibility = View.VISIBLE
+            progressBar.isVisible = true
         },
-        
+
         onCompleted = { routes, errorCode, _ ->
-            progressBar.visibility = View.GONE
-            
+            progressBar.isVisible = false
             when (errorCode)
             {
                 GemError.NoError ->
                 {
                     routesList = routes
-
-                    SdkCall.execute { gemSurfaceView.mapView?.presentRoutes(
+                    adapter.notifyItemRangeChanged(0, routesList.size)
+                    SdkCall.execute {
+                        gemSurfaceView.mapView?.presentRoutes(
                             routes = routes,
                             displayBubble = true
                         )
                     }
-                    
-                    settingsButtons.visibility = View.VISIBLE
+
+                    settingsButtons.isVisible = true
+                    decrement()
                 }
-                
+
                 GemError.Cancel ->
                 {
                     // The routing action was cancelled.
                     showDialog("The routing action was cancelled.")
+                    decrement()
                 }
-                
+
                 else ->
                 {
                     // There was a problem at computing the routing operation.
                     showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
+                    decrement()
                 }
             }
         }
     )
-    
+
     // ---------------------------------------------------------------------------------------------
-    
+
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        
+        increment()
         gemSurfaceView = findViewById(R.id.gem_surface_view)
         progressBar = findViewById(R.id.progress_bar)
         settingsButtons = findViewById<FloatingActionButton?>(R.id.settings_button).also {
@@ -152,20 +179,29 @@ class MainActivity : AppCompatActivity()
                 onSettingsButtonClicked()
             }
         }
-        
+
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
             // Defines an action that should be done when the world map is ready (Updated/ loaded).
             SdkCall.execute {
+
                 waypoints = arrayListOf(
                     Landmark("London", 51.5073204, -0.1276475),
                     Landmark("Paris", 48.8566932, 2.3514616)
                 )
 
                 routingService.calculateRoute(waypoints)
+                preferencesTruckProfile = TruckProfile(
+                    (3 * ETruckProfileUnitConverters.Weight.unit).toInt(),
+                    (1.8 * ETruckProfileUnitConverters.Height.unit).toInt(),
+                    (5 * ETruckProfileUnitConverters.Length.unit).toInt(),
+                    (2 * ETruckProfileUnitConverters.Width.unit).toInt(),
+                    (1.5 * ETruckProfileUnitConverters.AxleWeight.unit).toInt(),
+                    (60 * ETruckProfileUnitConverters.MaxSpeed.unit).toDouble()
+                )
             }
-            
+
             gemSurfaceView.mapView?.onTouch = { xy ->
                 SdkCall.execute {
                     // tell the map view where the touch event happened
@@ -182,7 +218,7 @@ class MainActivity : AppCompatActivity()
                             preferences?.routes?.mainRoute = route
                             centerOnRoutes(routesList)
                         }
-                    }   
+                    }
                 }
             }
         }
@@ -200,8 +236,17 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
-    }
 
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true)
+        {
+            override fun handleOnBackPressed()
+            {
+                finish()
+                exitProcess(0)
+            }
+        })
+    }
     // ---------------------------------------------------------------------------------------------
 
     override fun onDestroy()
@@ -214,25 +259,24 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
-    }
-    
-    // ---------------------------------------------------------------------------------------------
-
     private fun onSettingsButtonClicked()
     {
         val builder = AlertDialog.Builder(this)
 
         val convertView = layoutInflater.inflate(R.layout.truck_profile_settings_view, null)
-        val listView = convertView.findViewById<RecyclerView>(R.id.truck_profile_settings_list).apply {
-            layoutManager = LinearLayoutManager(this@MainActivity)
-            addItemDecoration(DividerItemDecoration(applicationContext, (layoutManager as LinearLayoutManager).orientation))
-        }
+        val listView =
+            convertView.findViewById<RecyclerView>(R.id.truck_profile_settings_list).apply {
+                layoutManager = LinearLayoutManager(this@MainActivity)
+                addItemDecoration(
+                    DividerItemDecoration(
+                        applicationContext,
+                        (layoutManager as LinearLayoutManager).orientation
+                    )
+                )
+            }
 
         listView.adapter = adapter
+        adapter.notifyItemRangeChanged(0, ETruckProfileSettings.values().size)
 
         builder.setTitle(getString(R.string.app_name))
         builder.setView(convertView)
@@ -249,23 +293,30 @@ class MainActivity : AppCompatActivity()
 
     private fun onSaveButtonClicked()
     {
+        increment()
         val dataSet = adapter.dataSet
 
         // convert m to cm
-        val width = (dataSet[ETruckProfileSettings.Width.ordinal].currentDoubleValue * 100).toInt()
-        val height = (dataSet[ETruckProfileSettings.Height.ordinal].currentDoubleValue * 100).toInt()
-        val length = (dataSet[ETruckProfileSettings.Length.ordinal].currentDoubleValue * 100).toInt()
+        val width =
+            (dataSet[ETruckProfileSettings.Width.ordinal].currentDoubleValue * ETruckProfileUnitConverters.Width.unit).toInt()
+        val height =
+            (dataSet[ETruckProfileSettings.Height.ordinal].currentDoubleValue * ETruckProfileUnitConverters.Height.unit).toInt()
+        val length =
+            (dataSet[ETruckProfileSettings.Length.ordinal].currentDoubleValue * ETruckProfileUnitConverters.Length.unit).toInt()
         // convert t to kg
-        val weight = (dataSet[ETruckProfileSettings.Weight.ordinal].currentDoubleValue * 1000).toInt()
-        val axleWeight = (dataSet[ETruckProfileSettings.AxleWeight.ordinal].currentDoubleValue * 1000).toInt()
+        val weight =
+            (dataSet[ETruckProfileSettings.Weight.ordinal].currentDoubleValue * ETruckProfileUnitConverters.Weight.unit).toInt()
+        val axleWeight =
+            (dataSet[ETruckProfileSettings.AxleWeight.ordinal].currentDoubleValue * ETruckProfileUnitConverters.AxleWeight.unit).toInt()
         // convert km/h to m/s
-        val maxSpeed = dataSet[ETruckProfileSettings.MaxSpeed.ordinal].currentIntValue * 0.27778
+        val maxSpeed =
+            dataSet[ETruckProfileSettings.MaxSpeed.ordinal].currentIntValue * ETruckProfileUnitConverters.MaxSpeed.unit.toDouble()
 
         SdkCall.execute {
             routingService.apply {
                 preferences.alternativesSchema = ERouteAlternativesSchema.Never
                 preferences.transportMode = ERouteTransportMode.Lorry
-                preferences.truckProfile = TruckProfile(
+                preferencesTruckProfile = TruckProfile(
                     massKg = weight,
                     heightCm = height,
                     lengthCm = length,
@@ -273,6 +324,7 @@ class MainActivity : AppCompatActivity()
                     axleLoadKg = axleWeight,
                     maxSpeedMs = maxSpeed
                 )
+                preferences.truckProfile = preferencesTruckProfile
                 calculateRoute(waypoints)
             }
         }
@@ -283,90 +335,102 @@ class MainActivity : AppCompatActivity()
     private fun getInitialDataSet(): List<TruckProfileSettingsModel>
     {
         return mutableListOf<TruckProfileSettingsModel>().also {
-            it.add(TruckProfileSettingsModel(
-                "Width",
-                ESeekBarValuesType.DoubleType,
-                "2 m",
-                "2.0 m",
-                "4 m",
-                0,
-                0,
-                0,
-                2.0,
-                2.0,
-                4.0,
-                "m"
-            ))
-            it.add(TruckProfileSettingsModel(
-                "Height",
-                ESeekBarValuesType.DoubleType,
-                "1.8 m",
-                "1.8 m",
-                "5 m",
-                0,
-                0,
-                0,
-                1.8,
-                1.8,
-                5.0,
-                "m"
-            ))
-            it.add(TruckProfileSettingsModel(
-                "Length",
-                ESeekBarValuesType.DoubleType,
-                "5 m",
-                "5.0 m",
-                "20 m",
-                0,
-                0,
-                0,
-                5.0,
-                5.0,
-                20.0,
-                "m"
-            ))
-            it.add(TruckProfileSettingsModel(
-                "Weight",
-                ESeekBarValuesType.DoubleType,
-                "3 t",
-                "3.0 t",
-                "50 t",
-                0,
-                0,
-                0,
-                3.0,
-                3.0,
-                50.0,
-                "t"
-            ))
-            it.add(TruckProfileSettingsModel(
-                "Axle Weight",
-                ESeekBarValuesType.DoubleType,
-                "1.5 t",
-                "1.5 t",
-                "10 t",
-                0,
-                0,
-                0,
-                1.5,
-                1.5,
-                10.0,
-                "t"
-            ))
-            it.add(TruckProfileSettingsModel(
-                "Max Speed",
-                ESeekBarValuesType.IntType,
-                "60 km/h",
-                "130 km/h",
-                "250 km/h",
-                60,
-                130,
-                250,
-                0.0,
-                0.0,
-                0.0,
-                "km/h"
-            ))
+            it.add(
+                TruckProfileSettingsModel(
+                    "Weight",
+                    ESeekBarValuesType.DoubleType,
+                    "3 t",
+                    "3.0 t",
+                    "50 t",
+                    0,
+                    0,
+                    0,
+                    3.0f,
+                    3.0f,
+                    50.0f,
+                    "t"
+                )
+            )
+            it.add(
+                TruckProfileSettingsModel(
+                    "Height",
+                    ESeekBarValuesType.DoubleType,
+                    "1.8 m",
+                    "1.8 m",
+                    "5 m",
+                    0,
+                    0,
+                    0,
+                    1.8f,
+                    1.8f,
+                    5.0f,
+                    "m"
+                )
+            )
+            it.add(
+                TruckProfileSettingsModel(
+                    "Length",
+                    ESeekBarValuesType.DoubleType,
+                    "5 m",
+                    "5.0 m",
+                    "20 m",
+                    0,
+                    0,
+                    0,
+                    5.0f,
+                    5.0f,
+                    20.0f,
+                    "m"
+                )
+            )
+            it.add(
+                TruckProfileSettingsModel(
+                    "Width",
+                    ESeekBarValuesType.DoubleType,
+                    "2 m",
+                    "2.0 m",
+                    "4 m",
+                    0,
+                    0,
+                    0,
+                    2f,
+                    2f,
+                    4f,
+                    "m"
+                )
+            )
+            it.add(
+                TruckProfileSettingsModel(
+                    "Axle Weight",
+                    ESeekBarValuesType.DoubleType,
+                    "1.5 t",
+                    "1.5 t",
+                    "10 t",
+                    0,
+                    0,
+                    0,
+                    1.5f,
+                    1.5f,
+                    10.0f,
+                    "t"
+                )
+            )
+            it.add(
+                TruckProfileSettingsModel(
+                    "Max Speed",
+                    ESeekBarValuesType.IntType,
+                    "60 km/h",
+                    "130 km/h",
+                    "250 km/h",
+                    60,
+                    130,
+                    250,
+                    0.0f,
+                    0.0f,
+                    0.0f,
+                    "km/h"
+                )
+            )
         }
     }
 
@@ -389,125 +453,122 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------
 
     inner class TruckProfileSettingsAdapter(val dataSet: List<TruckProfileSettingsModel>) :
         RecyclerView.Adapter<RecyclerView.ViewHolder>()
     {
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder
-        {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.settings_list_item_seekbar, parent, false)
-            return when (viewType)
-            {
-                ESeekBarValuesType.DoubleType.ordinal -> TruckProfileSettingsDoubleItemViewHolder(view)
-                ESeekBarValuesType.IntType.ordinal -> TruckProfileSettingsIntItemViewHolder(view)
-                else -> TruckProfileSettingsDoubleItemViewHolder(view)
-            }
-        }
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
+            TruckProfileSettingsItemViewHolder(
+                LayoutInflater.from(parent.context)
+                    .inflate(R.layout.settings_list_item_seekbar, parent, false)
+            )
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int)
         {
-            when (holder.itemViewType)
-            {
-                ESeekBarValuesType.IntType.ordinal -> (holder as TruckProfileSettingsIntItemViewHolder).bind(position)
-                ESeekBarValuesType.DoubleType.ordinal -> (holder as TruckProfileSettingsDoubleItemViewHolder).bind(position)
-                else -> (holder as TruckProfileSettingsDoubleItemViewHolder).bind(position)
-            }
+            (holder as TruckProfileSettingsItemViewHolder).bind(position)
         }
 
-        override fun getItemViewType(position: Int): Int
-        {
-            return dataSet[position].type.ordinal
-        }
+        override fun getItemViewType(position: Int): Int = dataSet[position].type.ordinal
 
         override fun getItemCount(): Int = dataSet.size
 
-        inner class TruckProfileSettingsDoubleItemViewHolder(view: View): RecyclerView.ViewHolder(view)
+        inner class TruckProfileSettingsItemViewHolder(view: View) :
+            RecyclerView.ViewHolder(view)
         {
             private val text: TextView = view.findViewById(R.id.text)
             private val minValueText: TextView = view.findViewById(R.id.min_value_text)
             private val currentValueText: TextView = view.findViewById(R.id.current_value_text)
             private val maxValueText: TextView = view.findViewById(R.id.max_value_text)
-            private val seekBar: AppCompatSeekBar = view.findViewById(R.id.seek_bar)
+            private val seekBar: Slider = view.findViewById(R.id.seek_bar)
 
             fun bind(position: Int)
             {
+                val isDoubleItem =
+                    getItemViewType(position) == ESeekBarValuesType.DoubleType.ordinal
                 val item = dataSet[position]
-
                 text.text = item.title
-
-                minValueText.text = item.minValueText
-                currentValueText.text = item.currentValueText
-                maxValueText.text = item.maxValueText
-
-                val stepsNumber = 100 * (item.maxDoubleValue - item.minDoubleValue).toInt()
-                seekBar.max = stepsNumber
-                seekBar.progress = (((item.currentDoubleValue - item.minDoubleValue) / (item.maxDoubleValue - item.minDoubleValue)) * stepsNumber).toInt()
-
-                seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener
+                if (isDoubleItem)
                 {
-                    override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean)
-                    {
-                        if (!fromUser) return
+                    minValueText.text = item.minValueText
+                    maxValueText.text = item.maxValueText
 
-                        val progressValue = item.minDoubleValue + (progress.toFloat() * (1.0f / stepsNumber) * (item.maxDoubleValue - item.minDoubleValue))
+                    seekBar.apply {
+                        valueTo = item.maxDoubleValue
+                        valueFrom = item.minDoubleValue
+                        addOnChangeListener { _, value, _ ->
+                            //if (!fromUser) return@addOnChangeListener
 
-                        item.currentDoubleValue = progressValue
-                        item.currentValueText = String.format("%.1f %s", progressValue, item.unit)
+                            item.currentDoubleValue = value
+                            item.currentValueText = String.format("%.1f %s", value, item.unit)
 
-                        currentValueText.text = item.currentValueText
+                            currentValueText.text = item.currentValueText
+                        }
                     }
 
-                    override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
-                    override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
-                })
-            }
-        }
-
-        inner class TruckProfileSettingsIntItemViewHolder(view: View): RecyclerView.ViewHolder(view)
-        {
-            private val text: TextView = view.findViewById(R.id.text)
-            private val minValueText: TextView = view.findViewById(R.id.min_value_text)
-            private val currentValueText: TextView = view.findViewById(R.id.current_value_text)
-            private val maxValueText: TextView = view.findViewById(R.id.max_value_text)
-            private val seekBar: AppCompatSeekBar = view.findViewById(R.id.seek_bar)
-
-            fun bind(position: Int)
-            {
-                val item = dataSet[position]
-
-                text.text = item.title
-
-                minValueText.text = item.minValueText
-                currentValueText.text = item.currentValueText
-                maxValueText.text = item.maxValueText
-
-                val stepsNumber = item.maxIntValue - item.minIntValue
-                seekBar.max = stepsNumber
-                seekBar.progress = ((item.currentIntValue.toFloat() - item.minIntValue.toFloat()) / (item.maxIntValue.toFloat() - item.minIntValue.toFloat()) * stepsNumber).toInt()
-
-                seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener
+                }
+                else
                 {
-                    override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean)
-                    {
-                        if (!fromUser) return
+                    minValueText.text = item.minValueText
+                    maxValueText.text = item.maxValueText
 
-                        val progressValue = (item.minIntValue + (progress.toFloat() * (1.0f / stepsNumber) * (item.maxIntValue - item.minIntValue))).toInt()
-
-                        item.currentIntValue = progressValue
-                        item.currentValueText = String.format("%d %s", progressValue, item.unit)
-
-                        currentValueText.text = item.currentValueText
+                    seekBar.apply {
+                        valueTo = item.maxIntValue.toFloat()
+                        valueFrom = item.minIntValue.toFloat()
+                        stepSize = 1f
+                        addOnChangeListener { _, value, _ ->
+                 /*           if (!fromUser)
+                                return@addOnChangeListener*/
+                            item.currentIntValue = value.toInt()
+                            item.currentValueText = String.format("%d %s", value.toInt(), item.unit)
+                            currentValueText.text = item.currentValueText
+                        }
                     }
+                }
+                val setting = ETruckProfileSettings.values()[position]
+                SdkCall.execute {
+                    val actualVal = when (setting)
+                    {
+                        ETruckProfileSettings.Weight -> preferencesTruckProfile.mass / ETruckProfileUnitConverters.Weight.unit
+                        ETruckProfileSettings.Height -> preferencesTruckProfile.height / ETruckProfileUnitConverters.Height.unit
+                        ETruckProfileSettings.Length -> preferencesTruckProfile.length / ETruckProfileUnitConverters.Length.unit
+                        ETruckProfileSettings.Width -> preferencesTruckProfile.width / ETruckProfileUnitConverters.Width.unit
+                        ETruckProfileSettings.AxleWeight -> preferencesTruckProfile.axleLoad / ETruckProfileUnitConverters.AxleWeight.unit
+                        ETruckProfileSettings.MaxSpeed -> (preferencesTruckProfile.maxSpeed / ETruckProfileUnitConverters.MaxSpeed.unit).toFloat()
+                    }
+                    seekBar.value = actualVal
+                    if (isDoubleItem)
+                        item.currentDoubleValue = actualVal
+                    else
+                        item.currentIntValue = actualVal.toInt()
 
-                    override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
-                    override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
-                })
+                    val valueText = if (isDoubleItem)
+                        String.format("%.1f %s", actualVal, item.unit)
+                    else
+                        String.format("%d %s", actualVal.toInt(), item.unit)
+
+                    item.currentValueText = valueText
+                    currentValueText.text = valueText
+                }
+                seekBar.contentDescription = item.title
             }
         }
     }
 
+    // ---------------------------------------------------------------------------------------------
+
+    @VisibleForTesting
+    fun getActivityIdlingResource(): IdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
     // ---------------------------------------------------------------------------------------------
 }
 

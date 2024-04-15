@@ -22,7 +22,11 @@ import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -48,12 +52,18 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------
-    
+    companion object
+    {
+        const val RESOURCE = "GLOBAL"
+    }
+
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var currentSpeed: TextView
     private lateinit var speedLimit: TextView
     private lateinit var followCursorButton: FloatingActionButton
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
 
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
@@ -80,6 +90,7 @@ class MainActivity : AppCompatActivity()
                     PositionService.addListener(positionListener, EDataType.Position)
                     enableGPSButton()
                     mapView.followPosition()
+                    decrement()
                 }
             }
         },
@@ -95,6 +106,10 @@ class MainActivity : AppCompatActivity()
         onDestinationReached = {
             // DON'T FORGET to remove the position listener after the navigation is done.
             PositionService.removeListener(positionListener)
+            decrement()
+        },
+        onNavigationError = {
+            decrement()
         }
     )
 
@@ -133,12 +148,12 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        increment()
         gemSurfaceView = findViewById(R.id.gem_surface)
         progressBar = findViewById(R.id.progressBar)
         currentSpeed = findViewById(R.id.current_speed)
         speedLimit = findViewById(R.id.speed_limit)
-        followCursorButton = findViewById(R.id.followCursor)
+        followCursorButton = findViewById(R.id.follow_cursor)
 
         /// MAGIC LANE
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
@@ -161,24 +176,19 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
-
     override fun onDestroy()
     {
         super.onDestroy()
-
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -200,7 +210,7 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------
 
     private fun enableGPSButton()
@@ -239,6 +249,20 @@ class MainActivity : AppCompatActivity()
     }
 
     // ---------------------------------------------------------------------------------------------
+
+    @VisibleForTesting
+    fun getActivityIdlingResource(): IdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
+    // ---------------------------------------------------------------------------------------------
+
 }
 
 // -------------------------------------------------------------------------------------------------

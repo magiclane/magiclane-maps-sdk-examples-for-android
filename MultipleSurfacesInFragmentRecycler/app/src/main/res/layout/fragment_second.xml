@@ -25,7 +25,7 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/bottomLeftButton"
+            android:id="@+id/bottom_left_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:tint="@color/white"
@@ -36,17 +36,17 @@
 
         <Button
             android:id="@+id/button_second"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="76dp"
+            android:layout_height="34dp"
             android:text="@string/previous"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent" />
 
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/bottomRightButton"
+            android:id="@+id/bottom_right_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:tint="@color/white"

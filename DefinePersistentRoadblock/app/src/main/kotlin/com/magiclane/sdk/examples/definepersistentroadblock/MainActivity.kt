@@ -21,6 +21,8 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -43,7 +45,8 @@ class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------
 
-    private lateinit var gemSurfaceView: GemSurfaceView
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var hint: TextView
 
     private var roadblock: TrafficEvent? = null
@@ -100,6 +103,11 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this){
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -110,14 +118,6 @@ class MainActivity : AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------

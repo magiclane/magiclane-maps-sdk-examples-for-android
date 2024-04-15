@@ -27,6 +27,7 @@ import com.magiclane.sdk.examples.androidauto.R
 import com.magiclane.sdk.examples.androidauto.androidAuto.Service
 import com.magiclane.sdk.examples.androidauto.androidAuto.model.CarNavigationData
 
+@Suppress("SameParameterValue", "MemberVisibilityCanBePrivate", "unused")
 object CarAppNotifications {
     const val CHANNEL_ID = "NavigationServiceChannel"
 
@@ -70,7 +71,7 @@ object CarAppNotifications {
         navigatingDisplayTitle: CharSequence,
         navigatingDisplayContent: CharSequence,
         notificationIcon: Bitmap?
-    ): Notification? {
+    ): Notification {
         val builder: NotificationCompat.Builder = NotificationCompat.Builder(context, CHANNEL_ID)
 //            .setContentIntent(createMainActivityPendingIntent())
             .setContentTitle(navigatingDisplayTitle)

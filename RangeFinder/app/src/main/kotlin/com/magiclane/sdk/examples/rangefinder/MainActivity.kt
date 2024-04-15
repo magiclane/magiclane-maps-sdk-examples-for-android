@@ -19,136 +19,230 @@ package com.magiclane.sdk.examples.rangefinder
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Color
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.EditText
-import android.widget.HorizontalScrollView
 import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.ProgressBar
-import android.widget.ScrollView
-import android.widget.Spinner
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.ColorInt
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.children
+import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
+import androidx.core.widget.doAfterTextChanged
+import androidx.databinding.Observable
+import androidx.lifecycle.ViewModelProvider
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
-import com.magiclane.sdk.core.GemSurfaceView
+import com.magiclane.sdk.core.Rect
+import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.d3scene.Animation
+import com.magiclane.sdk.d3scene.EAnimation
+import com.magiclane.sdk.d3scene.ERouteDisplayMode
+import com.magiclane.sdk.examples.rangefinder.databinding.ActivityMainBinding
 import com.magiclane.sdk.places.Landmark
-import com.magiclane.sdk.routesandnavigation.EBikeProfile
 import com.magiclane.sdk.routesandnavigation.EEBikeType
+import com.magiclane.sdk.routesandnavigation.ERouteRenderOptions
 import com.magiclane.sdk.routesandnavigation.ERouteTransportMode
 import com.magiclane.sdk.routesandnavigation.ERouteType
 import com.magiclane.sdk.routesandnavigation.ElectricBikeProfile
+import com.magiclane.sdk.routesandnavigation.Route
+import com.magiclane.sdk.routesandnavigation.RouteRenderSettings
 import com.magiclane.sdk.routesandnavigation.RoutingService
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
-class MainActivity: AppCompatActivity()
+class MainActivity : AppCompatActivity()
 {
+
+    // ---------------------------------------------------ACTIVITY MEMBERS--------------------------------------------------------
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private lateinit var rootView: ConstraintLayout
-    private lateinit var progressBar: ProgressBar
-    private lateinit var gemSurfaceView: GemSurfaceView
-    private lateinit var transportModeSpinner: Spinner
-    private lateinit var bikeTypeText: TextView
-    private lateinit var bikeTypeSpinner: Spinner
-    private lateinit var rangeTypeSpinner: Spinner
-    private lateinit var bikeWeightEditText: EditText
-    private lateinit var bikeWeightTextView: TextView
-    private lateinit var bikerWeightEditText: EditText
-    private lateinit var bikerWeightTextView: TextView
-    private lateinit var rangeValueEditText: EditText
-    private lateinit var addButton: TextView
-    private lateinit var currentRangesScrollContainer: HorizontalScrollView
-    private lateinit var currentRangesContainer: LinearLayout
-    private lateinit var rangeViewsContainer: ScrollView
-    
-    private var currentTransportMode: ERouteTransportMode? = null
-    private var currentRangeType: ERouteType? = null
-    
-    private val currentSelectedRanges = ArrayList<Int>()
+    //region members for testing
+    companion object
+    {
+        const val RESOURCE = "GLOBAL"
+    }
 
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
+    //endregion
+
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var viewModel: MainActivityViewModel
+
+    private val propertiesObserver = object : Observable.OnPropertyChangedCallback()
+    {
+        override fun onPropertyChanged(sender: Observable?, propertyId: Int)
+        {
+            updateOptions()
+        }
+    }
+
+    /**
+     * [routingService] is a service that specialises in computing routes
+     */
     private val routingService = RoutingService(
         onStarted = {
-            progressBar.visibility = View.VISIBLE
-            addButton.visibility = View.GONE
+            enableButtons(false)
         },
         onCompleted = { routes, errorCode, _ ->
-            progressBar.visibility = View.GONE
-            addButton.visibility = View.VISIBLE
+            enableButtons(true)
 
             when (errorCode)
             {
                 GemError.NoError ->
                 {
-                    SdkCall.execute {
-                        gemSurfaceView.mapView?.hideRoutes()
-                        gemSurfaceView.mapView?.presentRoutes(routes, displayBubble = true)
-                    }
+                    //if the process ended with no error add the new route to the route list
+                    viewModel.listOfRoutes.add(routes[0])
+                    //then display
+                    addRangeOnMap(
+                        viewModel.listOfRoutes.last(),
+                        viewModel.listOfRangeProfiles.last().color
+                    )
+                    SdkCall.execute { centerRoutes() }
                     showScrollableRangesList()
                 }
 
                 GemError.Cancel ->
                 { // The routing action was cancelled.
+                    viewModel.listOfRangeProfiles.removeAt(viewModel.listOfRangeProfiles.size - 1)
                 }
 
                 else ->
                 { // There was a problem at computing the routing operation.
-                    currentSelectedRanges.removeAt(currentSelectedRanges.size - 1)
-                    
-                    showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
+                    viewModel.listOfRangeProfiles.removeAt(viewModel.listOfRangeProfiles.size - 1)
+                    showErrorDialog(
+                        resources.getString(
+                            R.string.service_error,
+                            GemError.getMessage(errorCode)
+                        )
+                    )
                 }
             }
+
+            if (!mainActivityIdlingResource.isIdleNow)
+                decrement()
         }
     )
 
+    // ------------------------------------------------OVERRIDDEN METHODS---------------------------------------------------------
     // ---------------------------------------------------------------------------------------------------------------------------
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        rootView = findViewById(R.id.root_view)
-        progressBar = findViewById(R.id.progressBar)
-        gemSurfaceView = findViewById(R.id.gem_surface)
-        transportModeSpinner = findViewById(R.id.transport_mode_spinner)
-        bikeTypeText = findViewById(R.id.bike_type_text)
-        bikeTypeSpinner = findViewById(R.id.bike_type_spinner)
-        rangeTypeSpinner = findViewById(R.id.range_type_spinner)
-        bikeWeightEditText = findViewById(R.id.bike_weight_edit_text)
-        bikeWeightTextView = findViewById(R.id.bike_weight_text)
-        bikerWeightEditText = findViewById(R.id.biker_weight_edit_text)
-        bikerWeightTextView = findViewById(R.id.biker_weight_text)
-        rangeValueEditText = findViewById(R.id.range_value_edit_text)
-        addButton = findViewById(R.id.add_button)
-        currentRangesScrollContainer = findViewById(R.id.current_ranges_scroll_container)
-        currentRangesContainer = findViewById(R.id.current_ranges_buttons_container)
-        rangeViewsContainer = findViewById(R.id.range_container)
-        
-        setConstraints(resources.configuration.orientation)
-        
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.rootView)
+        increment()
         SdkSettings.onMapDataReady = { isReady ->
             if (isReady)
             {
+                viewModel = ViewModelProvider(this, ViewModelProvider.NewInstanceFactory())[MainActivityViewModel::class.java]
+
+                addPropertyCallback()
+
                 // Defines an action that should be done when the world map is ready (Updated/ loaded).
-                progressBar.visibility = View.GONE
-                rangeViewsContainer.visibility = View.VISIBLE
-                
-                prepareViews()
+                binding.apply {
+                    progressBar.isVisible = false
+                    optionsButton.setOnClickListener {
+                        scroll.isVisible = !scroll.isVisible
+                        optionsButton.icon = ResourcesCompat.getDrawable(
+                            resources,
+                            if (scroll.isVisible) R.drawable.ic_arrow_drop_up_24
+                            else R.drawable.ic_arrow_drop_down_24,
+                            theme
+                        )
+                    }
+
+                    addButton.setOnClickListener {
+                        increment()
+                        //check to see if more ranges can be generated on map
+                        if (viewModel.listOfRangeProfiles.size >= MAX_ITEMS)
+                        {
+                            showErrorDialog(
+                                resources.getString(
+                                    R.string.maximum_items_warning,
+                                    MAX_ITEMS
+                                )
+                            )
+                            return@setOnClickListener
+                        }
+
+                        if (scroll.isVisible)
+                            optionsButton.callOnClick()
+
+                        if (binding.rangeValueEditText.text!!.isNotEmpty())
+                        {
+                            //get a copy of the current range settings profile
+                            val newRange = viewModel.currentRangeSettingsProfile.copy()
+                            if (checkIfNewRangeAlreadyExists(newRange) == null)
+                            {
+                                //if the same range does not already exist
+                                //set a new color for it and update it's visibility status
+                                SdkCall.execute { newRange.color = viewModel.getNewColor() }
+                                newRange.isDisplayed = true
+                                //add that copy to the view model's list of range profiles
+                                viewModel.listOfRangeProfiles.add(newRange)
+                                //command the service to begin generating a new route with
+                                //your new range value
+                                SdkCall.execute { calculateRanges() }
+                                binding.rangeValueEditText.setText("")
+                                hideKeyboard()
+                            }
+                            else
+                                showErrorDialog(resources.getString(R.string.same_range_detected_warning))
+                        }
+                        else
+                            showErrorDialog(resources.getString(R.string.empty_range_value_warning))
+                    }
+
+                    //set on click listeners on each selector in order to show a dialog with options
+                    transportModeSelector.setOnClickListener {
+                        showOptionsDialog(it)
+                    }
+                    bikeTypeSelector.setOnClickListener {
+                        showOptionsDialog(it)
+                    }
+                    rangeTypeSelector.setOnClickListener {
+                        showOptionsDialog(it)
+                    }
+
+                    //set text listeners in order to update the current range settings profile
+                    bikeWeightEditText.doAfterTextChanged { txt ->
+                        viewModel.currentRangeSettingsProfile.bikeWeight =
+                            txt.toString().toIntOrNull() ?: 0
+                    }
+                    bikerWeightEditText.doAfterTextChanged { txt ->
+                        viewModel.currentRangeSettingsProfile.bikerWeight =
+                            txt.toString().toIntOrNull() ?: 0
+                    }
+                    rangeValueEditText.doAfterTextChanged { txt ->
+                        viewModel.currentRangeSettingsProfile.rangeValue =
+                            txt.toString().toIntOrNull() ?: 0
+                    }
+                    updateOptions()
+                }
+                decrement()
             }
+
         }
 
         SdkSettings.onApiTokenRejected = {/*
@@ -156,12 +250,16 @@ class MainActivity: AppCompatActivity()
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the magiclane.com website, sign up/sign in and generate one. 
              */
-            showDialog("TOKEN REJECTED")
+            showErrorDialog(resources.getString(R.string.token_rejected))
         }
 
         if (!Util.isInternetConnected(this))
         {
-            showDialog("You must be connected to the internet!")
+            showErrorDialog(resources.getString(R.string.internet_connection_warning))
+        }
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
         }
     }
 
@@ -170,11 +268,29 @@ class MainActivity: AppCompatActivity()
     override fun onConfigurationChanged(newConfig: Configuration)
     {
         super.onConfigurationChanged(newConfig)
-        
-        setConstraints(newConfig.orientation)
-        rangeViewsContainer.post { rangeViewsContainer.fullScroll(View.FOCUS_DOWN) }
+
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE)
+            changeConstraintsForLandscape()
+
+        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT)
+            changeConstraintsForPortrait()
+
+        if (binding.scroll.isVisible)
+            binding.optionsButton.callOnClick()
     }
-    
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    override fun onPause()
+    {
+        super.onPause()
+        if (isFinishing)
+        {
+            removePropertyCallback()
+            GemSdk.release()
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
     override fun onDestroy()
@@ -185,23 +301,115 @@ class MainActivity: AppCompatActivity()
         GemSdk.release()
     }
 
+    // --------------------------------------------HELPER METHODS-------------------------------------------------------------
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onBackPressed()
+    /**
+     * Checks whether the range value exists or not already in the retained list of range
+     * profiles from [viewModel]
+     * @param newRange the new [RangeSettingsProfile] to be added
+     */
+    private fun checkIfNewRangeAlreadyExists(newRange: RangeSettingsProfile) =
+        viewModel.listOfRangeProfiles.find {
+            val itemMatcher = it.transportMode == newRange.transportMode &&
+                    it.rangeType == newRange.rangeType &&
+                    it.rangeValue == newRange.rangeValue
+            if (it.transportMode == ERouteTransportMode.Bicycle && newRange.transportMode == ERouteTransportMode.Bicycle)
+                itemMatcher && it.bikeType == newRange.bikeType
+            else
+                itemMatcher
+        }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+
+    /**
+     * Adds a listener for every [RangeSettingsProfile] cashed in the [viewModel]
+     */
+    private fun addPropertyCallback()
     {
-        finish()
-        exitProcess(0)
+        viewModel.cashList.forEach {
+            it.addOnPropertyChangedCallback(
+                propertiesObserver
+            )
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String)
+    /**
+     * Removes the listener for every [RangeSettingsProfile] cashed in the [viewModel]
+     */
+    private fun removePropertyCallback()
     {
+        viewModel.cashList.forEach {
+            it.removeOnPropertyChangedCallback(
+                propertiesObserver
+            )
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Updates the visibility and values of options for range generation seen on screen.
+     */
+    private fun updateOptions()
+    {
+        with(viewModel.currentRangeSettingsProfile) {
+            binding.apply {
+                transportModeSelector.text = transportMode.name
+                bikeTypeSelector.text = bikeType.name
+                rangeTypeSelector.text = rangeType.name
+
+                val showBikeOptions = transportMode == ERouteTransportMode.Bicycle
+                bikeTypeSelector.isVisible = showBikeOptions
+                bikeTypeText.isVisible = showBikeOptions
+
+                val showEconomicBikeOptions = rangeType == ERouteType.Economic
+                bikeWeightEditTextLayout.isVisible = showEconomicBikeOptions
+                bikerWeightEditTextLayout.isVisible = showEconomicBikeOptions
+
+                rangeValueEditTextLayout.helperText = getMeasuringUnit(rangeType)
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Returns the matching measuring unit based on the current range type
+     * @param [rangeType]
+     */
+    private fun getMeasuringUnit(rangeType: ERouteType) = when (rangeType)
+    {
+        ERouteType.Fastest -> getString(R.string.seconds)
+        ERouteType.Shortest -> getString(R.string.meters)
+        ERouteType.Economic -> getString(R.string.watts_per_hour)
+        else -> ""
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Shows a [BottomSheetDialog] with a short message
+     */
+    @SuppressLint("InflateParams")
+    private fun showErrorDialog(text: String)
+    {
+        while (!mainActivityIdlingResource.isIdleNow)
+            decrement()
+
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
             findViewById<TextView>(R.id.title).text = getString(R.string.error)
+            findViewById<TextView>(R.id.title).setTextColor(
+                ContextCompat.getColor(this@MainActivity, R.color.text_color)
+            )
             findViewById<TextView>(R.id.message).text = text
+            findViewById<TextView>(R.id.message).setTextColor(
+                ContextCompat.getColor(this@MainActivity, R.color.text_color)
+            )
             findViewById<Button>(R.id.button).setOnClickListener {
                 dialog.dismiss()
             }
@@ -212,375 +420,572 @@ class MainActivity: AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun calculateRange(transportMode: ERouteTransportMode,
-                               routeType: ERouteType,
-                               ranges: ArrayList<Int>,
-                               bikeProfile: EBikeProfile = EBikeProfile.Road,
-                               electricBikeProfile: ElectricBikeProfile? = null)
+    /**
+     * Shows a dialog with a list of options based on the picked selector view
+     * @param view the selector that was clicked on
+     */
+    private fun showOptionsDialog(view: View)
+    {
+        val list = getOptionsArrayList(view).map { it.name }
+
+        val dialogBuilder = MaterialAlertDialogBuilder(this)
+
+        dialogBuilder.setTitle(getDialogTitle(view))
+            .setItems(list.toTypedArray()) { dialog, pos ->
+                onItemClicked(view, pos)
+                dialog.cancel()
+            }
+            .show()
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * On item clicked callback. Will updated the current selected option from the
+     * current [RangeSettingsProfile]
+     * @param selector the selector that was clicked on
+     * @param position option's positions in the dialog's options list
+     */
+    private fun onItemClicked(selector: View, position: Int)
+    {
+        if (selector.id == R.id.transport_mode_selector)
+            viewModel.currentRangeSettingsProfile = viewModel.cashList[position]
+        with(viewModel.currentRangeSettingsProfile) {
+            when (selector.id)
+            {
+                R.id.transport_mode_selector ->
+                    transportMode = viewModel.listOfTransportTypes[position]
+
+                R.id.range_type_selector ->
+                    rangeType =
+                        if (isBicycleTransportType()) viewModel.listOfBicycleRangeTypes[position]
+                        else viewModel.listOfRangeTypes[position]
+
+                R.id.bike_type_selector ->
+                    bikeType = viewModel.listOfBikeTypes[position]
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Returns the matching options list to be shown in the dialog view
+     * based on the on the picked selector view
+     * @param view the selector that was clicked on
+     */
+    private fun getOptionsArrayList(view: View) = when (view.id)
+    {
+        R.id.transport_mode_selector ->
+            viewModel.listOfTransportTypes
+
+        R.id.range_type_selector ->
+            if (isBicycleTransportType())
+                viewModel.listOfBicycleRangeTypes
+            else
+                viewModel.listOfRangeTypes
+
+        R.id.bike_type_selector -> viewModel.listOfBikeTypes
+
+        else -> ArrayList()
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Checks whether the current range type coincides with [ERouteTransportMode.Bicycle]
+     */
+    private fun isBicycleTransportType(): Boolean =
+        viewModel.currentRangeSettingsProfile.transportMode == ERouteTransportMode.Bicycle
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Returns the matching title to be shown in the dialog view
+     * based on the on the picked selector view
+     * @param view the selector that was clicked on
+     */
+    private fun getDialogTitle(view: View) = ContextCompat.getString(
+        this, when (view.id)
+        {
+            R.id.transport_mode_selector -> R.string.transport_mode
+            R.id.range_type_selector -> R.string.range_type
+            R.id.bike_type_selector -> R.string.bike_type
+            else -> R.string.transport_mode
+        }
+    )
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Commands the [routingService] to calculate array of routes with
+     * attached range values and routing preferences
+     */
+    private fun calculateRanges()
     {
         SdkCall.execute {
-            routingService.preferences.transportMode = transportMode
-            routingService.preferences.routeType = routeType
-            routingService.preferences.setRouteRanges(ranges, 100)
+            with(routingService.preferences) {
+                viewModel.currentRangeSettingsProfile.let {
+                    //get an electric bike profile in case the Economic range type option is picked
+                    val electricBikeProfile =
+                        if (isBicycleTransportType() && it.rangeType == ERouteType.Economic)
+                            ElectricBikeProfile(
+                                EEBikeType.Pedelec,
+                                it.bikeWeight.toFloat(),
+                                it.bikerWeight.toFloat(),
+                                2f,
+                                4f
+                            )
+                        else null
 
-            if (transportMode == ERouteTransportMode.Bicycle)
-            {
-                routingService.preferences.setBikeProfile(bikeProfile, electricBikeProfile)
+                    //set your routing preferences according to your selected options
+                    transportMode = it.transportMode
+                    routeType = it.rangeType
+                    setRouteRanges(
+                        ArrayList(arrayListOf(viewModel.listOfRangeProfiles.last().rangeValue)),
+                        100
+                    )
+                    if (isBicycleTransportType())
+                        setBikeProfile(it.bikeType, electricBikeProfile)
+                }
             }
-
             routingService.calculateRoute(arrayListOf(Landmark("London", 51.5073204, -0.1276475)))
         }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun setConstraints(orientation: Int)
-    {
-        when (orientation)
-        {
-            Configuration.ORIENTATION_PORTRAIT ->
-            {
-                if (currentRangeType == ERouteType.Economic)
-                {
-                    rangeViewsContainer.layoutParams.apply {
-                        width = ConstraintLayout.LayoutParams.MATCH_PARENT
-                        height = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
-                    }
-                    ConstraintSet().apply {
-                        clone(rootView)
-                        constrainPercentHeight(R.id.range_container, 0.35f)
-                        applyTo(rootView)
-                    }
-                }
-                else
-                {
-                    rangeViewsContainer.layoutParams.apply {
-                        width = ConstraintLayout.LayoutParams.MATCH_PARENT
-                        height = ConstraintLayout.LayoutParams.WRAP_CONTENT
-                    }
-                }
-
-                gemSurfaceView.layoutParams.apply {
-                    width = ConstraintLayout.LayoutParams.MATCH_PARENT
-                    height = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
-                }
-                
-                ConstraintSet().apply { 
-                    clone(rootView)
-                    connect(R.id.range_container, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
-                    connect(R.id.range_container, ConstraintSet.BOTTOM, R.id.gem_surface, ConstraintSet.TOP)
-                    connect(R.id.range_container, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
-                    connect(R.id.range_container, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
-                    
-                    connect(R.id.gem_surface, ConstraintSet.TOP, R.id.range_container, ConstraintSet.BOTTOM)
-                    connect(R.id.gem_surface, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
-                    connect(R.id.gem_surface, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
-                    connect(R.id.gem_surface, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
-
-                    constrainMinHeight(R.id.gem_surface, resources.displayMetrics.heightPixels / 2)
-                    constrainPercentHeight(R.id.range_container, 0.4f)
-
-                    applyTo(rootView)
-                }
-            }
-            
-            Configuration.ORIENTATION_LANDSCAPE ->
-            {
-                rangeViewsContainer.layoutParams.apply {
-                    width = resources.displayMetrics.widthPixels / 2
-                    height = ConstraintLayout.LayoutParams.MATCH_PARENT
-                }
-                rangeViewsContainer.forceLayout()
-
-                gemSurfaceView.layoutParams.apply {
-                    width = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
-                    height = ConstraintLayout.LayoutParams.MATCH_PARENT
-                }
-                
-                ConstraintSet().apply {
-                    clone(rootView)
-                    connect(R.id.range_container, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
-                    connect(R.id.range_container, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
-                    connect(R.id.range_container, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
-                    connect(R.id.range_container, ConstraintSet.END, R.id.gem_surface, ConstraintSet.START)
-
-                    connect(R.id.gem_surface, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
-                    connect(R.id.gem_surface, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
-                    connect(R.id.gem_surface, ConstraintSet.START, R.id.range_container, ConstraintSet.END)
-                    connect(R.id.gem_surface, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
-
-                    constrainPercentHeight(R.id.range_container, 1f)
-
-                    applyTo(rootView)
-                }
-            }
-            
-            else -> return
-        }
-    }
-    
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    private fun prepareViews()
-    {
-        val transportTypesList = mutableListOf(getString(R.string.car), getString(R.string.lorry), getString(R.string.pedestrian), getString(R.string.bicycle))
-        val adapter = ArrayAdapter(this, R.layout.spinner_item, R.id.spinner_text, transportTypesList)
-        transportModeSpinner.adapter = adapter
-        transportModeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener
-        {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long)
-            {
-                onTransportModeSelected(position)
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
-        }
-        transportModeSpinner.setSelection(0)
-        
-        val bikeTypeList = mutableListOf(getString(R.string.road), getString(R.string.cross), getString(R.string.city), getString(R.string.mountain))
-        bikeTypeSpinner.adapter = ArrayAdapter(this, R.layout.spinner_item, R.id.spinner_text, bikeTypeList)
-        bikeTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener
-        {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long)
-            {
-                if (currentSelectedRanges.isNotEmpty())
-                {
-                    currentSelectedRanges.clear()
-                    showScrollableRangesList()
-                    SdkCall.execute { gemSurfaceView.mapView?.hideRoutes() }
-                }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
-        }
-        
-        addButton.setOnClickListener { 
-            if (rangeValueEditText.text.isNotEmpty())
-            {
-                currentSelectedRanges.add(rangeValueEditText.text.toString().toInt())
-                SdkCall.execute { calculateRanges() }
-                rangeValueEditText.setText("")
-                hideKeyboard()
-            }
-            else
-            {
-                showDialog("Range value is empty!")
-            }
-        }
-    }
-    
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    private fun onTransportModeSelected(transportMode: Int)
-    {
-        currentTransportMode = ERouteTransportMode.values()[transportMode]
-        val rangeTypesList: MutableList<String> = when (transportMode)
-        {
-            ERouteTransportMode.Car.value -> mutableListOf(getString(R.string.fastest), getString(R.string.shortest))
-            ERouteTransportMode.Lorry.value -> mutableListOf(getString(R.string.fastest), getString(R.string.shortest))
-            ERouteTransportMode.Pedestrian.value -> mutableListOf(getString(R.string.fastest))
-            ERouteTransportMode.Bicycle.value -> mutableListOf(getString(R.string.fastest), getString(R.string.economic))
-            else -> mutableListOf()
-        }
-        
-        if (transportMode == ERouteTransportMode.Bicycle.value)
-        {
-            bikeTypeText.visibility = View.VISIBLE 
-            bikeTypeSpinner.visibility = View.VISIBLE 
-        }
-        else
-        {
-            bikeTypeText.visibility = View.GONE
-            bikeTypeSpinner.visibility = View.GONE
-        }
-        
-        val adapter = ArrayAdapter(this, R.layout.spinner_item, R.id.spinner_text, rangeTypesList)
-        rangeTypeSpinner.adapter = adapter
-        rangeTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener
-        {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long)
-            {
-                if (transportMode == ERouteTransportMode.Bicycle.value && position == 1)
-                {
-                    onRangeTypeSelected(position + 1)
-                }
-                else
-                {
-                    onRangeTypeSelected(position)
-                }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
-        }
-        rangeTypeSpinner.setSelection(0)
-
-        if (currentSelectedRanges.isNotEmpty())
-        {
-            currentSelectedRanges.clear()
-            showScrollableRangesList()
-            SdkCall.execute { gemSurfaceView.mapView?.hideRoutes() }
-        }
-    }
-    
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    private fun onRangeTypeSelected(rangeType: Int)
-    {
-        clearEditTexts()
-        currentRangeType = ERouteType.values()[rangeType]
-        
-        rangeValueEditText.hint = when (rangeType)
-        {
-            ERouteType.Fastest.value -> getString(R.string.seconds)
-            ERouteType.Shortest.value -> getString(R.string.meters)
-            ERouteType.Economic.value -> getString(R.string.watts_per_hour)
-            else -> ""
-        }
-        
-        if (rangeType == ERouteType.Economic.value)
-        {
-            bikeWeightEditText.visibility = View.VISIBLE
-            bikeWeightTextView.visibility = View.VISIBLE
-            bikerWeightEditText.visibility = View.VISIBLE
-            bikerWeightTextView.visibility = View.VISIBLE
-
-            if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
-            {
-                rangeViewsContainer.layoutParams.height = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
-                ConstraintSet().apply {
-                    clone(rootView)
-                    constrainPercentHeight(R.id.range_container, 0.35f)
-                    applyTo(rootView)
-                }
-            }
-            
-            rangeViewsContainer.post { rangeViewsContainer.fullScroll(View.FOCUS_DOWN) }
-        }
-        else
-        {
-            bikeWeightEditText.visibility = View.GONE
-            bikeWeightTextView.visibility = View.GONE
-            bikerWeightEditText.visibility = View.GONE
-            bikerWeightTextView.visibility = View.GONE
-
-            if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
-            {
-                rangeViewsContainer.layoutParams.height = ConstraintLayout.LayoutParams.WRAP_CONTENT   
-            }
-        }
-        
-        if (currentSelectedRanges.isNotEmpty())
-        {
-            currentSelectedRanges.clear()
-            showScrollableRangesList()
-            SdkCall.execute { gemSurfaceView.mapView?.hideRoutes() }
-        }
-    }
-    
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    private fun clearEditTexts()
-    {
-        rangeValueEditText.setText("")
-        bikeWeightEditText.setText("")
-        bikerWeightEditText.setText("")
-    }
-    
-    // ---------------------------------------------------------------------------------------------------------------------------
-    
     private fun hideKeyboard()
     {
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
+    /**
+     * Creates and displays a set of chip-like views for each [RangeSettingsProfile]
+     * retained in the view model list of range profiles
+     */
     private fun showScrollableRangesList()
     {
-        if (currentSelectedRanges.size <= 0)
-        {
-            currentRangesScrollContainer.visibility = View.GONE
-        }
-        else
-        {
-            currentRangesScrollContainer.visibility = View.VISIBLE
-            currentRangesContainer.removeAllViews()
-            
-            for (i in 0 until currentSelectedRanges.size)
-            {
-                val rangeContainer = layoutInflater.inflate(R.layout.button_text, currentRangesContainer, false) as ConstraintLayout
-                val textView = rangeContainer.findViewById<TextView>(R.id.text_button)
-                val clearButton = rangeContainer.findViewById<ImageView>(R.id.icon)
-                
-                textView.text = currentSelectedRanges[i].toString()
-                
-                clearButton.setOnClickListener { 
-                    currentSelectedRanges.removeAt(i)
-                    showScrollableRangesList()
-                    SdkCall.execute {
-                        calculateRanges()    
-                        gemSurfaceView.mapView?.hideRoutes() 
-                    }
-                }
-                
-                currentRangesContainer.addView(rangeContainer)
-            }
+        viewModel.listOfRangeProfiles.let { currentSelectedRanges ->
+            binding.apply {
+                currentRangesButtonsContainer.removeAllViews()
+                if (currentSelectedRanges.size <= 0) return
 
-            rangeViewsContainer.post { rangeViewsContainer.fullScroll(View.FOCUS_DOWN) }
-            currentRangesScrollContainer.post { currentRangesScrollContainer.fullScroll(View.FOCUS_RIGHT) }
+                for (i in 0 until currentSelectedRanges.size)
+                {
+                    val rangeContainer = layoutInflater.inflate(
+                        R.layout.button_text,
+                        currentRangesButtonsContainer,
+                        false
+                    ) as ConstraintLayout
+                    val textView = rangeContainer.findViewById<TextView>(R.id.text_button)
+                    val clearButton = rangeContainer.findViewById<ImageView>(R.id.icon)
+
+                    currentSelectedRanges[i].let {
+                        textView.text = resources.getString(
+                            R.string.range_item_text,
+                            if (isBicycleTransportType()) it.bikeType.name else "",
+                            it.transportMode.name,
+                            it.rangeValue,
+                            getMeasuringUnit(it.rangeType)
+                        )
+                    }
+
+                    textView.setTextColor(
+                        ContextCompat.getColor(
+                            this@MainActivity,
+                            R.color.text_color
+                        )
+                    )
+
+                    //center on the route on long click
+                    textView.setOnLongClickListener {
+                        SdkCall.execute { centerRoutes(route = viewModel.listOfRoutes[i]) }
+                        true
+                    }
+
+                    //display or hide the route on click
+                    textView.setOnClickListener {
+                        viewModel.listOfRangeProfiles[i].let {
+                            it.isDisplayed = !it.isDisplayed
+                            if (it.isDisplayed)
+                                addRangeOnMap(
+                                    viewModel.listOfRoutes[i],
+                                    viewModel.listOfRangeProfiles[i].color
+                                )
+                            else
+                                removeRangeFromMap(viewModel.listOfRoutes[i])
+                            SdkCall.execute {
+                                setStrokeColor(
+                                    rangeContainer,
+                                    getStrokeColor(index = i)
+                                )
+                            }
+                        }
+                    }
+
+                    //set click event on delete button
+                    clearButton.setOnClickListener {
+                        //remove the associated range settings profile of this route
+                        currentSelectedRanges.removeAt(i)
+                        SdkCall.execute {
+                            //mark the color as unused
+                            viewModel.resetColor(i)
+                            //remove the range from map
+                            removeRangeFromMap(viewModel.listOfRoutes[i])
+                            viewModel.listOfRoutes.removeAt(i)
+                            centerRoutes()
+                        }
+                        showScrollableRangesList()
+                    }
+                    clearButton.setColorFilter(
+                        ContextCompat.getColor(
+                            this@MainActivity,
+                            R.color.text_color
+                        )
+                    )
+
+                    SdkCall.execute { setStrokeColor(rangeContainer, getStrokeColor(index = i)) }
+                    currentRangesButtonsContainer.addView(rangeContainer)
+                }
+
+                scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+                currentRangesScrollContainer.post {
+                    currentRangesScrollContainer.fullScroll(
+                        View.FOCUS_RIGHT
+                    )
+                }
+
+            }
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun calculateRanges()
+    /**
+     * An utility function that enables and disables views that may cause thread interruptions
+     * while routes calculations are being made
+     */
+    private fun enableButtons(enable: Boolean)
     {
-        currentTransportMode?.let { transportMode ->
-            if (transportMode == ERouteTransportMode.Bicycle)
-            {
-                val bikeType = EBikeProfile.values()[bikeTypeSpinner.selectedItemPosition]
-                currentRangeType?.let { rangeType -> 
-                    if (rangeType == ERouteType.Economic)
-                    {
-                        val bikeWeight = bikeWeightEditText.toString().toIntOrNull() ?: 0
-                        val bikerWeight = bikerWeightEditText.toString().toIntOrNull() ?: 0
-                        calculateRange (
-                            transportMode,
-                            rangeType,
-                            currentSelectedRanges,
-                            bikeType,
-                            ElectricBikeProfile (
-                                EEBikeType.Pedelec,
-                                bikeWeight.toFloat(),
-                                bikerWeight.toFloat(),
-                                2f,
-                                4f
-                            )
-                        )
-                    }
-                    else
-                    {
-                        calculateRange (
-                            transportMode,
-                            rangeType,
-                            currentSelectedRanges,
-                            bikeType
-                        )
-                    }
-                }
+        binding.addButton.isEnabled = enable
+        for (item in binding.currentRangesButtonsContainer.children)
+        {
+            val button = item.findViewById<ImageView>(R.id.icon)
+            button.isEnabled = enable
+        }
+        binding.progressBar.isVisible = !enable
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun addRangeOnMap(route: Route, color: Rgba) = SdkCall.execute {
+        binding.gemSurfaceView.mapView?.preferences?.routes?.addWithRenderSettings(route,
+            RouteRenderSettings().also {
+                it.innerSize = 0.3
+                it.outerSize = 0.3
+
+                it.outerColor = color
+                it.innerColor = color
+
+                it.options = ERouteRenderOptions.Main.value
             }
-            else
-            {
-                currentRangeType?.let { rangeType -> calculateRange(transportMode, rangeType, currentSelectedRanges) }
+        )
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun removeRangeFromMap(route: Route) = SdkCall.execute {
+        binding.gemSurfaceView.mapView?.preferences?.routes?.remove(route)
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * @param rgbaColor the [Rgba] of the respective range settings profile item
+     * @return [Color]
+     */
+    private fun getAndroidColor(rgbaColor: Int): Int
+    {
+        val r = 0x000000ff and rgbaColor
+        val g = 0x000000ff and (rgbaColor shr 8)
+        val b = 0x000000ff and (rgbaColor shr 16)
+        val a = 0x000000ff and (rgbaColor shr 24)
+
+        return Color.argb(a, r, g, b)
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun setStrokeColor(view: View, @ColorInt color: Int)
+    {
+        view.background.colorFilter = PorterDuffColorFilter(
+            color,
+            PorterDuff.Mode.SRC_IN
+        )
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun getStrokeColor(index: Int) = viewModel.listOfRangeProfiles[index].let {
+        if (it.isDisplayed) getAndroidColor(it.color.apply {
+            alpha = 255
+        }.value)
+        else ContextCompat.getColor(this, R.color.outline)
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    private fun changeConstraintsForLandscape()
+    {
+        binding.apply {
+            ConstraintSet().apply {
+                //move main content to left side and shorten it's width
+                connect(
+                    R.id.main_content,
+                    ConstraintSet.TOP,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.TOP
+                )
+                connect(
+                    R.id.main_content,
+                    ConstraintSet.BOTTOM,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.BOTTOM
+                )
+                connect(
+                    R.id.main_content,
+                    ConstraintSet.START,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.START
+                )
+                connect(
+                    R.id.main_content,
+                    ConstraintSet.END,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.END
+                )
+                setHorizontalBias(R.id.main_content, 0f)
+                setVerticalBias(R.id.main_content, 0f)
+
+                //move gem surface to right side and shorten it's width
+                connect(
+                    R.id.gem_surface_view,
+                    ConstraintSet.TOP,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.TOP
+                )
+                connect(
+                    R.id.gem_surface_view,
+                    ConstraintSet.BOTTOM,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.BOTTOM
+                )
+                connect(
+                    R.id.gem_surface_view,
+                    ConstraintSet.START,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.START
+                )
+                connect(
+                    R.id.gem_surface_view,
+                    ConstraintSet.END,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.END
+                )
+
+                //move scroll to right side and shorten it's width
+                connect(
+                    R.id.scroll,
+                    ConstraintSet.TOP,
+                    R.id.main_content,
+                    ConstraintSet.BOTTOM
+                )
+                connect(
+                    R.id.scroll,
+                    ConstraintSet.BOTTOM,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.BOTTOM
+                )
+                connect(
+                    R.id.scroll,
+                    ConstraintSet.START,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.START
+                )
+                connect(
+                    R.id.scroll,
+                    ConstraintSet.END,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.END
+                )
+                setHorizontalBias(R.id.scroll, 0f)
+
+                applyTo(rootView)
+            }
+
+            mainContent.updateLayoutParams {
+                width = resources.displayMetrics.widthPixels / 2
+                height = ConstraintSet.WRAP_CONTENT
+            }
+
+            gemSurfaceView.updateLayoutParams {
+                width = ConstraintSet.MATCH_CONSTRAINT
+                height = ConstraintSet.MATCH_CONSTRAINT
+            }
+
+            scroll.updateLayoutParams {
+                width = resources.displayMetrics.widthPixels / 2
+                height = ConstraintSet.MATCH_CONSTRAINT
             }
         }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
-}
 
+    private fun changeConstraintsForPortrait()
+    {
+        binding.apply {
+            ConstraintSet().apply {
+                //move main content to top side and match it's width to it's parent
+                connect(
+                    R.id.main_content,
+                    ConstraintSet.TOP,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.TOP
+                )
+                connect(
+                    R.id.main_content,
+                    ConstraintSet.BOTTOM,
+                    R.id.gem_surface_view,
+                    ConstraintSet.TOP
+                )
+                connect(
+                    R.id.main_content,
+                    ConstraintSet.START,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.START
+                )
+                connect(
+                    R.id.main_content,
+                    ConstraintSet.END,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.END
+                )
+
+                //move gem surface to bottom of main content and match it's layout params to the remaining space
+                connect(
+                    R.id.gem_surface_view,
+                    ConstraintSet.TOP,
+                    R.id.main_content,
+                    ConstraintSet.BOTTOM
+                )
+                connect(
+                    R.id.gem_surface_view,
+                    ConstraintSet.BOTTOM,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.BOTTOM
+                )
+                connect(
+                    R.id.gem_surface_view,
+                    ConstraintSet.START,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.START
+                )
+                connect(
+                    R.id.gem_surface_view,
+                    ConstraintSet.END,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.END
+                )
+
+                //move scroll to bottom of main content and match it's layout params to the remaining space
+                connect(R.id.scroll, ConstraintSet.TOP, R.id.main_content, ConstraintSet.BOTTOM)
+                connect(
+                    R.id.scroll,
+                    ConstraintSet.BOTTOM,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.BOTTOM
+                )
+                connect(
+                    R.id.scroll,
+                    ConstraintSet.START,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.START
+                )
+                connect(R.id.scroll, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
+
+                applyTo(rootView)
+            }
+
+            mainContent.updateLayoutParams {
+                width = ConstraintSet.MATCH_CONSTRAINT
+                height = ConstraintSet.WRAP_CONTENT
+            }
+
+            gemSurfaceView.updateLayoutParams {
+                width = ConstraintSet.MATCH_CONSTRAINT
+                height = ConstraintSet.MATCH_CONSTRAINT
+            }
+
+            scroll.updateLayoutParams {
+                width = ConstraintSet.MATCH_CONSTRAINT
+                height = ConstraintSet.MATCH_CONSTRAINT
+            }
+
+        }
+    }
+
+    /**
+     * Utility function that centers the route on map in a predefined rectangle.
+     * If no route is provided all routes will be centered.
+     * Needs [SdkCall]
+     */
+    private fun centerRoutes(route: Route? = null)
+    {
+        val centeringPadding = resources.getDimensionPixelSize(R.dimen.big_padding)
+        val centeringRectangle = Rect(
+            left = if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
+                binding.gemSurfaceView.measuredWidth - resources.displayMetrics.widthPixels / 2 - centeringPadding
+            else centeringPadding,
+            top = centeringPadding,
+            right = binding.gemSurfaceView.measuredWidth - centeringPadding,
+            bottom = binding.gemSurfaceView.measuredHeight - centeringPadding
+        )
+        route?.let {
+            binding.gemSurfaceView.mapView?.centerOnRoute(
+                route,
+                centeringRectangle,
+                Animation(EAnimation.Linear, 900)
+            )
+        } ?: binding.gemSurfaceView.mapView?.centerOnRoutes(
+            viewModel.listOfRoutes,
+            ERouteDisplayMode.Full,
+            centeringRectangle,
+            Animation(EAnimation.Linear, 900)
+        )
+    }
+
+    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    @VisibleForTesting
+    fun getActivityIdlingResource(): IdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
+    //endregion ---------------------------------------------------------------------------------------------
+}
 // -------------------------------------------------------------------------------------------------------------------------------

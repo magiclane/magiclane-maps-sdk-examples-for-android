@@ -26,7 +26,11 @@ import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.*
@@ -51,6 +55,12 @@ import kotlin.system.exitProcess
 class MainActivity: AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------
+    companion object
+    {
+        private const val REQUEST_PERMISSIONS = 110
+        const val RESOURCE = "GLOBAL"
+    }
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
 
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
@@ -88,6 +98,7 @@ class MainActivity: AppCompatActivity()
                     enableGPSButton()
                     mapView.followPosition()
                 }
+                decrement()
             }
         },
         onNavigationInstructionUpdated = { instr ->
@@ -169,6 +180,8 @@ class MainActivity: AppCompatActivity()
         speedLimit = findViewById(R.id.speed_limit)
         followCursorButton = findViewById(R.id.followCursor)
 
+        increment()
+        
         /// MAGIC LANE
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
@@ -192,6 +205,12 @@ class MainActivity: AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
+        }
+
     }
     
     // ---------------------------------------------------------------------------------------------
@@ -202,15 +221,6 @@ class MainActivity: AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-    
-    // ---------------------------------------------------------------------------------------------
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -340,12 +350,17 @@ class MainActivity: AppCompatActivity()
     }
     
     // ---------------------------------------------------------------------------------------------
-
-    companion object
+    @VisibleForTesting
+    fun getActivityIdlingResource(): IdlingResource
     {
-        private const val REQUEST_PERMISSIONS = 110
+        return mainActivityIdlingResource
     }
-    
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
+    // ---------------------------------------------------------------------------------------------
     // ---------------------------------------------------------------------------------------------
 }
 

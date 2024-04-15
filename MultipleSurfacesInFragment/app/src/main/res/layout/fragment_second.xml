@@ -7,7 +7,7 @@
     tools:context=".SecondFragment">
 
     <ScrollView
-        android:id="@+id/scrollView"
+        android:id="@+id/scroll_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fadeScrollbars="false"
@@ -18,7 +18,7 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
-            android:id="@+id/scrolledLinearLayout"
+            android:id="@+id/scrolled_linear_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -32,13 +32,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/previous"
-        app:layout_constraintBottom_toTopOf="@+id/bottomButtons"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_buttons"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/scrollView" />
+        app:layout_constraintTop_toBottomOf="@id/scroll_view" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/bottomButtons"
+        android:id="@+id/bottom_buttons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/mapButtonMargin"
@@ -49,7 +49,7 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/bottomLeftButton"
+            android:id="@+id/bottom_left_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:tint="@color/white"
@@ -59,7 +59,7 @@
             tools:ignore="ContentDescription" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/bottomRightButton"
+            android:id="@+id/bottom_right_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:tint="@color/white"

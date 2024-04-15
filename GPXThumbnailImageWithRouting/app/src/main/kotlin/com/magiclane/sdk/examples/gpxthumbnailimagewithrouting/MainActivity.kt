@@ -126,14 +126,16 @@ class MainActivity : AppCompatActivity()
                         }
                     }
                 }
+
                 GemError.Cancel ->
                 {
-                    progressBar.visibility = View.GONE
+                    progressBar.isVisible = false
                     // No action.
                 }
+
                 else ->
                 {
-                    progressBar.visibility = View.GONE
+                    progressBar.isVisible = false
                     // There was a problem at computing the routing operation.
                     showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
                 }
@@ -246,7 +248,7 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 }
 

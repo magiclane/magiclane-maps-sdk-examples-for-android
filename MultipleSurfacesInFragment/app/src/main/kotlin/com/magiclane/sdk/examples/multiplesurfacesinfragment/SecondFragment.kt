@@ -60,14 +60,14 @@ class SecondFragment : Fragment()
             findNavController().navigate(R.id.action_SecondFragment_to_FirstFragment)
         }
 
-        val leftBtn = view.findViewById<FloatingActionButton>(R.id.bottomLeftButton)
+        val leftBtn = view.findViewById<FloatingActionButton>(R.id.bottom_left_button)
         leftBtn.visibility = View.VISIBLE
         buttonAsDelete(requireContext(), leftBtn)
         {
             deleteLastSurface()
         }
 
-        val rightBtn = view.findViewById<FloatingActionButton>(R.id.bottomRightButton)
+        val rightBtn = view.findViewById<FloatingActionButton>(R.id.bottom_right_button)
         rightBtn.visibility = View.VISIBLE
         buttonAsAdd(requireContext(), rightBtn)
         {
@@ -83,7 +83,7 @@ class SecondFragment : Fragment()
     {
         super.onStop()
 
-        val linearLayout = view?.findViewById<LinearLayout>(R.id.scrolledLinearLayout) ?: return
+        val linearLayout = view?.findViewById<LinearLayout>(R.id.scrolled_linear_layout) ?: return
 
         while (linearLayout.childCount > 0)
         {
@@ -95,7 +95,7 @@ class SecondFragment : Fragment()
 
     private fun addSurface()
     {
-        val linearLayout = view?.findViewById<LinearLayout>(R.id.scrolledLinearLayout) ?: return
+        val linearLayout = view?.findViewById<LinearLayout>(R.id.scrolled_linear_layout) ?: return
 
         if (linearLayout.childCount >= maxSurfacesCount)
         {
@@ -129,7 +129,7 @@ class SecondFragment : Fragment()
 
     private fun deleteLastSurface()
     {
-        val linearLayout = view?.findViewById<LinearLayout>(R.id.scrolledLinearLayout) ?: return
+        val linearLayout = view?.findViewById<LinearLayout>(R.id.scrolled_linear_layout) ?: return
         if (linearLayout.childCount == 0)
             return
 

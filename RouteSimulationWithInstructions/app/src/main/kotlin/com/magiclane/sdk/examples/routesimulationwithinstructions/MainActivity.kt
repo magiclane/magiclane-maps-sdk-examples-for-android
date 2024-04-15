@@ -24,8 +24,12 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
@@ -52,6 +56,13 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity()
 {
     class TSameImage(var value: Boolean = false)
+
+    companion object
+    {
+        const val RESOURCE = "GLOBAL"
+    }
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
 
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
@@ -83,6 +94,7 @@ class MainActivity : AppCompatActivity()
     private val navigationListener: NavigationListener = NavigationListener.create(
     
         onNavigationStarted = {
+            increment()
             SdkCall.execute {
                 gemSurfaceView.mapView?.let { mapView ->
                     mapView.preferences?.enableCursor = false
@@ -129,9 +141,7 @@ class MainActivity : AppCompatActivity()
             val sameTurnImage = TSameImage()
             val newTurnImage = getNextTurnImage(instr, turnImageSize, turnImageSize, sameTurnImage)
             if (!sameTurnImage.value)
-            {
                 navInstructionIcon.setImageBitmap(newTurnImage)
-            }
     
             navInstruction.text = instrText
             navInstructionDistance.text = instrDistance
@@ -139,6 +149,9 @@ class MainActivity : AppCompatActivity()
             eta.text = etaText
             rtt.text = rttText
             rtd.text = rtdText
+
+            if(!mainActivityIdlingResource.isIdleNow)
+                decrement()
         }
     )
 
@@ -152,9 +165,7 @@ class MainActivity : AppCompatActivity()
             progressBar.visibility = View.GONE
 
             if (errorCode != GemError.NoError)
-            {
                 showDialog(GemError.getMessage(errorCode))
-            }
         },
 
         postOnMain = true
@@ -195,7 +206,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        increment()
         turnImageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
 
         gemSurfaceView = findViewById(R.id.gem_surface)
@@ -233,6 +244,11 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this){
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -243,14 +259,6 @@ class MainActivity : AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -339,6 +347,18 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
+    @VisibleForTesting
+    fun getActivityIdlingResource(): IdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
+    // ---------------------------------------------------------------------------------------------
 }

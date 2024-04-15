@@ -24,6 +24,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.magiclane.sdk.content.ContentStore
 import com.magiclane.sdk.content.EContentType
@@ -64,23 +65,27 @@ class MainActivity : AppCompatActivity()
     We will use just the onNavigationStarted method, but for more available
     methods you should check the documentation.
      */
-    private val navigationListener: NavigationListener = NavigationListener.create(onNavigationStarted = { onNavigationStarted() },
-                                                                                   onNavigationSound = {
-                                                                                                           sound -> SdkCall.execute {
-                                                                                                               SoundPlayingService.play(sound, playingListener, soundPreference)
-                                                                                                           }
-                                                                                                       },
-                                                                                   canPlayNavigationSound = true,
-                                                                                   postOnMain = true)
+    private val navigationListener: NavigationListener = NavigationListener.create(
+        onNavigationStarted = { onNavigationStarted() },
+        onNavigationSound = { sound ->
+            SdkCall.execute {
+                SoundPlayingService.play(sound, playingListener, soundPreference)
+            }
+        },
+        canPlayNavigationSound = true,
+        postOnMain = true
+    )
 
     // Define a listener that will let us know the progress of the routing process.
-    private val routingProgressListener = ProgressListener.create(onStarted = {
-                                                                     progressBar.visibility = View.VISIBLE
-                                                                  },
-                                                                  onCompleted = { _, _ ->
-                                                                     progressBar.visibility = View.GONE
-                                                                  },
-                                                                  postOnMain = true)
+    private val routingProgressListener = ProgressListener.create(
+        onStarted = {
+            progressBar.visibility = View.VISIBLE
+        },
+        onCompleted = { _, _ ->
+            progressBar.visibility = View.GONE
+        },
+        postOnMain = true
+    )
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
@@ -109,77 +114,75 @@ class MainActivity : AppCompatActivity()
 
         progressBar.visibility = View.VISIBLE
 
-        val loadVoice = {
-            progressBar.visibility = View.VISIBLE
-
-            val type = EContentType.HumanVoice
-            val countryCode = "DEU"
-            var voiceHasBeenDownloaded = false
-
-            val onVoiceReady = { voiceFilePath: String ->
-                SdkSettings.setVoiceByPath(voiceFilePath)
-                startSimulation()
-            }
-
-            SdkCall.execute {
-                contentStore = ContentStore()
-
-                // check if already exists locally
-                contentStore?.getLocalContentList(type)?.let { localList ->
-                    for (item in localList)
-                    {
-                        if (item.countryCodes?.contains(countryCode) == true)
-                        {
-                            voiceHasBeenDownloaded = true
-                            onVoiceReady(item.filename!!)
-                            return@execute // already exists
-                        }
-                    }
-                }
-            }
-
-            if (!voiceHasBeenDownloaded)
-            {
-                val downloadVoice = {
-                    SdkCall.execute {
-                        contentStore?.asyncGetStoreContentList(type, onCompleted = { result, _, _ ->
-                            SdkCall.execute {
-                                for (item in result)
-                                {
-                                    if (item.countryCodes?.contains(countryCode) == true)
-                                    {
-                                        item.asyncDownload(onCompleted = { _, _ ->
-                                            SdkCall.execute {
-                                                onVoiceReady(item.filename!!)
-                                            }
-                                        })
-                                        break
-                                    }
-                                }
-                            }
-                        })
-                    }
-                }
-
-                val token = GemSdk.getTokenFromManifest(this)
-
-                if (!token.isNullOrEmpty() && (token != kDefaultToken))
-                {
-                    downloadVoice()
-                }
-                else // if token is not present try to avoid content server requests limitation by delaying the voices catalog request
-                {
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        downloadVoice()
-                    }, 3000)
-                }
-            }
-        }
-
         SdkSettings.onMapDataReady = { mapReady ->
             if (mapReady)
             {
-                loadVoice()
+                progressBar.visibility = View.VISIBLE
+
+                val type = EContentType.HumanVoice
+                val countryCode = "DEU"
+                var voiceHasBeenDownloaded = false
+
+                val onVoiceReady = { voiceFilePath: String ->
+                    SdkSettings.setVoiceByPath(voiceFilePath)
+                    startSimulation()
+                }
+
+                SdkCall.execute {
+                    contentStore = ContentStore()
+
+                    // check if already exists locally
+                    contentStore?.getLocalContentList(type)?.let { localList ->
+                        for (item in localList)
+                        {
+                            if (item.countryCodes?.contains(countryCode) == true)
+                            {
+                                voiceHasBeenDownloaded = true
+                                onVoiceReady(item.filename!!)
+                                return@execute // already exists
+                            }
+                        }
+                    }
+                }
+
+                if (!voiceHasBeenDownloaded)
+                {
+                    val downloadVoice = {
+                        SdkCall.execute {
+                            contentStore?.asyncGetStoreContentList(
+                                type,
+                                onCompleted = { result, _, _ ->
+                                    SdkCall.execute {
+                                        for (item in result)
+                                        {
+                                            if (item.countryCodes?.contains(countryCode) == true)
+                                            {
+                                                item.asyncDownload(onCompleted = { _, _ ->
+                                                    SdkCall.execute {
+                                                        onVoiceReady(item.filename!!)
+                                                    }
+                                                })
+                                                break
+                                            }
+                                        }
+                                    }
+                                })
+                        }
+                    }
+
+                    val token = GemSdk.getTokenFromManifest(this)
+
+                    if (!token.isNullOrEmpty() && (token != kDefaultToken))
+                    {
+                        downloadVoice()
+                    }
+                    else // if token is not present try to avoid content server requests limitation by delaying the voices catalog request
+                    {
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            downloadVoice()
+                        }, 3000)
+                    }
+                }
             }
         }
 
@@ -197,6 +200,15 @@ class MainActivity : AppCompatActivity()
             progressBar.visibility = View.GONE
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true)
+        {
+            override fun handleOnBackPressed()
+            {
+                finish()
+                exitProcess(0)
+            }
+        })
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -207,15 +219,6 @@ class MainActivity : AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -243,7 +246,8 @@ class MainActivity : AppCompatActivity()
 
     private fun startSimulation() = SdkCall.execute {
         val waypoints = arrayListOf(
-            Landmark("Start", 51.50338075949678, -0.11946124784612752), Landmark("Destination", 51.500996060519896, -0.12461566914005363)
+            Landmark("Start", 51.50338075949678, -0.11946124784612752),
+            Landmark("Destination", 51.500996060519896, -0.12461566914005363)
         )
 
         navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
@@ -268,7 +272,7 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 }
 

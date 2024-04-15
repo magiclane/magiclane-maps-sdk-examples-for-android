@@ -24,6 +24,7 @@ import androidx.car.app.navigation.NavigationManagerCallback
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 
+@Suppress("MemberVisibilityCanBePrivate", "unused")
 abstract class SessionBase : Session(), DefaultLifecycleObserver {
     val context: CarContext
         get() = carContext

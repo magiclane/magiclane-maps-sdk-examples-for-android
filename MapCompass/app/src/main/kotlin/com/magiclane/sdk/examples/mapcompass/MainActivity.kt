@@ -23,9 +23,13 @@ import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.GemSdk
@@ -76,6 +80,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        increment()
 
         surfaceView = findViewById(R.id.gem_surface)
         compass = findViewById(R.id.compass)
@@ -114,6 +119,9 @@ class MainActivity : AppCompatActivity()
         // compass sync with mapView's rotation angle
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
+
+            if(!mainActivityIdlingResource.isIdleNow)
+                decrement()
             
             compass.visibility = View.VISIBLE
             btnEnableLiveHeading.visibility = View.VISIBLE
@@ -151,6 +159,11 @@ class MainActivity : AppCompatActivity()
             btnEnableLiveHeading.visibility = View.GONE
             statusText.visibility = View.GONE
         }
+
+        onBackPressedDispatcher.addCallback(this){
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -187,14 +200,6 @@ class MainActivity : AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -251,6 +256,29 @@ class MainActivity : AppCompatActivity()
         }
     }
 
+    //region members for testing
+    companion object
+    {
+        const val RESOURCE = "GLOBAL"
+    }
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
+    //endregion
+    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    @VisibleForTesting
+    fun getActivityIdlingResource(): IdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
+    //endregion ---------------------------------------------------------------------------------------------
     // ---------------------------------------------------------------------------------------------
 }
 

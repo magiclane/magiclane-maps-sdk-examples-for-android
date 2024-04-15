@@ -25,6 +25,7 @@ import com.magiclane.sdk.util.GemUtil
 
 /// gather nav data.
 
+@Suppress("MemberVisibilityCanBePrivate")
 object CarNavigationDataFiller {
     fun fillNavData(navigationData: CarNavigationData) {
         navigationData.remainingDistanceInMeters =

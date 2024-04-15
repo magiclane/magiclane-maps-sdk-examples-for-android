@@ -18,9 +18,12 @@ package com.magiclane.sdk.examples.search
 // -------------------------------------------------------------------------------------------------
 
 import android.content.Context
+import android.Manifest
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import androidx.test.rule.GrantPermissionRule
+import com.magiclane.sdk.core.ErrorCode
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.SdkSettings
@@ -28,9 +31,15 @@ import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.LandmarkList
 import com.magiclane.sdk.places.SearchService
 import com.magiclane.sdk.util.SdkCall
+import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -53,39 +62,33 @@ class SearchServiceInstrumentedTests
 
         @get:ClassRule
         @JvmStatic
-        val sdkInitRule = SKDInitRule()
+        val sdkInitRule = SDKInitRule()
 
         @BeforeClass
         @JvmStatic
         fun checkSdkInit()
         {
-            //
-            try
-            {
-                assert(initResult)
-            }
-            catch (e: AssertionError)
-            {
-                throw AssertionError("GEM SDK not initialized", e)
-            }
+            assert(initResult) { "GEM SDK not initialized" }
         }
     }
 
     // -------------------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------------------
-    class SKDInitRule : TestRule
+    class SDKInitRule : TestRule
     {
         override fun apply(base: Statement, description: Description) = SDKStatement(base)
 
         inner class SDKStatement(private val base: Statement) : Statement()
         {
-            private val lock = Object()
+            private val channel = Channel<Boolean>()
 
             init
             {
                 SdkSettings.onMapDataReady = { isReady ->
                     if (isReady)
-                        synchronized(lock) { lock.notify() }
+                        runBlocking {
+                            channel.send(true)
+                        }
                 }
             }
 
@@ -98,7 +101,11 @@ class SearchServiceInstrumentedTests
                     runBlocking {
                         initResult = GemSdk.initSdkWithDefaults(appContext)
 
-                        synchronized(lock) { lock.wait(TIMEOUT) }
+                        // must wait for map data ready
+                        val sdkChannelJob = launch { channel.receive() }
+                        withTimeout(TIMEOUT) {
+                            while (sdkChannelJob.isActive) delay(500)
+                        }
                     }
                 }
                 else return
@@ -106,14 +113,12 @@ class SearchServiceInstrumentedTests
                 if (!SdkSettings.isMapDataReady)
                     throw Error(GemError.getMessage(GemError.OperationTimeout))
 
-                // must wait for map data ready
                 try
                 {
                     base.evaluate() // This executes tests
                 }
                 finally
                 {
-                    //after tests are executed
                     GemSdk.release()
                 }
             }
@@ -122,32 +127,36 @@ class SearchServiceInstrumentedTests
 
     // -------------------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------------------
+
     @Test
-    fun searchByFilterShouldReturnListOfResults()
-    {
+    fun searchByFilterShouldReturnListOfResults(): Unit = runBlocking {
         var onCompletedPassed = false
         var res = LandmarkList()
         var error = GemError.NoError
-        val objSync = Object()
+        val channel = Channel<Unit>(Channel.RENDEZVOUS)
         val searchService = SearchService(
             onCompleted = { results, errorCode, _ ->
                 onCompletedPassed = true
                 res = results
                 error = errorCode
-                synchronized(objSync) { objSync.notify() }
+                launch { channel.send(Unit) }
             }
         )
-        runBlocking {
+
+        val code = async {
             SdkCall.execute {
                 //London coordinates
                 val centerLondon = Coordinates(51.5072, 0.1276)
-                val code = searchService.searchByFilter(
+                searchService.searchByFilter(
                     "a",
                     centerLondon
                 ) //result of method one is separate test, see searchByFilterShouldReturnSuccess()
-                assert(code == GemError.NoError) { GemError.getMessage(error) }
             }
-            synchronized(objSync) { objSync.wait() }
+        }.await()
+
+        withTimeout(12000) {
+            channel.receive()
+            assert(code == GemError.NoError) { GemError.getMessage(error) }
             assert(onCompletedPassed)
             assert(error == GemError.NoError)
             { "An error occurred on GEM SDK thread: ${GemError.getMessage(error)}" }
@@ -158,41 +167,45 @@ class SearchServiceInstrumentedTests
 
     // -------------------------------------------------------------------------------------------------
     @Test
-    fun searchByFilterShouldReturnSuccess()
-    {
-        val objSync = Object()
+    fun searchByFilterShouldReturnSuccess(): Unit = runBlocking {
+        val channel = Channel<Unit>(Channel.RENDEZVOUS)
         val searchService = SearchService(
             onCompleted = { _, _, _ ->
-                synchronized(objSync) { objSync.notify() }
+                launch { channel.send(Unit) }
             }
         )
-        runBlocking {
+
+        val code = async {
             SdkCall.execute {
                 //London coordinates
                 val centerLondon = Coordinates(51.5072, 0.1276)
-                val code = searchService.searchByFilter("London", centerLondon)
-                assert(code == GemError.NoError) {
-                    " response to searchByFilter was ${GemError.getMessage(code)}"
-                }
+                searchService.searchByFilter("London", centerLondon)
+            } ?: GemError.General
+        }.await()
+
+        withTimeout(12000) {
+            channel.receive()
+            assert(code == GemError.NoError) {
+                " response to searchByFilter was ${GemError.getMessage(code)}"
             }
-            synchronized(objSync) { objSync.wait() }
         }
     }
 
     // -------------------------------------------------------------------------------------------------
     @Test
-    fun searchByFilterShouldNotSearchEmptyString()
-    {
+    fun searchByFilterShouldNotSearchEmptyString(): Unit = runBlocking {
         val searchService = SearchService()
-        SdkCall.execute {
-            //London coordinates
-            val centerLondon = Coordinates(51.5072, 0.1276)
-            val code = searchService.searchByFilter(
-                "",
-                centerLondon
-            )
-            assert(code == GemError.InvalidInput)
-        }
+        val code = async {
+            SdkCall.execute {
+                //London coordinates
+                val centerLondon = Coordinates(51.5072, 0.1276)
+                searchService.searchByFilter(
+                    "",
+                    centerLondon
+                )
+            } ?: GemError.General
+        }.await()
+        assert(code == GemError.InvalidInput)
     }
 // -------------------------------------------------------------------------------------------------
 }

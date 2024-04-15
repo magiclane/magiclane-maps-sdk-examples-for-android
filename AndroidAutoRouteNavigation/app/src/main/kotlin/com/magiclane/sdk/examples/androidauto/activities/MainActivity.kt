@@ -13,6 +13,7 @@ package com.magiclane.sdk.examples.androidauto.activities
 import android.content.Intent
 import android.os.Bundle
 import android.widget.ProgressBar
+import androidx.activity.OnBackPressedCallback
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.d3scene.MapView
 import com.magiclane.sdk.examples.androidauto.R
@@ -40,6 +41,12 @@ class MainActivity : BaseActivity() {
         gemSurfaceView?.onDefaultMapViewCreated = {
             controller.onDefaultMapViewCreated()
         }
+
+        onBackPressedDispatcher.addCallback(this /* lifecycle owner */, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                controller.onBackPressed()
+            }
+        })
     }
 
     private fun connectControls() {
@@ -52,12 +59,6 @@ class MainActivity : BaseActivity() {
     override fun onDestroy() {
         super.onDestroy()
         controller.onDestroy()
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    override fun onBackPressed() {
-        controller.onBackPressed()
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

@@ -26,30 +26,30 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.EGenericCategoriesIDs
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
-import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.places.SearchService
-import com.magiclane.sdk.routesandnavigation.NavigationListener
 import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.routesandnavigation.Route
+import com.magiclane.sdk.routesandnavigation.RoutingService
 import com.magiclane.sdk.sensordatasource.PositionService
-import com.magiclane.sdk.util.SdkCall
-import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.GemUtilImages
+import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.SdkImages
+import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
@@ -61,8 +61,8 @@ class MainActivity : AppCompatActivity()
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var searchButton: FloatingActionButton
-    private lateinit var followCursorButton: FloatingActionButton
-
+    private var routesList = ArrayList<Route>()
+    private var mainRoute = Route()
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
 
@@ -97,45 +97,44 @@ class MainActivity : AppCompatActivity()
         }
     )
 
-    /* 
-    Define a navigation listener that will receive notifications from the
-    navigation service.
-    We will use just the onNavigationStarted method, but for more available
-    methods you should check the documentation.
-     */
-    private val navigationListener: NavigationListener = NavigationListener.create(
-        onNavigationStarted = {
-            SdkCall.execute {
-                gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.enableCursor = false
-                    getNavRoute()?.let { route ->
-                        mapView.presentRoute(route)
 
-                        // Make the search button visible and add a click listener to do the search.
-                        Util.postOnMain {
-                            searchButton.visibility = View.VISIBLE
-                            searchButton.setOnClickListener { searchAlongRoute(route) }
-                        }
-                    }
-
-                    enableGPSButton()
-                    mapView.followPosition()
-                }
-            }
-        }
-    )
-
-    // Define a listener that will let us know the progress of the routing process.
-    private val routingProgressListener = ProgressListener.create(
+    private val routingService = RoutingService(
         onStarted = {
             progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { _, _ ->
+        onCompleted = { routes, errorCode, _ ->
             progressBar.visibility = View.GONE
-        },
 
-        postOnMain = true
+            when (errorCode)
+            {
+                GemError.NoError ->
+                {
+                    if(routes.isNotEmpty())
+                    {
+                        routesList = routes
+                        mainRoute = routes[0]
+                        Util.postOnMain {
+                            searchButton.visibility = View.VISIBLE
+                        }
+                        SdkCall.execute {
+                            gemSurfaceView.mapView?.presentRoutes(routes, displayBubble = true)
+                        }
+                    }
+                }
+
+                GemError.Cancel ->
+                {
+                    // The routing action was cancelled.
+                }
+
+                else ->
+                {
+                    // There was a problem at computing the routing operation.
+                    showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
+                }
+            }
+        }
     )
 
     // ---------------------------------------------------------------------------------------------
@@ -148,14 +147,36 @@ class MainActivity : AppCompatActivity()
         progressBar = findViewById(R.id.progressBar)
         gemSurfaceView = findViewById(R.id.gem_surface)
         searchButton = findViewById(R.id.search_button)
-        followCursorButton = findViewById(R.id.followCursor)
 
         /// MAGIC LANE
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
             // Defines an action that should be done when the world map is ready (Updated/ loaded).
-            startSimulation()
+            calculateRoute()
+
+            // onTouch event callback
+            gemSurfaceView.mapView?.onTouch = { xy ->
+                // xy are the coordinates of the touch event
+                SdkCall.execute {
+                    // tell the map view where the touch event happened
+                    gemSurfaceView.mapView?.cursorScreenPosition = xy
+
+                    // get the visible routes at the touch event point
+                    val routes = gemSurfaceView.mapView?.cursorSelectionRoutes
+                    // check if there is any route
+                    if (!routes.isNullOrEmpty())
+                    {
+                        // set the touched route as the main route and center on it
+                        mainRoute = routes[0]
+                        gemSurfaceView.mapView?.apply {
+                            preferences?.routes?.mainRoute = mainRoute
+                            centerOnRoutes(routesList)
+                        }
+                    }
+                }
+            }
+
         }
 
         SdkSettings.onApiTokenRejected = {
@@ -171,6 +192,18 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        searchButton.setOnClickListener {
+            searchAlongRoute(mainRoute)
+        }
+
+        onBackPressedDispatcher.addCallback(this,object : OnBackPressedCallback(true){
+            override fun handleOnBackPressed()
+            {
+                finish()
+                exitProcess(0)
+            }
+        })
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -178,51 +211,17 @@ class MainActivity : AppCompatActivity()
     override fun onDestroy()
     {
         super.onDestroy()
-
-        // Deinitialize the SDK.
         GemSdk.release()
     }
 
     // ---------------------------------------------------------------------------------------------
 
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
-    }
-
-    private fun getNavRoute(): Route? = navigationService.getNavigationRoute(navigationListener)
-
-    // ---------------------------------------------------------------------------------------------
-
-    private fun enableGPSButton()
-    {
-        // Set actions for entering/ exiting following position mode.
-        gemSurfaceView.mapView?.apply {
-            onExitFollowingPosition = {
-                followCursorButton.visibility = View.VISIBLE
-            }
-
-            onEnterFollowingPosition = {
-                followCursorButton.visibility = View.GONE
-            }
-
-            // Set on click action for the GPS button.
-            followCursorButton.setOnClickListener {
-                SdkCall.execute { followPosition() }
-            }
-        }
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    private fun startSimulation() = SdkCall.execute {
+    private fun calculateRoute() = SdkCall.execute {
         val waypoints = arrayListOf(
-            Landmark("London", 51.5073204, -0.1276475),
+            Landmark("Folkestone", 51.0814, 1.1695),
             Landmark("Paris", 48.8566932, 2.3514616)
         )
-
-        navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
+        routingService.calculateRoute(waypoints)
     }
 
     // ---------------------------------------------------------------------------------------------

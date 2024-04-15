@@ -3,4 +3,10 @@
     <string name="error">Error</string>
     <string name="ok">OK</string>
     <string name="save">Save</string>
+    <string name="weight">Weight</string>
+    <string name="height">Height</string>
+    <string name="length">Length</string>
+    <string name="width">Width</string>
+    <string name="axle_weight">Axle Weight</string>
+    <string name="max_speed">Max Speed</string>
 </resources>

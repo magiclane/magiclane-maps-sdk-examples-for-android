@@ -171,7 +171,6 @@ class MainActivity : AppCompatActivity()
         onBackPressedDispatcher.addCallback(this /* lifecycle owner */, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 finish()
-                exitProcess(0)
             }
         })
     }

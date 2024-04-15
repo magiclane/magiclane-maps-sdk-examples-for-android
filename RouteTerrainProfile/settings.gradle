@@ -14,8 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-include ':app', ':UILibCharts', ':UILibSortableTable'
+include ':app', ':UILibCharts'
 rootProject.name = "RouteTerrainProfile"
 
 project(':UILibCharts').projectDir = new File(rootDir, 'app/src/thirdParty/MPChartLib')
-project(':UILibSortableTable').projectDir = new File(rootDir, 'app/src/thirdParty/SortableTableView')

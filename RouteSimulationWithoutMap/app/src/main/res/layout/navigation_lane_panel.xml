@@ -6,7 +6,7 @@
 	android:background="@drawable/rounded_background_black">
 	
 	<ImageView
-		android:id="@+id/laneInformationImage"
+		android:id="@+id/lane_information_image"
 		android:layout_width="wrap_content"
 		android:layout_height="@dimen/nav_lane_panel_height"
 		app:layout_constraintTop_toTopOf="parent"

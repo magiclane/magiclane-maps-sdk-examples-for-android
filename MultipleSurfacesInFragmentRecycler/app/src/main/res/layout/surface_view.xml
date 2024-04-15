@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.magiclane.sdk.core.GemSurfaceView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/surface"
+    android:layout_width="match_parent"
+    android:layout_height="200dp"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/date" />

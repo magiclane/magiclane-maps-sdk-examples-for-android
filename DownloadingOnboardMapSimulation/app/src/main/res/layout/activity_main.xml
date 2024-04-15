@@ -7,7 +7,7 @@
     tools:context="com.magiclane.sdk.examples.downloadingonboardmapsimulation.MainActivity">
 
     <com.magiclane.sdk.core.GemSurfaceView
-        android:id="@+id/gem_surface"
+        android:id="@+id/gem_surface_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
@@ -36,19 +36,19 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
-            android:id="@+id/nav_icon"
+            android:id="@+id/nav_instruction_icon"
             android:layout_width="@dimen/progress_bar_size"
             android:layout_height="@dimen/progress_bar_size"
             android:layout_marginStart="@dimen/top_panel_margin"
             android:layout_marginTop="@dimen/big_padding"
             android:layout_marginEnd="@dimen/top_panel_margin"
-            app:layout_constraintBottom_toTopOf="@id/instr_distance"
+            app:layout_constraintBottom_toTopOf="@id/nav_instruction_distance"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:ignore="ContentDescription" />
 
         <TextView
-            android:id="@+id/instr_distance"
+            android:id="@+id/nav_instruction_distance"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/big_padding"
@@ -56,9 +56,9 @@
             android:textSize="@dimen/medium_text_size"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="@id/nav_icon"
-            app:layout_constraintStart_toStartOf="@id/nav_icon"
-            app:layout_constraintTop_toBottomOf="@id/nav_icon" />
+            app:layout_constraintEnd_toEndOf="@id/nav_instruction_icon"
+            app:layout_constraintStart_toStartOf="@id/nav_instruction_icon"
+            app:layout_constraintTop_toBottomOf="@id/nav_instruction_icon" />
 
         <TextView
             android:id="@+id/nav_instruction"
@@ -72,7 +72,7 @@
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/nav_icon"
+            app:layout_constraintStart_toEndOf="@id/nav_instruction_icon"
             app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
@@ -132,7 +132,7 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/followCursor"
+        android:id="@+id/follow_cursor_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/big_padding"
@@ -143,7 +143,7 @@
         app:layout_constraintBottom_toTopOf="@id/bottom_panel"
         app:layout_constraintEnd_toEndOf="parent"
         tools:ignore="ContentDescription" />
-    
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/map_container"
         android:layout_width="match_parent"
@@ -232,7 +232,7 @@
             app:layout_constraintBottom_toBottomOf="@id/download_progress_bar"
             android:visibility="gone"
             tools:ignore="ContentDescription" />
-        
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <TextView

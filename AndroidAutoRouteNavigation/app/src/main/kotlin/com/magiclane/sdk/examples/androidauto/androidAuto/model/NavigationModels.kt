@@ -39,6 +39,7 @@ data class UIRouteModel(
     var descriptionColor: CarColor? = null
 )
 
+@Suppress("MemberVisibilityCanBePrivate")
 class CarNavigationData {
     var remainingDistanceInMeters: Long = 0L
     var remainingTimeInSeconds: Long = 0L
@@ -151,6 +152,7 @@ class CarNavigationData {
     }
 }
 
+@Suppress("MemberVisibilityCanBePrivate")
 data class UIStepData(
     var turnInstruction: String? = null,
     var roadName: String? = null,
@@ -191,7 +193,7 @@ data class UIStepData(
             val distance = getDistance() ?: return null
 
             val rawOffset = TimeZone.getDefault().rawOffset
-            val noOffsetTimeMillis = remainingTimeInSeconds ?: 0L - rawOffset
+            val noOffsetTimeMillis = remainingTimeInSeconds ?: (0L - rawOffset)
 
             val arrivalTime = DateTimeWithZone.create(noOffsetTimeMillis, TimeZone.getDefault())
             return TravelEstimate.Builder(distance, arrivalTime).build()
@@ -220,6 +222,7 @@ data class UIStepData(
     }
 }
 
+@Suppress("MemberVisibilityCanBePrivate")
 data class UIManeuverData(
     var turnEvent: ETurnEvent? = null,
     var turnImage: Bitmap? = null,

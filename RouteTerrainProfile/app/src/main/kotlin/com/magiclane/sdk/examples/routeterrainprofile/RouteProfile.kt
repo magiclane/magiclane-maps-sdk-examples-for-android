@@ -12,20 +12,24 @@
 
 // -------------------------------------------------------------------------------------------------
 
+@file:Suppress("SameParameterValue")
+
 package com.magiclane.sdk.examples.routeterrainprofile
 
 // -------------------------------------------------------------------------------------------------
 
+import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.ColorStateList
 import android.content.res.Resources
 import android.graphics.Bitmap
-import android.graphics.BlendMode
-import android.graphics.BlendModeColorFilter
 import android.graphics.Color
 import android.graphics.PointF
+import android.graphics.Typeface
+import android.text.TextUtils
+import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -33,6 +37,25 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.widget.NestedScrollView
+import com.github.mikephil.charting.charts.CombinedChart
+import com.github.mikephil.charting.components.Legend
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.components.YAxis
+import com.github.mikephil.charting.data.BubbleData
+import com.github.mikephil.charting.data.CombinedData
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.formatter.DefaultFillFormatter
+import com.github.mikephil.charting.formatter.IAxisValueFormatter
+import com.github.mikephil.charting.formatter.IValueFormatter
+import com.github.mikephil.charting.highlight.Highlight
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet
+import com.github.mikephil.charting.listener.ChartTouchListener
+import com.github.mikephil.charting.listener.OnChartGestureListener
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener
+import com.github.mikephil.charting.utils.ViewPortHandler
 import com.magiclane.sdk.core.ImageDatabase
 import com.magiclane.sdk.core.Path
 import com.magiclane.sdk.core.Rect
@@ -52,25 +75,7 @@ import com.magiclane.sdk.util.GemUtilImages
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.SdkImages
 import com.magiclane.sdk.util.Util
-import com.github.mikephil.charting.charts.CombinedChart
-import com.github.mikephil.charting.components.Legend
-import com.github.mikephil.charting.components.XAxis
-import com.github.mikephil.charting.components.YAxis
-import com.github.mikephil.charting.data.BubbleData
-import com.github.mikephil.charting.data.CombinedData
-import com.github.mikephil.charting.data.Entry
-import com.github.mikephil.charting.data.LineData
-import com.github.mikephil.charting.data.LineDataSet
-import com.github.mikephil.charting.formatter.DefaultFillFormatter
-import com.github.mikephil.charting.formatter.IAxisValueFormatter
-import com.github.mikephil.charting.formatter.IValueFormatter
-import com.github.mikephil.charting.highlight.Highlight
-import com.github.mikephil.charting.interfaces.datasets.ILineDataSet
-import com.github.mikephil.charting.listener.ChartTouchListener
-import com.github.mikephil.charting.listener.OnChartGestureListener
-import com.github.mikephil.charting.listener.OnChartValueSelectedListener
-import com.github.mikephil.charting.utils.ViewPortHandler
-import de.codecrafters.tableview.toolkit.SimpleTableHeaderAdapter
+import de.codecrafters.tableview.TableHeaderAdapter
 import java.text.DecimalFormat
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -79,6 +84,7 @@ import kotlin.math.round
 
 // -------------------------------------------------------------------------------------------------
 
+@SuppressLint("ClickableViewAccessibility")
 class RouteProfile(
     private val parentActivity: MainActivity,
     private val route: Route,
@@ -143,6 +149,7 @@ class RouteProfile(
     
     private lateinit var routeTerrainProfile: RouteTerrainProfile
     
+    private val scrollView: NestedScrollView
     private val elevationChart: CombinedChart
     private val buttonsContainer: ConstraintLayout
     private val climbDetailsTitle: TextView
@@ -216,6 +223,7 @@ class RouteProfile(
                 highlightPathsColor = Rgba(239, 38, 81, 255)
             }
             
+            scrollView = findViewById(R.id.route_profile_scroll_view)
             elevationChart = findViewById(R.id.elevation_chart)
             buttonsContainer = findViewById(R.id.buttons_container)
             climbDetailsTitle = findViewById(R.id.climb_details_title)
@@ -454,6 +462,26 @@ class RouteProfile(
             }
             highlightedSurface.visibility = View.VISIBLE
             surfacesChart.visibility = View.VISIBLE
+            surfacesChart.setOnTouchListener { view, event ->
+                when (event.action)
+                {
+                    MotionEvent.ACTION_DOWN ->
+                    {
+                        scrollView.requestDisallowInterceptTouchEvent(true)
+                    }
+
+                    MotionEvent.ACTION_CANCEL,
+                    MotionEvent.ACTION_UP ->
+                    {
+                        scrollView.requestDisallowInterceptTouchEvent(false)
+                    }
+
+                    else -> return@setOnTouchListener false
+                }
+
+                view.performClick()
+                return@setOnTouchListener false
+            }
             loadSurfacesData()
             updateHighlightedSurfaceLabel(0.0)
             
@@ -488,6 +516,26 @@ class RouteProfile(
             }
             highlightedRoad.visibility = View.VISIBLE
             roadsChart.visibility = View.VISIBLE
+            roadsChart.setOnTouchListener { view, event ->
+                when (event.action)
+                {
+                    MotionEvent.ACTION_DOWN ->
+                    {
+                        scrollView.requestDisallowInterceptTouchEvent(true)
+                    }
+
+                    MotionEvent.ACTION_CANCEL,
+                    MotionEvent.ACTION_UP ->
+                    {
+                        scrollView.requestDisallowInterceptTouchEvent(false)
+                    }
+
+                    else -> return@setOnTouchListener false
+                }
+
+                view.performClick()
+                return@setOnTouchListener false
+            }
             loadRoadsData()
             updateHighlightedRoadLabel(0.0)
             
@@ -522,6 +570,26 @@ class RouteProfile(
             }
             highlightedSteepness.visibility = View.VISIBLE
             steepnessChart.visibility = View.VISIBLE
+            steepnessChart.setOnTouchListener { view, event ->
+                when (event.action)
+                {
+                    MotionEvent.ACTION_DOWN ->
+                    {
+                        scrollView.requestDisallowInterceptTouchEvent(true)
+                    }
+
+                    MotionEvent.ACTION_CANCEL,
+                    MotionEvent.ACTION_UP ->
+                    {
+                        scrollView.requestDisallowInterceptTouchEvent(false)
+                    }
+
+                    else -> return@setOnTouchListener false
+                }
+
+                view.performClick()
+                return@setOnTouchListener false
+            }
             loadSteepnessData()
             updateHighlightedSteepnessLabel(0.0)
             
@@ -840,9 +908,11 @@ class RouteProfile(
             if (data != null && data.dataSetCount > 0)
             {
                 initialLineDataSet = data.getDataSetByIndex(0) as LineDataSet
-                initialLineDataSet.entries = initialLineValues
+                initialLineDataSet.clear()
+                initialLineValues.forEach { initialLineDataSet.addEntry(it) }
+                //initialLineDataSet.entries = initialLineValues
                 
-                data.lineData?.let { 
+                data.lineData?.let {
                     val count = data.dataSetCount
                     for (i in count - 1 downTo 1)
                     {
@@ -1131,7 +1201,31 @@ class RouteProfile(
                 tableView
             )
             
-            val climbHeaderTableAdapter = SimpleTableHeaderAdapter(
+            val climbHeaderTableAdapter = object : TableHeaderAdapter(parentActivity)
+            {
+                override fun getHeaderView(columnIndex: Int, parentView: ViewGroup?): View {
+                    val textView = TextView(context)
+                    val headers = arrayOf(ratingText, "$startEndPointsText \n $startEndElevationText", lengthText, avgGradeText)
+
+                    textView.apply {
+                        if (columnIndex < headers.size) {
+                            text = headers[columnIndex]
+                            gravity = Gravity.CENTER
+                        }
+
+                        setPadding(20, 30, 20, 30)
+                        setTypeface(textView.typeface, Typeface.BOLD)
+                        textSize = 16f
+                        setTextColor(Color.BLACK)
+                        maxLines = 2
+                        ellipsize = TextUtils.TruncateAt.END
+                    }
+
+                    return textView
+                }
+            }
+                
+            /*SimpleTableHeaderAdapter(
                 tableView.context,
                 ratingText,
                 "$startEndPointsText \n $startEndElevationText",
@@ -1139,7 +1233,9 @@ class RouteProfile(
                 avgGradeText
             ).also { 
                 it.setTextColor(Color.BLACK)
-            }
+                it.setGravity(Gravity.CENTER)
+                it.setTextSize(15)
+            }*/
             
             tableView.apply { 
                 dataAdapter = climbDataAdapter
@@ -1474,10 +1570,31 @@ class RouteProfile(
     
     private fun setAttributesToElevationChart()
     {
-        elevationChart.apply { 
-            parent.parent.requestDisallowInterceptTouchEvent(true)
+        elevationChart.apply {
+            setOnTouchListener { view, event -> 
+                when (event.action)
+                {
+                    MotionEvent.ACTION_DOWN ->
+                    {
+                        scrollView.requestDisallowInterceptTouchEvent(true)           
+                    }
+                    
+                    MotionEvent.ACTION_CANCEL,
+                        MotionEvent.ACTION_UP ->
+                    {
+                        scrollView.requestDisallowInterceptTouchEvent(false)
+                    }
+                    
+                    else -> return@setOnTouchListener false
+                }
+                
+                view.performClick()
+                return@setOnTouchListener false
+            }
+            setScaleEnabled(false)
             isScaleXEnabled = true
             isScaleYEnabled = false
+            isHighlightPerDragEnabled = true
             isDragEnabled = false
             isDragXEnabled = true
             isDragYEnabled = false
@@ -2235,7 +2352,7 @@ class RouteProfile(
     }
     
     // ---------------------------------------------------------------------------------------------
-    
+
     private fun getElevationProfileButtonImage(index: Int, width: Int, height: Int) : Bitmap? = when (index)
     {
         TElevationProfileButtonType.EElevationAtDeparture.ordinal -> GemUtilImages.asBitmap(
@@ -2264,7 +2381,7 @@ class RouteProfile(
     } 
     
     // ---------------------------------------------------------------------------------------------
-    
+
     private fun getElevationProfileButtonText(index: Int) : String = when (index)
     {
         TElevationProfileButtonType.EElevationAtDeparture.ordinal -> getElevationString(routeTerrainProfile.getElevation(0).toInt())
@@ -2626,8 +2743,10 @@ class RouteProfile(
             minOffset = 0f
             isKeepPositionOnRotation = true
             dragDecelerationFrictionCoef = 0.5f
+            isDragDecelerationEnabled = false
             isScaleXEnabled = false
             isScaleYEnabled = false
+            setScaleEnabled(false)
             isDragXEnabled = true
             isDragYEnabled = false
             setPinchZoom(false)
@@ -2838,7 +2957,7 @@ class RouteProfile(
     
     companion object
     {
-        private const val CHART_OFFSET_TOP = 23
+        private const val CHART_OFFSET_TOP = 45
         private const val CHART_OFFSET_RIGHT = 17
         private const val CHART_OFFSET_BOTTOM = 20
     }

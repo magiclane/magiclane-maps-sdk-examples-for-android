@@ -23,11 +23,15 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -53,6 +57,14 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
+    //region members for testing
+    companion object
+    {
+        const val RESOURCE = "GLOBAL"
+    }
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
+    //endregion
 
     private lateinit var progressBar: ProgressBar
     private lateinit var gemSurfaceView: GemSurfaceView
@@ -97,6 +109,7 @@ class MainActivity : AppCompatActivity()
                     showDialog("Search service error: ${GemError.getMessage(errorCode)}")
                 }
             }
+            decrement()
         })
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -112,7 +125,7 @@ class MainActivity : AppCompatActivity()
         gemSurfaceView = findViewById(R.id.gem_surface)
         locationDetails = findViewById(R.id.location_details)
         statusText = findViewById(R.id.status_text)
-
+        increment()
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
@@ -140,6 +153,12 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this){
+            finish()
+            exitProcess(0)
+        }
+
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -150,14 +169,6 @@ class MainActivity : AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -216,7 +227,7 @@ class MainActivity : AppCompatActivity()
     private fun createStore()
     {
         store = LandmarkStoreService().createLandmarkStore("Favourites")?.first!!
-
+        store.startFastUpdateMode()
         gemSurfaceView.mapView?.let { mainMapView ->
             SdkCall.execute {
                 mainMapView.preferences?.landmarkStores?.addAllStoreCategories(store.id)
@@ -231,6 +242,7 @@ class MainActivity : AppCompatActivity()
         // Display a view containing the necessary information about the landmark.
         var name = ""
         var coordinates = ""
+        increment()
 
         SdkCall.execute {
             name = landmark.name ?: "Unnamed Location"
@@ -267,9 +279,10 @@ class MainActivity : AppCompatActivity()
                         showStatusMessage("The landmark was added to favourites.")
                     }
                 }
-
                 this.visibility = View.VISIBLE
             }
+
+            decrement()
         }
     }
 
@@ -323,20 +336,39 @@ class MainActivity : AppCompatActivity()
         val bmp = SdkCall.execute {
             if (isFavourite)
             {
-                ContextCompat.getDrawable(this, R.drawable.baseline_star_24)?.toBitmap(imageSize, imageSize)
+                ContextCompat.getDrawable(this, R.drawable.baseline_star_24)
             }
             else
             {
-                ContextCompat.getDrawable(this, R.drawable.baseline_star_border_24)?.toBitmap(imageSize, imageSize)
+                ContextCompat.getDrawable(this, R.drawable.baseline_star_border_24)
             }
         }
 
         bmp?.let {
-            imageView.setImageBitmap(bmp)
+            //imageView.setImageBitmap(bmp)
+            imageView.setImageDrawable(bmp)
         }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
+
+    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    @VisibleForTesting
+    fun getActivityIdlingResource(): IdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
+    //endregion ---------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
+
 }
 
 // -------------------------------------------------------------------------------------------------------------------------------

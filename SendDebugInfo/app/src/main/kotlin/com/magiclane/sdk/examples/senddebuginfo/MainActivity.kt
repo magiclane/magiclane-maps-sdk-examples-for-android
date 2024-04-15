@@ -25,6 +25,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import com.magiclane.sdk.core.*
@@ -35,6 +36,7 @@ import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
+@Suppress("SameParameterValue")
 class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -90,6 +92,11 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -98,21 +105,13 @@ class MainActivity : AppCompatActivity()
     {
         super.onDestroy()
 
-        // Deinitialize the SDK.
+        // Release the SDK.
         GemSdk.release()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
+    @Suppress("SameParameterValue")
     private class SendFeedbackTask(val activity: Activity, val email: String, val subject: String) : CoroutinesAsyncTask<Void, Void, Intent>()
     {
         override fun doInBackground(vararg params: Void?): Intent
@@ -180,11 +179,8 @@ class MainActivity : AppCompatActivity()
 
         override fun onPostExecute(result: Intent?)
         {
-            if (result == null)
-            {
-                return
-            }
-            
+            if (result == null) return
+
             activity.startActivity(result)
         }
     }

@@ -24,4 +24,15 @@
     <string name="biker_weight">Biker weight</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+    <string name="options">Options</string>
+
+    //type //vehicle //value // unit
+    <string name="range_item_text"><b>%s</b> <b>%s</b> %d %s</string>
+
+    <string name="maximum_items_warning">Only a maximum of %d ranges can be generated!</string>
+    <string name="same_range_detected_warning">A range with the same value already exists!</string>
+    <string name="empty_range_value_warning">Range value is empty!</string>
+    <string name="service_error">Routing service error: %s</string>
+    <string name="token_rejected">"TOKEN REJECTED"</string>
+    <string name="internet_connection_warning">"You must be connected to the internet!"</string>
 </resources>

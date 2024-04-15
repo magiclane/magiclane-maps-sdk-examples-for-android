@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="color_surface_container">#49454e</color>
+    <color name="color_background">#1c1b1e</color>
+    <color name="text_color">#e6e1e6</color>
+    <color name="indicator_color">#005048</color>
+    <color name="outline">#948f99</color>
+</resources>

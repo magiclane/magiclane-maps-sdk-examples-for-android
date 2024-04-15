@@ -25,12 +25,16 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -54,6 +58,7 @@ import com.magiclane.sdk.projection.ProjectionWGS84
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.places.Coordinates
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
@@ -62,7 +67,17 @@ class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------
 
-    private lateinit var gemSurfaceView: GemSurfaceView
+    //region members for testing
+    companion object
+    {
+        const val RESOURCE = "GLOBAL"
+    }
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
+    //endregion
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var projectionContainer: ConstraintLayout
     private lateinit var landmarkName: TextView
     private lateinit var projectionsList: RecyclerView
@@ -76,7 +91,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        increment()
         projectionAdapter = ProjectionAdapter(mutableListOf())
 
         gemSurfaceView = findViewById(R.id.gem_surface_view)
@@ -85,7 +100,12 @@ class MainActivity : AppCompatActivity()
         hint = findViewById(R.id.hint)
         projectionsList = findViewById<RecyclerView?>(R.id.projections_list).also {
             it.layoutManager = LinearLayoutManager(this)
-            it.addItemDecoration(DividerItemDecoration(this, (it.layoutManager as LinearLayoutManager).orientation))
+            it.addItemDecoration(
+                DividerItemDecoration(
+                    this,
+                    (it.layoutManager as LinearLayoutManager).orientation
+                )
+            )
             it.adapter = projectionAdapter
             it.itemAnimator = null
         }
@@ -98,18 +118,21 @@ class MainActivity : AppCompatActivity()
 
         setConstraints(resources.configuration.orientation)
 
-        SdkSettings.onMapDataReady = onMapDataReady@ { isReady ->
+        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
             hint.visibility = View.VISIBLE
-
+            if(!mainActivityIdlingResource.isIdleNow)
+                decrement()
             gemSurfaceView.mapView?.onTouch = { xy ->
+                increment()
                 // xy are the coordinates of the touch event
                 SdkCall.execute {
                     // tell the map view where the touch event happened
                     gemSurfaceView.mapView?.cursorScreenPosition = xy
 
-                    val centerXy = Xy(gemSurfaceView.measuredWidth / 2, gemSurfaceView.measuredHeight / 2)
+                    val centerXy =
+                        Xy(gemSurfaceView.measuredWidth / 2, gemSurfaceView.measuredHeight / 2)
 
                     val landmarks = gemSurfaceView.mapView?.cursorSelectionLandmarks
                     if (!landmarks.isNullOrEmpty())
@@ -127,6 +150,8 @@ class MainActivity : AppCompatActivity()
                         }
                         Util.postOnMain { hint.visibility = View.GONE }
                         showProjectionsForLandmark(landmark)
+                        if(!mainActivityIdlingResource.isIdleNow)
+                            decrement()
                     }
                 }
             }
@@ -145,6 +170,11 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -155,14 +185,6 @@ class MainActivity : AppCompatActivity()
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -240,15 +262,55 @@ class MainActivity : AppCompatActivity()
                 ConstraintSet().apply {
                     clone(rootView)
 
-                    connect(R.id.projection_container, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
-                    connect(R.id.projection_container, ConstraintSet.END, R.id.gem_surface_view, ConstraintSet.START)
-                    connect(R.id.projection_container, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
-                    connect(R.id.projection_container, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
+                    connect(
+                        R.id.projection_container,
+                        ConstraintSet.START,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.START
+                    )
+                    connect(
+                        R.id.projection_container,
+                        ConstraintSet.END,
+                        R.id.gem_surface_view,
+                        ConstraintSet.START
+                    )
+                    connect(
+                        R.id.projection_container,
+                        ConstraintSet.TOP,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.TOP
+                    )
+                    connect(
+                        R.id.projection_container,
+                        ConstraintSet.BOTTOM,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.BOTTOM
+                    )
 
-                    connect(R.id.gem_surface_view, ConstraintSet.START, R.id.projection_container, ConstraintSet.END)
-                    connect(R.id.gem_surface_view, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
-                    connect(R.id.gem_surface_view, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
-                    connect(R.id.gem_surface_view, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
+                    connect(
+                        R.id.gem_surface_view,
+                        ConstraintSet.START,
+                        R.id.projection_container,
+                        ConstraintSet.END
+                    )
+                    connect(
+                        R.id.gem_surface_view,
+                        ConstraintSet.END,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.END
+                    )
+                    connect(
+                        R.id.gem_surface_view,
+                        ConstraintSet.TOP,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.TOP
+                    )
+                    connect(
+                        R.id.gem_surface_view,
+                        ConstraintSet.BOTTOM,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.BOTTOM
+                    )
 
                     applyTo(rootView)
                 }
@@ -269,15 +331,55 @@ class MainActivity : AppCompatActivity()
                 ConstraintSet().apply {
                     clone(rootView)
 
-                    connect(R.id.projection_container, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
-                    connect(R.id.projection_container, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
-                    connect(R.id.projection_container, ConstraintSet.TOP, R.id.guideline, ConstraintSet.BOTTOM)
-                    connect(R.id.projection_container, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
+                    connect(
+                        R.id.projection_container,
+                        ConstraintSet.START,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.START
+                    )
+                    connect(
+                        R.id.projection_container,
+                        ConstraintSet.END,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.END
+                    )
+                    connect(
+                        R.id.projection_container,
+                        ConstraintSet.TOP,
+                        R.id.guideline,
+                        ConstraintSet.BOTTOM
+                    )
+                    connect(
+                        R.id.projection_container,
+                        ConstraintSet.BOTTOM,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.BOTTOM
+                    )
 
-                    connect(R.id.gem_surface_view, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
-                    connect(R.id.gem_surface_view, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
-                    connect(R.id.gem_surface_view, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
-                    connect(R.id.gem_surface_view, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
+                    connect(
+                        R.id.gem_surface_view,
+                        ConstraintSet.START,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.START
+                    )
+                    connect(
+                        R.id.gem_surface_view,
+                        ConstraintSet.END,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.END
+                    )
+                    connect(
+                        R.id.gem_surface_view,
+                        ConstraintSet.TOP,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.TOP
+                    )
+                    connect(
+                        R.id.gem_surface_view,
+                        ConstraintSet.BOTTOM,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.BOTTOM
+                    )
 
                     applyTo(rootView)
                 }
@@ -327,10 +429,13 @@ class MainActivity : AppCompatActivity()
                 EProjectionType.EPR_WhatThreeWords.ordinal -> R.layout.one_param_list_item
                 EProjectionType.EPR_Lam.ordinal,
                 EProjectionType.EPR_Wgs84.ordinal -> R.layout.two_params_list_item
+
                 EProjectionType.EPR_Mgrs.ordinal,
                 EProjectionType.EPR_Utm.ordinal -> R.layout.four_params_list_item
+
                 EProjectionType.EPR_Bng.ordinal,
                 EProjectionType.EPR_Gk.ordinal -> R.layout.three_params_list_item
+
                 else -> R.layout.two_params_list_item
             }
 
@@ -353,7 +458,10 @@ class MainActivity : AppCompatActivity()
         {
             when (holder.itemViewType)
             {
-                EProjectionType.EPR_WhatThreeWords.ordinal -> (holder as WhatThreeWordsViewHolder).bind(position)
+                EProjectionType.EPR_WhatThreeWords.ordinal -> (holder as WhatThreeWordsViewHolder).bind(
+                    position
+                )
+
                 EProjectionType.EPR_Bng.ordinal -> (holder as BngViewHolder).bind(position)
                 EProjectionType.EPR_Lam.ordinal -> (holder as LamViewHolder).bind(position)
                 EProjectionType.EPR_Utm.ordinal -> (holder as UtmViewHolder).bind(position)
@@ -407,9 +515,15 @@ class MainActivity : AppCompatActivity()
 
                 SdkCall.execute {
                     name = item.type.toString().split("_")[1]
-                    eastingStr = String.format("%s %f", getString(R.string.easting), item.getEasting())
-                    northingStr = String.format("%s %f", getString(R.string.northing), item.getNorthing())
-                    gridReferenceStr = String.format("%s %s", getString(R.string.grid_reference), item.gridReference)
+                    eastingStr =
+                        String.format("%s %f", getString(R.string.easting), item.getEasting())
+                    northingStr =
+                        String.format("%s %f", getString(R.string.northing), item.getNorthing())
+                    gridReferenceStr = String.format(
+                        "%s %s",
+                        getString(R.string.grid_reference),
+                        item.gridReference
+                    )
                 }
 
                 projectionName.text = name.uppercase()
@@ -468,7 +582,11 @@ class MainActivity : AppCompatActivity()
                     xStr = String.format("%s %f", getString(R.string.x), item.getX())
                     yStr = String.format("%s %f", getString(R.string.y), item.getY())
                     zoneStr = String.format("%s %d", getString(R.string.zone), item.getZone())
-                    hemisphereStr = String.format("%s %s", getString(R.string.hemisphere), EHemisphere.values()[item.getHemisphere()].toString())
+                    hemisphereStr = String.format(
+                        "%s %s",
+                        getString(R.string.hemisphere),
+                        EHemisphere.values()[item.getHemisphere()].toString()
+                    )
                 }
 
                 projectionName.text = name.uppercase()
@@ -499,10 +617,16 @@ class MainActivity : AppCompatActivity()
 
                 SdkCall.execute {
                     name = item.type.toString().split("_")[1]
-                    eastingStr = String.format("%s %06d", getString(R.string.easting), item.getEasting())
-                    northingStr = String.format("%s %06d", getString(R.string.northing), item.getNorthing())
+                    eastingStr =
+                        String.format("%s %06d", getString(R.string.easting), item.getEasting())
+                    northingStr =
+                        String.format("%s %06d", getString(R.string.northing), item.getNorthing())
                     zoneStr = String.format("%s %s", getString(R.string.zone), item.getZone())
-                    lettersStr = String.format("%s %s", getString(R.string.letters), item.getSq100kIdentifier())
+                    lettersStr = String.format(
+                        "%s %s",
+                        getString(R.string.letters),
+                        item.getSq100kIdentifier()
+                    )
                 }
 
                 projectionName.text = name.uppercase()
@@ -531,8 +655,10 @@ class MainActivity : AppCompatActivity()
 
                 SdkCall.execute {
                     name = item.type.toString().split("_")[1]
-                    eastingStr = String.format("%s %f", getString(R.string.easting), item.getEasting())
-                    northingStr = String.format("%s %f", getString(R.string.northing), item.getNorthing())
+                    eastingStr =
+                        String.format("%s %f", getString(R.string.easting), item.getEasting())
+                    northingStr =
+                        String.format("%s %f", getString(R.string.northing), item.getNorthing())
                     zoneStr = String.format("%s %s", getString(R.string.zone), item.getZone())
                 }
 
@@ -559,8 +685,10 @@ class MainActivity : AppCompatActivity()
 
                 SdkCall.execute {
                     name = item.type.toString().split("_")[1]
-                    latitudeStr = String.format("%s %f", getString(R.string.lat), item.coordinates.latitude)
-                    longitudeStr = String.format("%s %f", getString(R.string.lon), item.coordinates.longitude)
+                    latitudeStr =
+                        String.format("%s %f", getString(R.string.lat), item.coordinates.latitude)
+                    longitudeStr =
+                        String.format("%s %f", getString(R.string.lon), item.coordinates.longitude)
                 }
 
                 projectionName.text = name.uppercase()
@@ -569,7 +697,21 @@ class MainActivity : AppCompatActivity()
             }
         }
     }
+    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------------------
 
+    @VisibleForTesting
+    fun getActivityIdlingResource(): IdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
+    //endregion ---------------------------------------------------------------------------------------------
     // ---------------------------------------------------------------------------------------------
 }
 

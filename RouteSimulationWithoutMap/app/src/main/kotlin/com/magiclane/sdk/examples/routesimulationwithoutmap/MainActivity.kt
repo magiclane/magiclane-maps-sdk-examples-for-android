@@ -38,11 +38,15 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.EUnitSystem
@@ -58,6 +62,7 @@ import com.magiclane.sdk.core.Time
 import com.magiclane.sdk.d3scene.ECommonOverlayId
 import com.magiclane.sdk.d3scene.OverlayItem
 import com.magiclane.sdk.d3scene.OverlayService
+import com.magiclane.sdk.examples.routesimulationwithoutmap.databinding.ActivityMainBinding
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.AlarmListener
 import com.magiclane.sdk.routesandnavigation.AlarmService
@@ -87,45 +92,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 {
     class TSameImage(var value: Boolean = false)
 
-    private lateinit var progressBar: ProgressBar
-    private lateinit var followCursorButton: FloatingActionButton
-
-    private lateinit var topPanel: FrameLayout
-    private lateinit var navigationLanePanel: ConstraintLayout
-    private lateinit var turnInstruction: TextView
-    private lateinit var turnDistance: TextView
-    private lateinit var turnDistanceUnit: TextView
-    private lateinit var turnImage: ImageView
-    private lateinit var signPost: ImageView
-    private lateinit var roadCode: ImageView
-    private lateinit var laneInformationImage: ImageView
-    private lateinit var currentStreetText: TextView
-    private lateinit var currentRoadCodeImageContainer: LinearLayout
-    private lateinit var currentRoadCodeImage: ImageView
-    private lateinit var speedPanel: ConstraintLayout
-    private lateinit var bottomPanel: ConstraintLayout
-    private lateinit var navSpeedLimitSign: ConstraintLayout
-    private lateinit var navCurrentSpeedLimit: TextView
-    private lateinit var navCurrentSpeed: TextView
-    private lateinit var navCurrentSpeedUnit: TextView
-    private lateinit var alarmPanel: LinearLayout
-    private lateinit var alarmImage: ImageView
-    private lateinit var distanceToAlarm: TextView
-    private lateinit var distanceToAlarmUnit: TextView
-    private lateinit var trafficPanel: LinearLayout
-    private lateinit var trafficImage: ImageView
-    private lateinit var trafficEventDescription: TextView
-    private lateinit var trafficDelayDistance: TextView
-    private lateinit var trafficDelayDistanceUnit: TextView
-    private lateinit var trafficDelayTime: TextView
-    private lateinit var trafficDelayTimeUnit: TextView
-    private lateinit var endOfSectionImage: ImageView
-    private lateinit var distanceToTraffic: TextView
-    private lateinit var distanceToTrafficPrefix: TextView
-    private lateinit var distanceToTrafficUnit: TextView
-    private lateinit var eta: TextView
-    private lateinit var rtt: TextView
-    private lateinit var rtd: TextView
+    private lateinit var binding: ActivityMainBinding
 
     private var lastTurnImageId = Long.MAX_VALUE
     private var lastAlarmImageId = Long.MAX_VALUE
@@ -161,6 +128,13 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private var distanceToTrafficUnitText = ""
     private var dpi = 320
 
+    companion object
+    {
+        const val RESOURCE = "GLOBAL"
+    }
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
+
     private val navigationService = NavigationService()
 
     private var navRoute: Route? = null
@@ -169,8 +143,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private val soundPreference = SoundPlayingPreferences()
 
-    private val positionListener = object : PositionListener() {
-        override fun onNewPosition(value: PositionData) {
+    private val positionListener = object : PositionListener()
+    {
+        override fun onNewPosition(value: PositionData)
+        {
             if (value.hasSpeed())
             {
                 val speed = value.speed
@@ -179,67 +155,31 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 val speedText = GemUtil.getSpeedText(speed, EUnitSystem.Metric)
 
                 val currentSpeedLimit = if (speedLimit > 0.0)
-                {
                     GemUtil.getSpeedText(speedLimit, SdkSettings.unitSystem).first
-                }
                 else
-                {
                     ""
-                }
 
                 Util.postOnMain {
-                    if (speedText.first.isNotEmpty())
-                    {
-                        speedPanel.visibility = View.VISIBLE
-                        if (currentSpeedLimit.isNotEmpty())
+                    binding.navigationSpeedPanel.apply {
+                        root.isVisible = speedText.first.isNotEmpty()
+                        if (speedText.first.isNotEmpty())
                         {
-                            navSpeedLimitSign.visibility = View.VISIBLE
-                            navCurrentSpeedLimit.text = currentSpeedLimit
-                        }
-                        else
-                        {
-                            navSpeedLimitSign.visibility = View.GONE
-                        }
+                            navSpeedLimitSign.root.isVisible = currentSpeedLimit.isNotEmpty()
+                            if (currentSpeedLimit.isNotEmpty())
+                                navSpeedLimitSign.navCurrentSpeedLimit.text = currentSpeedLimit
 
-                        navCurrentSpeed.text = speedText.first
-                        navCurrentSpeedUnit.text = speedText.second
+                            navCurrentSpeed.text = speedText.first
+                            navCurrentSpeedUnit.text = speedText.second
 
-                        if (isOverspeeding)
-                        {
-                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)
-                            {
-                                speedPanel.background.colorFilter = PorterDuffColorFilter(speedPanelBackgroundColor, PorterDuff.Mode.MULTIPLY)
-                            }
-                            else
-                            {
-                                setBackgroundColor(speedPanel.background, speedPanelBackgroundColor)
-                            }
+                            val textColor = if (isOverspeeding) Color.WHITE else Color.BLACK
 
-                            val textColor = Color.WHITE
+                            setBackgroundColor(
+                                root.background,
+                                if (isOverspeeding) speedPanelBackgroundColor else Color.WHITE
+                            )
                             navCurrentSpeed.setTextColor(textColor)
                             navCurrentSpeedUnit.setTextColor(textColor)
                         }
-                        else
-                        {
-                            val bgColor = Color.WHITE
-                            val textColor = Color.BLACK
-
-                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)
-                            {
-                                speedPanel.background.colorFilter = PorterDuffColorFilter(bgColor, PorterDuff.Mode.MULTIPLY)
-                            }
-                            else
-                            {
-                                setBackgroundColor(speedPanel.background, bgColor)
-                            }
-
-                            navCurrentSpeed.setTextColor(textColor)
-                            navCurrentSpeedUnit.setTextColor(textColor)
-                        }
-                    }
-                    else
-                    {
-                        speedPanel.visibility = View.GONE
                     }
                 }
             }
@@ -251,9 +191,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     navigation service.
      */
     private val navigationListener: NavigationListener = NavigationListener.create(
-    
+
         onNavigationStarted = {
             SdkCall.execute {
+                increment()
                 GemUtilImages.setDpi(dpi)
 
                 PositionService.addListener(positionListener, EDataType.ImprovedPosition)
@@ -262,40 +203,46 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 alarmService?.alarmDistance = alarmDistanceMeters
 
                 val availableOverlays = OverlayService().getAvailableOverlays(null)?.first
-                if (availableOverlays != null) {
-                    for (item in availableOverlays) {
-                        if (item.uid == ECommonOverlayId.Safety.value) {
+                if (availableOverlays != null)
+                {
+                    for (item in availableOverlays)
+                    {
+                        if (item.uid == ECommonOverlayId.Safety.value)
+                        {
                             alarmService?.overlays?.add(item.uid)
                         }
                     }
                 }
 
-                endOfSectionBmp = ContextCompat.getDrawable(this, R.drawable.end_of_traffic_section)?.toBitmap(navigationImageSize, navigationImageSize)  
+                endOfSectionBmp = ContextCompat.getDrawable(this, R.drawable.end_of_traffic_section)
+                    ?.toBitmap(navigationImageSize, navigationImageSize)
 
                 navRoute = navigationService.getNavigationRoute()
             }
 
-            topPanel.visibility = View.VISIBLE
-            bottomPanel.visibility = View.VISIBLE
+            binding.navigationTopPanel.root.isVisible = true
+            binding.bottomPanel.isVisible = true
         },
 
-        onDestinationReached = {_: Landmark->
-            topPanel.visibility = View.GONE
-            bottomPanel.visibility = View.GONE
-            navigationLanePanel.visibility = View.GONE
-            currentStreetText.visibility = View.GONE
-            currentRoadCodeImageContainer.visibility = View.GONE
-            speedPanel.visibility = View.GONE
+        onDestinationReached = { _: Landmark ->
+            binding.apply {
+                navigationTopPanel.root.isVisible = false
+                bottomPanel.isVisible = false
+                navigationLanePanel.root.isVisible = false
+                currentStreetText.isVisible = false
+                currentRoadCodeImageContainer.isVisible = false
+                navigationSpeedPanel.root.isVisible = false
+            }
 
             SdkCall.execute {
                 PositionService.removeListener(positionListener)
             }
         },
-        
+
         onNavigationInstructionUpdated = { instr ->
             var instrDistance = ""
             var instrDistanceUnit = ""
-    
+
             var etaText = ""
             var rttText = ""
             var rtdText = ""
@@ -304,21 +251,20 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             var bDisplayRouteInstruction = true
             var bDisplayedRoadCode = false
             var rttColor = Color.argb(255, 0, 0, 0)
-    
+
             SdkCall.execute { // Fetch data for the navigation top panel (instruction related info).
-                GemUtil.getDistText(instr.timeDistanceToNextTurn?.totalDistance ?: 0, EUnitSystem.Metric).let { pair ->
+                GemUtil.getDistText(
+                    instr.timeDistanceToNextTurn?.totalDistance ?: 0,
+                    EUnitSystem.Metric
+                ).let { pair ->
                     instrDistance = pair.first
                     instrDistanceUnit = pair.second
                 }
 
                 speedLimit = if (instr.navigationStatus == ENavigationStatus.Running)
-                {
                     instr.currentStreetSpeedLimit
-                }
                 else
-                {
                     0.0
-                }
 
                 var trafficDelay = 0
 
@@ -328,17 +274,13 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                     rttColor = when
                     {
                         trafficDelayInMinutes == 0 ->
-                        {
                             Color.argb(255, 0, 170, 0) // green
-                        }
+
                         trafficDelayInMinutes < ConstVals.BIG_TRAFFIC_DELAY_IN_MINUTES ->
-                        {
                             Color.argb(255, 255, 175, 63) // orange
-                        }
+
                         else ->
-                        {
                             Color.argb(255, 235, 0, 0) // red
-                        }
                     }
                 }
 
@@ -348,122 +290,105 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             }
 
             // bottom panel: estimated time of arrival, remaining travel time, remaining travel distance
-            eta.text = etaText
-            rtt.text = rttText
-            rtd.text = rtdText
+            binding.apply {
+                eta.text = etaText
+                rtt.text = rttText
+                rtd.text = rtdText
 
-            rtt.setTextColor(rttColor)
+                rtt.setTextColor(rttColor)
+            }
 
             // next turn
             val sameTurnImage = TSameImage()
             val newTurnImage = getNextTurnImage(instr, turnImageSize, turnImageSize, sameTurnImage)
             if (!sameTurnImage.value)
-            {
-                turnImage.setImageBitmap(newTurnImage)
-            }
+                binding.navigationTopPanel.turnImage.setImageBitmap(newTurnImage)
 
             // distance to next turn
-            turnDistance.text = instrDistance
-            turnDistanceUnit.text = instrDistanceUnit
+            binding.navigationTopPanel.turnDistance.text = instrDistance
+            binding.navigationTopPanel.turnDistanceUnit.text = instrDistanceUnit
 
             // sign post info
-            val availableWidthForMiddlePanel = topPanelWidth - max(turnImageSize, turnMinWidth) - 3 * navigationPanelPadding
-            val signPostImage = getSignpostImage(instr, availableWidthForMiddlePanel, signPostImageSize).second
+            val availableWidthForMiddlePanel =
+                topPanelWidth - max(turnImageSize, turnMinWidth) - 3 * navigationPanelPadding
+            val signPostImage =
+                getSignpostImage(instr, availableWidthForMiddlePanel, signPostImageSize).second
 
-            signPostImage?.let {
-                signPost.visibility = View.VISIBLE
+            binding.navigationTopPanel.apply {
+                signPost.isVisible = signPostImage != null
+                signPostImage?.let {
+                    signPost.setImageBitmap(it)
 
-                signPost.setImageBitmap(it)
+                    bDisplayRoadCode = false
+                    bDisplayRouteInstruction = false
+                }
 
-                bDisplayRoadCode = false
-                bDisplayRouteInstruction = false
-            } ?: run { signPost.visibility = View.GONE }
+                // next road code info
+                roadCode.isVisible = bDisplayRoadCode
+                if (bDisplayRoadCode)
+                {
+                    val roadCodeImage = getRoadCodeImage(
+                        instr,
+                        availableWidthForMiddlePanel,
+                        navigationImageSize
+                    ).second
+                    roadCode.isVisible = roadCodeImage != null
+                    roadCodeImage?.let {
+                        roadCode.setImageBitmap(it)
+                        if (it.height > 0)
+                        {
+                            val ratio: Float = (it.width).toFloat() / it.height
+                            roadCode.layoutParams.width =
+                                (roadCode.layoutParams.height * ratio).toInt()
+                        }
 
-            // next road code info
-            if (bDisplayRoadCode)
-            {
-                val roadCodeImage = getRoadCodeImage(instr, availableWidthForMiddlePanel, navigationImageSize).second
-                roadCodeImage?.let {
-                    roadCode.visibility = View.VISIBLE
-                    roadCode.setImageBitmap(it)
-
-                    if (it.height > 0)
-                    {
-                        val ratio: Float = (it.width).toFloat() / it.height
-                        roadCode.layoutParams.width = (roadCode.layoutParams.height * ratio).toInt()
-                    }
-
-                    bDisplayedRoadCode = true
-                } ?: run { roadCode.visibility = View.GONE }
-            }
-            else
-            {
-                roadCode.visibility = View.GONE
-            }
-
-            // next route instruction
-            if (bDisplayRouteInstruction)
-            {
-                var instrText = ""
-
-                SdkCall.execute { // Fetch data for the navigation top panel (instruction related info).
-                    instrText = instr.nextStreetName ?: ""
-
-                    if (instrText.isEmpty())
-                    {
-                        instrText = instr.nextTurnInstruction ?: ""
+                        bDisplayedRoadCode = true
                     }
                 }
 
-                if (instrText.isNotEmpty())
+                // next route instruction
+                turnInstruction.isVisible = bDisplayRouteInstruction
+                if (bDisplayRouteInstruction)
                 {
-                    turnInstruction.visibility = View.VISIBLE
-                    if (turnInstruction.text != instrText)
+                    var instrText = ""
+
+                    SdkCall.execute { // Fetch data for the navigation top panel (instruction related info).
+                        instrText = instr.nextStreetName ?: ""
+
+                        if (instrText.isEmpty())
+                            instrText = instr.nextTurnInstruction ?: ""
+                    }
+
+                    turnInstruction.isVisible = instrText.isNotEmpty()
+                    if (instrText.isNotEmpty())
                     {
                         turnInstruction.text = instrText
-                    }
-
-                    if (bDisplayedRoadCode)
-                    {
-                        turnInstruction.maxLines = 1
-                    }
-                    else
-                    {
-                        turnInstruction.maxLines = 3
+                        turnInstruction.maxLines = if (bDisplayedRoadCode) 1 else 3
                     }
                 }
-                else
-                {
-                    turnInstruction.visibility = View.GONE
-                }
-            }
-            else
-            {
-                turnInstruction.visibility = View.GONE
             }
 
             // lane info / current street name / current road code
             val availableWidthForLaneInfo = topPanelWidth - 2 * navigationPanelPadding
-            val laneInfoImage: Bitmap? = getLaneInfoImage(instr, availableWidthForLaneInfo, navigationImageSize).second
+            val laneInfoImage: Bitmap? =
+                getLaneInfoImage(instr, availableWidthForLaneInfo, navigationImageSize).second
 
-            navigationLanePanel.run {
+            binding.navigationLanePanel.run {
                 laneInfoImage?.let {
-                    currentStreetText.visibility = View.GONE
+                    binding.currentStreetText.isVisible = false
 
-                    if (currentRoadCodeImageContainer.isVisible)
-                    {
-                        currentRoadCodeImageContainer.visibility = View.GONE
-                    }
+                    if (binding.currentRoadCodeImageContainer.isVisible)
+                        binding.currentRoadCodeImageContainer.isVisible = false
 
                     laneInformationImage.setImageBitmap(it)
 
                     laneInformationImage.layoutParams.width = it.width
                     laneInformationImage.layoutParams.height = it.height
 
-                    visibility = View.VISIBLE
+                    root.isVisible = true
                 }
             } ?: run {
-                navigationLanePanel.visibility = View.GONE
+                binding.navigationLanePanel.root.isVisible = false
 
                 val crtStreetName = SdkCall.execute {
                     instr.currentStreetName
@@ -471,171 +396,151 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
                 if (crtStreetName.isNotEmpty())
                 {
-                    currentRoadCodeImageContainer.visibility = View.GONE
-                    currentStreetText.visibility = View.VISIBLE
-                    currentStreetText.text = crtStreetName
+                    binding.currentRoadCodeImageContainer.isVisible = false
+                    binding.currentStreetText.isVisible = true
+                    binding.currentStreetText.text = crtStreetName
                 }
                 else
                 {
-                    currentStreetText.visibility = View.GONE
+                    binding.currentStreetText.isVisible = false
 
-                    val currentRoadCodeImg = getRoadCodeImage(instr, availableWidthForMiddlePanel, currentRoadCodeImageSize, false).second
+                    val currentRoadCodeImg = getRoadCodeImage(
+                        instr,
+                        availableWidthForMiddlePanel,
+                        currentRoadCodeImageSize,
+                        false
+                    ).second
 
                     currentRoadCodeImg?.let {
-                        currentRoadCodeImage.setImageBitmap(it)
-                        currentRoadCodeImageContainer.visibility = View.VISIBLE
+                        binding.currentRoadCodeImage.setImageBitmap(it)
+                        binding.currentRoadCodeImageContainer.isVisible = true
                     } ?: run {
-                        currentRoadCodeImageContainer.visibility = View.GONE
+                        binding.currentRoadCodeImageContainer.isVisible = false
                     }
                 }
             }
 
             // safety alarm
             updateAlarmsInfo()
-            alarmBmp?.let {
-                alarmPanel.visibility = View.VISIBLE
-
-                if (!sameAlarmImage)
-                {
-                    alarmImage.setImageBitmap(it)
-
-                    if (it.height > 0)
+            binding.navigationTopPanel.apply {
+                alarmPanel.isVisible = alarmBmp != null
+                alarmBmp?.let {
+                    if (!sameAlarmImage)
                     {
-                        val ratio = it.width.toFloat() / it.height
-                        alarmImage.layoutParams.width = (alarmImage.layoutParams.height * ratio).toInt()
+                        alarmIcon.setImageBitmap(it)
+
+                        if (it.height > 0)
+                        {
+                            val ratio = it.width.toFloat() / it.height
+                            alarmIcon.layoutParams.width =
+                                (alarmIcon.layoutParams.height * ratio).toInt()
+                        }
+                    }
+
+                    val shouldShowDistanceToAlarm =
+                        distanceToAlarmText.isNotEmpty() && distanceToAlarmUnitText.isNotEmpty()
+                    distanceToAlarm.isVisible = shouldShowDistanceToAlarm
+                    distanceToAlarmUnit.isVisible = shouldShowDistanceToAlarm
+                    if (shouldShowDistanceToAlarm)
+                    {
+                        distanceToAlarm.text = distanceToAlarmText
+                        distanceToAlarm.setTextColor(Color.BLACK)
+                        distanceToAlarmUnit.text = distanceToAlarmUnitText
+                        distanceToAlarm.setTextColor(Color.BLACK)
                     }
                 }
-
-                if (distanceToAlarmText.isNotEmpty() && distanceToAlarmUnitText.isNotEmpty())
-                {
-                    distanceToAlarm.visibility = View.VISIBLE
-                    distanceToAlarm.text = distanceToAlarmText
-                    distanceToAlarm.setTextColor(Color.BLACK)
-                    distanceToAlarmUnit.visibility = View.VISIBLE
-                    distanceToAlarmUnit.text = distanceToAlarmUnitText
-                    distanceToAlarm.setTextColor(Color.BLACK)
-                }
-                else
-                {
-                    distanceToAlarm.visibility = View.GONE
-                    distanceToAlarmUnit.visibility = View.GONE
-                }
-            } ?: run {
-                alarmPanel.visibility = View.GONE
             }
 
             // traffic event
-            navRoute?.let { route ->
-                val trafficEvent = getTrafficEvent(instr, route)
-                trafficEvent?.let { event ->
-                    updateTrafficEventInfo(event)
+            binding.navigationTopPanel.apply {
+                trafficPanel.isVisible = navRoute != null
+                navRoute?.let { route ->
+                    val trafficEvent = getTrafficEvent(instr, route)
+                    trafficEvent?.let { event ->
+                        updateTrafficEventInfo(event)
+                        trafficBmp?.let { bmp ->
+                            trafficPanel.isVisible = true
 
-                    trafficBmp?.let { bmp ->
-                        trafficPanel.visibility = View.VISIBLE
-                        if (alarmBmp != null)
-                        {
-                            trafficPanel.background = ContextCompat.getDrawable(this@MainActivity, R.drawable.white_button)
+                            trafficPanel.background = ContextCompat.getDrawable(
+                                this@MainActivity,
+                                if (alarmBmp != null) R.drawable.white_button else R.drawable.bottom_rounded_white_button
+                            )
 
-                            val layoutParams: FrameLayout.LayoutParams = trafficImage.layoutParams as FrameLayout.LayoutParams
-                            val margin: Int = navigationPanelPadding
-
-                            layoutParams.setMargins(margin, margin, margin, margin)
-                            endOfSectionImage.layoutParams = layoutParams
-                        }
-                        else
-                        {
-                            trafficPanel.background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bottom_rounded_white_button)
-
-                            val layoutParams: FrameLayout.LayoutParams = trafficImage.layoutParams as FrameLayout.LayoutParams
+                            val layoutParams: FrameLayout.LayoutParams =
+                                trafficImage.layoutParams as FrameLayout.LayoutParams
                             val margin: Int = navigationPanelPadding
                             val top: Int = navigationPanelPadding - getSizeInPixels(1)
-                            layoutParams.setMargins(margin, top, margin, margin)
+
+                            layoutParams.setMargins(
+                                margin,
+                                if (alarmBmp != null) margin else top,
+                                margin,
+                                margin
+                            )
                             endOfSectionImage.layoutParams = layoutParams
-                        }
 
-                        setBackgroundColor(trafficPanel.background, trafficPanelBackgroundColor)
+                            setBackgroundColor(trafficPanel.background, trafficPanelBackgroundColor)
 
-                        if (!sameTrafficImage)
-                        {
-                            trafficImage.setImageBitmap(bmp)
-                        }
+                            if (!sameTrafficImage)
+                                trafficImage.setImageBitmap(bmp)
 
-                        if (insideTrafficEvent)
-                        {
-                            endOfSectionBmp?.let {
-                                endOfSectionImage.visibility = View.VISIBLE
-                                endOfSectionImage.setImageBitmap(it)
-                            } ?: run {
-                                endOfSectionImage.visibility = View.GONE
-                            }
-                        }
-                        else
-                        {
-                            endOfSectionImage.visibility = View.GONE
-                        }
+                            endOfSectionImage.isVisible =
+                                insideTrafficEvent && endOfSectionBmp != null
+                            if (insideTrafficEvent)
+                                endOfSectionBmp?.let {
+                                    endOfSectionImage.setImageBitmap(it)
+                                }
 
-                        trafficEventDescription.text = trafficEventDescriptionText
+                            trafficEventDescription.text = trafficEventDescriptionText
 
-                        var prefix = distanceToTrafficPrefixText
-                        if (prefix.isNotEmpty())
-                        {
-                            prefix = "$prefix "
-                        }
-                        distanceToTrafficPrefix.text = prefix
+                            var prefix = distanceToTrafficPrefixText
+                            if (prefix.isNotEmpty()) prefix = "$prefix "
+                            distanceToTrafficPrefix.text = prefix
 
-                        distanceToTraffic.text = distanceToTrafficText
-                        distanceToTrafficUnit.text = distanceToTrafficUnitText
+                            distanceToTraffic.text = distanceToTrafficText
+                            distanceToTrafficUnit.text = distanceToTrafficUnitText
 
-                        trafficDelayTime.text = trafficDelayTimeText
-                        trafficDelayTimeUnit.text = trafficDelayTimeUnitText
+                            trafficDelayTime.text = trafficDelayTimeText
+                            trafficDelayTimeUnit.text = trafficDelayTimeUnitText
 
-                        if (trafficDelayDistanceText.isNotEmpty())
-                        {
-                            trafficDelayDistance.text = trafficDelayDistanceText
-                            trafficDelayDistance.visibility = View.VISIBLE
-                        }
-                        else
-                        {
-                            trafficDelayDistance.visibility = View.GONE
-                        }
+                            trafficDelayDistance.isVisible = trafficDelayDistanceText.isNotEmpty()
+                            if (trafficDelayDistanceText.isNotEmpty())
+                                trafficDelayDistance.text = trafficDelayDistanceText
 
-                        if (trafficDelayDistanceUnitText.isNotEmpty())
-                        {
-                            trafficDelayDistanceUnit.text = trafficDelayDistanceUnitText
-                            trafficDelayDistanceUnit.visibility = View.VISIBLE
-                        }
-                        else
-                        {
-                            trafficDelayDistanceUnit.visibility = View.GONE
+                            trafficDelayDistanceUnit.isVisible =
+                                trafficDelayDistanceUnitText.isNotEmpty()
+                            if (trafficDelayDistanceUnitText.isNotEmpty())
+                                trafficDelayDistanceUnit.text = trafficDelayDistanceUnitText
+
+                        } ?: run {
+                            trafficPanel.isVisible = false
                         }
                     } ?: run {
-                        trafficPanel.visibility = View.GONE
+                        trafficPanel.isVisible = false
+                        trafficBmp = null
                     }
-                } ?: run {
-                    trafficPanel.visibility = View.GONE
-                    trafficBmp = null
                 }
-            } ?: run {
-                trafficPanel.visibility = View.GONE
             }
+            if(!mainActivityIdlingResource.isIdleNow)
+                decrement()
         },
 
-        onNavigationSound = { sound -> SdkCall.execute {
+        onNavigationSound = { sound ->
+            SdkCall.execute {
                 SoundPlayingService.play(sound, playingListener, soundPreference)
             }
         },
+
         canPlayNavigationSound = true
     )
 
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
         onCompleted = { errorCode, _ ->
-            progressBar.visibility = View.GONE
+            binding.progressBar.isVisible = false
 
             if (errorCode != GemError.NoError)
-            {
                 showDialog(GemError.getMessage(errorCode))
-            }
         },
 
         postOnMain = true
@@ -647,7 +552,12 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun getNextTurnImage(navInstr: NavigationInstruction, width: Int, height: Int, bSameImage: TSameImage): Bitmap?
+    private fun getNextTurnImage(
+        navInstr: NavigationInstruction,
+        width: Int,
+        height: Int,
+        bSameImage: TSameImage
+    ): Bitmap?
     {
         return SdkCall.execute {
             if (!navInstr.hasNextTurnInfo()) return@execute null
@@ -659,9 +569,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
             val image = navInstr.nextTurnDetails?.abstractGeometryImage
             if (image != null)
-            {
                 lastTurnImageId = image.uid
-            }
 
             val aInner = Rgba(255, 255, 255, 255)
             val aOuter = Rgba(0, 0, 0, 255)
@@ -676,7 +584,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun getSignpostImage(navInstr: NavigationInstruction, width: Int, height: Int): Pair<Int, Bitmap?>
+    private fun getSignpostImage(
+        navInstr: NavigationInstruction,
+        width: Int,
+        height: Int
+    ): Pair<Int, Bitmap?>
     {
         var result: Pair<Int, Bitmap?> = Pair(0, null)
         SdkCall.execute {
@@ -692,46 +604,46 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun getRoadCodeImage(navInstr: NavigationInstruction, width: Int, height: Int, nextRoadCode: Boolean = true): Pair<Int, Bitmap?>
+    private fun getRoadCodeImage(
+        navInstr: NavigationInstruction,
+        width: Int,
+        height: Int,
+        nextRoadCode: Boolean = true
+    ): Pair<Int, Bitmap?>
     {
         return SdkCall.execute {
             val roadsInfo = if (nextRoadCode)
-            {
                 navInstr.nextRoadInformation ?: return@execute Pair(0, null)
-            }
             else
-            {
                 navInstr.currentRoadInformation ?: return@execute Pair(0, null)
-            }
 
             if (roadsInfo.isNotEmpty())
             {
                 var resultWidth = width
                 if (resultWidth == 0)
-                {
                     resultWidth = (2.5 * height).toInt()
-                }
 
                 val image = navInstr.getRoadInfoImage(roadsInfo)
 
                 GemUtilImages.asBitmap(image, resultWidth, height)
             }
             else
-            {
                 Pair(0, null)
-            }
         } ?: Pair(0, null)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun getLaneInfoImage(navInstr: NavigationInstruction, width: Int, height: Int): Pair<Int, Bitmap?>
+    private fun getLaneInfoImage(
+        navInstr: NavigationInstruction,
+        width: Int,
+        height: Int
+    ): Pair<Int, Bitmap?>
     {
         return SdkCall.execute {
             var resultWidth = width
-            if (resultWidth == 0) {
+            if (resultWidth == 0)
                 resultWidth = (2.5 * height).toInt()
-            }
 
             val bkColor = Rgba(0, 0, 0, 255)
             val activeColor = Rgba(255, 255, 255, 255)
@@ -759,7 +671,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        increment()
+        setContentView(binding.root)
 
         supportActionBar?.hide()
 
@@ -771,62 +685,20 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         lanePanelPadding = resources.getDimension(R.dimen.route_status_text_lateral_padding).toInt()
         signPostImageSize = resources.getDimension(R.dimen.sign_post_image_size).toInt()
         navigationImageSize = resources.getDimension(R.dimen.navigation_image_size).toInt()
-        currentRoadCodeImageSize = resources.getDimension(R.dimen.nav_top_panel_road_img_size).toInt()
+        currentRoadCodeImageSize =
+            resources.getDimension(R.dimen.nav_top_panel_road_img_size).toInt()
 
-        val displayMetrics = DisplayMetrics()
-        windowManager.defaultDisplay.getMetrics(displayMetrics)
-        topPanelWidth = displayMetrics.widthPixels
-
-        progressBar = findViewById(R.id.progressBar)
-        followCursorButton = findViewById(R.id.followCursor)
-
-        topPanel = findViewById(R.id.navigation_top_panel)
-        navigationLanePanel = findViewById(R.id.navigation_lane_panel)
-        turnInstruction = findViewById(R.id.turn_instruction)
-        turnDistance = findViewById(R.id.turn_distance)
-        turnDistanceUnit = findViewById(R.id.turn_distance_unit)
-        turnImage = findViewById(R.id.turn_image)
-        signPost = findViewById(R.id.sign_post)
-        roadCode = findViewById(R.id.road_code)
-        laneInformationImage = findViewById(R.id.laneInformationImage)
-        currentStreetText = findViewById(R.id.current_street_text)
-        currentRoadCodeImageContainer = findViewById(R.id.current_road_code_image_container)
-        currentRoadCodeImage = findViewById(R.id.current_road_code_image)
-        speedPanel = findViewById(R.id.navigation_speed_panel)
-        bottomPanel = findViewById(R.id.bottom_panel)
-        navSpeedLimitSign = findViewById(R.id.nav_speed_limit_sign)
-        navCurrentSpeedLimit = findViewById(R.id.nav_current_speed_limit)
-        navCurrentSpeed = findViewById(R.id.nav_current_speed)
-        navCurrentSpeedUnit = findViewById(R.id.nav_current_speed_unit)
-        alarmPanel = findViewById(R.id.alarm_panel)
-        alarmImage = findViewById(R.id.alarm_icon)
-        distanceToAlarm = findViewById(R.id.distance_to_alarm)
-        distanceToAlarmUnit = findViewById(R.id.distance_to_alarm_unit)
-        trafficPanel = findViewById(R.id.traffic_panel)
-        trafficImage = findViewById(R.id.traffic_image)
-        trafficEventDescription = findViewById(R.id.traffic_event_description)
-        trafficDelayDistance = findViewById(R.id.traffic_delay_distance)
-        trafficDelayDistanceUnit = findViewById(R.id.traffic_delay_distance_unit)
-        trafficDelayTime = findViewById(R.id.traffic_delay_time)
-        trafficDelayTimeUnit = findViewById(R.id.traffic_delay_time_unit)
-        endOfSectionImage = findViewById(R.id.end_of_section)
-        distanceToTraffic = findViewById(R.id.distance_to_traffic)
-        distanceToTrafficPrefix = findViewById(R.id.distance_to_traffic_prefix)
-        distanceToTrafficUnit = findViewById(R.id.distance_to_traffic_suffix)
-        eta = findViewById(R.id.eta)
-        rtt = findViewById(R.id.rtt)
-        rtd = findViewById(R.id.rtd)
+        topPanelWidth = resources.displayMetrics.widthPixels
 
         /// MAGIC LANE
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
-            val ttsPlayerIsInitialized = SdkCall.execute { SoundPlayingService.ttsPlayerIsInitialized } ?: false
+            val ttsPlayerIsInitialized =
+                SdkCall.execute { SoundPlayingService.ttsPlayerIsInitialized } ?: false
 
             if (!ttsPlayerIsInitialized)
-            {
                 SoundUtils.addTTSPlayerInitializationListener(this)
-            }
             else
             {
                 SoundPlayingService.setTTSLanguage("eng-USA")
@@ -854,6 +726,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         {
             showDialog("You must be connected to the internet!")
         }
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -866,14 +742,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         // Deinitialize the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -892,16 +760,20 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private fun NavigationInstruction.getRtt(trafficDelay: Int): String
     {
-        return GemUtil.getTimeText((remainingTravelTimeDistance?.totalTime ?: 0) + trafficDelay).let { pair ->
-            pair.first + " " + pair.second
-        }
+        return GemUtil.getTimeText((remainingTravelTimeDistance?.totalTime ?: 0) + trafficDelay)
+            .let { pair ->
+                pair.first + " " + pair.second
+            }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun NavigationInstruction.getRtd(): String
     {
-        return GemUtil.getDistText(remainingTravelTimeDistance?.totalDistance ?: 0, EUnitSystem.Metric).let { pair ->
+        return GemUtil.getDistText(
+            remainingTravelTimeDistance?.totalDistance ?: 0,
+            EUnitSystem.Metric
+        ).let { pair ->
             pair.first + " " + pair.second
         }
     }
@@ -913,7 +785,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         // val waypoints = arrayListOf(Landmark("Brasov", 45.65139, 25.60528), Landmark("Predeal", 45.50187, 25.57408))
         // val waypoints = arrayListOf(Landmark("General Magic", 45.65135, 25.60505), Landmark("Codlea", 45.69248, 25.44899))
         // val waypoints = arrayListOf(Landmark("Bulevardul Saturn", 45.64717, 25.62943), Landmark("Calea Bucuresti", 45.63497, 25.63531))
-        val waypoints = arrayListOf(Landmark("London", 51.50732, -0.12765), Landmark("Paris", 48.85669, 2.35146))
+        val waypoints = arrayListOf(
+            Landmark("London", 51.50732, -0.12765),
+            Landmark("Paris", 48.85669, 2.35146)
+        )
 
         navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
     }
@@ -985,7 +860,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 {
                     val sameImage = TSameImage()
                     val textsPair = GemUtil.getDistText(distance.toInt(), EUnitSystem.Metric, true)
-                    val safetyAlarmPair = getSafetyCameraAlarmImage(markersList.getItem(0), navigationImageSize, sameImage)
+                    val safetyAlarmPair = getSafetyCameraAlarmImage(
+                        markersList.getItem(0),
+                        navigationImageSize,
+                        sameImage
+                    )
 
                     distanceToAlarmText = textsPair.first
                     distanceToAlarmUnitText = textsPair.second
@@ -997,10 +876,17 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
                         if (alarmBmp != null)
                         {
-                            val warning = String.format(GemUtil.getTTSString(EStringIds.eStrCaution), GemUtil.getTTSString(EStringIds.eStrSpeedCamera))
+                            val warning = String.format(
+                                GemUtil.getTTSString(EStringIds.eStrCaution),
+                                GemUtil.getTTSString(EStringIds.eStrSpeedCamera)
+                            )
                             if (warning.isNotEmpty())
                             {
-                                SoundPlayingService.playText(warning, playingListener, soundPreference)
+                                SoundPlayingService.playText(
+                                    warning,
+                                    playingListener,
+                                    soundPreference
+                                )
                             }
                         }
                     }
@@ -1015,7 +901,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun getSafetyCameraAlarmImage(from: OverlayItem?, height: Int, sameImage: TSameImage): Pair<Int, Bitmap?> = SdkCall.execute {
+    private fun getSafetyCameraAlarmImage(
+        from: OverlayItem?,
+        height: Int,
+        sameImage: TSameImage
+    ): Pair<Int, Bitmap?> = SdkCall.execute {
         val marker = from ?: return@execute Pair(0, null)
         if ((marker.image?.uid ?: 0) == lastAlarmImageId)
         {
@@ -1027,30 +917,34 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         val actualWidth = (aspectRatio * height).toInt()
 
         val image = marker.image
-        if (image != null) {
+        if (image != null)
             lastAlarmImageId = image.uid
-        }
 
         return@execute Pair(actualWidth, GemUtilImages.asBitmap(image, actualWidth, height))
     } ?: Pair(0, null)
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun getImageAspectRatio(marker: OverlayItem?): Float {
+    private fun getImageAspectRatio(marker: OverlayItem?): Float
+    {
         val image = marker?.image ?: return 1.0f
         var fAspectRatio = 1.0f
 
         val size = image.size
-        if (size != null && size.height != 0) {
+        if (size != null && size.height != 0)
             fAspectRatio = (size.width.toFloat() / size.height.toFloat())
-        }
 
         return fAspectRatio
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun getTrafficImage(from: RouteTrafficEvent?, width: Int, height: Int, sameImage: TSameImage): Bitmap? = SdkCall.execute {
+    private fun getTrafficImage(
+        from: RouteTrafficEvent?,
+        width: Int,
+        height: Int,
+        sameImage: TSameImage
+    ): Bitmap? = SdkCall.execute {
         if ((from?.image?.uid ?: 0) == lastTrafficImageId)
         {
             sameImage.value = true
@@ -1059,50 +953,46 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         val image = from?.image
         if (image != null)
-        {
             lastTrafficImageId = image.uid
-        }
 
         GemUtilImages.asBitmap(image, width, height)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun getTrafficEvent(navInstr: NavigationInstruction, route: Route): RouteTrafficEvent? = SdkCall.execute {
-        if (navInstr.navigationStatus != ENavigationStatus.Running) return@execute null
-        val trafficEventsList = route.trafficEvents ?: return@execute null
+    private fun getTrafficEvent(navInstr: NavigationInstruction, route: Route): RouteTrafficEvent? =
+        SdkCall.execute {
+            if (navInstr.navigationStatus != ENavigationStatus.Running) return@execute null
+            val trafficEventsList = route.trafficEvents ?: return@execute null
 
-        val remainingTravelDistance = navInstr.remainingTravelTimeDistance?.totalDistance ?: 0
+            val remainingTravelDistance = navInstr.remainingTravelTimeDistance?.totalDistance ?: 0
 
-        // pick current traffic event
-        for (event in trafficEventsList)
-        {
-            if (event.delay != 0)
+            // pick current traffic event
+            for (event in trafficEventsList)
             {
-                val distToDest = event.distanceToDestination
-                distToTrafficEvent = remainingTravelDistance - distToDest
-
-                insideTrafficEvent = false
-
-                if (distToTrafficEvent <= 0)
+                if (event.delay != 0)
                 {
-                    remainingDistInsideTrafficEvent = event.length - (distToDest - remainingTravelDistance)
+                    val distToDest = event.distanceToDestination
+                    distToTrafficEvent = remainingTravelDistance - distToDest
 
-                    if (remainingDistInsideTrafficEvent >= 0)
+                    insideTrafficEvent = false
+
+                    if (distToTrafficEvent <= 0)
                     {
-                        insideTrafficEvent = true
-                    }
-                }
+                        remainingDistInsideTrafficEvent =
+                            event.length - (distToDest - remainingTravelDistance)
 
-                if ((distToTrafficEvent >= 0) || (remainingDistInsideTrafficEvent >= 0))
-                {
-                    return@execute event
+                        if (remainingDistInsideTrafficEvent >= 0)
+                            insideTrafficEvent = true
+                    }
+
+                    if ((distToTrafficEvent >= 0) || (remainingDistInsideTrafficEvent >= 0))
+                        return@execute event
                 }
             }
-        }
 
-        return@execute null
-    }
+            return@execute null
+        }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
@@ -1110,13 +1000,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         trafficEventDescriptionText = trafficEvent.description ?: ""
 
         val distance = if (insideTrafficEvent)
-        {
             remainingDistInsideTrafficEvent
-        }
         else
-        {
             distToTrafficEvent
-        }
 
         val distanceToTrafficPair = GemUtil.getDistText(distance, EUnitSystem.Metric, true)
 
@@ -1136,8 +1022,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         {
             if (insideTrafficEvent)
             {
-                if (trafficEvent.length > 0) {
-                    val nRemainingTimeInsideTrafficEvent = (trafficEvent.delay * remainingDistInsideTrafficEvent) / trafficEvent.length
+                if (trafficEvent.length > 0)
+                {
+                    val nRemainingTimeInsideTrafficEvent =
+                        (trafficEvent.delay * remainingDistInsideTrafficEvent) / trafficEvent.length
                     val trafficDelayTextPair = GemUtil.getTimeText(nRemainingTimeInsideTrafficEvent)
 
                     trafficDelayTimeText = trafficDelayTextPair.first
@@ -1146,7 +1034,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             }
             else
             {
-                val trafficDistTextPair = GemUtil.getDistText(trafficEvent.length, SdkSettings.unitSystem, true)
+                val trafficDistTextPair =
+                    GemUtil.getDistText(trafficEvent.length, SdkSettings.unitSystem, true)
 
                 trafficDelayDistanceText = trafficDistTextPair.first
                 trafficDelayDistanceUnitText = trafficDistTextPair.second
@@ -1159,24 +1048,39 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }
 
         val sameImage = TSameImage()
-        val newTrafficBmp = getTrafficImage(trafficEvent, navigationImageSize, navigationImageSize, sameImage)
+        val newTrafficBmp =
+            getTrafficImage(trafficEvent, navigationImageSize, navigationImageSize, sameImage)
         if (!sameImage.value)
         {
             trafficBmp = newTrafficBmp
             sameTrafficImage = false
         }
         else
-        {
             sameTrafficImage = true
-        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    private fun getSizeInPixels(dpi: Int): Int {
+    private fun getSizeInPixels(dpi: Int): Int
+    {
         val metrics = resources.displayMetrics
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpi.toFloat(), metrics).toInt()
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpi.toFloat(), metrics)
+            .toInt()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
+
+    @VisibleForTesting
+    fun getActivityIdlingResource(): IdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
+    // ---------------------------------------------------------------------------------------------
 }

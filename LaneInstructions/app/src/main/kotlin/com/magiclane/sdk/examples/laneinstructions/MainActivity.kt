@@ -18,12 +18,15 @@ package com.magiclane.sdk.examples.laneinstructions
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.ProgressListener
@@ -35,8 +38,6 @@ import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -44,7 +45,7 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
-    
+
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var laneImage: ImageView
@@ -84,26 +85,19 @@ class MainActivity : AppCompatActivity()
             }?.second
 
             // Show the lanes instruction.
-            if (lanes != null)
-            {
-                laneImage.visibility = View.VISIBLE
-                laneImage.setImageBitmap(lanes)
-            }
-            else
-            {
-                laneImage.visibility = View.GONE
-            }
+            laneImage.isVisible = lanes != null
+            lanes?.let { laneImage.setImageBitmap(it)}
         }
     )
 
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
         onStarted = {
-            progressBar.visibility = View.VISIBLE
+            progressBar.isVisible = true
         },
 
         onCompleted = { _, _ ->
-            progressBar.visibility = View.GONE
+            progressBar.isVisible = false
         },
 
         postOnMain = true
@@ -142,6 +136,11 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -156,24 +155,16 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
     private fun enableGPSButton()
     {
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                followCursorButton.visibility = View.VISIBLE
+                followCursorButton.isVisible = true
             }
 
             onEnterFollowingPosition = {
-                followCursorButton.visibility = View.GONE
+                followCursorButton.isVisible = false
             }
 
             // Set on click action for the GPS button.
@@ -213,7 +204,7 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 }
 

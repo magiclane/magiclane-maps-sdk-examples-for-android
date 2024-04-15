@@ -28,6 +28,7 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -49,12 +50,12 @@ import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
-class MainActivity: AppCompatActivity()
+class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private var listView: RecyclerView? = null
-    
+
     private var statusText: TextView? = null
 
     private val contentStore = ContentStore()
@@ -63,8 +64,9 @@ class MainActivity: AppCompatActivity()
 
     private var voicesCatalogRequested = false
 
-    private val kDefaultToken = "YOUR_TOKEN"
-    
+    private val kDefaultToken =
+        "YOUR_TOKEN"
+
     private val flagBitmapsMap = HashMap<String, Bitmap?>()
 
     private val progressListener = ProgressListener.create(
@@ -72,7 +74,7 @@ class MainActivity: AppCompatActivity()
             progressBar?.visibility = View.VISIBLE
             showStatusMessage("Started content store service.")
         },
-        
+
         onCompleted = { errorCode, _ ->
             progressBar?.visibility = View.GONE
             showStatusMessage("Content store service completed with error code: $errorCode")
@@ -85,7 +87,8 @@ class MainActivity: AppCompatActivity()
                         // No error encountered, we can handle the results.
                         // Get the list of voices that was retrieved in the content store.
 
-                        val models = contentStore.getStoreContentList(EContentType.HumanVoice)?.first
+                        val models =
+                            contentStore.getStoreContentList(EContentType.HumanVoice)?.first
                         if (!models.isNullOrEmpty())
                         {
                             // The voice items list is not empty or null.
@@ -95,27 +98,29 @@ class MainActivity: AppCompatActivity()
                             // Start downloading the first voice item.
                             SdkCall.execute {
                                 voiceItem.asyncDownload(GemSdk.EDataSavePolicy.UseDefault,
-                                                        true,
-                                                        onStarted = {
-                                                            showStatusMessage("Started downloading $itemName.")
-                                                        },
-                                                        onCompleted = { _, _ ->
-                                                                            listView?.adapter?.notifyItemChanged(0)
-                                                                            showStatusMessage("$itemName was downloaded.")
-                                                        },
-                                                        onProgress = {
-                                                            listView?.adapter?.notifyItemChanged(0)
-                                                        })
+                                    true,
+                                    onStarted = {
+                                        showStatusMessage("Started downloading $itemName.")
+                                    },
+                                    onCompleted = { _, _ ->
+                                        listView?.adapter?.notifyItemChanged(0)
+                                        showStatusMessage("$itemName was downloaded.")
+                                    },
+                                    onProgress = {
+                                        listView?.adapter?.notifyItemChanged(0)
+                                    })
                             }
                         }
 
                         displayList(models)
                     }
                 }
+
                 GemError.Cancel ->
                 {
                     // The action was cancelled.
                 }
+
                 else ->
                 {
                     // There was a problem at retrieving the content store items.
@@ -132,18 +137,21 @@ class MainActivity: AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        
+
         statusText = findViewById(R.id.status_text)
         progressBar = findViewById(R.id.progressBar)
         listView = findViewById<RecyclerView?>(R.id.list_view).apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
 
-            val separator = DividerItemDecoration(applicationContext, (layoutManager as LinearLayoutManager).orientation)
+            val separator = DividerItemDecoration(
+                applicationContext,
+                (layoutManager as LinearLayoutManager).orientation
+            )
             addItemDecoration(separator)
 
             val lateralPadding = resources.getDimension(R.dimen.big_padding).toInt()
             setPadding(lateralPadding, 0, lateralPadding, 0)
-            
+
             itemAnimator = null
         }
 
@@ -156,7 +164,10 @@ class MainActivity: AppCompatActivity()
                     SdkCall.execute {
                         // Defines an action that should be done after the network is connected.
                         // Call to the content store to asynchronously retrieve the list of voices.
-                        contentStore.asyncGetStoreContentList(EContentType.HumanVoice, progressListener)
+                        contentStore.asyncGetStoreContentList(
+                            EContentType.HumanVoice,
+                            progressListener
+                        )
                     }
                 }
 
@@ -197,6 +208,14 @@ class MainActivity: AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this,object: OnBackPressedCallback(true){
+            override fun handleOnBackPressed()
+            {
+                finish()
+                exitProcess(0)
+            }
+        })
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -211,14 +230,6 @@ class MainActivity: AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
     private fun displayList(models: ArrayList<ContentStoreItem>?)
     {
         if (models != null)
@@ -229,15 +240,15 @@ class MainActivity: AppCompatActivity()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
-    
+
     @SuppressLint("InflateParams")
     private fun showDialog(text: String)
     {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply { 
+        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
             findViewById<TextView>(R.id.title).text = getString(R.string.error)
             findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener { 
+            findViewById<Button>(R.id.button).setOnClickListener {
                 dialog.dismiss()
             }
         }
@@ -247,9 +258,9 @@ class MainActivity: AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
-    
+
     private fun showStatusMessage(text: String)
     {
         statusText?.text = text
@@ -261,7 +272,8 @@ class MainActivity: AppCompatActivity()
      * This custom adapter is made to facilitate the displaying of the data from the model
      * and to decide how it is displayed.
      */
-    inner class CustomAdapter(private val dataSet: ArrayList<ContentStoreItem>): RecyclerView.Adapter<CustomAdapter.ViewHolder>()
+    inner class CustomAdapter(private val dataSet: ArrayList<ContentStoreItem>) :
+        RecyclerView.Adapter<CustomAdapter.ViewHolder>()
     {
         // -----------------------------------------------------------------------------------------------------------------------
 
@@ -278,7 +290,8 @@ class MainActivity: AppCompatActivity()
 
         override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder
         {
-            val view = LayoutInflater.from(viewGroup.context).inflate(R.layout.list_item, viewGroup, false)
+            val view =
+                LayoutInflater.from(viewGroup.context).inflate(R.layout.list_item, viewGroup, false)
             return ViewHolder(view)
         }
 
@@ -287,8 +300,17 @@ class MainActivity: AppCompatActivity()
         override fun onBindViewHolder(viewHolder: ViewHolder, position: Int)
         {
             viewHolder.apply {
-                text.text = SdkCall.execute { dataSet[position].name + " (" + GemUtil.formatSizeAsText(dataSet[position].totalSize) + ")" }
-                description.text = SdkCall.execute { "${getCountryName(dataSet[position])} - ${getParameter(dataSet[position], "native_language")} - ${getParameter(dataSet[position], "gender")}" }
+                text.text = SdkCall.execute {
+                    dataSet[position].name + " (" + GemUtil.formatSizeAsText(dataSet[position].totalSize) + ")"
+                }
+                description.text = SdkCall.execute {
+                    "${getCountryName(dataSet[position])} - ${
+                        getParameter(
+                            dataSet[position],
+                            "native_language"
+                        )
+                    } - ${getParameter(dataSet[position], "gender")}"
+                }
                 imageView.setImageBitmap(SdkCall.execute { getFlagBitmap(dataSet[position]) })
 
                 statusImageView.visibility = View.GONE
@@ -300,13 +322,14 @@ class MainActivity: AppCompatActivity()
                         statusImageView.visibility = View.VISIBLE
                         progressBar.visibility = View.INVISIBLE
                     }
-                    
+
                     EContentStoreItemStatus.DownloadRunning ->
                     {
                         progressBar.visibility = View.VISIBLE
-                        progressBar.progress = SdkCall.execute { dataSet[position].downloadProgress } ?: 0 
+                        progressBar.progress =
+                            SdkCall.execute { dataSet[position].downloadProgress } ?: 0
                     }
-                    
+
                     else -> return
                 }
             }
@@ -325,10 +348,11 @@ class MainActivity: AppCompatActivity()
                 if (!flagBitmapsMap.containsKey(isoCode))
                 {
                     val size = resources.getDimension(R.dimen.icon_size).toInt()
-                    flagBitmapsMap[isoCode] = MapDetails().getCountryFlag(codes[0])?.asBitmap(size, size) 
+                    flagBitmapsMap[isoCode] =
+                        MapDetails().getCountryFlag(codes[0])?.asBitmap(size, size)
                 }
-                
-                return flagBitmapsMap[isoCode] 
+
+                return flagBitmapsMap[isoCode]
             }
             return null
         }

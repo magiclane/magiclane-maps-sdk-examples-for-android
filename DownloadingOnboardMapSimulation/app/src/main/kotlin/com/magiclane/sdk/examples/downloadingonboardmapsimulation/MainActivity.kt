@@ -21,14 +21,15 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.View
 import android.widget.Button
-import android.widget.ImageView
-import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.magiclane.sdk.content.ContentStore
 import com.magiclane.sdk.content.ContentStoreItem
 import com.magiclane.sdk.content.EContentStoreItemStatus
@@ -36,7 +37,6 @@ import com.magiclane.sdk.content.EContentType
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
-import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.MapDetails
 import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.SdkSettings
@@ -50,48 +50,26 @@ import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.magiclane.sdk.examples.downloadingonboardmapsimulation.databinding.ActivityMainBinding
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
 class MainActivity : AppCompatActivity()
 {
-    private lateinit var gemSurfaceView: GemSurfaceView
 
-    private lateinit var progressBar: ProgressBar
+    //region members for testing
+    companion object
+    {
+        const val NAV_IDLE_RESOURCE = "GLOBAL"
+        const val DOWNLOAD_IDLE_RESOURCE = "GLOBAL2"
+    }
 
-    private lateinit var followCursorButton: FloatingActionButton
+    private var downloadingMapIdlingResource = CountingIdlingResource(DOWNLOAD_IDLE_RESOURCE, true)
+    private var navigationIdlingResource = CountingIdlingResource(NAV_IDLE_RESOURCE, true)
+    //endregion
 
-    private lateinit var topPanel: ConstraintLayout
-
-    private lateinit var navInstruction: TextView
-
-    private lateinit var navInstructionDistance: TextView
-
-    private lateinit var navInstructionIcon: ImageView
-
-    private lateinit var bottomPanel: ConstraintLayout
-
-    private lateinit var eta: TextView
-
-    private lateinit var rtt: TextView
-
-    private lateinit var rtd: TextView
-    
-    private lateinit var mapContainer: ConstraintLayout
-    
-    private lateinit var flagIcon: ImageView
-    
-    private lateinit var countryName: TextView
-    
-    private lateinit var mapDescription: TextView
-    
-    private lateinit var downloadProgressBar: ProgressBar
-    
-    private lateinit var downloadedIcon: ImageView
-    
-    private lateinit var statusText: TextView
+    private lateinit var binding: ActivityMainBinding
 
     private val mapName = "Luxembourg"
 
@@ -120,8 +98,10 @@ class MainActivity : AppCompatActivity()
      */
     private val navigationListener: NavigationListener = NavigationListener.create(
         onNavigationStarted = {
+            if (!navigationIdlingResource.isIdleNow)
+                navigationIdlingResource.decrement()
             SdkCall.execute {
-                gemSurfaceView.mapView?.let { mapView ->
+                binding.gemSurfaceView.mapView?.let { mapView ->
                     mapView.preferences?.enableCursor = false
                     navRoute?.let { route ->
                         mapView.presentRoute(route)
@@ -132,9 +112,9 @@ class MainActivity : AppCompatActivity()
                 }
             }
 
-            topPanel.visibility = View.VISIBLE
-            bottomPanel.visibility = View.VISIBLE
-            
+            binding.topPanel.isVisible = true
+            binding.bottomPanel.isVisible = true
+
             showStatusMessage("Simulation started.")
         },
         onNavigationInstructionUpdated = { instr ->
@@ -160,17 +140,19 @@ class MainActivity : AppCompatActivity()
             }
 
             // Update the navigation panels info.
-            navInstruction.text = instrText
-            navInstructionIcon.setImageBitmap(instrIcon)
-            navInstructionDistance.text = instrDistance
+            binding.apply {
+                navInstruction.text = instrText
+                navInstructionIcon.setImageBitmap(instrIcon)
+                navInstructionDistance.text = instrDistance
 
-            eta.text = etaText
-            rtt.text = rttText
-            rtd.text = rtdText
+                eta.text = etaText
+                rtt.text = rttText
+                rtd.text = rtdText
 
-            if (statusText.isVisible)
-            {
-                statusText.visibility = View.GONE
+                if (statusText.isVisible)
+                {
+                    statusText.isVisible = false
+                }
             }
         }
     )
@@ -178,11 +160,11 @@ class MainActivity : AppCompatActivity()
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
         onStarted = {
-            progressBar.visibility = View.VISIBLE
+            binding.progressBar.isVisible = true
             showStatusMessage("Routing process started.")
         },
         onCompleted = { _, _ ->
-            progressBar.visibility = View.GONE
+            binding.progressBar.isVisible = false
             showStatusMessage("Routing process completed.")
         },
         postOnMain = true
@@ -190,11 +172,11 @@ class MainActivity : AppCompatActivity()
 
     private val contentListener = ProgressListener.create(
         onStarted = {
-            progressBar.visibility = View.VISIBLE
+            binding.progressBar.isVisible = true
             showStatusMessage("Started content store service.")
         },
         onCompleted = { errorCode, _ ->
-            progressBar.visibility = View.GONE
+            binding.progressBar.isVisible = false
             showStatusMessage("Content store service completed with error code: $errorCode")
 
             when (errorCode)
@@ -203,7 +185,8 @@ class MainActivity : AppCompatActivity()
                 {
                     // No error encountered, we can handle the results.
                     SdkCall.execute { // Get the list of maps that was retrieved in the content store.
-                        val contentListPair = contentStore.getStoreContentList(EContentType.RoadMap) ?: return@execute
+                        val contentListPair =
+                            contentStore.getStoreContentList(EContentType.RoadMap) ?: return@execute
 
                         for (map in contentListPair.first)
                         {
@@ -219,7 +202,7 @@ class MainActivity : AppCompatActivity()
                                 val downloadProgressListener = ProgressListener.create(
                                     onStarted = {
                                         onDownloadStarted(map)
-                                        showStatusMessage("Started downloading $mapName.") 
+                                        showStatusMessage("Started downloading $mapName.")
                                     },
                                     onStatusChanged = { status ->
                                         onStatusChanged(status)
@@ -236,16 +219,22 @@ class MainActivity : AppCompatActivity()
                                     })
 
                                 // Start downloading the first map item.
-                                map.asyncDownload(downloadProgressListener, GemSdk.EDataSavePolicy.UseDefault, true)
+                                map.asyncDownload(
+                                    downloadProgressListener,
+                                    GemSdk.EDataSavePolicy.UseDefault,
+                                    true
+                                )
                             }
 
                             break
                         }
                     }
                 }
+
                 GemError.Cancel ->
                 { // The action was cancelled.
                 }
+
                 else ->
                 {
                     // There was a problem at retrieving the content store items.
@@ -260,34 +249,13 @@ class MainActivity : AppCompatActivity()
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        gemSurfaceView = findViewById(R.id.gem_surface)
-        progressBar = findViewById(R.id.progressBar)
-        followCursorButton = findViewById(R.id.followCursor)
-
-        topPanel = findViewById(R.id.top_panel)
-        navInstruction = findViewById(R.id.nav_instruction)
-        navInstructionDistance = findViewById(R.id.instr_distance)
-        navInstructionIcon = findViewById(R.id.nav_icon)
-
-        bottomPanel = findViewById(R.id.bottom_panel)
-        eta = findViewById(R.id.eta)
-        rtt = findViewById(R.id.rtt)
-        rtd = findViewById(R.id.rtd)
-        
-        mapContainer = findViewById(R.id.map_container)
-        flagIcon = findViewById(R.id.flag_icon)
-        countryName = findViewById(R.id.country_name)
-        mapDescription = findViewById(R.id.map_description)
-        downloadProgressBar = findViewById(R.id.download_progress_bar)
-        downloadedIcon = findViewById(R.id.downloaded_icon)
-        
-        statusText = findViewById(R.id.status_text)
-
+        navigationIdlingResource.increment()
+        downloadingMapIdlingResource.increment()
         val loadMaps = {
             mapsCatalogRequested = true
-
             val loadMapsCatalog = {
                 SdkCall.execute {
                     // Call to the content store to asynchronously retrieve the list of maps.
@@ -297,13 +265,10 @@ class MainActivity : AppCompatActivity()
 
             val token = GemSdk.getTokenFromManifest(this)
 
-            if (!token.isNullOrEmpty() && (token != kDefaultToken))
-            {
-                loadMapsCatalog()
-            }
+            if (!token.isNullOrEmpty() && (token != kDefaultToken)) loadMapsCatalog()
             else // if token is not present try to avoid content server requests limitation by delaying the voices catalog request
             {
-                progressBar.visibility = View.VISIBLE
+                binding.progressBar.isVisible = true
 
                 Handler(Looper.getMainLooper()).postDelayed({
                     loadMapsCatalog()
@@ -315,10 +280,7 @@ class MainActivity : AppCompatActivity()
             if (!requiredMapHasBeenDownloaded)
             {
                 mapReady = it
-                if (connected && mapReady && !mapsCatalogRequested)
-                {
-                    loadMaps()
-                }
+                if (connected && mapReady && !mapsCatalogRequested) loadMaps()
             }
         }
 
@@ -326,10 +288,7 @@ class MainActivity : AppCompatActivity()
             if (!requiredMapHasBeenDownloaded)
             {
                 connected = it
-                if (connected && mapReady && !mapsCatalogRequested)
-                {
-                    loadMaps()
-                }
+                if (connected && mapReady && !mapsCatalogRequested) loadMaps()
             }
         }
 
@@ -342,8 +301,9 @@ class MainActivity : AppCompatActivity()
             showDialog("TOKEN REJECTED")
         }
 
-        gemSurfaceView.onSdkInitSucceeded = onSdkInitSucceeded@{
-            val localMaps = contentStore.getLocalContentList(EContentType.RoadMap) ?: return@onSdkInitSucceeded
+        binding.gemSurfaceView.onSdkInitSucceeded = onSdkInitSucceeded@{
+            val localMaps =
+                contentStore.getLocalContentList(EContentType.RoadMap) ?: return@onSdkInitSucceeded
 
             for (map in localMaps)
             {
@@ -356,16 +316,17 @@ class MainActivity : AppCompatActivity()
             }
 
             // Defines an action that should be done when the the sdk had been loaded.
-            if (requiredMapHasBeenDownloaded)
-            {
-                onOnboardMapReady()
-            }
+            if (requiredMapHasBeenDownloaded) onOnboardMapReady()
         }
 
         if (!requiredMapHasBeenDownloaded && !Util.isInternetConnected(this))
-        {
             showDialog("You must be connected to the internet!")
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
         }
+
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -380,73 +341,58 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onBackPressed()
+    private fun onDownloadStarted(map: ContentStoreItem)
     {
-        finish()
-        exitProcess(0)
+        binding.apply {
+            mapContainer.isVisible = true
+
+            var flagBitmap: Bitmap? = null
+            SdkCall.execute {
+                map.countryCodes?.let { codes ->
+                    val size = resources.getDimension(R.dimen.icon_size).toInt()
+                    flagBitmap = MapDetails().getCountryFlag(codes[0])?.asBitmap(size, size)
+                }
+            }
+            flagIcon.setImageBitmap(flagBitmap)
+
+            countryName.text = SdkCall.execute { map.name }
+            mapDescription.text = SdkCall.execute { GemUtil.formatSizeAsText(map.totalSize) }
+        }
+        if (!downloadingMapIdlingResource.isIdleNow)
+            downloadingMapIdlingResource.decrement()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
-    
-    private fun onDownloadStarted(map: ContentStoreItem)
-    {
-        mapContainer.visibility = View.VISIBLE
-        
-        var flagBitmap: Bitmap? = null 
-        SdkCall.execute {
-            map.countryCodes?.let { codes ->
-                val size = resources.getDimension(R.dimen.icon_size).toInt()
-                flagBitmap = MapDetails().getCountryFlag(codes[0])?.asBitmap(size, size)
-            }
-        }
-        flagIcon.setImageBitmap(flagBitmap)
-        
-        countryName.text = SdkCall.execute { map.name }
-        mapDescription.text = SdkCall.execute { GemUtil.formatSizeAsText(map.totalSize) }
-    }
-    
-    // ---------------------------------------------------------------------------------------------------------------------------
-    
+
     private fun onStatusChanged(status: Int)
     {
-        when (EContentStoreItemStatus.values()[status])
-        {
-            EContentStoreItemStatus.Completed ->
-            {
-                downloadedIcon.visibility = View.VISIBLE
-                downloadProgressBar.visibility = View.INVISIBLE
-            }
-            
-            EContentStoreItemStatus.DownloadRunning ->
-            {
-                downloadedIcon.visibility = View.GONE
-                downloadProgressBar.visibility = View.VISIBLE
-            }
-            
-            else -> return
-        }
+        binding.downloadedIcon.isVisible =
+            EContentStoreItemStatus.values()[status] == EContentStoreItemStatus.Completed
+        binding.downloadProgressBar.isInvisible =
+            EContentStoreItemStatus.values()[status] == EContentStoreItemStatus.Completed
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
-    
+
     private fun onProgressUpdated(progress: Int)
     {
-        downloadProgressBar.progress = progress
+        binding.downloadProgressBar.progress = progress
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun onOnboardMapReady()
     {
         startSimulation()
-        mapContainer.visibility = View.GONE
+        binding.mapContainer.isVisible = false
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun startSimulation() = SdkCall.execute {
         val waypoints = arrayListOf(
-            Landmark("Luxembourg", 49.61588784436375, 6.135843869736401), Landmark("Mersch", 49.74785494642988, 6.103323786692679)
+            Landmark("Luxembourg", 49.61588784436375, 6.135843869736401),
+            Landmark("Mersch", 49.74785494642988, 6.103323786692679)
         )
 
         navigationService.startSimulation(
@@ -473,18 +419,15 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun showStatusMessage(text: String)
     {
-        if (!statusText.isVisible)
-        {
-            statusText.visibility = View.VISIBLE
-        }
-        statusText.text = text
+        binding.statusText.isVisible = true
+        binding.statusText.text = text
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun NavigationInstruction.getDistanceInMeters(): String
@@ -534,24 +477,30 @@ class MainActivity : AppCompatActivity()
 
     private fun enableGPSButton()
     { // Set actions for entering/ exiting following position mode.
-        gemSurfaceView.mapView?.apply {
-            onExitFollowingPosition = {
-                followCursorButton.visibility = View.VISIBLE
-            }
-
-            onEnterFollowingPosition = {
-                followCursorButton.visibility = View.GONE
-            }
-
-            // Set on click action for the GPS button.
-            followCursorButton.setOnClickListener {
-                SdkCall.execute { followPosition() }
+        binding.apply {
+            gemSurfaceView.mapView?.apply {
+                onExitFollowingPosition = {
+                    followCursorButton.isVisible = true
+                }
+                onEnterFollowingPosition = {
+                    followCursorButton.isVisible = false
+                }
+                // Set on click action for the GPS button.
+                followCursorButton.setOnClickListener {
+                    SdkCall.execute { followPosition() }
+                }
             }
         }
     }
+    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------------------
+    @VisibleForTesting
+    fun getNavIdlingResource(): IdlingResource = navigationIdlingResource
 
+    @VisibleForTesting
+    fun getDownloadingIdlingResource(): IdlingResource = downloadingMapIdlingResource
+    //endregion ---------------------------------------------------------------------------------------------
     // ---------------------------------------------------------------------------------------------------------------------------
 }
 
 // -------------------------------------------------------------------------------------------------------------------------------
-

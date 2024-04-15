@@ -30,11 +30,15 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
+import androidx.test.espresso.IdlingResource
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.GemError
@@ -68,8 +72,10 @@ class MainActivity : AppCompatActivity()
     // ---------------------------------------------------------------------------------------------
 
     private lateinit var progressBar: ProgressBar
-    private lateinit var gemSurfaceView: GemSurfaceView
-    
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    lateinit var gemSurfaceView: GemSurfaceView
+
     private lateinit var overlayContainer: ConstraintLayout
     private lateinit var name: TextView
     private lateinit var description: TextView
@@ -78,7 +84,8 @@ class MainActivity : AppCompatActivity()
     private lateinit var followCursorButton: FloatingActionButton
     private lateinit var flyToRoutesButton: FloatingActionButton
 
-    private var routesList = ArrayList<Route>()
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    var routesList = ArrayList<Route>()
 
     private var imageSize = 0
 
@@ -90,6 +97,7 @@ class MainActivity : AppCompatActivity()
         onCompleted = { routes, errorCode, _ ->
             progressBar.visibility = View.GONE
 
+
             when (errorCode)
             {
                 GemError.NoError ->
@@ -99,12 +107,16 @@ class MainActivity : AppCompatActivity()
                     SdkCall.execute {
                         gemSurfaceView.mapView?.presentRoutes(routes, displayBubble = true)
                         gemSurfaceView.mapView?.preferences?.routes?.mainRoute?.let { selectRoute(it) }
+                        if (!mainActivityIdlingResource.isIdleNow)
+                            decrement()
                     }
                     flyToRoutesButton.visibility = View.VISIBLE
                 }
 
                 GemError.Cancel ->
                 {
+                    if (!mainActivityIdlingResource.isIdleNow)
+                        decrement()
                     // The routing action was cancelled.
                 }
 
@@ -112,6 +124,8 @@ class MainActivity : AppCompatActivity()
                 {
                     // There was a problem at computing the routing operation.
                     showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
+                    if (!mainActivityIdlingResource.isIdleNow)
+                        decrement()
                 }
             }
         }
@@ -126,15 +140,15 @@ class MainActivity : AppCompatActivity()
 
         progressBar = findViewById(R.id.progress_bar)
         gemSurfaceView = findViewById(R.id.gem_surface)
-        
+
         overlayContainer = findViewById(R.id.overlay_container)
         name = findViewById(R.id.name)
         description = findViewById(R.id.description)
         image = findViewById(R.id.image)
-        
+
         followCursorButton = findViewById(R.id.follow_cursor)
-        
-        flyToRoutesButton = findViewById<FloatingActionButton?>(R.id.fly_to_route).also { 
+
+        flyToRoutesButton = findViewById<FloatingActionButton?>(R.id.fly_to_route).also {
             it.setOnClickListener {
                 SdkCall.execute {
                     gemSurfaceView.mapView?.let { mapView ->
@@ -146,9 +160,10 @@ class MainActivity : AppCompatActivity()
                 }
             }
         }
-        
+
         imageSize = resources.getDimension(R.dimen.image_size).toInt()
 
+        increment()
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
@@ -157,7 +172,8 @@ class MainActivity : AppCompatActivity()
 
             // Set GPS button if location permission is granted, otherwise request permission
             SdkCall.execute {
-                val hasLocationPermission = PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                val hasLocationPermission =
+                    PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 if (hasLocationPermission)
                 {
                     Util.postOnMain { enableGPSButton() }
@@ -175,16 +191,22 @@ class MainActivity : AppCompatActivity()
                     // tell the map view where the touch event happened
                     gemSurfaceView.mapView?.cursorScreenPosition = xy
                     gemSurfaceView.mapView?.deactivateAllHighlights()
-                    
-                    val centerXy = Xy(gemSurfaceView.measuredWidth / 2, gemSurfaceView.measuredHeight / 2)
+
+                    val centerXy =
+                        Xy(gemSurfaceView.measuredWidth / 2, gemSurfaceView.measuredHeight / 2)
 
                     val myPosition = gemSurfaceView.mapView?.cursorSelectionSceneObject
-                    if (myPosition != null && isSameMapScene(myPosition, MapSceneObject.getDefPositionTracker().first!!))
+                    if (myPosition != null && isSameMapScene(
+                            myPosition,
+                            MapSceneObject.getDefPositionTracker().first!!
+                        )
+                    )
                     {
                         showOverlayContainer(
                             getString(R.string.my_position),
                             "",
-                            ContextCompat.getDrawable(this, R.drawable.ic_current_location_arrow)?.toBitmap(imageSize, imageSize)
+                            ContextCompat.getDrawable(this, R.drawable.ic_current_location_arrow)
+                                ?.toBitmap(imageSize, imageSize)
                         )
 
                         myPosition.coordinates?.let {
@@ -231,7 +253,10 @@ class MainActivity : AppCompatActivity()
                                     0.75
                                 )
 
-                                gemSurfaceView.mapView?.activateHighlightLandmarks(landmark, displaySettings)
+                                gemSurfaceView.mapView?.activateHighlightLandmarks(
+                                    landmark,
+                                    displaySettings
+                                )
                             }
                         }
                         else
@@ -259,7 +284,7 @@ class MainActivity : AppCompatActivity()
 
                         return@execute
                     }
-                    
+
                     val overlays = gemSurfaceView.mapView?.cursorSelectionOverlayItems
                     if (!overlays.isNullOrEmpty())
                     {
@@ -271,14 +296,14 @@ class MainActivity : AppCompatActivity()
                         }
                         else
                         {
-                            overlay.run { 
+                            overlay.run {
                                 showOverlayContainer(
-                                    name.toString(), 
-                                    overlayInfo?.name.toString(), 
+                                    name.toString(),
+                                    overlayInfo?.name.toString(),
                                     image?.asBitmap(imageSize, imageSize)
-                                ) 
+                                )
                             }
-                            
+
                             overlay.coordinates?.let {
                                 gemSurfaceView.mapView?.centerOnCoordinates(
                                     it,
@@ -322,6 +347,11 @@ class MainActivity : AppCompatActivity()
         {
             showDialog("You must be connected to the internet!")
         }
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -336,15 +366,11 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
-    }
-
-    // ---------------------------------------------------------------------------------------------
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray)
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    )
     {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
@@ -362,7 +388,7 @@ class MainActivity : AppCompatActivity()
         SdkCall.execute {
             // Notify permission status had changed
             PermissionsHelper.onRequestPermissionsResult(this, requestCode, grantResults)
-            
+
             lateinit var positionListener: PositionListener
             if (PositionService.position?.isValid() == true)
             {
@@ -380,7 +406,7 @@ class MainActivity : AppCompatActivity()
             }
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------
 
     private fun calculateRoute() = SdkCall.execute {
@@ -393,59 +419,60 @@ class MainActivity : AppCompatActivity()
     }
 
     // ---------------------------------------------------------------------------------------------
-    
-    private fun isSameMapScene(first: MapSceneObject, second: MapSceneObject) : Boolean = 
+
+    private fun isSameMapScene(first: MapSceneObject, second: MapSceneObject): Boolean =
         first.maxScaleFactor == second.maxScaleFactor &&
-        first.scaleFactor == second.scaleFactor &&
-        first.visibility == second.visibility &&
-        first.coordinates?.latitude == second.coordinates?.latitude &&
-        first.coordinates?.longitude == second.coordinates?.longitude &&
-        first.coordinates?.altitude == second.coordinates?.altitude &&
-        first.orientation?.x == second.orientation?.x &&
-        first.orientation?.y == second.orientation?.y &&
-        first.orientation?.z == second.orientation?.z &&
-        first.orientation?.w == second.orientation?.w
-            
-    
+                first.scaleFactor == second.scaleFactor &&
+                first.visibility == second.visibility &&
+                first.coordinates?.latitude == second.coordinates?.latitude &&
+                first.coordinates?.longitude == second.coordinates?.longitude &&
+                first.coordinates?.altitude == second.coordinates?.altitude &&
+                first.orientation?.x == second.orientation?.x &&
+                first.orientation?.y == second.orientation?.y &&
+                first.orientation?.z == second.orientation?.z &&
+                first.orientation?.w == second.orientation?.w
+
+
     // ---------------------------------------------------------------------------------------------
-    
-    private fun showOverlayContainer(name: String, description: String, image: Bitmap?) = Util.postOnMain {
-        if (!overlayContainer.isVisible)
-        {
-            overlayContainer.visibility = View.VISIBLE
+
+    private fun showOverlayContainer(name: String, description: String, image: Bitmap?) =
+        Util.postOnMain {
+            if (!overlayContainer.isVisible)
+            {
+                overlayContainer.visibility = View.VISIBLE
+            }
+
+            this.name.text = name
+            if (description.isNotEmpty())
+            {
+                this.description.apply {
+                    text = description
+                    visibility = View.VISIBLE
+                }
+            }
+            else
+            {
+                this.description.visibility = View.GONE
+            }
+
+            this.image.setImageBitmap(image)
         }
 
-        this.name.text = name
-        if (description.isNotEmpty())
-        {
-            this.description.apply {
-                text = description
-                visibility = View.VISIBLE
-            }
-        }
-        else
-        {
-            this.description.visibility = View.GONE
-        }
-        
-        this.image.setImageBitmap(image)
-    }
-    
     // ---------------------------------------------------------------------------------------------
-    
+
     private fun hideOverlayContainer() = Util.postOnMain { overlayContainer.visibility = View.GONE }
-    
+
     // ---------------------------------------------------------------------------------------------
-    
+
     private fun openWebActivity(url: String)
     {
         val intent = Intent(this, WebActivity::class.java)
         intent.putExtra("url", url)
         startActivity(intent)
     }
-    
+
     // ---------------------------------------------------------------------------------------------
-    
+
     private fun enableGPSButton()
     {
         // Set actions for entering/ exiting following position mode.
@@ -459,7 +486,7 @@ class MainActivity : AppCompatActivity()
             {
                 View.VISIBLE
             }
-            
+
             onExitFollowingPosition = {
                 followCursorButton.visibility = View.VISIBLE
             }
@@ -477,10 +504,11 @@ class MainActivity : AppCompatActivity()
             }
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------
 
-    private fun requestPermissions(activity: Activity): Boolean {
+    private fun requestPermissions(activity: Activity): Boolean
+    {
         val permissions = arrayListOf(
             Manifest.permission.INTERNET,
             Manifest.permission.ACCESS_NETWORK_STATE,
@@ -492,7 +520,7 @@ class MainActivity : AppCompatActivity()
             REQUEST_PERMISSIONS, activity, permissions.toTypedArray()
         )
     }
-    
+
     // ---------------------------------------------------------------------------------------------
 
     @SuppressLint("InflateParams")
@@ -514,7 +542,7 @@ class MainActivity : AppCompatActivity()
     }
 
     // ---------------------------------------------------------------------------------------------
-    
+
     private fun selectRoute(route: Route)
     {
         gemSurfaceView.mapView?.apply {
@@ -533,7 +561,7 @@ class MainActivity : AppCompatActivity()
 
         gemSurfaceView.mapView?.centerOnRoutes(routesList)
     }
-    
+
     // ---------------------------------------------------------------------------------------------
 
     private fun Context.isDarkThemeOn(): Boolean
@@ -546,8 +574,29 @@ class MainActivity : AppCompatActivity()
     companion object
     {
         private const val REQUEST_PERMISSIONS = 110
+
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        const val RESOURCE = "GLOBAL"
     }
-    
+
+
+    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
+    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    fun getActivityIdlingResource(): IdlingResource
+    {
+        return mainActivityIdlingResource
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private fun increment() = mainActivityIdlingResource.increment()
+
+    // ---------------------------------------------------------------------------------------------
+    private fun decrement() = mainActivityIdlingResource.decrement()
+    //endregion ---------------------------------------------------------------------------------------------
+
     // ---------------------------------------------------------------------------------------------
 }
 
