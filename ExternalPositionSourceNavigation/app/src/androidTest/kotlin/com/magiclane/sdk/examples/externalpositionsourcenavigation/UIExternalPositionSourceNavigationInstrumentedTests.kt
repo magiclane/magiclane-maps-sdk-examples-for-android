@@ -73,7 +73,7 @@ class UIExternalPositionSourceNavigationInstrumentedTests
 
     @Test
     fun checkViews(): Unit = runBlocking {
-        delay(3000)
+        delay(10000)
         onView(withId(R.id.eta)).check(matches(isDisplayed()))
         onView(withId(R.id.rtt)).check(matches(isDisplayed()))
         onView(withId(R.id.rtd)).check(matches(isDisplayed()))

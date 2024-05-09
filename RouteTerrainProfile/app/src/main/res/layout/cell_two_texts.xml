@@ -10,6 +10,7 @@
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:textStyle="bold"
         android:layout_gravity="center_horizontal|bottom"
         android:gravity="center_horizontal|bottom"/>
 
@@ -19,6 +20,7 @@
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:textStyle="bold"
         android:layout_gravity="center_horizontal|top"
         android:gravity="center_horizontal|top"/>
 </LinearLayout>

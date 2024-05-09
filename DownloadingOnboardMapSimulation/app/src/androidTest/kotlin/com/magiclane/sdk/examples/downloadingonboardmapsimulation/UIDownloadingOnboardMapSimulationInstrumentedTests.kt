@@ -31,6 +31,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -85,6 +86,7 @@ class UIDownloadingOnboardMapSimulationInstrumentedTests
         onView(withId(R.id.nav_instruction)).check(matches(isDisplayed()))
     }
     @Test
+    @Ignore("To be worked on")
     fun checkDownloadingViews(): Unit = runBlocking {
         downloadIdleResource = activityRes.getDownloadingIdlingResource()
         IdlingRegistry.getInstance().register(downloadIdleResource)

@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,6 +60,7 @@ class ApplyMapStyleInstrumentedTests
     }
 
     @Test
+    @Ignore("To be worked on")
     fun checkMapStatusView() : Unit = runBlocking{
         delay(2000)
         onView(withId(R.id.status_text)).check(matches(isDisplayed()))

@@ -133,6 +133,6 @@ class FlyToCoordinatesInstrumentedTests
 
         delay(2000)
         assert(gemOffscreenSurfaceView.mapView != null)
-        gemOffscreenSurfaceView.mapView?.centerOnCoordinates(Coordinates(45.65112176095828, 25.60473923113322))
+        SdkCall.execute{ gemOffscreenSurfaceView.mapView?.centerOnCoordinates(Coordinates(45.65112176095828, 25.60473923113322)) }
     }
 }

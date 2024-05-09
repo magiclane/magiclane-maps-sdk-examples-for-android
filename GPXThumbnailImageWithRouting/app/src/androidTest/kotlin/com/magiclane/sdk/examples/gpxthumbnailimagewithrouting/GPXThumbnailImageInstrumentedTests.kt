@@ -30,6 +30,7 @@ import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
+import com.magiclane.sdk.examples.gpxthumbnailimagewithrouting.R
 import com.magiclane.sdk.routesandnavigation.ELineType
 import com.magiclane.sdk.routesandnavigation.ERouteTransportMode
 import com.magiclane.sdk.routesandnavigation.RouteRenderSettings

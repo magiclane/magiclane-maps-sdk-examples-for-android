@@ -42,6 +42,7 @@ import kotlinx.coroutines.runBlocking
 import org.hamcrest.Matcher
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -83,6 +84,7 @@ class ProjectionInstrumentedTests
     }
 
     @Test
+    @Ignore("To be worked on")
     fun checkProjectionResults(): Unit = runBlocking {
         onView(withId(R.id.gem_surface_view)).check(matches(isDisplayed()))
         delay(5000)

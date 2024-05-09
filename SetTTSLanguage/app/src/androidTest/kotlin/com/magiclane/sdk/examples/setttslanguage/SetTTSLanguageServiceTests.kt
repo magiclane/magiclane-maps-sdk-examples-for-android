@@ -202,7 +202,7 @@ class SetTTSLanguageServiceTests : SoundUtils.ITTSPlayerInitializationListener
         var hintStr = ""
         SdkCall.execute {
             SoundPlayingService.playText(
-                GemUtil.getTTSString(EStringIds.eStrMindYourSpeed),
+                "Mind your speed!",
                 object : SoundPlayingListener()
                 {
                     override fun notifyComplete(errorCode: Int, hint: String)
