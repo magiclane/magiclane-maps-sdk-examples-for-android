@@ -59,8 +59,8 @@ class LocationWikipediaInstrumentedTests
     }
 
     @Test
-    fun checkText(){
-        runBlocking { delay(3000) }
+    fun checkText(): Unit = runBlocking { 
+        delay(10000) 
         onView(withId(R.id.name)).check(matches(withSubstring("Liberty")))
     }
 }

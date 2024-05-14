@@ -46,6 +46,7 @@ import org.junit.Test
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
+import java.util.Timer
 import kotlin.concurrent.fixedRateTimer
 
 class ExternalPositionSourceNavigationInstrumentedTests
@@ -130,6 +131,7 @@ class ExternalPositionSourceNavigationInstrumentedTests
         lateinit var positionListener: PositionListener
         var externalDataSource: ExternalDataSource?
         val channel = Channel<Unit>()
+        var timer : Timer? = null
 
         SdkCall.execute {
             externalDataSource =
@@ -156,7 +158,7 @@ class ExternalPositionSourceNavigationInstrumentedTests
             PositionService.addListener(positionListener)
             var index = 0
             externalDataSource?.let { dataSource ->
-                fixedRateTimer("timer", false, 0L, 1000) {
+                timer = fixedRateTimer("timer", false, 0L, 1000) {
                     SdkCall.execute {
                         val externalPosition = ExternalPosition.produceExternalPosition(
                             System.currentTimeMillis(),
@@ -178,6 +180,7 @@ class ExternalPositionSourceNavigationInstrumentedTests
                     index++
                     if (index == MainActivity.positions.size)
                     {
+                        index = 0
                         launch { channel.send(Unit) }
                     }
                 }
@@ -185,6 +188,7 @@ class ExternalPositionSourceNavigationInstrumentedTests
         }
         withTimeout(180000) {
             channel.receive()
+            timer?.cancel()
         }
     }
 

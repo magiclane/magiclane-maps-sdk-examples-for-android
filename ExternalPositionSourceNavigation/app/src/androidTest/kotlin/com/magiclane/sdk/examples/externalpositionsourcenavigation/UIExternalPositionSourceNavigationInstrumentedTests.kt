@@ -32,48 +32,41 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4ClassRunner::class)
-class UIExternalPositionSourceNavigationInstrumentedTests
-{
+class UIExternalPositionSourceNavigationInstrumentedTests {
     @Rule
     @JvmField
     val activityScenarioRule: ActivityScenarioRule<MainActivity> =
         ActivityScenarioRule(MainActivity::class.java)
 
-    private var mActivityIdlingResource: IdlingResource? = null
-
     private lateinit var activityRes: MainActivity
 
 
     @Before
-    fun registerIdlingResource()
-    {
+    fun registerIdlingResource() {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
         runBlocking { delay(2000) }
         activityScenarioRule.scenario.onActivity { activity ->
-//            mActivityIdlingResource = activity.getActivityIdlingResource()
-            // To prove that the test fails, omit this call:
-            //IdlingRegistry.getInstance().register(mActivityIdlingResource)
+            IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
             activityRes = activity
         }
     }
 
     @After
-    fun closeActivity()
-    {
+    fun closeActivity() {
         activityScenarioRule.scenario.close()
-        if (mActivityIdlingResource != null)
-            IdlingRegistry.getInstance().unregister(mActivityIdlingResource)
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
     }
 
     @Test
     fun checkViews(): Unit = runBlocking {
-        delay(10000)
+        delay(1000)
         onView(withId(R.id.eta)).check(matches(isDisplayed()))
         onView(withId(R.id.rtt)).check(matches(isDisplayed()))
         onView(withId(R.id.rtd)).check(matches(isDisplayed()))
@@ -85,7 +78,7 @@ class UIExternalPositionSourceNavigationInstrumentedTests
 
     @Test
     fun testFollowCursorButton(): Unit = runBlocking {
-        delay(3000)
+        delay(1000)
         onView(withId(R.id.gem_surface)).perform(slowSwipeLeft())
         delay(500)
         onView(withId(R.id.follow_cursor)).check(matches(isDisplayed()))

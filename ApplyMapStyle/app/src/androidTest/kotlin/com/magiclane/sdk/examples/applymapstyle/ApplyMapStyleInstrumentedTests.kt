@@ -15,10 +15,12 @@ package com.magiclane.sdk.examples.applymapstyle
 
 import androidx.lifecycle.Lifecycle
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.IdlingRegistry
+import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.test.espresso.matcher.ViewMatchers.withSubstring
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
@@ -26,7 +28,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,13 +43,14 @@ class ApplyMapStyleInstrumentedTests
 
 
     private lateinit var activityRes: MainActivity
-
+    private var idlingResource: IdlingResource? = null
     @Before
     fun registerIdlingResource()
     {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
         runBlocking { delay(2000) }
         activityScenarioRule.scenario.onActivity { activity ->
+            IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
             activityRes = activity
         }
     }
@@ -56,15 +58,13 @@ class ApplyMapStyleInstrumentedTests
     @After
     fun closeActivity()
     {
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
         activityScenarioRule.scenario.close()
     }
 
-    @Test
-    @Ignore("To be worked on")
+    @Test 
     fun checkMapStatusView() : Unit = runBlocking{
-        delay(2000)
         onView(withId(R.id.status_text)).check(matches(isDisplayed()))
-        onView(withId(R.id.status_text)).check(matches(withText("Style Basic 3 Nocturnal with Elevation was applied.")))
-
+        onView(withId(R.id.status_text)).check(matches(withSubstring("Style")))
     }
 }

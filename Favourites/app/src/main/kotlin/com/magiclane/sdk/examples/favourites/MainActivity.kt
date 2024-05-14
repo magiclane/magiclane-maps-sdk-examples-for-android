@@ -28,10 +28,10 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
 import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -49,7 +49,6 @@ import com.magiclane.sdk.places.SearchService
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.SdkImages
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -227,7 +226,6 @@ class MainActivity : AppCompatActivity()
     private fun createStore()
     {
         store = LandmarkStoreService().createLandmarkStore("Favourites")?.first!!
-        store.startFastUpdateMode()
         gemSurfaceView.mapView?.let { mainMapView ->
             SdkCall.execute {
                 mainMapView.preferences?.landmarkStores?.addAllStoreCategories(store.id)

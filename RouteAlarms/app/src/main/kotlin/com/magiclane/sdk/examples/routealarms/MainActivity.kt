@@ -63,8 +63,7 @@ import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
 
-class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationListener
-{
+class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationListener {
     // ---------------------------------------------------------------------------------------------
 
     private lateinit var gemSurfaceView: GemSurfaceView
@@ -76,8 +75,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private var alarmImageSize = 0
     private var safetyAlarmId = 0
 
-    companion object
-    {
+    companion object {
         const val RESOURCE = "GLOBAL"
     }
 
@@ -104,8 +102,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             SdkCall.execute execute@{
                 // Get the overlay items that are present and relevant.
                 val alarmsList = alarmService?.overlayItemAlarms
-                if ((alarmsList == null) || (alarmsList.size == 0))
-                {
+                if ((alarmsList == null) || (alarmsList.size == 0)) {
                     return@execute
                 }
 
@@ -114,16 +111,13 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
                 // Get the distance to the closest alarm marker.
                 val distance = alarmsList.getDistance(0)
-                if (distance <= maxDistance)
-                {
+                if (distance <= maxDistance) {
                     var bmp: Bitmap? = null
 
                     alarmsList.getItem(0)?.let { alarm ->
                         val id = alarm.overlayUid
-                        if (id != safetyAlarmId)
-                        {
-                            if (safetyAlarmId != 0)
-                            {
+                        if (id != safetyAlarmId) {
+                            if (safetyAlarmId != 0) {
                                 removeHighlightedAlarm()
                             }
 
@@ -137,8 +131,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                                 }
                             }
 
-                            if (SoundPlayingService.ttsPlayerIsInitialized)
-                            {
+                            if (SoundPlayingService.ttsPlayerIsInitialized) {
                                 val warning = String.format(
                                     GemUtil.getTTSString(EStringIds.eStrCaution),
                                     GemUtil.getTTSString(EStringIds.eStrSpeedCamera)
@@ -154,21 +147,20 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
                     // If you are close enough to the alarm item, notify the user.
                     Util.postOnMain {
-                        if (!alarmPanel.isVisible)
-                        {
+                        if (!alarmPanel.isVisible) {
                             alarmPanel.visibility = View.VISIBLE
                         }
 
                         alarmText.text = getString(R.string.alarm_text, distance.toInt())
                         bmp?.let { alarmImage.setImageBitmap(it) }
+                        if (!alarmIdlingResource.isIdleNow)
+                            alarmIdlingResource.decrement()
                     }
 
                     // Remove the alarm listener if you want to notify only once.
                     // alarmService?.setAlarmListener(null)
                 }
             }
-            if (!alarmIdlingResource.isIdleNow)
-                alarmIdlingResource.decrement()
         },
 
         onOverlayItemAlarmsPassedOver = {
@@ -229,8 +221,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     // ---------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?)
-    {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         SoundUtils.addTTSPlayerInitializationListener(this)
@@ -263,8 +254,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             showDialog("TOKEN REJECTED")
         }
 
-        if (!Util.isInternetConnected(this))
-        {
+        if (!Util.isInternetConnected(this)) {
             showDialog("You must be connected to the internet!")
         }
 
@@ -276,8 +266,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     // ---------------------------------------------------------------------------------------------
 
-    override fun onDestroy()
-    {
+    override fun onDestroy() {
         super.onDestroy()
 
         // Deinitialize the SDK.
@@ -286,13 +275,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     // ---------------------------------------------------------------------------------------------
 
-    private fun enableGPSButton()
-    {
+    private fun enableGPSButton() {
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
-                if (SdkCall.execute { navigationService.isSimulationActive() } == true)
-                {
+                if (SdkCall.execute { navigationService.isSimulationActive() } == true) {
                     followCursorButton.visibility = View.VISIBLE
                 }
             }
@@ -311,8 +298,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     // ---------------------------------------------------------------------------------------------
 
     @Suppress("SameParameterValue")
-    private fun setAlarmOverlay(overlay: ECommonOverlayId)
-    {
+    private fun setAlarmOverlay(overlay: ECommonOverlayId) {
         SdkCall.execute {
             alarmService = AlarmService.produce(alarmListener)
             alarmService?.alarmDistance = 500.0 // meters
@@ -336,8 +322,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     // ---------------------------------------------------------------------------------------------
 
     @SuppressLint("InflateParams")
-    private fun showDialog(text: String)
-    {
+    private fun showDialog(text: String) {
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
             findViewById<TextView>(R.id.title).text = getString(R.string.error)
@@ -355,8 +340,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     // ---------------------------------------------------------------------------------------------
 
-    private fun highlightAlarm(image: Image, coordinates: Coordinates)
-    {
+    private fun highlightAlarm(image: Image, coordinates: Coordinates) {
         gemSurfaceView.mapView?.let { mapView ->
             val landmark = Landmark()
             landmark.image = image
@@ -375,29 +359,25 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     // ---------------------------------------------------------------------------------------------
 
-    private fun removeHighlightedAlarm()
-    {
+    private fun removeHighlightedAlarm() {
         gemSurfaceView.mapView?.deactivateHighlight(0)
     }
 
     // ---------------------------------------------------------------------------------------------
 
-    override fun onTTSPlayerInitialized()
-    {
+    override fun onTTSPlayerInitialized() {
         SoundPlayingService.setTTSLanguage("eng-USA")
     }
 
     // ---------------------------------------------------------------------------------------------
 
     @VisibleForTesting
-    fun getActivityIdlingResource(): IdlingResource
-    {
+    fun getActivityIdlingResource(): IdlingResource {
         return mainActivityIdlingResource
     }
 
     @VisibleForTesting
-    fun getAlarmIdlingResource(): IdlingResource
-    {
+    fun getAlarmIdlingResource(): IdlingResource {
         return alarmIdlingResource
     }
 }

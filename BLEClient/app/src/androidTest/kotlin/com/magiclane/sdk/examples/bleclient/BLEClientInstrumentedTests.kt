@@ -27,7 +27,6 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import com.polidea.rxandroidble2.mockrxandroidble.RxBleDeviceMock
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.BaseMatcher
@@ -36,7 +35,7 @@ import org.hamcrest.Matcher
 import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.not
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -49,8 +48,7 @@ import org.junit.runner.RunWith
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 @RunWith(AndroidJUnit4ClassRunner::class)
-class BLEClientInstrumentedTests
-{
+class BLEClientInstrumentedTests {
 
     @Rule
     @JvmField
@@ -87,8 +85,7 @@ class BLEClientInstrumentedTests
     @Rule
     @JvmField
     val permissionRule: GrantPermissionRule =
-        when
-        {
+        when {
 
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
                 permissionRuleVersionSAndUP
@@ -103,8 +100,7 @@ class BLEClientInstrumentedTests
         }
 
     @Before
-    fun registerIdlingResource()
-    {
+    fun registerIdlingResource() {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
         runBlocking { delay(2000) }
         activityScenarioRule.scenario.onActivity { activity ->
@@ -113,8 +109,7 @@ class BLEClientInstrumentedTests
     }
 
     @After
-    fun closeActivity()
-    {
+    fun closeActivity() {
         activityScenarioRule.scenario.close()
         activityRes.finish()
         //if (navIdleResource != null)
@@ -122,8 +117,7 @@ class BLEClientInstrumentedTests
     }
 
     @Test
-    fun checkBluetoothIsOn()
-    {
+    fun checkBluetoothIsOn() {
         val bluetoothManager =
             appContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         val bluetoothAdapter = bluetoothManager.adapter
@@ -145,28 +139,23 @@ class BLEClientInstrumentedTests
         ).check(
             matches(isDisplayed())
         ).withFailureHandler { error, _ ->
-            throw NotFoundException("No devices found: ${error.message}")
+            Assert.fail("No devices found: ${error.message}")
         }
     }
 
 
-    private fun <T> first(matcher: Matcher<T>): Matcher<T>
-    {
-        return object : BaseMatcher<T>()
-        {
+    private fun <T> first(matcher: Matcher<T>): Matcher<T> {
+        return object : BaseMatcher<T>() {
             var isFirst = true
-            override fun matches(item: Any): Boolean
-            {
-                if (isFirst && matcher.matches(item))
-                {
+            override fun matches(item: Any): Boolean {
+                if (isFirst && matcher.matches(item)) {
                     isFirst = false
                     return true
                 }
                 return false
             }
 
-            override fun describeTo(description: Description)
-            {
+            override fun describeTo(description: Description) {
                 description.appendText("should return first matching item")
             }
         }

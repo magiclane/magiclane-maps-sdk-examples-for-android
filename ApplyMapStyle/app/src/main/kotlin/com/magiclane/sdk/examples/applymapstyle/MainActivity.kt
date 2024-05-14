@@ -27,6 +27,8 @@ import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
+import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.content.ContentStore
 import com.magiclane.sdk.content.ContentStoreItem
 import com.magiclane.sdk.content.EContentStoreItemStatus
@@ -37,7 +39,6 @@ import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -62,6 +63,8 @@ class MainActivity : AppCompatActivity()
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
+        EspressoIdlingResource.increment()
+        
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -73,10 +76,9 @@ class MainActivity : AppCompatActivity()
         styleName = findViewById(R.id.style_name)
         downloadProgressBar = findViewById(R.id.download_progress_bar)
         downloadedIcon = findViewById(R.id.downloaded_icon)
-
+        
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
-
             fetchAvailableStyles()
         }
 
@@ -178,10 +180,12 @@ class MainActivity : AppCompatActivity()
                     }
                     GemError.Cancel -> {
                         // The action was cancelled.
+                        EspressoIdlingResource.decrement()
                         return@onCompleted
                     }
 
                     else -> {
+                        EspressoIdlingResource.decrement()
                         // There was a problem at retrieving the content store items.
                         showDialog("Content store service error: ${GemError.getMessage(errorCode)}")
                     }
@@ -221,6 +225,7 @@ class MainActivity : AppCompatActivity()
                 applyStyle(style)
                 showStatusMessage("Style $styleName was applied.")
                 styleContainer.visibility = View.GONE
+                EspressoIdlingResource.decrement()
             }
         )
     }
@@ -261,8 +266,13 @@ class MainActivity : AppCompatActivity()
     {
         downloadProgressBar.progress = progress
     }
-    
     // ---------------------------------------------------------------------------------------------------------------------------
 }
 
+// -------------------------------------------------------------------------------------------------------------------------------
+public object EspressoIdlingResource {
+    val espressoIdlingResource = CountingIdlingResource("ApplyMapStyleInstrumentedTestsIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if(!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
 // -------------------------------------------------------------------------------------------------------------------------------

@@ -23,6 +23,7 @@ package com.magiclane.sdk.examples.externalpositionsourcenavigation
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
@@ -31,6 +32,7 @@ import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.*
@@ -44,6 +46,7 @@ import com.magiclane.sdk.sensordatasource.enums.EDataType
 import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
+import java.util.Timer
 import kotlin.concurrent.fixedRateTimer
 import kotlin.math.acos
 import kotlin.math.atan2
@@ -177,6 +180,8 @@ class MainActivity : AppCompatActivity()
     private val navRoute: Route?
         get() = navigationService.getNavigationRoute(navigationListener)
 
+    var timer : Timer? = null
+    
     /*
     Define a navigation listener that will receive notifications from the
     navigation service.
@@ -192,6 +197,8 @@ class MainActivity : AppCompatActivity()
 
                     enableGPSButton()
                     mapView.followPosition()
+                    
+                    EspressoIdlingResource.decrement()
                 }
             }
 
@@ -255,6 +262,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        EspressoIdlingResource.increment()
 
         gemSurfaceView = findViewById(R.id.gem_surface)
         progressBar = findViewById(R.id.progress_bar)
@@ -309,7 +317,7 @@ class MainActivity : AppCompatActivity()
 
                     var index = 0
                     externalDataSource?.let { dataSource ->
-                        fixedRateTimer("timer", false, 0L, 1000) {
+                        timer = fixedRateTimer("timer", false, 0L, 1000) {
                             SdkCall.execute {
                                 val externalPosition = ExternalPosition.produceExternalPosition(
                                     System.currentTimeMillis(),
@@ -327,6 +335,7 @@ class MainActivity : AppCompatActivity()
                             index++
                             if (index == positions.size)
                               index = 0
+                            Log.d("BLABLA", index.toString() )
                         }
                     }
                 }
@@ -349,7 +358,8 @@ class MainActivity : AppCompatActivity()
     override fun onDestroy()
     {
         super.onDestroy()
-
+        timer?.cancel()
+        timer = null
         // Deinitialize the SDK.
         GemSdk.release()
     }
@@ -527,4 +537,11 @@ fun Array<Pair<Double, Double>>.getBearing(index: Int): Double
     return -1.0
 }
 
+// -------------------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------------------
+public object EspressoIdlingResource {
+    val espressoIdlingResource = CountingIdlingResource("ApplyMapStyleInstrumentedTestsIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if(!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
 // -------------------------------------------------------------------------------------------------------------------------------
