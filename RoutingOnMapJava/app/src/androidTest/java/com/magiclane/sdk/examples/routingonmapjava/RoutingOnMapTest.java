@@ -16,10 +16,12 @@
 package com.magiclane.sdk.examples.routingonmapjava;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner;
 
+import com.magiclane.sdk.core.ApiCallLogger;
 import com.magiclane.sdk.core.GemError;
 import com.magiclane.sdk.core.GemSdk;
 import com.magiclane.sdk.core.SdkSettings;
@@ -28,6 +30,7 @@ import com.magiclane.sdk.routesandnavigation.Route;
 import com.magiclane.sdk.routesandnavigation.RoutingService;
 import com.magiclane.sdk.util.GemCall;
 
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -37,6 +40,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.model.Statement;
 
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -46,7 +50,7 @@ public class RoutingOnMapTest {
     private static final Long TIMEOUT = 600000L;
     private static final Context appContext = ApplicationProvider.getApplicationContext();
     private static Boolean initResult = false;
-    
+
     @BeforeClass
     public static void checkSdkInitStartActivity() {
         try {
@@ -56,9 +60,18 @@ public class RoutingOnMapTest {
         }
     }
 
+    @Before
+    public void checkTokenAndNetwork() {
+        //verify token and internet connection
+        GemCall.INSTANCE.execute(() -> {
+            assert (!Objects.requireNonNull(GemSdk.INSTANCE.getTokenFromManifest(appContext)).isEmpty());
+            return null;
+        });
+        assert (appContext.getSystemService(ConnectivityManager.class).getActiveNetwork() != null);
+    }
     // -------------------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------------------
-   
+
     static class SDKInitRule implements TestRule {
         static class SDKStatement extends Statement {
             private final Statement statement;
@@ -78,16 +91,13 @@ public class RoutingOnMapTest {
             @Override
             public void evaluate() throws Throwable {
                 if (!GemSdk.INSTANCE.isInitialized()) {
-                    initResult = GemSdk.INSTANCE.initSdkWithDefaults(appContext, null, null, null, null, null, null, null, null, null, true, null, null, null, true);
+                    initResult = GemSdk.INSTANCE.initSdkWithDefaults(appContext, null, null, null, null, null, null, null, null, null, false, new ApiCallLogger(), null, null, true, false);
 
                     // must wait for map data ready
                     synchronized (lock) {
                         lock.wait(TIMEOUT);
                     }
                 } else return;
-
-               /* if (!SdkSettings.INSTANCE.isMapDataReady())
-                    throw new Error(new GemError().getMessage(GemError.OperationTimeout, appContext));*/
 
                 try {
                     statement.evaluate(); // This executes tests
@@ -151,7 +161,7 @@ public class RoutingOnMapTest {
         });
 
         GemCall.INSTANCE.execute(() -> {
-                var waypoints = new ArrayList<Landmark>();
+                ArrayList<Landmark> waypoints = new ArrayList<Landmark>();
                 waypoints.add(new Landmark("London", 51.5073204, -0.1276475));
                 waypoints.add(new Landmark("Paris", 48.8566932, 2.3514616));
                 routingService.calculateRoute(waypoints, null, false, (t) -> null, null, null);
@@ -159,8 +169,8 @@ public class RoutingOnMapTest {
             }
         );
         wait(objSync, 12000L);
-        assert(onCompletedPassed.get()) : "OnCompleted not passed : ${GemError.getMessage(error)}";
-        assert(error.get() == GemError.NoError ) : "Error code: " + error.get() ;
-        assert(!routeList.get().isEmpty()) : "Routing service returned no results." ;
+        assert (onCompletedPassed.get()) : "OnCompleted not passed : ${GemError.getMessage(error)}";
+        assert (error.get() == GemError.NoError) : "Error code: " + error.get();
+        assert (!routeList.get().isEmpty()) : "Routing service returned no results.";
     }
 }

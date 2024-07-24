@@ -76,15 +76,6 @@ class MainActivity : AppCompatActivity()
     // ---------------------------------------------------ACTIVITY MEMBERS--------------------------------------------------------
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    //region members for testing
-    companion object
-    {
-        const val RESOURCE = "GLOBAL"
-    }
-
-    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
-    //endregion
-
     private lateinit var binding: ActivityMainBinding
     private lateinit var viewModel: MainActivityViewModel
 
@@ -138,8 +129,7 @@ class MainActivity : AppCompatActivity()
                 }
             }
 
-            if (!mainActivityIdlingResource.isIdleNow)
-                decrement()
+            EspressoIdlingResource.decrement()
         }
     )
 
@@ -151,12 +141,12 @@ class MainActivity : AppCompatActivity()
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.rootView)
-        increment()
+        EspressoIdlingResource.increment()
+        viewModel = ViewModelProvider(this, ViewModelProvider.NewInstanceFactory())[MainActivityViewModel::class.java]
         SdkSettings.onMapDataReady = { isReady ->
             if (isReady)
             {
-                viewModel = ViewModelProvider(this, ViewModelProvider.NewInstanceFactory())[MainActivityViewModel::class.java]
-
+                viewModel.load()
                 addPropertyCallback()
 
                 // Defines an action that should be done when the world map is ready (Updated/ loaded).
@@ -173,7 +163,7 @@ class MainActivity : AppCompatActivity()
                     }
 
                     addButton.setOnClickListener {
-                        increment()
+                        EspressoIdlingResource.increment()
                         //check to see if more ranges can be generated on map
                         if (viewModel.listOfRangeProfiles.size >= MAX_ITEMS)
                         {
@@ -206,11 +196,9 @@ class MainActivity : AppCompatActivity()
                                 SdkCall.execute { calculateRanges() }
                                 binding.rangeValueEditText.setText("")
                                 hideKeyboard()
-                            }
-                            else
+                            } else
                                 showErrorDialog(resources.getString(R.string.same_range_detected_warning))
-                        }
-                        else
+                        } else
                             showErrorDialog(resources.getString(R.string.empty_range_value_warning))
                     }
 
@@ -240,9 +228,8 @@ class MainActivity : AppCompatActivity()
                     }
                     updateOptions()
                 }
-                decrement()
+                EspressoIdlingResource.decrement()
             }
-
         }
 
         SdkSettings.onApiTokenRejected = {/*
@@ -312,8 +299,8 @@ class MainActivity : AppCompatActivity()
     private fun checkIfNewRangeAlreadyExists(newRange: RangeSettingsProfile) =
         viewModel.listOfRangeProfiles.find {
             val itemMatcher = it.transportMode == newRange.transportMode &&
-                    it.rangeType == newRange.rangeType &&
-                    it.rangeValue == newRange.rangeValue
+                it.rangeType == newRange.rangeType &&
+                it.rangeValue == newRange.rangeValue
             if (it.transportMode == ERouteTransportMode.Bicycle && newRange.transportMode == ERouteTransportMode.Bicycle)
                 itemMatcher && it.bikeType == newRange.bikeType
             else
@@ -397,8 +384,8 @@ class MainActivity : AppCompatActivity()
     @SuppressLint("InflateParams")
     private fun showErrorDialog(text: String)
     {
-        while (!mainActivityIdlingResource.isIdleNow)
-            decrement()
+        while (!EspressoIdlingResource.espressoIdlingResource.isIdleNow)
+            EspressoIdlingResource.decrement()
 
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
@@ -974,18 +961,12 @@ class MainActivity : AppCompatActivity()
 
     //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
     // ---------------------------------------------------------------------------------------------------------------------------
-
-    @VisibleForTesting
-    fun getActivityIdlingResource(): IdlingResource
+    public object EspressoIdlingResource
     {
-        return mainActivityIdlingResource
+        val espressoIdlingResource = CountingIdlingResource("ApplyMapStyleInstrumentedTestsIdlingResource")
+        fun increment() = espressoIdlingResource.increment()
+        fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
     }
-
-    // ---------------------------------------------------------------------------------------------
-    private fun increment() = mainActivityIdlingResource.increment()
-
-    // ---------------------------------------------------------------------------------------------
-    private fun decrement() = mainActivityIdlingResource.decrement()
-    //endregion ---------------------------------------------------------------------------------------------
+    //endregion  -------------------------------------------------------------------------------------------------------------------------------
 }
 // -------------------------------------------------------------------------------------------------------------------------------

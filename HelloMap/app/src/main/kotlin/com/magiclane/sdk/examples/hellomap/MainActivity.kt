@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onDestroy()
 
-        // Deinitialize the SDK.
+        // Rekease the SDK.
         GemSdk.release()
     }
 

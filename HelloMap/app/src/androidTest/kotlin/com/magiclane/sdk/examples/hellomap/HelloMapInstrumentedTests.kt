@@ -13,19 +13,23 @@
 // -------------------------------------------------------------------------------------------------
 
 
-
 package com.magiclane.sdk.examples.hellomap
 // -------------------------------------------------------------------------------------------------
 
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.util.SdkCall
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -53,7 +57,17 @@ class HelloMapInstrumentedTests()
         @JvmStatic
         val sdkInitRule = SDKInitRule()
 
+        fun isInternetOn() = appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null
+
         // -------------------------------------------------------------------------------------------------
+    }
+
+    @Before
+    fun checkTokenAndNetwork()
+    {
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(isInternetOn()) { " No internet connection." }
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -65,13 +79,13 @@ class HelloMapInstrumentedTests()
 
         inner class SDKStatement(private val base: Statement) : Statement()
         {
-            private val lock = Object()
+            private val channel = Channel<Unit>()
 
             init
             {
                 SdkSettings.onMapDataReady = { isReady ->
                     if (isReady)
-                        synchronized(lock) { lock.notify() }
+                        runBlocking { channel.send(Unit) }
                 }
             }
 
@@ -83,12 +97,13 @@ class HelloMapInstrumentedTests()
                 {
                     runBlocking {
                         initResult = GemSdk.initSdkWithDefaults(appContext)
-
                         // must wait for map data ready
-                        synchronized(lock) { lock.wait(TIMEOUT) }
+                        withTimeoutOrNull(TIMEOUT) {
+                            channel.receive()
+                        } ?: if (isInternetOn()) assert(false) { "No internet." }
+                        else assert(false) { "Unexpected error. SDK not initialised." }
                     }
-                }
-                else return
+                } else return
 
                 if (!SdkSettings.isMapDataReady)
                     throw Error(GemError.getMessage(GemError.OperationTimeout))
@@ -96,8 +111,7 @@ class HelloMapInstrumentedTests()
                 try
                 {
                     base.evaluate() // This executes tests
-                }
-                finally
+                } finally
                 {
                     GemSdk.release()
                 }
@@ -109,7 +123,8 @@ class HelloMapInstrumentedTests()
     // -------------------------------------------------------------------------------------------------
 
     @Test
-    fun checkSDKInit(){
+    fun checkSDKInit()
+    {
         assert(initResult)
     }
 

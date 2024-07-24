@@ -16,6 +16,7 @@
 package com.magiclane.sdk.examples.downloadingonboardmap
 
 import android.content.Context
+import android.net.ConnectivityManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
@@ -59,6 +60,9 @@ class DownloadingOnboardMapInstrumentedTests
         fun checkSdkInitStartActivity()
         {
             assert(initResult) { "GEM SDK not initialized" }
+            //verify token and internet connection
+            SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+            assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
         }
 
     }

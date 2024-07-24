@@ -16,6 +16,7 @@ package com.magiclane.sdk.examples.definepersistentroadblock
 
 import android.Manifest
 import android.graphics.Point
+import android.net.ConnectivityManager
 import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.MotionEvent.PointerCoords
@@ -32,7 +33,9 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.util.SdkCall
 import kotlinx.coroutines.delay
@@ -54,7 +57,7 @@ class DefinePersistentRoadBlockInstrumentedTests
     val activityScenarioRule: ActivityScenarioRule<MainActivity> =
         ActivityScenarioRule(MainActivity::class.java)
 
-    //private var navIdleResource: IdlingResource? = null
+    private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
     private lateinit var activityRes: MainActivity
 
@@ -75,23 +78,26 @@ class DefinePersistentRoadBlockInstrumentedTests
         activityScenarioRule.scenario.onActivity { activity ->
             activityRes = activity
         }
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
     }
 
     @After
     fun closeActivity()
     {
         activityScenarioRule.scenario.close()
-        //if (navIdleResource != null)
-        //IdlingRegistry.getInstance().unregister(navIdleResource)
     }
 
     @Test
-    fun zoomAndClickOnMap():Unit = runBlocking{
+    fun zoomAndClickOnMap(): Unit = runBlocking {
         delay(3000)
-        SdkCall.execute{
-            activityRes.gemSurfaceView.mapView?.centerOnCoordinates(Coordinates(
-                45.651310, 25.604799
-            ))
+        SdkCall.execute {
+            activityRes.gemSurfaceView.mapView?.centerOnCoordinates(
+                Coordinates(
+                    45.651310, 25.604799
+                )
+            )
         }
         delay(3000)
         repeat(3) {
@@ -99,7 +105,7 @@ class DefinePersistentRoadBlockInstrumentedTests
         }
         onView(withId(R.id.gem_surface_view)).perform(click())
     }
-
+    
     private fun pinchOut(): ViewAction
     {
         return object : ViewAction
@@ -152,14 +158,10 @@ class DefinePersistentRoadBlockInstrumentedTests
                 val startTime = SystemClock.uptimeMillis()
                 var eventTime = startTime
                 var event: MotionEvent?
-                var eventX1: Float
-                var eventY1: Float
-                var eventX2: Float
-                var eventY2: Float
-                eventX1 = startPoint1.x.toFloat()
-                eventY1 = startPoint1.y.toFloat()
-                eventX2 = startPoint2.x.toFloat()
-                eventY2 = startPoint2.y.toFloat()
+                var eventX1: Float = startPoint1.x.toFloat()
+                var eventY1: Float = startPoint1.y.toFloat()
+                var eventX2: Float = startPoint2.x.toFloat()
+                var eventY2: Float = startPoint2.y.toFloat()
 
                 // Specify the property for the two touch points
                 val properties = arrayOfNulls<PointerProperties>(2)
@@ -229,14 +231,10 @@ class DefinePersistentRoadBlockInstrumentedTests
 
                     // Step 3, 4
                     val moveEventNumber = duration / eventMinInterval
-                    val stepX1: Float
-                    val stepY1: Float
-                    val stepX2: Float
-                    val stepY2: Float
-                    stepX1 = ((endPoint1.x - startPoint1.x) / moveEventNumber).toFloat()
-                    stepY1 = ((endPoint1.y - startPoint1.y) / moveEventNumber).toFloat()
-                    stepX2 = ((endPoint2.x - startPoint2.x) / moveEventNumber).toFloat()
-                    stepY2 = ((endPoint2.y - startPoint2.y) / moveEventNumber).toFloat()
+                    val stepX1: Float = ((endPoint1.x - startPoint1.x) / moveEventNumber).toFloat()
+                    val stepY1: Float = ((endPoint1.y - startPoint1.y) / moveEventNumber).toFloat()
+                    val stepX2: Float = ((endPoint2.x - startPoint2.x) / moveEventNumber).toFloat()
+                    val stepY2: Float = ((endPoint2.y - startPoint2.y) / moveEventNumber).toFloat()
                     for (i in 0 until moveEventNumber)
                     {
                         // Update the move events
@@ -293,8 +291,7 @@ class DefinePersistentRoadBlockInstrumentedTests
                         pointerCoords, 0, 0, 1f, 1f, 0, 0, 0, 0
                     )
                     injectMotionEventToUiController(uiController, event)
-                }
-                catch (e: InjectEventSecurityException)
+                } catch (e: InjectEventSecurityException)
                 {
                     throw RuntimeException("Could not perform pinch", e)
                 }

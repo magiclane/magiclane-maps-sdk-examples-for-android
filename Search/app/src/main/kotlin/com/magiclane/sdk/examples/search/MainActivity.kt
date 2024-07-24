@@ -25,7 +25,11 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.ProgressBar
+import android.widget.SearchView
+import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -33,6 +37,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemError
@@ -46,6 +51,7 @@ import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
+import com.magiclane.sound.session.SoundSession.requestFocus
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
@@ -58,6 +64,7 @@ class MainActivity : AppCompatActivity()
     private lateinit var progressBar: ProgressBar
     private lateinit var noResultText: TextView
     private lateinit var toolbar: Toolbar
+    private lateinit var searchView: SearchView
     private var imageSize: Int = 0
     private var reference: Coordinates? = null
 
@@ -89,6 +96,7 @@ class MainActivity : AppCompatActivity()
                     showDialog("Search service error: ${GemError.getMessage(errorCode)}")
                 }
             }
+            EspressoIdlingResource.decrement()
         }
     )
 
@@ -102,6 +110,14 @@ class MainActivity : AppCompatActivity()
         progressBar = findViewById(R.id.progressBar)
         noResultText = findViewById(R.id.no_results_text)
         toolbar = findViewById(R.id.toolbar)
+        searchView = findViewById(R.id.search_input)
+        SdkSettings.onMapDataReady = { isReady ->
+            if(isReady){
+                searchView.isVisible = true
+                EspressoIdlingResource.decrement()
+            }
+        }
+        EspressoIdlingResource.increment()
         listView = findViewById<RecyclerView?>(R.id.list_view).apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
             addItemDecoration(
@@ -118,8 +134,7 @@ class MainActivity : AppCompatActivity()
         }
         setSupportActionBar(toolbar)
 
-        findViewById<SearchView>(R.id.search_input).apply {
-
+        searchView.apply {
             setOnQueryTextListener(
                 object : SearchView.OnQueryTextListener
                 {
@@ -168,8 +183,10 @@ class MainActivity : AppCompatActivity()
             showDialog("You must be connected to the internet!")
         }
 
-        onBackPressedDispatcher.addCallback(this /* lifecycle owner */, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
+        onBackPressedDispatcher.addCallback(this /* lifecycle owner */, object : OnBackPressedCallback(true)
+        {
+            override fun handleOnBackPressed()
+            {
                 finish()
             }
         })
@@ -177,10 +194,9 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
-    override fun onPause()
+    override fun onStop()
     {
-        super.onPause()
-
+        super.onStop()
         if (isFinishing)
             GemSdk.release() // Release the SDK.
     }
@@ -211,7 +227,6 @@ class MainActivity : AppCompatActivity()
 
     private fun search(filter: String): Int = SdkCall.execute {
         // Cancel any search that is in progress now.
-        Log.d("SEARCH", filter)
         searchService.cancelSearch()
         if (filter.isBlank())
         {
@@ -223,13 +238,15 @@ class MainActivity : AppCompatActivity()
         reference = if (position?.isValid() == true)
         {
             position.coordinates
-        }
-        else
+        } else
         {
             Coordinates(51.5072, 0.1276) // center London
         }
-        
-        searchService.searchByFilter(filter, reference)
+
+        val  res = searchService.searchByFilter(filter, reference)
+        Log.d("!Q@W#E","....incremented,filter : $filter ,res = $res")
+        EspressoIdlingResource.increment()
+        res
     } ?: GemError.Cancel
 
     // ---------------------------------------------------------------------------------------------
@@ -353,4 +370,19 @@ class MainActivity : AppCompatActivity()
     }
 }
 
+// -------------------------------------------------------------------------------------------------
+
+object EspressoIdlingResource
+{
+    private const val RESOURCE_NAME = "SearchIdlingResource"
+    private var count = 0
+    val espressoIdlingResource = CountingIdlingResource(RESOURCE_NAME)
+
+    //fun increment() = if (count == 0) espressoIdlingResource.increment().also { count++ } else{}
+    fun increment() = espressoIdlingResource.increment().also { ++count }
+
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement().also { --count } else
+    {
+    }
+}
 // -------------------------------------------------------------------------------------------------

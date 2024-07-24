@@ -5,7 +5,7 @@ This example app demonstrates the following features:
 
 ## Requirements
 
-- Deployment target device must run min Android API 16.
+- Deployment target device must run Android 5.0 (API level 21) or higher.
 - Deployment target device must be connected to internet.
 
 ## Build instructions
@@ -16,7 +16,7 @@ Step 2. Extract SDK to the predefined folder (app/libs)
 
 Step 3. Load the project into ```Android Studio```.
 
-Step 4. ```File``` -> ```Sync project with gradle files```.
+Step 4. ```File``` -> ```Sync Project with Gradle Files```.
 
 Step 5. Select desired ```Active Build Variant``` (debug/release) in ```Build Variants``` menu.
 

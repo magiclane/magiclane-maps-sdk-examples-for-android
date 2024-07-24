@@ -14,7 +14,7 @@ android {
     // https://developer.android.com/studio/build/configure-app-module#set-namespace
     namespace 'com.github.mikephil.charting'
 
-    compileSdk 33
+    compileSdk 34
 
     buildTypes {
         release {
@@ -44,7 +44,7 @@ android {
     }
 
     dependencies {
-        implementation "androidx.annotation:annotation:1.5.0"
-        testImplementation 'junit:junit:4.13.2'
+        implementation shared.androidx.annotation
+        testImplementation shared.junit
     }
 }

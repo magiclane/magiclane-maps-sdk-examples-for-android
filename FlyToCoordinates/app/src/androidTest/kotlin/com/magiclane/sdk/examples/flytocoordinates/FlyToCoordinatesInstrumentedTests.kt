@@ -15,24 +15,21 @@
 package com.magiclane.sdk.examples.flytocoordinates
 
 import android.content.Context
+import android.net.ConnectivityManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemOffscreenSurfaceView
 import com.magiclane.sdk.core.GemSdk
-import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.places.Coordinates
-import com.magiclane.sdk.places.Landmark
-import com.magiclane.sdk.routesandnavigation.RoutingService
 import com.magiclane.sdk.util.SdkCall
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -65,7 +62,17 @@ class FlyToCoordinatesInstrumentedTests
         {
             assert(initResult) { "GEM SDK not initialized" }
         }
+
+        fun isInternetOn() = appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null
         // -------------------------------------------------------------------------------------------------
+    }
+
+    @Before
+    fun checkTokenAndInternet()
+    {
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -97,13 +104,12 @@ class FlyToCoordinatesInstrumentedTests
                     runBlocking {
                         initResult = GemSdk.initSdkWithDefaults(appContext)
                         // must wait for map data ready
-                        val sdkChannelJob = launch { channel.receive() }
-                        withTimeout(TIMEOUT) {
-                            while (sdkChannelJob.isActive) delay(500)
-                        }
+                        withTimeoutOrNull(TIMEOUT) {
+                            channel.receive()
+                        } ?: if (isInternetOn()) assert(false) { "No internet." }
+                        else assert(false) { "Unexpected error. SDK not initialised." }
                     }
-                }
-                else return
+                } else return
 
                 if (!SdkSettings.isMapDataReady)
                     throw Error(GemError.getMessage(GemError.OperationTimeout))
@@ -111,8 +117,7 @@ class FlyToCoordinatesInstrumentedTests
                 try
                 {
                     base.evaluate() // This executes tests
-                }
-                finally
+                } finally
                 {
                     GemSdk.release()
                 }
@@ -127,12 +132,14 @@ class FlyToCoordinatesInstrumentedTests
         val mapWidth = 200 * appContext.resources.displayMetrics.density
         val mapHeight = 200 * appContext.resources.displayMetrics.density
         val gemOffscreenSurfaceView =
-            GemOffscreenSurfaceView(mapWidth.toInt(),
+            GemOffscreenSurfaceView(
+                mapWidth.toInt(),
                 mapHeight.toInt(),
-                appContext.resources.displayMetrics.densityDpi)
+                appContext.resources.displayMetrics.densityDpi
+            )
 
         delay(2000)
         assert(gemOffscreenSurfaceView.mapView != null)
-        SdkCall.execute{ gemOffscreenSurfaceView.mapView?.centerOnCoordinates(Coordinates(45.65112176095828, 25.60473923113322)) }
+        SdkCall.execute { gemOffscreenSurfaceView.mapView?.centerOnCoordinates(Coordinates(45.65112176095828, 25.60473923113322)) }
     }
 }

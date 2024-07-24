@@ -59,21 +59,28 @@ class MainActivityViewModel : ViewModel()
         }
     }
 
-    private var colors = SdkCall.execute {
-        mutableListOf(
-            ColorInfo(Rgba(52, 119, 235, 63), false),
-            ColorInfo(Rgba(159, 122, 255, 63), false),
-            ColorInfo(Rgba(195, 98, 217, 63), false),
-            ColorInfo(Rgba(84, 73, 179, 63), false),
-            ColorInfo(Rgba(212, 59, 156, 63), false),
-            ColorInfo(Rgba(72, 153, 70, 63), false),
-            ColorInfo(Rgba(237, 45, 45, 63), false),
-            ColorInfo(Rgba(240, 160, 41, 63), false),
-            ColorInfo(Rgba(245, 106, 47, 63), false),
-            ColorInfo(Rgba(153, 89, 67, 63), false)
-        )
-    } ?: MutableList(MAX_ITEMS) { ColorInfo() }
+    private lateinit var colors : MutableList<ColorInfo>
 
+    
+    fun load(){
+        colors = SdkCall.execute {
+            mutableListOf(
+                ColorInfo(Rgba(52, 119, 235, 63), false),
+                ColorInfo(Rgba(159, 122, 255, 63), false),
+                ColorInfo(Rgba(195, 98, 217, 63), false),
+                ColorInfo(Rgba(84, 73, 179, 63), false),
+                ColorInfo(Rgba(212, 59, 156, 63), false),
+                ColorInfo(Rgba(72, 153, 70, 63), false),
+                ColorInfo(Rgba(237, 45, 45, 63), false),
+                ColorInfo(Rgba(240, 160, 41, 63), false),
+                ColorInfo(Rgba(245, 106, 47, 63), false),
+                ColorInfo(Rgba(153, 89, 67, 63), false)
+            )
+        } ?: MutableList(MAX_ITEMS) { ColorInfo() }
+        cashList = MutableList(listOfTransportTypes.size) { RangeSettingsProfile() }
+        currentRangeSettingsProfile = cashList[0]
+    }
+    
     // -------------------------------------------------------------------------------------------------------------------------------
 
     val listOfRangeProfiles = mutableListOf<RangeSettingsProfile>()
@@ -89,10 +96,9 @@ class MainActivityViewModel : ViewModel()
     )
 
     //cashes the choices made for each transport mode
-    val cashList =
-        MutableList(listOfTransportTypes.size) { RangeSettingsProfile() }
+    lateinit var cashList : MutableList<RangeSettingsProfile>
 
-    var currentRangeSettingsProfile = cashList[0]
+    lateinit var currentRangeSettingsProfile :RangeSettingsProfile 
 
     // -------------------------------------------------------------------------------------------------------------------------------
 

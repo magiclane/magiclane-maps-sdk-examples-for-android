@@ -15,6 +15,7 @@
 package com.magiclane.sdk.examples.flytotraffic
 
 import android.content.Context
+import android.net.ConnectivityManager
 import android.view.View
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
@@ -31,6 +32,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -63,9 +66,17 @@ class FlyToTrafficInstrumentedTests
         {
             assert(initResult) { "GEM SDK not initialized" }
         }
+        fun isInternetOn() = appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null
         // -------------------------------------------------------------------------------------------------
     }
 
+    @Before
+    fun checkTokenAndNetwork(){
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
+    }
+    
     // -------------------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------------------
     class SDKInitRule : TestRule
@@ -95,10 +106,10 @@ class FlyToTrafficInstrumentedTests
                     runBlocking {
                         initResult = GemSdk.initSdkWithDefaults(appContext)
                         // must wait for map data ready
-                        val sdkChannelJob = launch { channel.receive() }
-                        withTimeout(TIMEOUT) {
-                            while (sdkChannelJob.isActive) delay(500)
-                        }
+                        withTimeoutOrNull(TIMEOUT) {
+                            channel.receive()
+                        } ?: if (isInternetOn()) assert(false) { "No internet." }
+                        else assert(false) { "Unexpected error. SDK not initialised." }
                     }
                 }
                 else return

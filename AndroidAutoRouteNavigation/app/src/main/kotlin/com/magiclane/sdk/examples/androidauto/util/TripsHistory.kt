@@ -20,6 +20,7 @@ import com.magiclane.sdk.routesandnavigation.PTRoute
 import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.routesandnavigation.RouteBookmarks
 import com.magiclane.sdk.routesandnavigation.RoutePreferences
+import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.Util
 import kotlin.math.abs
 
@@ -162,10 +163,10 @@ class TripModel {
 
             // get departure and destination names
             if (bIsFromAToB)
-                departureName = TextsUtil.formatLandmarkDetails(waypoints[0])
+                departureName = GemUtil.formatLandmarkDetails(waypoints[0])
 
             if (tripWptsCount > 0)
-                destinationName = TextsUtil.formatLandmarkDetails(waypoints[tripWptsCount - 1])
+                destinationName = GemUtil.formatLandmarkDetails(waypoints[tripWptsCount - 1])
 
             // get all intermediate waypoints as one string ("%s, %s, %s...")
             val intermediateWptsName = getIntermediateWaypointsName(waypoints, bIsFromAToB).second
@@ -228,7 +229,7 @@ class TripModel {
             for (index in startIndex..endIndex) {
                 var tmpName: String
                 val waypoint = waypoints[index]
-                tmpName = TextsUtil.getFormattedWaypointName(waypoint)
+                tmpName = GemUtil.getFormattedWaypointName(waypoint)
 
                 if (pickShortNames) {
                     val idx = tmpName.indexOf(";")

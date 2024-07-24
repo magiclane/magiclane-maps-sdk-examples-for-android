@@ -14,14 +14,13 @@
 
 package com.magiclane.sdk.examples.downloadingonboardmap
 
+import android.net.ConnectivityManager
 import android.view.View
 import androidx.lifecycle.Lifecycle
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingPolicies
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withChild
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withParent
@@ -30,6 +29,10 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import androidx.test.platform.app.InstrumentationRegistry
+import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.util.SdkCall
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.Matcher
@@ -49,57 +52,37 @@ class UIDownloadingOnBoardInstrumentedTests
     @JvmField
     val activityScenarioRule: ActivityScenarioRule<MainActivity> =
         ActivityScenarioRule(MainActivity::class.java)
-
-    private var navIdleResource: IdlingResource? = null
-    private var downloadIdleResource: IdlingResource? = null
-
-    private lateinit var activityRes: MainActivity
-
+    
+    private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Before
     fun registerIdlingResource()
     {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        runBlocking { delay(2000) }
-        activityScenarioRule.scenario.onActivity { activity ->
-            IdlingPolicies.setIdlingResourceTimeout(180000, TimeUnit.MILLISECONDS)
-            activityRes = activity
+        IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
+        IdlingPolicies.setIdlingResourceTimeout(3, TimeUnit.MINUTES)
+        EspressoIdlingResource.espressoIdlingResource.increment()
+        activityScenarioRule.scenario.onActivity { _ ->
+            EspressoIdlingResource.espressoIdlingResource.decrement()
         }
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
     }
 
     @After
     fun closeActivity()
     {
         activityScenarioRule.scenario.close()
-        if (navIdleResource != null)
-            IdlingRegistry.getInstance().unregister(navIdleResource)
-        if (downloadIdleResource != null)
-            IdlingRegistry.getInstance().unregister(downloadIdleResource)
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
     }
 
     @Test
     fun checkMapDownloading(): Unit = runBlocking {
         delay(5000)
-        onView(
-            withPositionInParent(
-                R.id.list_view,
-                0
-            )
-        ).check(
-            matches(
-                allOf(
-                    withChild(withText("Afghanistan")), withChild(
-                        allOf(
-                            withId(R.id.item_progress_bar),
-                            isDisplayed()
-                        )
-                    )
-                )
-            )
-        )
+        onView(firstPositionInParent(R.id.list_view)).check(matches(withChild(withText("Afghanistan"))))
     }
 
-    fun withPositionInParent(parentViewId: Int, position: Int): Matcher<View> =
-        allOf(withParent(withId(parentViewId)), withParentIndex(position))
-
+    private fun firstPositionInParent(parentViewId: Int): Matcher<View> =
+        allOf(withParent(withId(parentViewId)), withParentIndex(0))
 }

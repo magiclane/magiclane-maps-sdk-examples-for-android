@@ -24,6 +24,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.icu.number.Precision.increment
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -37,7 +38,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -97,7 +97,6 @@ class MainActivity : AppCompatActivity()
         onCompleted = { routes, errorCode, _ ->
             progressBar.visibility = View.GONE
 
-
             when (errorCode)
             {
                 GemError.NoError ->
@@ -107,16 +106,13 @@ class MainActivity : AppCompatActivity()
                     SdkCall.execute {
                         gemSurfaceView.mapView?.presentRoutes(routes, displayBubble = true)
                         gemSurfaceView.mapView?.preferences?.routes?.mainRoute?.let { selectRoute(it) }
-                        if (!mainActivityIdlingResource.isIdleNow)
-                            decrement()
+
                     }
                     flyToRoutesButton.visibility = View.VISIBLE
                 }
 
                 GemError.Cancel ->
                 {
-                    if (!mainActivityIdlingResource.isIdleNow)
-                        decrement()
                     // The routing action was cancelled.
                 }
 
@@ -124,10 +120,10 @@ class MainActivity : AppCompatActivity()
                 {
                     // There was a problem at computing the routing operation.
                     showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
-                    if (!mainActivityIdlingResource.isIdleNow)
-                        decrement()
+
                 }
             }
+            EspressoIdlingResource.decrement()
         }
     )
 
@@ -163,7 +159,7 @@ class MainActivity : AppCompatActivity()
 
         imageSize = resources.getDimension(R.dimen.image_size).toInt()
 
-        increment()
+        EspressoIdlingResource.increment()
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
@@ -177,8 +173,7 @@ class MainActivity : AppCompatActivity()
                 if (hasLocationPermission)
                 {
                     Util.postOnMain { enableGPSButton() }
-                }
-                else
+                } else
                 {
                     requestPermissions(this)
                 }
@@ -258,8 +253,7 @@ class MainActivity : AppCompatActivity()
                                     displaySettings
                                 )
                             }
-                        }
-                        else
+                        } else
                         {
                             landmark.coordinates?.let {
                                 gemSurfaceView.mapView?.centerOnCoordinates(
@@ -293,8 +287,7 @@ class MainActivity : AppCompatActivity()
                         {
                             hideOverlayContainer()
                             openWebActivity(overlay.getPreviewUrl(Size()).toString())
-                        }
-                        else
+                        } else
                         {
                             overlay.run {
                                 showOverlayContainer(
@@ -393,8 +386,7 @@ class MainActivity : AppCompatActivity()
             if (PositionService.position?.isValid() == true)
             {
                 Util.postOnMain { enableGPSButton() }
-            }
-            else
+            } else
             {
                 positionListener = PositionListener {
                     if (!it.isValid()) return@PositionListener
@@ -422,15 +414,15 @@ class MainActivity : AppCompatActivity()
 
     private fun isSameMapScene(first: MapSceneObject, second: MapSceneObject): Boolean =
         first.maxScaleFactor == second.maxScaleFactor &&
-                first.scaleFactor == second.scaleFactor &&
-                first.visibility == second.visibility &&
-                first.coordinates?.latitude == second.coordinates?.latitude &&
-                first.coordinates?.longitude == second.coordinates?.longitude &&
-                first.coordinates?.altitude == second.coordinates?.altitude &&
-                first.orientation?.x == second.orientation?.x &&
-                first.orientation?.y == second.orientation?.y &&
-                first.orientation?.z == second.orientation?.z &&
-                first.orientation?.w == second.orientation?.w
+            first.scaleFactor == second.scaleFactor &&
+            first.visibility == second.visibility &&
+            first.coordinates?.latitude == second.coordinates?.latitude &&
+            first.coordinates?.longitude == second.coordinates?.longitude &&
+            first.coordinates?.altitude == second.coordinates?.altitude &&
+            first.orientation?.x == second.orientation?.x &&
+            first.orientation?.y == second.orientation?.y &&
+            first.orientation?.z == second.orientation?.z &&
+            first.orientation?.w == second.orientation?.w
 
 
     // ---------------------------------------------------------------------------------------------
@@ -449,8 +441,7 @@ class MainActivity : AppCompatActivity()
                     text = description
                     visibility = View.VISIBLE
                 }
-            }
-            else
+            } else
             {
                 this.description.visibility = View.GONE
             }
@@ -481,8 +472,7 @@ class MainActivity : AppCompatActivity()
             followCursorButton.visibility = if (isFollowingPosition == true)
             {
                 View.GONE
-            }
-            else
+            } else
             {
                 View.VISIBLE
             }
@@ -575,29 +565,17 @@ class MainActivity : AppCompatActivity()
     {
         private const val REQUEST_PERMISSIONS = 110
 
-        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-        const val RESOURCE = "GLOBAL"
     }
-
-
-    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
-    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    fun getActivityIdlingResource(): IdlingResource
-    {
-        return mainActivityIdlingResource
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    private fun increment() = mainActivityIdlingResource.increment()
-
-    // ---------------------------------------------------------------------------------------------
-    private fun decrement() = mainActivityIdlingResource.decrement()
-    //endregion ---------------------------------------------------------------------------------------------
-
-    // ---------------------------------------------------------------------------------------------
 }
 
+// -------------------------------------------------------------------------------------------------
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+object EspressoIdlingResource
+{
+    val espressoIdlingResource = CountingIdlingResource("MapSelectionIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+//endregion  -------------------------------------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------

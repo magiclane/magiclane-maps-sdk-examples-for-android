@@ -19,7 +19,6 @@ import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
-import androidx.multidex.MultiDexApplication
 import com.magiclane.sdk.core.DataBuffer
 import com.magiclane.sdk.core.ErrorCode
 import com.magiclane.sdk.core.GemSdk
@@ -45,7 +44,7 @@ import java.io.ByteArrayOutputStream
 
 const val REQUEST_PERMISSIONS = 110
 
-class AppProcess : MultiDexApplication() {
+class AppProcess : Application() {
 
     init
     {

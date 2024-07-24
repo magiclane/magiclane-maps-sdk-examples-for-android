@@ -27,6 +27,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.not
@@ -49,26 +50,20 @@ class UIRouteInstructionsInstrumentedTests
     val activityScenarioRule: ActivityScenarioRule<MainActivity> =
         ActivityScenarioRule(MainActivity::class.java)
 
-    private var mActivityIdlingResource: IdlingResource? = null
+    private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Before
     fun registerIdlingResource()
     {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        runBlocking { delay(2000) }
-        activityScenarioRule.scenario.onActivity { activity ->
-            mActivityIdlingResource = activity.getActivityIdlingResource()
-            // To prove that the test fails, omit this call:
-            IdlingRegistry.getInstance().register(mActivityIdlingResource)
-        }
+        IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
     }
 
     @After
     fun closeActivity()
     {
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
         activityScenarioRule.scenario.close()
-        if (mActivityIdlingResource != null)
-            IdlingRegistry.getInstance().unregister(mActivityIdlingResource)
     }
 
     @Test

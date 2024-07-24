@@ -6,8 +6,6 @@ Contact: info@magiclane.com
 
 This repository holds a series of example projects using the **Magic Lane - Maps SDK for Android**. More information about the API can be found on the [Documentation](https://developer.magiclane.com/documentation) page.
 
-This set of individual, use-case based projects is designed to be cloned by developers for their own use.
-
 * [Android Auto Route Navigation](AndroidAutoRouteNavigation) - Start navigation from the current position to a given landmark if a route can be calculated.
 * [Apply Custom Map Style](ApplyCustomMapStyle) - Present a map; apply a custom map style.
 * [Apply Map Style](ApplyMapStyle) - Get the map style items from the server; download and apply a map style.
@@ -79,7 +77,7 @@ This set of individual, use-case based projects is designed to be cloned by deve
 
 **Note:** As the very first step, we highly recommend that you get a token from [Magic Lane Portal](https://developer.magiclane.com/api). If no token is set, you can still test your apps, but a watermark will be displayed, and all the online services including mapping, searching, routing, etc. will slow down after a few minutes.
 
-**Note:** Build all examples by using `build_all.sh`. First set environment variable `ANDROID_SDK_ROOT`, e.g.: `export ANDROID_SDK_ROOT=/path/to/android-sdk` and then call `build_all.sh <path/to/sdk/.aar>`
+**Note:** Build all examples by using `build_all.sh`. First set environment variable `ANDROID_SDK_ROOT`, e.g.: `export ANDROID_SDK_ROOT=/path/to/android-sdk` and then call `build_all.sh`
 
 ## License
 

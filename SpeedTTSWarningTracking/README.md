@@ -18,7 +18,7 @@ Step 2. Extract SDK to the predefined folder (app/libs)
 
 Step 3. Load the project into ```Android Studio```.
 
-Step 4. ```File``` -> ```Sync project with gradle files```.
+Step 4. ```File``` -> ```Sync Project with Gradle Files```.
 
 Step 5. Select desired ```Active Build Variant``` (debug/release) in ```Build Variants``` menu.
 

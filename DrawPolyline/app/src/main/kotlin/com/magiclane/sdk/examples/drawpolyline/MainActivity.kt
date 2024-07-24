@@ -23,8 +23,12 @@ import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
+import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.EMarkerType
 import com.magiclane.sdk.d3scene.Marker
@@ -32,8 +36,8 @@ import com.magiclane.sdk.d3scene.MarkerCollection
 import com.magiclane.sdk.d3scene.MarkerCollectionRenderSettings
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.magiclane.sdk.core.Rgba
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -53,11 +57,16 @@ class MainActivity : AppCompatActivity()
         setContentView(R.layout.activity_main)
         gemSurfaceView = findViewById(R.id.gem_surface)
 
+        EspressoIdlingResource.increment()
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
             // Defines an action that should be done when the map is ready.
             flyToPolyline()
+            lifecycleScope.launch {
+                delay(3000)
+                EspressoIdlingResource.decrement()
+            }
         }
 
         SdkSettings.onApiTokenRejected = {/* 
@@ -148,8 +157,15 @@ class MainActivity : AppCompatActivity()
             markerCollection.area?.let { mapView.centerOnArea(it) }
         }
     }
-
     // ---------------------------------------------------------------------------------------------------------------------------
 }
-
+// ---------------------------------------------------------------------------------------------------------------------------
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+@VisibleForTesting
+object EspressoIdlingResource {
+    val espressoIdlingResource = CountingIdlingResource("DrawPolylineIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if(!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+//endregion -------------------------------------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------------------------------------

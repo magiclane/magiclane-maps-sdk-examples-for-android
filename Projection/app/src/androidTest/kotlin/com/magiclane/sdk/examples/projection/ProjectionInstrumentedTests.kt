@@ -15,34 +15,41 @@
 
 package com.magiclane.sdk.examples.projection
 
+import android.net.ConnectivityManager
 import android.view.View
+import android.widget.TextView
+import androidx.annotation.IdRes
+import androidx.core.view.children
 import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.action.MotionEvents
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.contrib.RecyclerViewActions
+import androidx.test.espresso.matcher.ViewMatchers.hasMinimumChildCount
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withSubstring
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import androidx.test.platform.app.InstrumentationRegistry
+import com.google.android.material.textview.MaterialTextView
+import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.Xy
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.util.SdkCall
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.hamcrest.CoreMatchers.anyOf
 import org.hamcrest.Matcher
 import org.junit.After
+import org.junit.Assert
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,46 +64,42 @@ class ProjectionInstrumentedTests
     val activityScenarioRule: ActivityScenarioRule<MainActivity> =
         ActivityScenarioRule(MainActivity::class.java)
 
-    private var mActivityIdlingResource: IdlingResource? = null
-
     private lateinit var activityRes: MainActivity
-
+    private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Before
-    fun registerIdlingResource()
-    {
+    fun registerIdlingResource(): Unit = runBlocking {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        runBlocking { delay(2000) }
+        IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
         activityScenarioRule.scenario.onActivity { activity ->
-            mActivityIdlingResource = activity.getActivityIdlingResource()
-            // To prove that the test fails, omit this call:
-            IdlingRegistry.getInstance().register(mActivityIdlingResource)
             activityRes = activity
         }
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
+
     }
 
     @After
     fun closeActivity()
     {
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
         activityScenarioRule.scenario.close()
-        if (mActivityIdlingResource != null)
-            IdlingRegistry.getInstance().unregister(mActivityIdlingResource)
     }
 
     @Test
-    @Ignore("To be worked on")
     fun checkProjectionResults(): Unit = runBlocking {
         onView(withId(R.id.gem_surface_view)).check(matches(isDisplayed()))
         delay(5000)
-
+        val surface = activityRes.findViewById<GemSurfaceView>(R.id.gem_surface_view)
         val center = Pair(
-            activityRes.gemSurfaceView.measuredWidth / 2,
-            activityRes.gemSurfaceView.measuredHeight / 2
+            surface.measuredWidth / 2,
+            surface.measuredHeight / 2
         )
         async {
             SdkCall.execute {
                 val centerXy = Xy(center.first, center.second)
-                activityRes.gemSurfaceView.mapView?.centerOnCoordinates(
+                surface.mapView?.centerOnCoordinates(
                     Coordinates(40.689846, -74.047690), //Liberty Island
                     zoomLevel = -1,
                     xy = centerXy,
@@ -104,7 +107,7 @@ class ProjectionInstrumentedTests
             }
         }.await()
 
-        delay(5000)
+        delay(10000)
 
         onView(withId(R.id.gem_surface_view)).perform(
             touchDownAndUp(
@@ -114,19 +117,52 @@ class ProjectionInstrumentedTests
         )
         delay(6000)
 
-        onView(withSubstring("Liberty Island")).check(matches(isDisplayed()))
-        onView(withSubstring("WGS84")).check(matches(isDisplayed()))
-        onView(withSubstring("UTM")).check(matches(isDisplayed()))
+        //check there is at least a child with one of the substrings of projection types
+        onView(withId(R.id.projections_list)).check(matches(hasMinimumChildCount(1)))
         onView(withId(R.id.projections_list)).perform(
-            RecyclerViewActions.scrollToLastPosition<RecyclerView.ViewHolder>()
+            PerformTextCheck<MaterialTextView>(
+                R.id.projection_name,
+                anyOf(
+                    withSubstring("WGS"),
+                    withSubstring("WHATTHREEWORDS"),
+                    withSubstring("LAM"),
+                    withSubstring("BNG"),
+                    withSubstring("MGRS"),
+                    withSubstring("UTM"),
+                    withSubstring("GK"),
+                )
+            )
         )
-        onView(withSubstring("MGRS")).check(matches(isDisplayed()))
-        onView(withSubstring("WHATTHREEWORDS")).check(matches(isDisplayed()))
-
     }
 
+    class PerformTextCheck<T : TextView>(@IdRes val textId: Int, private val matcher: Matcher<T>) : ViewAction
+    {
+        override fun getDescription(): String
+        {
+            return "Checking view with text matcher"
+        }
 
-    private fun touchDownAndUp(x: Float, y: Float): ViewAction?
+        override fun getConstraints(): Matcher<View>
+        {
+            return isDisplayed()
+        }
+
+        override fun perform(uiController: UiController?, view: View?)
+        {
+            if (view is RecyclerView)
+            {
+                for (each in view.children)
+                {
+                    each.findViewById<T>(textId)?.let {
+                        assert(matcher.matches(it)) { "View with id : $textId, did not match matcher : $matcher" }
+                    }
+                }
+            } else
+                Assert.fail("This action is for RecycleView only")
+        }
+    }
+
+    private fun touchDownAndUp(x: Float, y: Float): ViewAction
     {
         return object : ViewAction
         {

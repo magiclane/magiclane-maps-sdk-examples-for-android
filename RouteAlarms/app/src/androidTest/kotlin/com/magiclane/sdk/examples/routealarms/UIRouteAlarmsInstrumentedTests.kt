@@ -17,12 +17,11 @@ package com.magiclane.sdk.examples.routealarms
 // -------------------------------------------------------------------------------------------------
 
 import android.Manifest
-import android.view.View
+import android.net.ConnectivityManager
 import android.widget.ImageView
 import androidx.lifecycle.Lifecycle
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -30,18 +29,19 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.util.SdkCall
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.hamcrest.CoreMatchers.not
-import org.hamcrest.Description
-import org.hamcrest.TypeSafeMatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.lang.IllegalArgumentException
 
 // -------------------------------------------------------------------------------------------------
 @LargeTest
@@ -54,31 +54,27 @@ class UIRouteAlarmsInstrumentedTests
     val activityScenarioRule: ActivityScenarioRule<MainActivity> =
         ActivityScenarioRule(MainActivity::class.java)
 
-    private var mActivityIdlingResource: IdlingResource? = null
-    private var mAlarmIdlingResource: IdlingResource? = null
-
+    private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Before
     fun registerIdlingResource()
     {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        runBlocking { delay(2000) }
-        activityScenarioRule.scenario.onActivity { activity ->
-            mActivityIdlingResource = activity.getActivityIdlingResource()
-            mAlarmIdlingResource = activity.getAlarmIdlingResource()
-            // To prove that the test fails, omit this call:
-            IdlingRegistry.getInstance().register(mActivityIdlingResource)
+        IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
+        EspressoIdlingResource.increment()
+        activityScenarioRule.scenario.onActivity { _ ->
+           EspressoIdlingResource.espressoIdlingResource.decrement()
         }
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
     }
 
     @After
     fun closeActivity()
     {
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
         activityScenarioRule.scenario.close()
-        if (mActivityIdlingResource != null)
-            IdlingRegistry.getInstance().unregister(mActivityIdlingResource)
-        if (mAlarmIdlingResource != null)
-            IdlingRegistry.getInstance().unregister(mAlarmIdlingResource)
     }
 
     @Rule(order = 0)
@@ -89,25 +85,15 @@ class UIRouteAlarmsInstrumentedTests
     )
 
     @Test
-    fun testAlarmPanelShows(){
-        IdlingRegistry.getInstance().register(mAlarmIdlingResource)
-        onView(withId(R.id.alarm_panel)).check(matches(isDisplayed()))
-        onView(withId(R.id.alarm_image)).check(matches(HasDrawableMatcher()))
-        onView(withId(R.id.alarm_text)).check(matches(not(withText(""))))
-    }
-
-    private class HasDrawableMatcher : TypeSafeMatcher<View>()
-    {
-        override fun describeTo(description: Description?)
-        {
-            description?.appendText("Image does not have drawable")
-        }
-
-        override fun matchesSafely(item: View?): Boolean
-        {
-            if (item is ImageView)
-                return item.drawable != null
-            else throw IllegalArgumentException()
+    fun testAlarmPanelShows(): Unit = runBlocking{
+        withTimeout(20000){
+            while (!EspressoIdlingResource.alarmShows) delay(1000)
+            onView(withId(R.id.alarm_panel)).check(matches(isDisplayed()))
+            onView(withId(R.id.alarm_image)).check { view, exception ->
+                if (exception != null) throw exception
+                assert((view as ImageView).drawable != null)
+            }
+            onView(withId(R.id.alarm_text)).check(matches(not(withText(""))))
         }
     }
 }

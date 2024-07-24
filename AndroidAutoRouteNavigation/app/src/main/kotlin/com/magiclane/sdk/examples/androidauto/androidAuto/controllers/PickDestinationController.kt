@@ -20,9 +20,9 @@ import com.magiclane.sdk.d3scene.Canvas
 import com.magiclane.sdk.examples.androidauto.androidAuto.Service
 import com.magiclane.sdk.examples.androidauto.androidAuto.model.UIActionModel
 import com.magiclane.sdk.examples.androidauto.androidAuto.screens.FreeNavigationScreen
-import com.magiclane.sdk.examples.androidauto.util.TextsUtil
 import com.magiclane.sdk.examples.androidauto.util.Util
 import com.magiclane.sdk.places.Landmark
+import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util.postOnMain
 
@@ -117,7 +117,7 @@ class PickDestinationController(context: CarContext) : FreeNavigationScreen(cont
             val coordinates = mapView?.cursorWgsPosition ?: return@execute
 
             val landmark = Landmark("Destination", coordinates)
-            TextsUtil.fillLandmarkAddressInfo(mapView, landmark, true)
+            GemUtil.fillLandmarkAddressInfo(mapView, landmark, true)
 
             postOnMain {
                 Service.pushScreen(RoutesPreviewController(context, landmark), true)

@@ -16,10 +16,10 @@
 package com.magiclane.sdk.examples.routesimulationwithinstructions
 
 // -------------------------------------------------------------------------------------------------
+import android.net.ConnectivityManager
 import androidx.lifecycle.Lifecycle
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -27,8 +27,9 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import androidx.test.platform.app.InstrumentationRegistry
+import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.util.SdkCall
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.not
 import org.junit.After
@@ -47,40 +48,52 @@ class UIRouteSimulationWithInstructionsInstrumentedTests
     val activityScenarioRule: ActivityScenarioRule<MainActivity> =
         ActivityScenarioRule(MainActivity::class.java)
 
-    private var mActivityIdlingResource: IdlingResource? = null
-
-
+    private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+    
     @Before
     fun registerIdlingResource()
     {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        runBlocking { delay(2000) }
-        activityScenarioRule.scenario.onActivity { activity ->
-            mActivityIdlingResource = activity.getActivityIdlingResource()
-            // To prove that the test fails, omit this call:
-            IdlingRegistry.getInstance().register(mActivityIdlingResource)
-        }
+        IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
     }
 
     @After
     fun closeActivity()
     {
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
         activityScenarioRule.scenario.close()
-        if (mActivityIdlingResource != null)
-            IdlingRegistry.getInstance().unregister(mActivityIdlingResource)
     }
 
     @Test
-    fun checkMandatoryViewsForVisibilityAndText(){
-        onView(withId(R.id.eta)).check(matches(allOf(not(withText("")),
-            isDisplayed()
-        )))
-        onView(withId(R.id.rtt)).check(matches(allOf(not(withText("")),
-            isDisplayed()
-        )))
-        onView(withId(R.id.rtd)).check(matches(allOf(not(withText("")),
-            isDisplayed()
-        )))
+    fun checkMandatoryViewsForVisibilityAndText()
+    {
+        onView(withId(R.id.eta)).check(
+            matches(
+                allOf(
+                    not(withText("")),
+                    isDisplayed()
+                )
+            )
+        )
+        onView(withId(R.id.rtt)).check(
+            matches(
+                allOf(
+                    not(withText("")),
+                    isDisplayed()
+                )
+            )
+        )
+        onView(withId(R.id.rtd)).check(
+            matches(
+                allOf(
+                    not(withText("")),
+                    isDisplayed()
+                )
+            )
+        )
     }
 }
 // -------------------------------------------------------------------------------------------------

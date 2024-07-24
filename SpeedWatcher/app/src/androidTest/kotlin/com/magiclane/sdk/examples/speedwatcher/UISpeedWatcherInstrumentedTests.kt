@@ -16,6 +16,7 @@ package com.magiclane.sdk.examples.speedwatcher
 
 // -------------------------------------------------------------------------------------------------
 
+import android.net.ConnectivityManager
 import android.view.View
 import androidx.lifecycle.Lifecycle
 import androidx.test.espresso.Espresso.onView
@@ -31,6 +32,8 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import androidx.test.platform.app.InstrumentationRegistry
+import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.util.SdkCall
 import kotlinx.coroutines.delay
@@ -54,27 +57,24 @@ class UISpeedWatcherInstrumentedTests
     // -------------------------------------------------------------------------------------------------
     @Rule
     @JvmField
-    val activityScenarioRule: ActivityScenarioRule<MainActivity> =
-        ActivityScenarioRule(MainActivity::class.java)
+    val activityScenarioRule: ActivityScenarioRule<MainActivity> = ActivityScenarioRule(MainActivity::class.java)
 
-    private var mActivityIdlingResource: IdlingResource? = null
+    private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Before
     fun registerIdlingResource()
     {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        runBlocking { delay(2000) }
-        activityScenarioRule.scenario.onActivity { activity ->
-            mActivityIdlingResource = activity.getActivityIdlingResource()
-            IdlingRegistry.getInstance().register(mActivityIdlingResource)
-        }
+        IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
     }
 
     @After
     fun closeActivity()
     {
-        if (mActivityIdlingResource != null)
-            IdlingRegistry.getInstance().unregister(mActivityIdlingResource)
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
         activityScenarioRule.scenario.close()
     }
 
@@ -106,7 +106,7 @@ class UISpeedWatcherInstrumentedTests
 
                 if (view is GemSurfaceView)
                 {
-                    SdkCall.execute{
+                    SdkCall.execute {
                         val cameraMoving = view.mapView?.isCameraMoving()
                         val isFollowingPosition = view.mapView?.isFollowingPosition()
                         assertThat(cameraMoving, matcher)

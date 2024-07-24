@@ -29,7 +29,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemError
@@ -108,7 +107,7 @@ class MainActivity : AppCompatActivity()
                     showDialog("Search service error: ${GemError.getMessage(errorCode)}")
                 }
             }
-            decrement()
+            EspressoIdlingResource.decrement()
         })
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -124,7 +123,7 @@ class MainActivity : AppCompatActivity()
         gemSurfaceView = findViewById(R.id.gem_surface)
         locationDetails = findViewById(R.id.location_details)
         statusText = findViewById(R.id.status_text)
-        increment()
+        EspressoIdlingResource.increment()
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
@@ -240,7 +239,7 @@ class MainActivity : AppCompatActivity()
         // Display a view containing the necessary information about the landmark.
         var name = ""
         var coordinates = ""
-        increment()
+        EspressoIdlingResource.increment()
 
         SdkCall.execute {
             name = landmark.name ?: "Unnamed Location"
@@ -280,7 +279,7 @@ class MainActivity : AppCompatActivity()
                 this.visibility = View.VISIBLE
             }
 
-            decrement()
+            EspressoIdlingResource.decrement()
         }
     }
 
@@ -349,24 +348,14 @@ class MainActivity : AppCompatActivity()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
-
-    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    @VisibleForTesting
-    fun getActivityIdlingResource(): IdlingResource
-    {
-        return mainActivityIdlingResource
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    private fun increment() = mainActivityIdlingResource.increment()
-
-    // ---------------------------------------------------------------------------------------------
-    private fun decrement() = mainActivityIdlingResource.decrement()
-    //endregion ---------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------
-
 }
-
-// -------------------------------------------------------------------------------------------------------------------------------
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+@VisibleForTesting
+object EspressoIdlingResource
+{
+    val espressoIdlingResource = CountingIdlingResource("FavouritesIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+//endregion  -------------------------------------------------------------------------------------------------------------------------------

@@ -19,8 +19,6 @@ package com.magiclane.sdk.examples.routesimulationwithoutmap
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
@@ -29,26 +27,17 @@ import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.ShapeDrawable
 import android.os.Build
 import android.os.Bundle
-import android.util.DisplayMetrics
 import android.util.TypedValue
-import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.addCallback
-import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
@@ -139,7 +128,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private var navRoute: Route? = null
 
-    private val playingListener = object : SoundPlayingListener() {}
+    private val playingListener = object : SoundPlayingListener()
+    {}
 
     private val soundPreference = SoundPlayingPreferences()
 
@@ -194,7 +184,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         onNavigationStarted = {
             SdkCall.execute {
-                increment()
+                EspressoIdlingResource.increment()
                 GemUtilImages.setDpi(dpi)
 
                 PositionService.addListener(positionListener, EDataType.ImprovedPosition)
@@ -399,8 +389,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                     binding.currentRoadCodeImageContainer.isVisible = false
                     binding.currentStreetText.isVisible = true
                     binding.currentStreetText.text = crtStreetName
-                }
-                else
+                } else
                 {
                     binding.currentStreetText.isVisible = false
 
@@ -521,8 +510,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                     }
                 }
             }
-            if(!mainActivityIdlingResource.isIdleNow)
-                decrement()
+            EspressoIdlingResource.decrement()
         },
 
         onNavigationSound = { sound ->
@@ -626,8 +614,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 val image = navInstr.getRoadInfoImage(roadsInfo)
 
                 GemUtilImages.asBitmap(image, resultWidth, height)
-            }
-            else
+            } else
                 Pair(0, null)
         } ?: Pair(0, null)
     }
@@ -672,7 +659,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
-        increment()
+        EspressoIdlingResource.increment()
         setContentView(binding.root)
 
         supportActionBar?.hide()
@@ -1031,8 +1018,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                     trafficDelayTimeText = trafficDelayTextPair.first
                     trafficDelayTimeUnitText = trafficDelayTextPair.second
                 }
-            }
-            else
+            } else
             {
                 val trafficDistTextPair =
                     GemUtil.getDistText(trafficEvent.length, SdkSettings.unitSystem, true)
@@ -1054,8 +1040,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         {
             trafficBmp = newTrafficBmp
             sameTrafficImage = false
-        }
-        else
+        } else
             sameTrafficImage = true
     }
 
@@ -1069,18 +1054,16 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------
-
-    @VisibleForTesting
-    fun getActivityIdlingResource(): IdlingResource
-    {
-        return mainActivityIdlingResource
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    private fun increment() = mainActivityIdlingResource.increment()
-
-    // ---------------------------------------------------------------------------------------------
-    private fun decrement() = mainActivityIdlingResource.decrement()
-    // ---------------------------------------------------------------------------------------------
 }
+
+// ---------------------------------------------------------------------------------------------------------------------------
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+object EspressoIdlingResource
+{
+    val espressoIdlingResource = CountingIdlingResource("RouteSimulationWithoutMapIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+//endregion  -------------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------

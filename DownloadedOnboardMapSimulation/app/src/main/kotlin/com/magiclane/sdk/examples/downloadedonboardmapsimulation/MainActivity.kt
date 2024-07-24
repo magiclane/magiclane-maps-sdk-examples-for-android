@@ -23,24 +23,21 @@ package com.magiclane.sdk.examples.downloadedonboardmapsimulation
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.view.View
+import android.util.Log
 import android.widget.Button
-import android.widget.ImageView
-import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemSdk
-import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.Time
+import com.magiclane.sdk.examples.downloadedonboardmapsimulation.databinding.ActivityMainBinding
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.NavigationInstruction
 import com.magiclane.sdk.routesandnavigation.NavigationListener
@@ -48,25 +45,13 @@ import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.magiclane.sdk.examples.downloadedonboardmapsimulation.databinding.ActivityMainBinding
+import java.util.Locale
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
 class MainActivity : AppCompatActivity()
 {
-    //region members for testing
-    companion object
-    {
-        const val NAV_IDLE_RESOURCE = "GLOBAL"
-    }
-
-    private var navigationIdlingResource = CountingIdlingResource(NAV_IDLE_RESOURCE, true)
-    //endregion
-    // ---------------------------------------------------------------------------------------------------------------------------
-
     private lateinit var binding: ActivityMainBinding
 
     // Define a navigation service from which we will start the simulation.
@@ -122,7 +107,7 @@ class MainActivity : AppCompatActivity()
             }
 
             // Update the navigation panels info.
-            binding.apply{
+            binding.apply {
                 navInstruction.text = instrText
                 navInstructionIcon.setImageBitmap(instrIcon)
                 navInstructionDistance.text = instrDistance
@@ -130,9 +115,10 @@ class MainActivity : AppCompatActivity()
                 eta.text = etaText
                 rtt.text = rttText
                 rtd.text = rtdText
-                
+
                 statusText.isVisible = false
             }
+            EspressoIdlingResource.decrement()
         }
     )
 
@@ -156,7 +142,6 @@ class MainActivity : AppCompatActivity()
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         /// MAGIC LANE
         SdkSettings.onApiTokenRejected = {
             /*
@@ -167,7 +152,7 @@ class MainActivity : AppCompatActivity()
             showDialog("TOKEN REJECTED")
         }
 
-        binding.gemSurfaceView.onSdkInitSucceeded = {
+        binding.gemSurfaceView.onDefaultMapViewCreated = {
 
             // Defines an action that should be done when the the sdk had been loaded.
             startSimulation()
@@ -177,16 +162,18 @@ class MainActivity : AppCompatActivity()
             finish()
             exitProcess(0)
         }
+        EspressoIdlingResource.increment()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onDestroy()
+    override fun onStop()
     {
-        super.onDestroy()
-
-        // Deinitialize the SDK.
-        GemSdk.release()
+        super.onStop()
+        // Release the SDK.
+        Log.e("GEMSDK", "isFinishing = $isFinishing ")
+        if (isFinishing)
+            GemSdk.release()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -259,8 +246,8 @@ class MainActivity : AppCompatActivity()
 
         val time = Time()
         time.setLocalTime()
-        time.longValue = time.longValue + etaNumber * 1000
-        return String.format("%d:%02d", time.hour, time.minute)
+        time.longValue += etaNumber * 1000
+        return String.format(Locale.getDefault(), "%d:%02d", time.hour, time.minute)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -292,22 +279,23 @@ class MainActivity : AppCompatActivity()
             Landmark("Luxembourg", 49.61588784436375, 6.135843869736401),
             Landmark("Mersch", 49.74785494642988, 6.103323786692679)
         )
-
         navigationService.startSimulation(
             waypoints,
             navigationListener,
             routingProgressListener
         )
     }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------------------------------------
-    @VisibleForTesting
-    fun getNavIdlingResource(): IdlingResource = navigationIdlingResource
-    //endregion ---------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------------------------------------
 }
 
+// -------------------------------------------------------------------------------------------------------------------------------
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+@VisibleForTesting
+object EspressoIdlingResource
+{
+    val espressoIdlingResource = CountingIdlingResource("DownloadedOnboardMapSimulationIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+//endregion  -------------------------------------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------------------------------------

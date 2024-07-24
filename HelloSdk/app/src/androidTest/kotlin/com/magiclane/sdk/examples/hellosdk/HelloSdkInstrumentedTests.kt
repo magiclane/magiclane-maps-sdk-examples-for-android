@@ -19,13 +19,18 @@ package com.magiclane.sdk.examples.hellosdk
 
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.util.SdkCall
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
+import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.rules.TestRule
@@ -45,14 +50,21 @@ class HelloSdkInstrumentedTests()
         // -------------------------------------------------------------------------------------------------
         const val TIMEOUT = 600000L
         private val appContext: Context = ApplicationProvider.getApplicationContext()
-        private val mainIntent = Intent(appContext, MainActivity::class.java)
         private var initResult = false
 
         @get:ClassRule
         @JvmStatic
         val sdkInitRule = SDKInitRule()
-
+        
+        fun isInternetOn() = appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null
         // -------------------------------------------------------------------------------------------------
+    }
+
+    @Before
+    fun checkTokenAndNetwork(){
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(isInternetOn()) { " No internet connection." }
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -64,13 +76,15 @@ class HelloSdkInstrumentedTests()
 
         inner class SDKStatement(private val base: Statement) : Statement()
         {
-            private val lock = Object()
+            private val channel = Channel<Boolean>()
 
             init
             {
                 SdkSettings.onMapDataReady = { isReady ->
                     if (isReady)
-                        synchronized(lock) { lock.notify() }
+                        runBlocking {
+                            channel.send(true)
+                        }
                 }
             }
 
@@ -82,9 +96,11 @@ class HelloSdkInstrumentedTests()
                 {
                     runBlocking {
                         initResult = GemSdk.initSdkWithDefaults(appContext)
-
                         // must wait for map data ready
-                        synchronized(lock) { lock.wait(TIMEOUT) }
+                        withTimeoutOrNull(TIMEOUT) {
+                            channel.receive()
+                        } ?: if (isInternetOn()) assert(false) { "No internet." }
+                        else assert(false) { "Unexpected error. SDK not initialised." }
                     }
                 }
                 else return

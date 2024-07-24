@@ -14,11 +14,14 @@
 
 package com.magiclane.sdk.examples.drawpolyline
 
+import android.net.ConnectivityManager
 import androidx.lifecycle.Lifecycle
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.IdlingResource
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import androidx.test.platform.app.InstrumentationRegistry
+import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.util.SdkCall
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -36,37 +39,34 @@ class DrawPolylineInstrumentedTest
     val activityScenarioRule: ActivityScenarioRule<MainActivity> =
         ActivityScenarioRule(MainActivity::class.java)
 
-    private var mActivityIdlingResource: IdlingResource? = null
-
     private lateinit var activityRes: MainActivity
-
+    private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Before
     fun registerIdlingResource()
     {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        runBlocking { delay(2000) }
+        IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
         activityScenarioRule.scenario.onActivity { activity ->
-            //mActivityIdlingResource = activity.getActivityIdlingResource()
-            // To prove that the test fails, omit this call:
-            //IdlingRegistry.getInstance().register(mActivityIdlingResource)
             activityRes = activity
         }
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
     }
 
     @After
     fun closeActivity()
     {
         activityScenarioRule.scenario.close()
-        if (mActivityIdlingResource != null)
-            IdlingRegistry.getInstance().unregister(mActivityIdlingResource)
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
     }
 
     @Test
-    fun markersShouldBeOfSize2()= runBlocking{
-        delay(2000)
-        val s = SdkCall.execute{activityRes.gemSurfaceView.mapView?.preferences?.markers?.size == 2} ?: false
-        assert(s){"Marker collection not added"}
+    fun markersShouldBeOfSize2() = runBlocking {
+        delay(10000)
+        val s = SdkCall.execute { activityRes.gemSurfaceView.mapView?.preferences?.markers?.size == 2 } ?: false
+        assert(s) { "Marker collection not added" }
     }
 
 }

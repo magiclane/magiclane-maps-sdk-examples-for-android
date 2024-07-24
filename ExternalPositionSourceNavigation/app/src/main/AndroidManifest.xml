@@ -16,7 +16,7 @@
 
         <meta-data
             android:name="com.magiclane.sdk.token"
-            android:value="YOUR_TOKEN" />
+            android:value="${GEM_TOKEN}" />
 
         <activity
             android:name=".MainActivity"

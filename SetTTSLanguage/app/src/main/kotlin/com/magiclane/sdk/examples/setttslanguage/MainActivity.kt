@@ -35,6 +35,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.SoundPlayingListener
@@ -46,7 +47,6 @@ import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.magiclane.sound.SoundUtils
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -56,12 +56,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     // ---------------------------------------------------------------------------------------------------------------------------
 
     // ---------------------------------------------------------------------------------------------
-    companion object
-    {
-        const val RESOURCE = "GLOBAL"
-    }
-
-    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
     private lateinit var progressBar: ProgressBar
     private lateinit var selectedLanguageTextView: TextView
     private lateinit var languageButton: Button
@@ -84,7 +78,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         playButton = findViewById(R.id.play_button)
         languageContainer = findViewById(R.id.language_container)
 
-        increment()
+        EspressoIdlingResource.increment()
         languageButton.setOnClickListener {
             onLanguageButtonClicked()
         }
@@ -93,12 +87,12 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             SdkCall.execute {
                 SoundPlayingService.playText(
                     GemUtil.getTTSString(EStringIds.eStrMindYourSpeed),
-                   /* SoundPlayingListener()*/
+                    /* SoundPlayingListener()*/
                     object : SoundPlayingListener()
                     {
                         override fun notifyComplete(errorCode: Int, hint: String)
                         {
-                            increment()
+                            EspressoIdlingResource.increment()
                             super.notifyComplete(errorCode, hint)
                         }
                     },
@@ -117,12 +111,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             if (!ttsPlayerIsInitialized)
             {
                 SoundUtils.addTTSPlayerInitializationListener(this)
-            }
-            else
+            } else
             {
                 loadTTSLanguages()
             }
-            decrement()
+            EspressoIdlingResource.decrement()
         }
 
         SdkSettings.onApiTokenRejected = {
@@ -195,7 +188,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private fun loadTTSLanguages()
     {
-        increment()
+        EspressoIdlingResource.increment()
         SdkCall.execute {
             ttsLanguages = SoundPlayingService.getTTSLanguages()
         }
@@ -214,14 +207,14 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         progressBar.isVisible = false
         languageContainer.isVisible = true
         playButton.isVisible = true
-        decrement()
+        EspressoIdlingResource.decrement()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun onLanguageButtonClicked()
     {
-        increment()
+        EspressoIdlingResource.increment()
         val builder = AlertDialog.Builder(this)
 
         val convertView = layoutInflater.inflate(R.layout.dialog_list, null)
@@ -248,7 +241,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         val dialog = builder.create()
         dialog.setOnShowListener {
-            decrement()
+            EspressoIdlingResource.decrement()
         }
         dialog.show()
         adapter.dialog = dialog
@@ -315,19 +308,17 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         // -----------------------------------------------------------------------------------------------------------------------
     }
-
-    @VisibleForTesting
-    fun getActivityIdlingResource(): CountingIdlingResource
-    {
-        return mainActivityIdlingResource
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    private fun increment() = mainActivityIdlingResource.increment()
-
-    // ---------------------------------------------------------------------------------------------
-    private fun decrement() = mainActivityIdlingResource.decrement()
-    // ---------------------------------------------------------------------------------------------
-
     // ---------------------------------------------------------------------------------------------------------------------------
 }
+
+@VisibleForTesting
+object EspressoIdlingResource
+{
+    const val resourceName = "SetTTsLanguageIdlingResource"
+    val espressoIdlingResource = CountingIdlingResource(resourceName)
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else
+    {
+    }
+}
+// ---------------------------------------------------------------------------------------------------------------------------

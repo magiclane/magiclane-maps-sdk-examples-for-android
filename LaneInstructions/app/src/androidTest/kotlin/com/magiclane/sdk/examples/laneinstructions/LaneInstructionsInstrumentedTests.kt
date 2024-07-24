@@ -17,6 +17,7 @@ package com.magiclane.sdk.examples.laneinstructions
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.net.ConnectivityManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
@@ -31,10 +32,11 @@ import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.util.SdkCall
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -42,7 +44,6 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runner.RunWith
 import org.junit.runners.model.Statement
-import kotlin.system.measureTimeMillis
 
 // -------------------------------------------------------------------------------------------------
 
@@ -68,6 +69,16 @@ class LaneInstructionsInstrumentedTests
         {
             assert(initResult) { "GEM SDK not initialized" }
         }
+
+        fun isInternetOn() = appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null
+    }
+
+    @Before
+    fun checkTokenAndNetwork()
+    {
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(isInternetOn()) { " No internet connection." }
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -98,15 +109,13 @@ class LaneInstructionsInstrumentedTests
                 {
                     runBlocking {
                         initResult = GemSdk.initSdkWithDefaults(appContext)
-
                         // must wait for map data ready
-                        val sdkChannelJob = launch { channel.receive() }
-                        withTimeout(TIMEOUT) {
-                            while (sdkChannelJob.isActive) delay(500)
-                        }
+                        withTimeoutOrNull(TIMEOUT) {
+                            channel.receive()
+                        } ?: if (isInternetOn()) assert(false) { "No internet." }
+                        else assert(false) { "Unexpected error. SDK not initialised." }
                     }
-                }
-                else return
+                } else return
 
                 if (!SdkSettings.isMapDataReady)
                     throw Error(GemError.getMessage(GemError.OperationTimeout))
@@ -114,8 +123,7 @@ class LaneInstructionsInstrumentedTests
                 try
                 {
                     base.evaluate() // This executes tests
-                }
-                finally
+                } finally
                 {
                     GemSdk.release()
                 }
@@ -186,7 +194,7 @@ class LaneInstructionsInstrumentedTests
                 channel.receive()
                 assert(list.isNotEmpty()) {
                     "List is empty, no lane instruction received." +
-                            "This may be false positive if your route does not have lane updates"
+                        "This may be false positive if your route does not have lane updates"
                 }
                 assert(list.filterNotNull().isNotEmpty()) { "No Bitmaps received" }
                 assert(startNavigationResult == GemError.NoError) { "Could not start navigation" }

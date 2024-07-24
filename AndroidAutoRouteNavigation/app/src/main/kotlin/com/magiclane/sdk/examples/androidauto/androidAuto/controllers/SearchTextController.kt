@@ -22,7 +22,6 @@ import com.magiclane.sdk.examples.androidauto.androidAuto.model.UIActionModel
 import com.magiclane.sdk.examples.androidauto.androidAuto.screens.SearchScreen
 import com.magiclane.sdk.examples.androidauto.app.AppProcess
 import com.magiclane.sdk.examples.androidauto.services.SearchInstance
-import com.magiclane.sdk.examples.androidauto.util.TextsUtil
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.places.LandmarkList
@@ -114,7 +113,7 @@ class SearchTextController(context: CarContext) : SearchScreen(context) {
     companion object {
         fun asSearchModel(item: Landmark, reference: Coordinates?): GenericListItemModel? {
             val coordinates = item.coordinates ?: return null
-            val nameDesc = TextsUtil.pairFormatLandmarkDetails(item)
+            val nameDesc = GemUtil.pairFormatLandmarkDetails(item)
 
             val distanceInMeters = reference?.let { coordinates.getDistance(it).toInt() } ?: -1
 

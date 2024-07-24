@@ -19,6 +19,7 @@ package com.magiclane.sdk.examples.routeinstructions
 import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.icu.number.Precision.increment
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -28,13 +29,12 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.addCallback
-import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.Rgba
@@ -48,7 +48,6 @@ import com.magiclane.sdk.util.GemUtilImages
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.magiclane.sdk.util.Util.postOnMain
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
@@ -56,12 +55,6 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------
-    companion object
-    {
-        const val RESOURCE = "GLOBAL"
-    }
-
-    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
 
     private lateinit var listView: RecyclerView
     private lateinit var progressBar: ProgressBar
@@ -88,14 +81,14 @@ class MainActivity : AppCompatActivity()
                 {
                     // The routing action was cancelled.
                     showDialog("The routing action was cancelled.")
-                    decrement()
+                    EspressoIdlingResource.decrement()
                 }
 
                 else ->
                 {
                     // There was a problem at computing the routing operation.
                     showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
-                    decrement()
+                    EspressoIdlingResource.decrement()
                 }
             }
         }
@@ -108,9 +101,9 @@ class MainActivity : AppCompatActivity()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        increment()
+        EspressoIdlingResource.increment()
         progressBar = findViewById(R.id.progressBar)
-        listView = findViewById<RecyclerView?>(R.id.list_view).also { 
+        listView = findViewById<RecyclerView?>(R.id.list_view).also {
             it.layoutManager = LinearLayoutManager(this)
             it.addItemDecoration(DividerItemDecoration(this, (it.layoutManager as LinearLayoutManager).orientation))
         }
@@ -179,7 +172,7 @@ class MainActivity : AppCompatActivity()
         val instructions = SdkCall.execute { route.instructions } ?: arrayListOf()
         val imageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
         listView.adapter = CustomAdapter(instructions, imageSize, isDarkThemeOn())
-        decrement()
+        EspressoIdlingResource.decrement()
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -207,22 +200,18 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
-    @VisibleForTesting
-    fun getActivityIdlingResource(): IdlingResource
-    {
-        return mainActivityIdlingResource
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    private fun increment() = mainActivityIdlingResource.increment()
-
-    // ---------------------------------------------------------------------------------------------
-    private fun decrement() = mainActivityIdlingResource.decrement()
-    // ---------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------
 }
+
+// ---------------------------------------------------------------------------------------------------------------------------
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+object EspressoIdlingResource
+{
+    val espressoIdlingResource = CountingIdlingResource("ApplyMapStyleInstrumentedTestsIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+//endregion  -------------------------------------------------------------------------------------------------------------------------------
 
 // -------------------------------------------------------------------------------------------------
 
@@ -273,9 +262,9 @@ class CustomAdapter(
                 val aOuter = if (isDarkThemeOn) Rgba(0, 0, 0, 255) else Rgba(255, 255, 255, 255)
                 val iInner = Rgba(128, 128, 128, 255)
                 val iOuter = Rgba(128, 128, 128, 255)
-                
+
                 turnImage = GemUtilImages.asBitmap(instruction.turnDetails?.abstractGeometryImage, imageSize, imageSize, aInner, aOuter, iInner, iOuter)
-                
+
                 text = instruction.turnInstruction ?: ""
                 if (text.isNotEmpty() && text.last() == '.')
                 {

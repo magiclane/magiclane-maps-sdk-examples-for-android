@@ -24,6 +24,7 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
@@ -242,7 +243,7 @@ class MainActivity : AppCompatActivity()
     
     private fun onStatusChanged(status: Int)
     {
-        when (EContentStoreItemStatus.values()[status])
+        when (EContentStoreItemStatus.entries[status])
         {
             EContentStoreItemStatus.Completed ->
             {
@@ -268,11 +269,13 @@ class MainActivity : AppCompatActivity()
     }
     // ---------------------------------------------------------------------------------------------------------------------------
 }
-
-// -------------------------------------------------------------------------------------------------------------------------------
-public object EspressoIdlingResource {
-    val espressoIdlingResource = CountingIdlingResource("ApplyMapStyleInstrumentedTestsIdlingResource")
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+@VisibleForTesting
+object EspressoIdlingResource
+{
+    val espressoIdlingResource = CountingIdlingResource("ApplyMapStyleIdlingResource")
     fun increment() = espressoIdlingResource.increment()
-    fun decrement() = if(!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
 }
-// -------------------------------------------------------------------------------------------------------------------------------
+//endregion  -------------------------------------------------------------------------------------------------------------------------------

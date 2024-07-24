@@ -60,14 +60,7 @@ class RouteSimulationWithoutMapInstrumentedTests
         @JvmStatic
         fun checkSdkInitStartActivity()
         {
-            try
-            {
-                assert(initResult)
-            }
-            catch (e: AssertionError)
-            {
-                throw AssertionError("GEM SDK not initialized", e)
-            }
+            assert(initResult) {"GEM SDK not initialized" }
         }
         // -------------------------------------------------------------------------------------------------
     }

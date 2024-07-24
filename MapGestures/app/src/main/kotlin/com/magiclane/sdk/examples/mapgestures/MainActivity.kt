@@ -24,23 +24,21 @@ import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.Xy
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
 class MainActivity : AppCompatActivity()
 {
-
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    @VisibleForTesting
     lateinit var gemSurfaceView: GemSurfaceView
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -49,7 +47,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        increment()
+        EspressoIdlingResource.increment()
         gemSurfaceView = findViewById(R.id.gem_surface)
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
@@ -85,11 +83,11 @@ class MainActivity : AppCompatActivity()
                         Log.i(
                             "Gesture",
                             "onPinch from " +
-                                    "(${start1.x}, ${start1.y}) and (${start2.x}, ${start2.y}) " +
-                                    "to " +
-                                    "(${end1.x}, ${end1.y}) and (${end2.x}, ${end2.y})" +
-                                    "center " +
-                                    "(${center.x}, ${center.y})."
+                                "(${start1.x}, ${start1.y}) and (${start2.x}, ${start2.y}) " +
+                                "to " +
+                                "(${end1.x}, ${end1.y}) and (${end2.x}, ${end2.y})" +
+                                "center " +
+                                "(${center.x}, ${center.y})."
                         )
                     }
                 }
@@ -98,9 +96,9 @@ class MainActivity : AppCompatActivity()
                     SdkCall.execute {
                         Log.i(
                             "Gesture", "onSwipe with " +
-                                    "$distX pixels on X and " +
-                                    "$distY pixels on Y and " +
-                                    "the speed of $speedMMPerSec mm/s."
+                                "$distX pixels on X and " +
+                                "$distY pixels on Y and " +
+                                "the speed of $speedMMPerSec mm/s."
                         )
                     }
                 }
@@ -117,7 +115,7 @@ class MainActivity : AppCompatActivity()
                     }
                 }
             }
-            decrement()
+            EspressoIdlingResource.decrement()
         }
 
         SdkSettings.onApiTokenRejected = {
@@ -134,7 +132,7 @@ class MainActivity : AppCompatActivity()
             showDialog("You must be connected to the internet!")
         }
 
-        onBackPressedDispatcher.addCallback(this){
+        onBackPressedDispatcher.addCallback(this) {
             finish()
             exitProcess(0)
         }
@@ -146,7 +144,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onDestroy()
 
-        // Deinitialize the SDK.
+        // Release the SDK.
         GemSdk.release()
     }
 
@@ -169,31 +167,16 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-    
-    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    companion object
-    {
-        const val RESOURCE = "GLOBAL"
-    }
-
-    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
-
-
-    @VisibleForTesting
-    fun getActivityIdlingResource(): IdlingResource
-    {
-        return mainActivityIdlingResource
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    private fun increment() = mainActivityIdlingResource.increment()
-
-    // ---------------------------------------------------------------------------------------------
-    private fun decrement() = mainActivityIdlingResource.decrement()
-    //endregion ---------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------
 }
 
+// -----------------------------------------------------------------------------------------------------------------------------------
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+object EspressoIdlingResource
+{
+    val espressoIdlingResource = CountingIdlingResource("MapGesturesIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+//endregion  -------------------------------------------------------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------------------------------------------------------

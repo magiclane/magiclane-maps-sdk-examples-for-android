@@ -18,6 +18,7 @@ package com.magiclane.sdk.examples.routesimulation
 // -------------------------------------------------------------------------------------------------------------------------------
 
 import android.content.Context
+import android.net.ConnectivityManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
@@ -30,10 +31,11 @@ import com.magiclane.sdk.routesandnavigation.NavigationListener
 import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.util.SdkCall
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -66,10 +68,19 @@ class RouteSimulationInstrumentedTests
         {
             assert(initResult) { "GEM SDK not initialized" }
         }
+
+        fun isInternetOn() = appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null
         // -------------------------------------------------------------------------------------------------
     }
 
-
+    @Before
+    fun checkTokenAndNetwork()
+    {
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(isInternetOn()) { " No internet connection." }
+    }
+    
     // -------------------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------------------
     class SDKInitRule : TestRule
@@ -98,15 +109,13 @@ class RouteSimulationInstrumentedTests
                 {
                     runBlocking {
                         initResult = GemSdk.initSdkWithDefaults(appContext)
-
                         // must wait for map data ready
-                        val sdkChannelJob = launch { channel.receive() }
-                        withTimeout(TIMEOUT) {
-                            while (sdkChannelJob.isActive) delay(500)
-                        }
+                        withTimeoutOrNull(TIMEOUT) {
+                            channel.receive()
+                        } ?: if (isInternetOn()) assert(false) { "No internet." }
+                        else assert(false) { "Unexpected error. SDK not initialised." }
                     }
-                }
-                else return
+                } else return
 
                 if (!SdkSettings.isMapDataReady)
                     throw Error(GemError.getMessage(GemError.OperationTimeout))
@@ -114,8 +123,7 @@ class RouteSimulationInstrumentedTests
                 try
                 {
                     base.evaluate() // This executes tests
-                }
-                finally
+                } finally
                 {
                     GemSdk.release()
                 }
@@ -156,7 +164,7 @@ class RouteSimulationInstrumentedTests
                     }
                     onProgressCompletedPassed = true
                 },
-                onStatusChanged = { status ->
+                onStatusChanged = { _ ->
                     onProgressStatusChangedPassed = true
                 }
             )
@@ -170,7 +178,8 @@ class RouteSimulationInstrumentedTests
             navigationService.startSimulation(
                 waypoints,
                 navigationListener,
-                routingProgressListener
+                routingProgressListener,
+                speedMultiplier = 10f
             )
         }
         withTimeout(300000) {
@@ -229,7 +238,8 @@ class RouteSimulationInstrumentedTests
             navigationService.startSimulation(
                 waypoints,
                 navigationListener,
-                routingProgressListener
+                routingProgressListener,
+                speedMultiplier = 5f
             )
         }
 

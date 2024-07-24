@@ -18,6 +18,7 @@ package com.magiclane.sdk.examples.routesimulationwithinstructions
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.icu.number.Precision.increment
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -25,11 +26,11 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.addCallback
-import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
@@ -47,8 +48,6 @@ import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.GemUtilImages
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -56,13 +55,6 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity()
 {
     class TSameImage(var value: Boolean = false)
-
-    companion object
-    {
-        const val RESOURCE = "GLOBAL"
-    }
-
-    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
 
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
@@ -94,7 +86,7 @@ class MainActivity : AppCompatActivity()
     private val navigationListener: NavigationListener = NavigationListener.create(
     
         onNavigationStarted = {
-            increment()
+            EspressoIdlingResource.increment()
             SdkCall.execute {
                 gemSurfaceView.mapView?.let { mapView ->
                     mapView.preferences?.enableCursor = false
@@ -150,8 +142,7 @@ class MainActivity : AppCompatActivity()
             rtt.text = rttText
             rtd.text = rtdText
 
-            if(!mainActivityIdlingResource.isIdleNow)
-                decrement()
+            EspressoIdlingResource.decrement()
         }
     )
 
@@ -206,7 +197,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        increment()
+        EspressoIdlingResource.increment()
         turnImageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
 
         gemSurfaceView = findViewById(R.id.gem_surface)
@@ -347,18 +338,14 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-    @VisibleForTesting
-    fun getActivityIdlingResource(): IdlingResource
-    {
-        return mainActivityIdlingResource
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    private fun increment() = mainActivityIdlingResource.increment()
-
-    // ---------------------------------------------------------------------------------------------
-    private fun decrement() = mainActivityIdlingResource.decrement()
-    // ---------------------------------------------------------------------------------------------
 }
+// ---------------------------------------------------------------------------------------------------------------------------
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+object EspressoIdlingResource
+{
+    val espressoIdlingResource = CountingIdlingResource("RouteSimWithInstrIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+//endregion  -------------------------------------------------------------------------------------------------------------------------------

@@ -22,7 +22,10 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.DataBuffer
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -30,15 +33,14 @@ import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.MapView
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
-class MainActivity : AppCompatActivity() 
+class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
-    
+
     private lateinit var progressBar: ProgressBar
     private lateinit var gemSurfaceView: GemSurfaceView
 
@@ -52,9 +54,14 @@ class MainActivity : AppCompatActivity()
         progressBar = findViewById(R.id.progressBar)
         gemSurfaceView = findViewById(R.id.gem_surface)
 
+        EspressoIdlingResource.increment()
+
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
-
+            gemSurfaceView.mapView?.onMapStyleChanged = { _, str ->
+                EspressoIdlingResource.pathString = str
+                EspressoIdlingResource.decrement()
+            }
             applyCustomAssetStyle(gemSurfaceView.mapView)
         }
 
@@ -66,13 +73,13 @@ class MainActivity : AppCompatActivity()
              */
             showDialog("TOKEN REJECTED")
         }
-        
+
         if (!Util.isInternetConnected(this))
         {
             showDialog("You must be connected to the internet!")
         }
 
-        onBackPressedDispatcher.addCallback(this){
+        onBackPressedDispatcher.addCallback(this) {
             finish()
             exitProcess(0)
         }
@@ -108,7 +115,7 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun applyCustomAssetStyle(mapView: MapView?) = SdkCall.execute {
@@ -124,8 +131,17 @@ class MainActivity : AppCompatActivity()
         // Apply style.
         mapView?.preferences?.setMapStyleByDataBuffer(DataBuffer(data))
     }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
 }
 
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+@VisibleForTesting
+object EspressoIdlingResource
+{
+    val espressoIdlingResource = CountingIdlingResource("ApplyCustomMapStyleIdlingResource")
+    var pathString = ""
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+//endregion  -------------------------------------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------------------------------------

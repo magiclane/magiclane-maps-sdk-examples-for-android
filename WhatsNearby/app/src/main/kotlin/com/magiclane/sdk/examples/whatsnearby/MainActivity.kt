@@ -28,13 +28,11 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
-import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.test.espresso.IdlingResource
-import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
@@ -48,7 +46,6 @@ import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.magiclane.sdk.util.Util.postOnMain
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
@@ -80,7 +77,6 @@ class MainActivity : AppCompatActivity()
                     if (results.isNotEmpty())
                     {
                         reference?.let { listView.adapter = CustomAdapter(it, results, imageSize) }
-                        decrement()
                     }
                     else
                     {
@@ -111,7 +107,6 @@ class MainActivity : AppCompatActivity()
         setContentView(R.layout.activity_main)
 
         imageSize = resources.getDimension(R.dimen.landmark_image_size).toInt()
-        increment()
         progressBar = findViewById(R.id.progressBar)
         listView = findViewById<RecyclerView?>(R.id.list_view).apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
@@ -236,7 +231,6 @@ class MainActivity : AppCompatActivity()
     @SuppressLint("InflateParams")
     private fun showDialog(text: String)
     {
-        decrement()
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
             findViewById<TextView>(R.id.title).text = getString(R.string.error)
@@ -257,27 +251,8 @@ class MainActivity : AppCompatActivity()
     companion object
     {
         private const val REQUEST_PERMISSIONS = 110
-        const val RESOURCE = "GLOBAL"
     }
-
-//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
-
-    @VisibleForTesting
-    fun getActivityIdlingResource(): IdlingResource
-    {
-        return mainActivityIdlingResource
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    private fun increment() = mainActivityIdlingResource.increment()
-
-    // ---------------------------------------------------------------------------------------------
-    private fun decrement() = mainActivityIdlingResource.decrement()
-    //endregion ---------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------
+    
 }
 
 // -------------------------------------------------------------------------------------------------

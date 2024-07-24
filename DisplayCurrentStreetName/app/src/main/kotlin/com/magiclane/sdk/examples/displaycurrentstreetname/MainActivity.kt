@@ -24,8 +24,11 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.GemSdk
@@ -40,18 +43,19 @@ import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
-@Suppress("SameParameterValue")
-class MainActivity : AppCompatActivity() 
+class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------------------------------------
-    
+
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var currentStreetNameView: TextView
     private lateinit var followCursorButton: FloatingActionButton
 
     private var dataSource: DataSource? = null
-    private val dataSourceListener = object : DataSourceListener() {
-        override fun onNewData(data: SenseData) {
+    private val dataSourceListener = object : DataSourceListener()
+    {
+        override fun onNewData(data: SenseData)
+        {
             var txt = ""
             SdkCall.execute execute@{
                 val improvedPositionData = ImprovedPositionData(data)
@@ -61,11 +65,11 @@ class MainActivity : AppCompatActivity()
                     if (it.isEmpty())
                     {
                         txt = "Current street name not available."
-                        return@let   
+                        return@let
                     }
 
                     txt = "Current street name: $it"
-                    
+
                     val speedLimit = (improvedPositionData.roadSpeedLimit * 3.6).toInt()
                     if (speedLimit != 0)
                     {
@@ -73,12 +77,14 @@ class MainActivity : AppCompatActivity()
                     }
                 }
             }
-            Util.postOnMain { 
+            Util.postOnMain {
                 currentStreetNameView.apply {
                     isVisible = true
                     text = txt
-                } 
+                }
             }
+            
+            EspressoIdlingResource.decrement()
         }
     }
 
@@ -88,8 +94,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-
+        
         gemSurfaceView = findViewById(R.id.gem_surface)
         currentStreetNameView = findViewById(R.id.current_street_name)
         followCursorButton = findViewById(R.id.follow_cursor_button)
@@ -97,29 +102,31 @@ class MainActivity : AppCompatActivity()
         gemSurfaceView.onDefaultMapViewCreated = {
             enableGPSButton()
         }
-
         SdkSettings.onMapDataReady = {
             val hasPermissions = PermissionsHelper.hasPermissions(this, permissions)
 
-            if (hasPermissions) {
+            if (hasPermissions)
+            {
+                EspressoIdlingResource.increment()
                 SdkCall.execute {
                     startImprovedPositionListener()
                 }
-            } else {
+            } else
+            {
                 requestPermissions(this)
             }
         }
 
         if (!Util.isInternetConnected(this))
         {
-            showDialog("You must be connected to the internet!")
+            showDialog()
         }
-        
-        onBackPressedDispatcher.addCallback(this){
+
+        onBackPressedDispatcher.addCallback(this) {
             finish()
             exitProcess(0)
         }
-        
+
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -128,19 +135,19 @@ class MainActivity : AppCompatActivity()
     {
         super.onDestroy()
 
-        // Deinitialize the SDK.
+        // Release the SDK.
         GemSdk.release()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
     @SuppressLint("InflateParams")
-    private fun showDialog(text: String)
+    private fun showDialog()
     {
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
             findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
+            findViewById<TextView>(R.id.message).text = ContextCompat.getString(context, R.string.not_connected)
             findViewById<Button>(R.id.button).setOnClickListener {
                 dialog.dismiss()
             }
@@ -151,7 +158,7 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-    
+
     // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun startImprovedPositionListener()
@@ -193,8 +200,10 @@ class MainActivity : AppCompatActivity()
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode != REQUEST_PERMISSIONS) return
 
-        for (item in grantResults) {
-            if (item != PackageManager.PERMISSION_GRANTED) {
+        for (item in grantResults)
+        {
+            if (item != PackageManager.PERMISSION_GRANTED)
+            {
                 finish()
                 exitProcess(0)
             }
@@ -231,5 +240,15 @@ class MainActivity : AppCompatActivity()
         private const val REQUEST_PERMISSIONS = 110
     }
 }
-
+// -------------------------------------------------------------------------------------------------------------------------------
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+@VisibleForTesting
+object EspressoIdlingResource
+{
+    val espressoIdlingResource = CountingIdlingResource("DisplayCurrentStreetNameIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+//endregion  -------------------------------------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------------------------------------

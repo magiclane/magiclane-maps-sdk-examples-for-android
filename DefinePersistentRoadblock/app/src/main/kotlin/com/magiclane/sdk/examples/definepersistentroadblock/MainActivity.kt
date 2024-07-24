@@ -116,7 +116,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onDestroy()
 
-        // Deinitialize the SDK.
+        // Release the SDK.
         GemSdk.release()
     }
 
@@ -179,7 +179,6 @@ class MainActivity : AppCompatActivity()
             show()
         }
     }
-
     // ---------------------------------------------------------------------------------------------
 }
 

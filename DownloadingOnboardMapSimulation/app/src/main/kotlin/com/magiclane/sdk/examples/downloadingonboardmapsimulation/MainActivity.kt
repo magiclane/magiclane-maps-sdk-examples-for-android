@@ -28,8 +28,8 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.content.ContentStore
 import com.magiclane.sdk.content.ContentStoreItem
 import com.magiclane.sdk.content.EContentStoreItemStatus
@@ -41,6 +41,7 @@ import com.magiclane.sdk.core.MapDetails
 import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.Time
+import com.magiclane.sdk.examples.downloadingonboardmapsimulation.databinding.ActivityMainBinding
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.NavigationInstruction
 import com.magiclane.sdk.routesandnavigation.NavigationListener
@@ -49,26 +50,13 @@ import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.magiclane.sdk.examples.downloadingonboardmapsimulation.databinding.ActivityMainBinding
+import java.util.Locale
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
 class MainActivity : AppCompatActivity()
 {
-
-    //region members for testing
-    companion object
-    {
-        const val NAV_IDLE_RESOURCE = "GLOBAL"
-        const val DOWNLOAD_IDLE_RESOURCE = "GLOBAL2"
-    }
-
-    private var downloadingMapIdlingResource = CountingIdlingResource(DOWNLOAD_IDLE_RESOURCE, true)
-    private var navigationIdlingResource = CountingIdlingResource(NAV_IDLE_RESOURCE, true)
-    //endregion
-
     private lateinit var binding: ActivityMainBinding
 
     private val mapName = "Luxembourg"
@@ -98,8 +86,6 @@ class MainActivity : AppCompatActivity()
      */
     private val navigationListener: NavigationListener = NavigationListener.create(
         onNavigationStarted = {
-            if (!navigationIdlingResource.isIdleNow)
-                navigationIdlingResource.decrement()
             SdkCall.execute {
                 binding.gemSurfaceView.mapView?.let { mapView ->
                     mapView.preferences?.enableCursor = false
@@ -116,6 +102,7 @@ class MainActivity : AppCompatActivity()
             binding.bottomPanel.isVisible = true
 
             showStatusMessage("Simulation started.")
+            //EspressoIdlingResource.decrementNavigationResource()
         },
         onNavigationInstructionUpdated = { instr ->
             var instrText = ""
@@ -154,6 +141,7 @@ class MainActivity : AppCompatActivity()
                     statusText.isVisible = false
                 }
             }
+            EspressoIdlingResource.decrementNavigationResource()
         }
     )
 
@@ -215,7 +203,8 @@ class MainActivity : AppCompatActivity()
                                         {
                                             showStatusMessage("$mapName was downloaded.")
                                             onOnboardMapReady()
-                                        }
+                                        } else
+                                            EspressoIdlingResource.decrementDownloadingResource()
                                     })
 
                                 // Start downloading the first map item.
@@ -233,12 +222,16 @@ class MainActivity : AppCompatActivity()
 
                 GemError.Cancel ->
                 { // The action was cancelled.
+                    showStatusMessage("Content store service completed with error code: $errorCode")
+                    EspressoIdlingResource.decrementDownloadingResource()
                 }
 
                 else ->
                 {
                     // There was a problem at retrieving the content store items.
+                    showStatusMessage("Content store service completed with error code: $errorCode")
                     showDialog("Content store service error: ${GemError.getMessage(errorCode)}")
+                    EspressoIdlingResource.decrementDownloadingResource()
                 }
             }
         }
@@ -252,8 +245,8 @@ class MainActivity : AppCompatActivity()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        navigationIdlingResource.increment()
-        downloadingMapIdlingResource.increment()
+        EspressoIdlingResource.incrementNavigationResource()
+        EspressoIdlingResource.incrementDownloadingResource()
         val loadMaps = {
             mapsCatalogRequested = true
             val loadMapsCatalog = {
@@ -354,12 +347,11 @@ class MainActivity : AppCompatActivity()
                 }
             }
             flagIcon.setImageBitmap(flagBitmap)
-
             countryName.text = SdkCall.execute { map.name }
             mapDescription.text = SdkCall.execute { GemUtil.formatSizeAsText(map.totalSize) }
         }
-        if (!downloadingMapIdlingResource.isIdleNow)
-            downloadingMapIdlingResource.decrement()
+        EspressoIdlingResource.decrementDownloadingResource()
+        GemSdk
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -367,9 +359,9 @@ class MainActivity : AppCompatActivity()
     private fun onStatusChanged(status: Int)
     {
         binding.downloadedIcon.isVisible =
-            EContentStoreItemStatus.values()[status] == EContentStoreItemStatus.Completed
+            EContentStoreItemStatus.entries.toTypedArray()[status] == EContentStoreItemStatus.Completed
         binding.downloadProgressBar.isInvisible =
-            EContentStoreItemStatus.values()[status] == EContentStoreItemStatus.Completed
+            EContentStoreItemStatus.entries.toTypedArray()[status] == EContentStoreItemStatus.Completed
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -447,8 +439,8 @@ class MainActivity : AppCompatActivity()
 
         val time = Time()
         time.setLocalTime()
-        time.longValue = time.longValue + etaNumber * 1000
-        return String.format("%d:%02d", time.hour, time.minute)
+        time.longValue += etaNumber * 1000
+        return String.format(Locale.getDefault(), "%d:%02d", time.hour, time.minute)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -492,15 +484,17 @@ class MainActivity : AppCompatActivity()
             }
         }
     }
-    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------------------------------------
-    @VisibleForTesting
-    fun getNavIdlingResource(): IdlingResource = navigationIdlingResource
-
-    @VisibleForTesting
-    fun getDownloadingIdlingResource(): IdlingResource = downloadingMapIdlingResource
-    //endregion ---------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------------------------------------
 }
+// -------------------------------------------------------------------------------------------------------------------------------
 
+@VisibleForTesting(VisibleForTesting.PRIVATE)
+object EspressoIdlingResource
+{
+    val navigationIdlingResource = CountingIdlingResource("NavigationIdlingResource")
+    val downloadingIdlingResource = CountingIdlingResource("DownloadingIdlingResource")
+    fun incrementNavigationResource() = navigationIdlingResource.increment()
+    fun incrementDownloadingResource() = downloadingIdlingResource.increment()
+    fun decrementNavigationResource() = if (!navigationIdlingResource.isIdleNow) navigationIdlingResource.decrement() else Unit
+    fun decrementDownloadingResource() = if (!downloadingIdlingResource.isIdleNow) downloadingIdlingResource.decrement() else Unit
+}
 // -------------------------------------------------------------------------------------------------------------------------------

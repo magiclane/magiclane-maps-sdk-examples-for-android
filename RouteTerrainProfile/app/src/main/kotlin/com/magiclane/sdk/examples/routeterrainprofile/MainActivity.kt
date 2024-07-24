@@ -18,6 +18,7 @@ package com.magiclane.sdk.examples.routeterrainprofile
 
 import android.annotation.SuppressLint
 import android.content.res.Configuration
+import android.icu.number.Precision.increment
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -29,21 +30,20 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.widget.NestedScrollView
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.d3scene.Animation
+import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.EMapViewPerspective
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.routesandnavigation.RoutingService
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.magiclane.sdk.d3scene.Animation
-import com.magiclane.sdk.d3scene.EAnimation
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ class MainActivity : AppCompatActivity()
                         else
                         {
                             showDialog("Route terrain profile is not available!")
-                            decrement()
+                            EspressoIdlingResource.decrement()
                         }
                     }
                 }
@@ -106,14 +106,14 @@ class MainActivity : AppCompatActivity()
                 {
                     // The routing action was cancelled.
                     showDialog("The routing action was cancelled.")
-                    decrement()
+                    EspressoIdlingResource.decrement()
                 }
 
                 else ->
                 {
                     // There was a problem at computing the routing operation.
                     showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
-                    decrement()
+                    EspressoIdlingResource.decrement()
                 }
             }
         }
@@ -125,7 +125,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        increment()
+        EspressoIdlingResource.increment()
         gemSurfaceView = findViewById(R.id.gem_surface_view)
         routeProfileContainer = findViewById(R.id.route_profile_scroll_view)
         progressBar = findViewById(R.id.progressBar)
@@ -228,7 +228,7 @@ class MainActivity : AppCompatActivity()
         
         // creates the instance of the class that operates the elevation data
         routingProfile =  RouteProfile(this, route)
-        decrement()
+        EspressoIdlingResource.decrement()
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -338,20 +338,16 @@ class MainActivity : AppCompatActivity()
             }
         }
     }
-    // ---------------------------------------------------------------------------------------------
-
-    @VisibleForTesting
-    fun getActivityIdlingResource(): IdlingResource
-    {
-        return mainActivityIdlingResource
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    private fun increment() = mainActivityIdlingResource.increment()
-
-    // ---------------------------------------------------------------------------------------------
-    private fun decrement() = mainActivityIdlingResource.decrement()
-    // ---------------------------------------------------------------------------------------------
 }
 
+// -------------------------------------------------------------------------------------------------
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+object EspressoIdlingResource
+{
+    val espressoIdlingResource = CountingIdlingResource("RouteTerrainIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+//endregion  -------------------------------------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------

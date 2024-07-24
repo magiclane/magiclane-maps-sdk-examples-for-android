@@ -1,10 +1,16 @@
+/build
 /*/*.idea/
 /*/.idea/
 .idea/
 /*/.gradle/
 /*/build/
 /*/app/build/
+/*/.DS_Store
+/*/captures/
+/*/.externalNativeBuild/
+/*/.cxx/
 APK/
+REPORTS/
 .gradle/
 /*/*/local.properties
 /*/local.properties

@@ -16,6 +16,7 @@
 package com.magiclane.sdk.examples.mapselection
 
 import android.Manifest
+import android.net.ConnectivityManager
 import android.view.View
 import androidx.lifecycle.Lifecycle
 import androidx.test.espresso.Espresso.onView
@@ -32,7 +33,9 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.Xy
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.util.SdkCall
@@ -57,22 +60,22 @@ class MapSelectionInstrumentedTests
     val activityScenarioRule: ActivityScenarioRule<MainActivity> =
         ActivityScenarioRule(MainActivity::class.java)
 
-    private var mActivityIdlingResource: IdlingResource? = null
 
     private lateinit var activityRes: MainActivity
+    private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
 
     @Before
     fun registerIdlingResource()
     {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        runBlocking { delay(2000) }
+        IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
         activityScenarioRule.scenario.onActivity { activity ->
-            mActivityIdlingResource = activity.getActivityIdlingResource()
-            // To prove that the test fails, omit this call:
-            IdlingRegistry.getInstance().register(mActivityIdlingResource)
             activityRes = activity
         }
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
     }
 
     @Rule(order = 0)
@@ -88,8 +91,7 @@ class MapSelectionInstrumentedTests
     fun closeActivity()
     {
         activityScenarioRule.scenario.close()
-        if (mActivityIdlingResource != null)
-            IdlingRegistry.getInstance().unregister(mActivityIdlingResource)
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
     }
 
     @Test
@@ -117,7 +119,7 @@ class MapSelectionInstrumentedTests
 
     @Test
     fun selectLandmark(): Unit = runBlocking {
-        delay(5000)
+        delay(20000)
         val center = Pair(
             activityRes.gemSurfaceView.measuredWidth / 2,
             activityRes.gemSurfaceView.measuredHeight / 2
@@ -133,7 +135,7 @@ class MapSelectionInstrumentedTests
                 )
             }
         }.await()
-        delay(5000)
+        delay(20000)
 
         onView(withId(R.id.gem_surface)).perform(
             touchDownAndUp(

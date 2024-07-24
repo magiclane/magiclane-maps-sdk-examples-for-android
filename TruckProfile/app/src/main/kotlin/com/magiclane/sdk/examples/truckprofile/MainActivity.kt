@@ -25,14 +25,12 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
-import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -49,6 +47,7 @@ import com.magiclane.sdk.routesandnavigation.RoutingService
 import com.magiclane.sdk.routesandnavigation.TruckProfile
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
+import java.util.Locale
 import kotlin.system.exitProcess
 
 
@@ -106,17 +105,10 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
-    companion object
-    {
-        const val RESOURCE = "GLOBAL"
-    }
-
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var settingsButtons: FloatingActionButton
     private lateinit var preferencesTruckProfile: TruckProfile
-
-    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
 
     private var routesList = ArrayList<Route>()
 
@@ -145,21 +137,21 @@ class MainActivity : AppCompatActivity()
                     }
 
                     settingsButtons.isVisible = true
-                    decrement()
+                    EspressoIdlingResource.decrement()
                 }
 
                 GemError.Cancel ->
                 {
                     // The routing action was cancelled.
                     showDialog("The routing action was cancelled.")
-                    decrement()
+                    EspressoIdlingResource.decrement()
                 }
 
                 else ->
                 {
                     // There was a problem at computing the routing operation.
                     showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
-                    decrement()
+                    EspressoIdlingResource.decrement()
                 }
             }
         }
@@ -171,7 +163,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        increment()
+        EspressoIdlingResource.increment()
         gemSurfaceView = findViewById(R.id.gem_surface_view)
         progressBar = findViewById(R.id.progress_bar)
         settingsButtons = findViewById<FloatingActionButton?>(R.id.settings_button).also {
@@ -276,7 +268,7 @@ class MainActivity : AppCompatActivity()
             }
 
         listView.adapter = adapter
-        adapter.notifyItemRangeChanged(0, ETruckProfileSettings.values().size)
+        adapter.notifyItemRangeChanged(0, ETruckProfileSettings.entries.size)
 
         builder.setTitle(getString(R.string.app_name))
         builder.setView(convertView)
@@ -293,7 +285,7 @@ class MainActivity : AppCompatActivity()
 
     private fun onSaveButtonClicked()
     {
-        increment()
+        EspressoIdlingResource.increment()
         val dataSet = adapter.dataSet
 
         // convert m to cm
@@ -501,14 +493,13 @@ class MainActivity : AppCompatActivity()
                             //if (!fromUser) return@addOnChangeListener
 
                             item.currentDoubleValue = value
-                            item.currentValueText = String.format("%.1f %s", value, item.unit)
+                            item.currentValueText = String.format(Locale.getDefault(), "%.1f %s", value, item.unit)
 
                             currentValueText.text = item.currentValueText
                         }
                     }
 
-                }
-                else
+                } else
                 {
                     minValueText.text = item.minValueText
                     maxValueText.text = item.maxValueText
@@ -518,15 +509,15 @@ class MainActivity : AppCompatActivity()
                         valueFrom = item.minIntValue.toFloat()
                         stepSize = 1f
                         addOnChangeListener { _, value, _ ->
-                 /*           if (!fromUser)
-                                return@addOnChangeListener*/
+                            /*           if (!fromUser)
+                                           return@addOnChangeListener*/
                             item.currentIntValue = value.toInt()
-                            item.currentValueText = String.format("%d %s", value.toInt(), item.unit)
+                            item.currentValueText = String.format(Locale.getDefault(), "%d %s", value.toInt(), item.unit)
                             currentValueText.text = item.currentValueText
                         }
                     }
                 }
-                val setting = ETruckProfileSettings.values()[position]
+                val setting = ETruckProfileSettings.entries[position]
                 SdkCall.execute {
                     val actualVal = when (setting)
                     {
@@ -544,9 +535,9 @@ class MainActivity : AppCompatActivity()
                         item.currentIntValue = actualVal.toInt()
 
                     val valueText = if (isDoubleItem)
-                        String.format("%.1f %s", actualVal, item.unit)
+                        String.format(Locale.getDefault(), "%.1f %s", actualVal, item.unit)
                     else
-                        String.format("%d %s", actualVal.toInt(), item.unit)
+                        String.format(Locale.getDefault(), "%d %s", actualVal.toInt(), item.unit)
 
                     item.currentValueText = valueText
                     currentValueText.text = valueText
@@ -555,21 +546,16 @@ class MainActivity : AppCompatActivity()
             }
         }
     }
-
-    // ---------------------------------------------------------------------------------------------
-
-    @VisibleForTesting
-    fun getActivityIdlingResource(): IdlingResource
-    {
-        return mainActivityIdlingResource
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    private fun increment() = mainActivityIdlingResource.increment()
-
-    // ---------------------------------------------------------------------------------------------
-    private fun decrement() = mainActivityIdlingResource.decrement()
-    // ---------------------------------------------------------------------------------------------
 }
 
 // -------------------------------------------------------------------------------------------------
+//region --------------------------------------------------FOR TESTING------------------------------
+// -------------------------------------------------------------------------------------------------
+object EspressoIdlingResource
+{
+    val espressoIdlingResource = CountingIdlingResource("TruckProfileIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+//endregion  ----------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------

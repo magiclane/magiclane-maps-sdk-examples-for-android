@@ -17,6 +17,7 @@ package com.magiclane.sdk.examples.voiceinstrroutesimulation
 // -------------------------------------------------------------------------------------------------
 import android.Manifest
 import android.content.Context
+import android.net.ConnectivityManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
@@ -30,6 +31,7 @@ import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.SoundPlayingListener
 import com.magiclane.sdk.core.SoundPlayingPreferences
 import com.magiclane.sdk.core.SoundPlayingService
+import com.magiclane.sdk.examples.voiceinstrroutesimulation.VoiceInstrInstrumentedTests.Companion.voiceHasBeenDownloaded
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.NavigationListener
 import com.magiclane.sdk.routesandnavigation.NavigationService
@@ -39,6 +41,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+import org.junit.Assert
+import org.junit.Assume
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -76,8 +81,17 @@ class VoiceInstrInstrumentedTests
         {
             assert(initResult) { "GEM SDK not initialized" }
         }
+
+        fun isInternetOn() = appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null
     }
 
+    @Before
+    fun checkTokenAndNetwork() {
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(isInternetOn()) { " No internet connection." }
+    }
+    
     @Rule
     @JvmField
     val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(
@@ -114,15 +128,13 @@ class VoiceInstrInstrumentedTests
                 {
                     runBlocking {
                         initResult = GemSdk.initSdkWithDefaults(appContext)
-
                         // must wait for map data ready
-                        val sdkChannelJob = launch { channel.receive() }
-                        withTimeout(TIMEOUT) {
-                            while (sdkChannelJob.isActive) delay(500)
-                        }
+                        withTimeoutOrNull(TIMEOUT) {
+                            channel.receive()
+                        } ?: if (isInternetOn()) assert(false) { "No internet." }
+                        else assert(false) { "Unexpected error. SDK not initialised." }
                     }
-                }
-                else return
+                } else return
 
                 if (!SdkSettings.isMapDataReady)
                     throw Error(GemError.getMessage(GemError.OperationTimeout))
@@ -130,8 +142,7 @@ class VoiceInstrInstrumentedTests
                 try
                 {
                     base.evaluate() // This executes tests
-                }
-                finally
+                } finally
                 {
                     GemSdk.release()
                 }
@@ -161,11 +172,7 @@ class VoiceInstrInstrumentedTests
                 launch { channel.send(Unit) }
             }
         }
-        val job1 = launch { channel.receive() }
-
-        withTimeout(300000) {
-            while (job1.isActive) delay(500)
-        }
+        withTimeoutOrNull(30000) { channel.receive() } ?: Assert.fail("Failed to get local content list")
 
         if (!voiceHasBeenDownloaded)
             SdkCall.execute {
@@ -190,12 +197,7 @@ class VoiceInstrInstrumentedTests
                         }
                     })
             }
-
-        val job2 = launch { channel.receive() }
-
-        withTimeout(300000) {
-            while (job2.isActive) delay(500)
-        }
+        withTimeoutOrNull(30000) { channel.receive() } ?: Assert.fail("Voice failed to download")
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -246,7 +248,8 @@ class VoiceInstrInstrumentedTests
                     onCompleted = { _, _ ->
                     },
                     postOnMain = true
-                )
+                ),
+                speedMultiplier = 3f
             )
         }
 

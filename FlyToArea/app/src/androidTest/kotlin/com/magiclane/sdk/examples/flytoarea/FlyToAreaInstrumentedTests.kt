@@ -15,15 +15,13 @@
 package com.magiclane.sdk.examples.flytoarea
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.view.View
+import android.net.ConnectivityManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemOffscreenSurfaceView
 import com.magiclane.sdk.core.GemSdk
-import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.EHighlightOptions
 import com.magiclane.sdk.d3scene.HighlightRenderSettings
@@ -31,10 +29,10 @@ import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.SearchService
 import com.magiclane.sdk.util.SdkCall
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -67,7 +65,17 @@ class FlyToAreaInstrumentedTests
         {
             assert(initResult) { "GEM SDK not initialized" }
         }
+
+        fun isInternetOn() = appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null
         // -------------------------------------------------------------------------------------------------
+    }
+
+    @Before
+    fun checkTokenAndNetwork()
+    {
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(isInternetOn()) { " No internet connection." }
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -99,13 +107,12 @@ class FlyToAreaInstrumentedTests
                     runBlocking {
                         initResult = GemSdk.initSdkWithDefaults(appContext)
                         // must wait for map data ready
-                        val sdkChannelJob = launch { channel.receive() }
-                        withTimeout(TIMEOUT) {
-                            while (sdkChannelJob.isActive) delay(500)
-                        }
+                        withTimeoutOrNull(TIMEOUT) {
+                            channel.receive()
+                        } ?: if (isInternetOn()) assert(false) { "No internet." }
+                        else assert(false) { "Unexpected error. SDK not initialised." }
                     }
-                }
-                else return
+                } else return
 
                 if (!SdkSettings.isMapDataReady)
                     throw Error(GemError.getMessage(GemError.OperationTimeout))
@@ -113,8 +120,7 @@ class FlyToAreaInstrumentedTests
                 try
                 {
                     base.evaluate() // This executes tests
-                }
-                finally
+                } finally
                 {
                     GemSdk.release()
                 }
@@ -129,9 +135,11 @@ class FlyToAreaInstrumentedTests
         val mapWidth = 200 * appContext.resources.displayMetrics.density
         val mapHeight = 200 * appContext.resources.displayMetrics.density
         val gemOffscreenSurfaceView =
-            GemOffscreenSurfaceView(mapWidth.toInt(),
+            GemOffscreenSurfaceView(
+                mapWidth.toInt(),
                 mapHeight.toInt(),
-                appContext.resources.displayMetrics.densityDpi)
+                appContext.resources.displayMetrics.densityDpi
+            )
 
         val channel = Channel<Unit>()
         val searchService = SearchService(

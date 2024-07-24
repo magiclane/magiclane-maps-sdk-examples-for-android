@@ -22,10 +22,10 @@ import com.magiclane.sdk.examples.androidauto.androidAuto.screens.QuickLeftListS
 import com.magiclane.sdk.examples.androidauto.app.AppProcess
 import com.magiclane.sdk.examples.androidauto.services.SearchInstance
 import com.magiclane.sdk.examples.androidauto.util.INVALID_ID
-import com.magiclane.sdk.examples.androidauto.util.TextsUtil
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.util.EnumHelp
+import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
 
 typealias PoisScreen = QuickLeftListScreen
@@ -194,7 +194,7 @@ class PoiSubCategoriesController(context: CarContext, private val categoryId: In
         landmark ?: return null
 
         val coordinates = landmark.coordinates ?: return null
-        val nameDesc = TextsUtil.pairFormatLandmarkDetails(landmark)
+        val nameDesc = GemUtil.pairFormatLandmarkDetails(landmark)
 
         val item = GenericListItemModel()
         item.distanceInMeters = coordinates.getDistance(reference).toInt()

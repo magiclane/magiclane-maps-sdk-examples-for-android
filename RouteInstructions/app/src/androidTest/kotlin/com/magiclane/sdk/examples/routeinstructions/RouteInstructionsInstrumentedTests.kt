@@ -16,6 +16,7 @@
 package com.magiclane.sdk.examples.routeinstructions
 
 import android.content.Context
+import android.net.ConnectivityManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
@@ -26,8 +27,12 @@ import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.RouteInstruction
 import com.magiclane.sdk.routesandnavigation.RouteList
 import com.magiclane.sdk.routesandnavigation.RoutingService
+import com.magiclane.sdk.util.GemCall.lock
 import com.magiclane.sdk.util.SdkCall
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -58,18 +63,20 @@ class RouteInstructionsInstrumentedTests
         @JvmStatic
         fun checkSdkInitStartActivity()
         {
-            try
-            {
-                assert(initResult)
-            }
-            catch (e: AssertionError)
-            {
-                throw AssertionError("GEM SDK not initialized", e)
-            }
+            assert(initResult) { "GEM SDK not initialized" }
         }
+
+        fun isInternetOn() = appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null
         // -------------------------------------------------------------------------------------------------
     }
 
+    @Before
+    fun checkTokenAndNetwork()
+    {
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(isInternetOn()) { " No internet connection." }
+    }
 
     // -------------------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------------------
@@ -79,13 +86,13 @@ class RouteInstructionsInstrumentedTests
 
         inner class SDKStatement(private val base: Statement) : Statement()
         {
-            private val lock = Object()
+            private val channel = Channel<Unit>()
 
             init
             {
                 SdkSettings.onMapDataReady = { isReady ->
                     if (isReady)
-                        synchronized(lock) { lock.notify() }
+                        runBlocking { channel.send(Unit) }
                 }
             }
 
@@ -97,12 +104,13 @@ class RouteInstructionsInstrumentedTests
                 {
                     runBlocking {
                         initResult = GemSdk.initSdkWithDefaults(appContext)
-
                         // must wait for map data ready
-                        synchronized(lock) { lock.wait(TIMEOUT) }
+                        withTimeoutOrNull(TIMEOUT) {
+                            channel.receive()
+                        } ?: if (isInternetOn()) assert(false) { "No internet." }
+                        else assert(false) { "Unexpected error. SDK not initialised." }
                     }
-                }
-                else return
+                } else return
 
                 if (!SdkSettings.isMapDataReady)
                     throw Error(GemError.getMessage(GemError.OperationTimeout))
@@ -110,8 +118,7 @@ class RouteInstructionsInstrumentedTests
                 try
                 {
                     base.evaluate() // This executes tests
-                }
-                finally
+                } finally
                 {
                     GemSdk.release()
                 }

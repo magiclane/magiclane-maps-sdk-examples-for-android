@@ -22,11 +22,12 @@
             android:layout_marginEnd="@dimen/filter_padding"
             android:closeIcon="@drawable/ic_close_white_24dp"
             android:iconifiedByDefault="false"
-            android:queryHint="@string/app_name"
             android:imeOptions="flagNoExtractUi"
             android:maxHeight="@dimen/filter_height"
             android:minHeight="@dimen/filter_min_height"
+            android:queryHint="@string/app_name"
             android:searchIcon="@drawable/ic_search_white_24dp"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -47,14 +48,14 @@
         android:id="@+id/no_results_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
         android:layout_marginStart="@dimen/big_padding"
-        android:textColor="@color/text_color"
         android:text="@string/no_results"
+        android:textColor="@color/text_color"
         android:textSize="@dimen/standard_text_size"
         android:visibility="gone"
-        android:layout_gravity="center_vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar"/>
+        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
 
     <ProgressBar
         android:id="@+id/progressBar"

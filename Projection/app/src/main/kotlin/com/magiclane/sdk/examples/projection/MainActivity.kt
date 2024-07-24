@@ -59,6 +59,7 @@ import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.places.Coordinates
+import java.util.Locale
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
@@ -67,17 +68,8 @@ class MainActivity : AppCompatActivity()
 {
     // ---------------------------------------------------------------------------------------------
 
-    //region members for testing
-    companion object
-    {
-        const val RESOURCE = "GLOBAL"
-    }
-
-    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
-    //endregion
-
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    lateinit var gemSurfaceView: GemSurfaceView
+    private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var projectionContainer: ConstraintLayout
     private lateinit var landmarkName: TextView
     private lateinit var projectionsList: RecyclerView
@@ -91,9 +83,8 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        increment()
+        EspressoIdlingResource.increment()
         projectionAdapter = ProjectionAdapter(mutableListOf())
-
         gemSurfaceView = findViewById(R.id.gem_surface_view)
         projectionContainer = findViewById(R.id.projection_container)
         landmarkName = findViewById(R.id.landmark_name)
@@ -117,16 +108,14 @@ class MainActivity : AppCompatActivity()
         }
 
         setConstraints(resources.configuration.orientation)
-
+        
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
-
+            EspressoIdlingResource.decrement()
             hint.visibility = View.VISIBLE
-            if(!mainActivityIdlingResource.isIdleNow)
-                decrement()
             gemSurfaceView.mapView?.onTouch = { xy ->
-                increment()
                 // xy are the coordinates of the touch event
+                EspressoIdlingResource.increment()
                 SdkCall.execute {
                     // tell the map view where the touch event happened
                     gemSurfaceView.mapView?.cursorScreenPosition = xy
@@ -150,8 +139,6 @@ class MainActivity : AppCompatActivity()
                         }
                         Util.postOnMain { hint.visibility = View.GONE }
                         showProjectionsForLandmark(landmark)
-                        if(!mainActivityIdlingResource.isIdleNow)
-                            decrement()
                     }
                 }
             }
@@ -211,7 +198,7 @@ class MainActivity : AppCompatActivity()
             add(wgs84Projection)
         }
 
-        for (i in EProjectionType.values())
+        for (i in EProjectionType.entries)
         {
             if (i == EProjectionType.EPR_Wgs84 || i == EProjectionType.EPR_Undefined)
                 continue
@@ -248,6 +235,8 @@ class MainActivity : AppCompatActivity()
             landmarkName.text = SdkCall.execute { landmark.name }
             projectionContainer.visibility = View.VISIBLE
         }
+        
+        EspressoIdlingResource.decrement()
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -516,9 +505,9 @@ class MainActivity : AppCompatActivity()
                 SdkCall.execute {
                     name = item.type.toString().split("_")[1]
                     eastingStr =
-                        String.format("%s %f", getString(R.string.easting), item.getEasting())
+                        String.format(Locale.getDefault(),"%s %f", getString(R.string.easting), item.getEasting())
                     northingStr =
-                        String.format("%s %f", getString(R.string.northing), item.getNorthing())
+                        String.format(Locale.getDefault(),"%s %f", getString(R.string.northing), item.getNorthing())
                     gridReferenceStr = String.format(
                         "%s %s",
                         getString(R.string.grid_reference),
@@ -549,8 +538,8 @@ class MainActivity : AppCompatActivity()
 
                 SdkCall.execute {
                     name = item.type.toString().split("_")[1]
-                    xStr = String.format("%s %f", getString(R.string.x), item.getX())
-                    yStr = String.format("%s %f", getString(R.string.y), item.getY())
+                    xStr = String.format(Locale.getDefault(),"%s %f", getString(R.string.x), item.getX())
+                    yStr = String.format(Locale.getDefault(),"%s %f", getString(R.string.y), item.getY())
                 }
 
                 projectionName.text = name.uppercase()
@@ -579,13 +568,13 @@ class MainActivity : AppCompatActivity()
 
                 SdkCall.execute {
                     name = item.type.toString().split("_")[1]
-                    xStr = String.format("%s %f", getString(R.string.x), item.getX())
-                    yStr = String.format("%s %f", getString(R.string.y), item.getY())
-                    zoneStr = String.format("%s %d", getString(R.string.zone), item.getZone())
+                    xStr = String.format(Locale.getDefault(),"%s %f", getString(R.string.x), item.getX())
+                    yStr = String.format(Locale.getDefault(),"%s %f", getString(R.string.y), item.getY())
+                    zoneStr = String.format(Locale.getDefault(),"%s %d", getString(R.string.zone), item.getZone())
                     hemisphereStr = String.format(
                         "%s %s",
                         getString(R.string.hemisphere),
-                        EHemisphere.values()[item.getHemisphere()].toString()
+                        EHemisphere.entries[item.getHemisphere()].toString()
                     )
                 }
 
@@ -618,9 +607,9 @@ class MainActivity : AppCompatActivity()
                 SdkCall.execute {
                     name = item.type.toString().split("_")[1]
                     eastingStr =
-                        String.format("%s %06d", getString(R.string.easting), item.getEasting())
+                        String.format(Locale.getDefault(),"%s %06d", getString(R.string.easting), item.getEasting())
                     northingStr =
-                        String.format("%s %06d", getString(R.string.northing), item.getNorthing())
+                        String.format(Locale.getDefault(),"%s %06d", getString(R.string.northing), item.getNorthing())
                     zoneStr = String.format("%s %s", getString(R.string.zone), item.getZone())
                     lettersStr = String.format(
                         "%s %s",
@@ -656,9 +645,9 @@ class MainActivity : AppCompatActivity()
                 SdkCall.execute {
                     name = item.type.toString().split("_")[1]
                     eastingStr =
-                        String.format("%s %f", getString(R.string.easting), item.getEasting())
+                        String.format(Locale.getDefault(),"%s %f", getString(R.string.easting), item.getEasting())
                     northingStr =
-                        String.format("%s %f", getString(R.string.northing), item.getNorthing())
+                        String.format(Locale.getDefault(),"%s %f", getString(R.string.northing), item.getNorthing())
                     zoneStr = String.format("%s %s", getString(R.string.zone), item.getZone())
                 }
 
@@ -686,9 +675,9 @@ class MainActivity : AppCompatActivity()
                 SdkCall.execute {
                     name = item.type.toString().split("_")[1]
                     latitudeStr =
-                        String.format("%s %f", getString(R.string.lat), item.coordinates.latitude)
+                        String.format( Locale.getDefault(),"%s %f", getString(R.string.lat), item.coordinates.latitude)
                     longitudeStr =
-                        String.format("%s %f", getString(R.string.lon), item.coordinates.longitude)
+                        String.format(Locale.getDefault(),"%s %f", getString(R.string.lon), item.coordinates.longitude)
                 }
 
                 projectionName.text = name.uppercase()
@@ -697,22 +686,12 @@ class MainActivity : AppCompatActivity()
             }
         }
     }
-    //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    @VisibleForTesting
-    fun getActivityIdlingResource(): IdlingResource
-    {
-        return mainActivityIdlingResource
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    private fun increment() = mainActivityIdlingResource.increment()
-
-    // ---------------------------------------------------------------------------------------------
-    private fun decrement() = mainActivityIdlingResource.decrement()
-    //endregion ---------------------------------------------------------------------------------------------
     // ---------------------------------------------------------------------------------------------
 }
-
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+public object EspressoIdlingResource {
+    val espressoIdlingResource = CountingIdlingResource("ApplyMapStyleInstrumentedTestsIdlingResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if(!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+// -------------------------------------------------------------------------------------------------------------------------------

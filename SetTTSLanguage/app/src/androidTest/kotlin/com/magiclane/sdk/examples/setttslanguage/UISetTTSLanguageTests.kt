@@ -15,18 +15,17 @@
 
 package com.magiclane.sdk.examples.setttslanguage
 
+import android.net.ConnectivityManager
 import android.view.View
 import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.NoMatchingViewException
 import androidx.test.espresso.ViewAssertion
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.RecyclerViewActions
-import androidx.test.espresso.idling.CountingIdlingResource
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
@@ -35,11 +34,10 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import org.hamcrest.CoreMatchers.`is`
+import androidx.test.platform.app.InstrumentationRegistry
+import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.util.SdkCall
 import org.hamcrest.Matcher
-import org.hamcrest.Matchers
 import org.hamcrest.Matchers.greaterThan
 import org.junit.After
 import org.junit.Before
@@ -53,29 +51,32 @@ import org.junit.runner.RunWith
 class UISetTTSLanguageTests
 {
     // -------------------------------------------------------------------------------------------------
+
+    private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+    
     @Rule
     @JvmField
     val activityScenarioRule: ActivityScenarioRule<MainActivity> =
         ActivityScenarioRule(MainActivity::class.java)
 
-    private var mActivityIdlingResource: CountingIdlingResource? = null
-
     @Before
     fun registerIdlingResource()
     {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        runBlocking { delay(2000) }
-        activityScenarioRule.scenario.onActivity { activity ->
-            mActivityIdlingResource = activity.getActivityIdlingResource()
-            IdlingRegistry.getInstance().register(mActivityIdlingResource)
+        IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
+        EspressoIdlingResource.increment()
+        activityScenarioRule.scenario.onActivity { _ ->
+            EspressoIdlingResource.decrement()
         }
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
     }
 
     @After
     fun closeActivity()
     {
-        if (mActivityIdlingResource != null)
-            IdlingRegistry.getInstance().unregister(mActivityIdlingResource)
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
         activityScenarioRule.scenario.close()
     }
 
@@ -93,6 +94,7 @@ class UISetTTSLanguageTests
         onView(withId(R.id.list_view)).check(RecyclerViewItemCountAssertion(greaterThan(0)))
 
     }
+
     @Test
     fun languageShouldChangeOnItemClick()
     {
@@ -104,14 +106,8 @@ class UISetTTSLanguageTests
     }
 
 
-    class RecyclerViewItemCountAssertion : ViewAssertion
+    class RecyclerViewItemCountAssertion(private val matcher: Matcher<Int>) : ViewAssertion
     {
-        private val matcher: Matcher<Int>
-
-        constructor(matcher: Matcher<Int>)
-        {
-            this.matcher = matcher
-        }
 
         override fun check(view: View?, noViewFoundException: NoMatchingViewException?)
         {

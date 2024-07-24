@@ -16,12 +16,12 @@ package com.magiclane.sdk.examples.truckprofile
 
 // -------------------------------------------------------------------------------------------------
 
+import android.net.ConnectivityManager
 import android.view.View
 import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.action.ViewActions.click
@@ -36,9 +36,10 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.android.material.slider.Slider
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.util.SdkCall
 import org.hamcrest.Description
 import org.hamcrest.Matcher
 import org.junit.After
@@ -59,27 +60,23 @@ class UITruckProfileInstrumentedTests
     @JvmField
     val activityScenarioRule: ActivityScenarioRule<MainActivity> =
         ActivityScenarioRule(MainActivity::class.java)
-
-    private var mActivityIdlingResource: IdlingResource? = null
+    private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Before
     fun registerIdlingResource()
     {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        runBlocking { delay(2000) }
-        activityScenarioRule.scenario.onActivity { activity ->
-            mActivityIdlingResource = activity.getActivityIdlingResource()
-            // To prove that the test fails, omit this call:
-            IdlingRegistry.getInstance().register(mActivityIdlingResource)
-        }
+        IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
     }
 
     @After
     fun closeActivity()
     {
         activityScenarioRule.scenario.close()
-        if (mActivityIdlingResource != null)
-            IdlingRegistry.getInstance().unregister(mActivityIdlingResource)
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -95,7 +92,7 @@ class UITruckProfileInstrumentedTests
     @Test
     fun recyclerViewHasTruckProfileSettingsShown()
     {
-        val supposedSettingsCount = MainActivity.ETruckProfileSettings.values().size
+        val supposedSettingsCount = MainActivity.ETruckProfileSettings.entries.size
 
         onView(withId(R.id.settings_button)).perform(click())
 
@@ -115,7 +112,7 @@ class UITruckProfileInstrumentedTests
     @Test
     fun checkProfileSettingUpdated()
     {
-        val settingsCount = MainActivity.ETruckProfileSettings.values().size
+        val settingsCount = MainActivity.ETruckProfileSettings.entries.size
 
         onView(withId(R.id.settings_button)).perform(click())
 
@@ -170,7 +167,7 @@ class UITruckProfileInstrumentedTests
     /**
      * Matcher to check a slider's value
      **/
-    fun withValue(expectedValue: Float): Matcher<View?>
+    private fun withValue(expectedValue: Float): Matcher<View?>
     {
         return object : BoundedMatcher<View?, Slider>(Slider::class.java)
         {

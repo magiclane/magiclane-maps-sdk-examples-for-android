@@ -29,11 +29,14 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.addCallback
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.content.ContentStore
 import com.magiclane.sdk.content.ContentStoreItem
 import com.magiclane.sdk.content.EContentStoreItemStatus
@@ -46,7 +49,6 @@ import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -109,6 +111,7 @@ class MainActivity : AppCompatActivity()
                                                 )
                                             }"
                                         )
+                                    EspressoIdlingResource.decrement()
                                 })
 
                             // Start downloading the first map item.
@@ -128,12 +131,14 @@ class MainActivity : AppCompatActivity()
                 GemError.Cancel ->
                 {
                     // The action was cancelled.
+                    EspressoIdlingResource.decrement()
                 }
 
                 else ->
                 {
                     // There was a problem at retrieving the content store items.
                     showDialog("Content store service error: ${GemError.getMessage(errorCode)}")
+                    EspressoIdlingResource.decrement()
                 }
             }
         }
@@ -145,7 +150,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        EspressoIdlingResource.increment()
         progressBar = findViewById(R.id.progress_bar)
         statusText = findViewById(R.id.status_text)
         listView = findViewById<RecyclerView?>(R.id.list_view).apply {
@@ -176,8 +181,7 @@ class MainActivity : AppCompatActivity()
             if (!token.isNullOrEmpty() && (token != kDefaultToken))
             {
                 loadMapsCatalog()
-            }
-            else // if token is not present try to avoid content server requests limitation by delaying the maps catalog request
+            } else // if token is not present try to avoid content server requests limitation by delaying the maps catalog request
             {
                 Handler(Looper.getMainLooper()).postDelayed({
                     loadMapsCatalog()
@@ -214,7 +218,7 @@ class MainActivity : AppCompatActivity()
             showDialog("You must be connected to the internet!")
         }
 
-        onBackPressedDispatcher.addCallback(this){
+        onBackPressedDispatcher.addCallback(this) {
             finish()
             exitProcess(0)
         }
@@ -226,7 +230,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onDestroy()
 
-        // Deinitialize the SDK.
+        // Release the SDK.
         GemSdk.release()
     }
 
@@ -361,4 +365,19 @@ class MainActivity : AppCompatActivity()
     // ---------------------------------------------------------------------------------------------------------------------------
 }
 
+// ---------------------------------------------------------------------------------------------------------------------------
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+@VisibleForTesting
+object EspressoIdlingResource
+{
+    private const val IDLING_RESOURCE_NAME = "DownloadingOnboardMapIdleRes"
+    val espressoIdlingResource = CountingIdlingResource(IDLING_RESOURCE_NAME)
+
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else
+    {
+    }
+}
+//endregion  -------------------------------------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------------------------------------

@@ -36,6 +36,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.idling.CountingIdlingResource
 import com.magiclane.sdk.core.EExternalImageQuality
 import com.magiclane.sdk.core.ErrorCode
 import com.magiclane.sdk.core.ExternalInfo
@@ -115,6 +116,7 @@ class MainActivity : AppCompatActivity()
         onCompleted = { _, _ ->
             displayWikipediaInfo()
             progressBar.visibility = View.GONE
+            EspressoIdlingResource.decrement()
         },
 
         postOnMain = true
@@ -128,7 +130,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        
+        EspressoIdlingResource.increment()
         gemSurface = findViewById(R.id.gem_surface)
         progressBar = findViewById(R.id.progress_bar)
         wikipediaContainer = findViewById(R.id.wikipedia_container)
@@ -417,5 +419,12 @@ class MainActivity : AppCompatActivity()
     
     // ---------------------------------------------------------------------------------------------
 }
-
-// -------------------------------------------------------------------------------------------------
+//region --------------------------------------------------FOR TESTING--------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------
+object EspressoIdlingResource
+{
+    val espressoIdlingResource = CountingIdlingResource("LocationWikiResource")
+    fun increment() = espressoIdlingResource.increment()
+    fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
+}
+//endregion  -------------------------------------------------------------------------------------------------------------------------------

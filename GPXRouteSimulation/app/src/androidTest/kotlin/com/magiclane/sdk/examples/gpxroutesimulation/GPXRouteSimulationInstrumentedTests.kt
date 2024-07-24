@@ -15,6 +15,7 @@
 package com.magiclane.sdk.examples.gpxroutesimulation
 
 import android.content.Context
+import android.net.ConnectivityManager
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
@@ -35,7 +36,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+import org.hamcrest.core.IsNull
 import org.junit.Assert
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -47,10 +51,12 @@ import org.junit.runners.model.Statement
 
 @LargeTest
 @RunWith(AndroidJUnit4ClassRunner::class)
-class GPXRouteSimulationInstrumentedTests {
+class GPXRouteSimulationInstrumentedTests
+{
     // -------------------------------------------------------------------------------------------------
 
-    companion object {
+    companion object
+    {
         // -------------------------------------------------------------------------------------------------
         const val TIMEOUT = 600000L
         private val appContext: Context = ApplicationProvider.getApplicationContext()
@@ -62,21 +68,35 @@ class GPXRouteSimulationInstrumentedTests {
 
         @BeforeClass
         @JvmStatic
-        fun checkSdkInitStartActivity() {
+        fun checkSdkInitStartActivity()
+        {
             assert(initResult) { "GEM SDK not initialized" }
         }
+
+        fun isInternetOn() = appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null
         // -------------------------------------------------------------------------------------------------
+    }
+
+    @Before
+    fun checkTokenAndNetwork()
+    {
+        //verify token and internet connection
+        SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
+        assert(isInternetOn()) { " No internet connection." }
     }
 
     // -------------------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------------------
-    class SDKInitRule : TestRule {
+    class SDKInitRule : TestRule
+    {
         override fun apply(base: Statement, description: Description) = SDKStatement(base)
 
-        inner class SDKStatement(private val base: Statement) : Statement() {
+        inner class SDKStatement(private val base: Statement) : Statement()
+        {
             private val channel = Channel<Boolean>()
 
-            init {
+            init
+            {
                 SdkSettings.onMapDataReady = { isReady ->
                     if (isReady)
                         runBlocking {
@@ -86,25 +106,29 @@ class GPXRouteSimulationInstrumentedTests {
             }
 
             @Throws(Throwable::class)
-            override fun evaluate() {
+            override fun evaluate()
+            {
                 //before tests are executed
-                if (!GemSdk.isInitialized()) {
+                if (!GemSdk.isInitialized())
+                {
                     runBlocking {
                         initResult = GemSdk.initSdkWithDefaults(appContext)
                         // must wait for map data ready
-                        val sdkChannelJob = launch { channel.receive() }
-                        withTimeout(TIMEOUT) {
-                            while (sdkChannelJob.isActive) delay(500)
-                        }
+                        withTimeoutOrNull(TIMEOUT) {
+                            channel.receive()
+                        } ?: if (isInternetOn()) assert(false) { "No internet." }
+                        else assert(false) { "Unexpected error. SDK not initialised." }
                     }
                 } else return
 
                 if (!SdkSettings.isMapDataReady)
                     throw Error(GemError.getMessage(GemError.OperationTimeout))
 
-                try {
+                try
+                {
                     base.evaluate() // This executes tests
-                } finally {
+                } finally
+                {
                     GemSdk.release()
                 }
             }
@@ -134,8 +158,10 @@ class GPXRouteSimulationInstrumentedTests {
         )
         val routingService = RoutingService(
             onCompleted = { routes, errorCode, _ ->
-                when (errorCode) {
-                    GemError.NoError -> {
+                when (errorCode)
+                {
+                    GemError.NoError ->
+                    {
                         val route = routes[0]
                         SdkCall.execute {
                             val result = navigationService.startSimulationWithRoute(
@@ -159,9 +185,9 @@ class GPXRouteSimulationInstrumentedTests {
             delay(3000)
             channel.send(Unit)
         }
-   /*     launch {
-            delay(20000)
-        }*/
+        /*     launch {
+                 delay(20000)
+             }*/
         withTimeout(60000) {
             val l = arrayListOf(
                 "1.gpx",
