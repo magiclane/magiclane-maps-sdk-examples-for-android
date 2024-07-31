@@ -31,6 +31,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.junit.AfterClass
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -39,6 +40,10 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runner.RunWith
 import org.junit.runners.model.Statement
+import java.io.File
+import java.nio.file.Files
+import java.util.stream.Collectors
+import kotlin.io.path.Path
 
 @LargeTest
 @RunWith(AndroidJUnit4ClassRunner::class)
@@ -58,8 +63,30 @@ class BaseInstrumentedTests
         @JvmStatic
         fun checkSdkInitStartActivity()
         {
-            
             assert(initResult) { "GEM SDK not initialized" }
+            deleteMap()
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun deleteResources()
+        {
+            deleteMap()
+        }
+
+        private fun deleteMap()
+        {
+            appContext.getExternalFilesDirs(null)?.forEach {
+                val pathInt = it.path.toString() + File.separator + "Data" + File.separator + "Maps"
+                val stream = Files.find(Path(pathInt), 20, { filePath, _ ->
+                    filePath.fileName.toString().startsWith("Lux")
+                })
+                val list = stream.collect(Collectors.toList())
+                list.forEach { itemList ->
+                    if (Files.exists(itemList))
+                        Files.delete(itemList)
+                }
+            }
         }
 
     }
@@ -158,11 +185,13 @@ class BaseInstrumentedTests
                                                 ?.asBitmap(size, size)
                                             assert(flagBitmap != null)
                                         }
-
-                                        runBlocking {
-                                            delay(10000)
-                                            channel.send(Unit)
-                                        }
+                                    }
+                                },
+                                onCompleted = { err , msg ->
+                                    assert(!GemError.isError(err)){"error on onCOmpleted: $msg"}
+                                    runBlocking {
+                                        delay(10000)
+                                        channel.send(Unit)
                                     }
                                 })
                             // Start downloading the first map item.

@@ -245,8 +245,10 @@ class MainActivity : AppCompatActivity()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        EspressoIdlingResource.incrementNavigationResource()
-        EspressoIdlingResource.incrementDownloadingResource()
+        if (EspressoIdlingResource.isDownloadingTest)
+            EspressoIdlingResource.incrementDownloadingResource()
+        else
+            EspressoIdlingResource.incrementNavigationResource()
         val loadMaps = {
             mapsCatalogRequested = true
             val loadMapsCatalog = {
@@ -324,12 +326,13 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------------------------------------
 
-    override fun onDestroy()
+    override fun onStop()
     {
-        super.onDestroy()
+        super.onStop()
 
-        // Deinitialize the SDK.
-        GemSdk.release()
+        // Release the SDK.
+        if (isFinishing)
+            GemSdk.release()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -351,7 +354,6 @@ class MainActivity : AppCompatActivity()
             mapDescription.text = SdkCall.execute { GemUtil.formatSizeAsText(map.totalSize) }
         }
         EspressoIdlingResource.decrementDownloadingResource()
-        GemSdk
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -490,6 +492,7 @@ class MainActivity : AppCompatActivity()
 @VisibleForTesting(VisibleForTesting.PRIVATE)
 object EspressoIdlingResource
 {
+    var isDownloadingTest = false
     val navigationIdlingResource = CountingIdlingResource("NavigationIdlingResource")
     val downloadingIdlingResource = CountingIdlingResource("DownloadingIdlingResource")
     fun incrementNavigationResource() = navigationIdlingResource.increment()

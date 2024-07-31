@@ -33,6 +33,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -40,6 +41,10 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runner.RunWith
 import org.junit.runners.model.Statement
+import java.io.File
+import java.nio.file.Files
+import java.util.stream.Collectors
+import kotlin.io.path.Path
 
 @LargeTest
 @RunWith(AndroidJUnit4ClassRunner::class)
@@ -63,8 +68,31 @@ class DownloadingOnboardMapInstrumentedTests
             //verify token and internet connection
             SdkCall.execute { assert(GemSdk.getTokenFromManifest(appContext)?.isNotEmpty() == true) { "Invalid token." } }
             assert(appContext.getSystemService(ConnectivityManager::class.java).activeNetwork != null) { " No internet connection." }
+
+            deleteMap()
         }
 
+        @AfterClass
+        @JvmStatic
+        fun deleteResources()
+        {
+            deleteMap()
+        }
+
+        private fun deleteMap()
+        {
+            appContext.getExternalFilesDirs(null)?.forEach {
+                val pathInt = it.path.toString() + File.separator + "Data" + File.separator + "Maps"
+                val stream = Files.find(Path(pathInt), 20, { filePath, _ ->
+                    filePath.fileName.toString().startsWith("Lux")
+                })
+                val list = stream.collect(Collectors.toList())
+                list.forEach { itemList ->
+                    if (Files.exists(itemList))
+                        Files.delete(itemList)
+                }
+            }
+        }
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -101,8 +129,7 @@ class DownloadingOnboardMapInstrumentedTests
                             while (sdkChannelJob.isActive) delay(500)
                         }
                     }
-                }
-                else return
+                } else return
 
                 if (!SdkSettings.isMapDataReady)
                     throw Error(GemError.getMessage(GemError.OperationTimeout))
@@ -110,8 +137,7 @@ class DownloadingOnboardMapInstrumentedTests
                 try
                 {
                     base.evaluate() // This executes tests
-                }
-                finally
+                } finally
                 {
                     GemSdk.release()
                 }
@@ -122,7 +148,7 @@ class DownloadingOnboardMapInstrumentedTests
     // -------------------------------------------------------------------------------------------------
 
     @Test
-    fun downloadResource()  = runBlocking{
+    fun downloadResource() = runBlocking {
         val channel = Channel<Unit>()
         val luxembourg = "Luxembourg"
         val contentStore = ContentStore()
@@ -156,11 +182,13 @@ class DownloadingOnboardMapInstrumentedTests
                                                 ?.asBitmap(size, size)
                                             assert(flagBitmap != null)
                                         }
-
-                                        runBlocking {
-                                            delay(10000)
-                                            channel.send(Unit)
-                                        }
+                                    }
+                                },
+                                onCompleted = { errorCode, msg ->
+                                    assert(!GemError.isError(errorCode)) { msg }
+                                    runBlocking {
+                                        delay(10000)
+                                        channel.send(Unit)
                                     }
                                 })
                             // Start downloading the first map item.
@@ -181,7 +209,7 @@ class DownloadingOnboardMapInstrumentedTests
             contentStore.asyncGetStoreContentList(EContentType.RoadMap, contentListener)
         }
 
-        withTimeout(120000){
+        withTimeout(120000) {
             channel.receive()
         }
     }

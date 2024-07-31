@@ -150,6 +150,15 @@ class MainActivity : AppCompatActivity()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
+
+    override fun onStop() {
+        super.onStop()
+        
+        if (isFinishing)
+            gemOffscreenSurfaceView.destroy()
+    }
+    
+    // ---------------------------------------------------------------------------------------------------------------------------
     
     private fun showPath(path: Path)
     {

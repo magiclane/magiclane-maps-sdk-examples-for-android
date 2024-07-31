@@ -237,6 +237,7 @@ class GPXThumbnailInstrumentedTests
         {
             val bmp = channel.receive()
             assert(bmp != null)
+            gemOffscreenSurfaceView.destroy()
         }
     }
 }

@@ -36,8 +36,8 @@ function on_exit()
         for EXAMPLE_PATH in ${EXAMPLE_PROJECTS}; do
             EXAMPLE_NAME="$(basename "${EXAMPLE_PATH}")"
             if [ -d "${EXAMPLE_PATH}"/build/app/reports ]; then
-                 mkdir -p "${MY_DIR}/REPORTS/${EXAMPLE_NAME}"
-                 mv "${EXAMPLE_PATH}"/build/app/reports/* "${MY_DIR}/REPORTS/${EXAMPLE_NAME}"/
+                 mkdir -p "${MY_DIR}/_REPORTS/${EXAMPLE_NAME}"
+                 mv "${EXAMPLE_PATH}"/build/app/reports/* "${MY_DIR}/_REPORTS/${EXAMPLE_NAME}"/
             fi
             find "${EXAMPLE_PATH}" -type f -name "*.aar" -exec rm {} +
         done
@@ -246,19 +246,19 @@ msg "Build all examples..."
 GRADLE_WRAPPER=$(find "${MY_DIR}" -maxdepth 1 -type f -executable -name gradlew -print -quit)
 GEM_TOKEN="${API_TOKEN}" ${GRADLE_WRAPPER} --parallel --no-watch-fs --stacktrace --warning-mode all buildAll || true
 
-if [ -d "APK" ]; then
-    rm -rf "APK"
+if [ -d "_APK" ]; then
+    rm -rf "_APK"
 fi
-mkdir APK
+mkdir _APK
 
-if [ -d "REPORTS" ]; then
-    rm -rf "REPORTS"
+if [ -d "_REPORTS" ]; then
+    rm -rf "_REPORTS"
 fi
-mkdir REPORTS
+mkdir _REPORTS
 
 for EXAMPLE_PATH in ${EXAMPLE_PROJECTS}; do
     EXAMPLE_NAME="$(basename "${EXAMPLE_PATH}")"
-    mv "${EXAMPLE_PATH}"/build/app/outputs/apk/release/app-release.apk "APK/${EXAMPLE_NAME}_app-release.apk"
+    mv "${EXAMPLE_PATH}"/build/app/outputs/apk/release/app-release.apk "_APK/${EXAMPLE_NAME}_app-release.apk"
 done
 
 if ${RUN_UNIT_TESTS}; then
@@ -272,8 +272,8 @@ if ${RUN_INSTRUMENTED_TESTS}; then
         exit 2
     fi
 
-    if [ -d "REPORTS/androidTests" ]; then
-        rm -rf "REPORTS/androidTests"
+    if [ -d "_REPORTS/androidTests" ]; then
+        rm -rf "_REPORTS/androidTests"
     fi
 
     msg "Run instrumented tests from all examples..."
@@ -288,11 +288,11 @@ if ${RUN_INSTRUMENTED_TESTS}; then
 fi
 
 if ${ANALYZE}; then
-    if [ -d "REPORTS/detekt" ]; then
-        rm -rf "REPORTS/detekt"
+    if [ -d "_REPORTS/detekt" ]; then
+        rm -rf "_REPORTS/detekt"
     fi
-    if [ -d "REPORTS/ktlint" ]; then
-        rm -rf "REPORTS/ktlint"
+    if [ -d "_REPORTS/ktlint" ]; then
+        rm -rf "_REPORTS/ktlint"
     fi
 
     msg "Analyze Kotlin code for all examples..."

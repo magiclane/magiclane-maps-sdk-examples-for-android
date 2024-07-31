@@ -36,6 +36,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,6 +57,15 @@ class UITestsForDownloadingViews
     private val contentStore = ContentStore()
     private val appContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
 
+    companion object{
+        @JvmStatic
+        @BeforeClass
+        fun setTestType(): Unit
+        {
+            EspressoIdlingResource.isDownloadingTest = true
+        }
+    }
+    
     @Before
     fun registerIdlingResource(): Unit = runBlocking {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -84,6 +94,7 @@ class UITestsForDownloadingViews
     @Test
     fun t1_checkDownloadingViews(): Unit = runBlocking {
         deleteMap()
+        delay(700)
         onView(ViewMatchers.withId(R.id.flag_icon)).check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
         onView(ViewMatchers.withId(R.id.download_progress_bar)).check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
     }

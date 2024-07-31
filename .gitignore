@@ -9,8 +9,8 @@
 /*/captures/
 /*/.externalNativeBuild/
 /*/.cxx/
-APK/
-REPORTS/
+_APK/
+_REPORTS/
 .gradle/
 /*/*/local.properties
 /*/local.properties

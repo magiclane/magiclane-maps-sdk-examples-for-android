@@ -120,7 +120,7 @@ class ApplicationModulePlugin : Plugin<Project> {
             } else {
 				// Check if direct downloaded Maps SDK for Android exists in libs folder
 				val libsDir = File(rootProject.projectDir, "app/libs")
-				val regex = Regex("MAGICLANE-MAPS-SDK-.*\\.aar")
+				val regex = Regex("MAGICLANE-(ADAS|MAPS)-SDK-.*\\.aar")
 				val aarFile = libsDir.listFiles()?.find { it.name.matches(regex) }
 				if (aarFile != null) {
                     logger.warn(

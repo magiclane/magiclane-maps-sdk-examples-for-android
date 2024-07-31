@@ -37,6 +37,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,6 +57,14 @@ class UIInstrumentedTests
     private lateinit var activityRes: MainActivity
     private val contentStore = ContentStore()
 
+    companion object{
+        @JvmStatic
+        @BeforeClass
+        fun setTestType(): Unit
+        {
+            EspressoIdlingResource.isDownloadingTest = false
+        }
+    }
     @Before
     fun registerIdlingResource(): Unit = runBlocking {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
