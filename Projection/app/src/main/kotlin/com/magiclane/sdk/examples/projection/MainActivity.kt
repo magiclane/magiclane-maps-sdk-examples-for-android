@@ -205,7 +205,11 @@ class MainActivity : AppCompatActivity()
 
             val projection: Projection = when (i)
             {
-                EProjectionType.EPR_WhatThreeWords -> ProjectionW3W().also { it.setToken(getString(R.string.what_3_words_token)) }
+                EProjectionType.EPR_WhatThreeWords -> ProjectionW3W().also {
+                    //please replace this string resource with a valid What 3 Words token
+                    val token = getString(R.string.what_3_words_token)
+                    if(token.isNotEmpty()) it.setToken(token)
+                }
                 EProjectionType.EPR_Bng -> ProjectionBNG()
                 EProjectionType.EPR_Lam -> ProjectionLAM()
                 EProjectionType.EPR_Utm -> ProjectionUTM()
