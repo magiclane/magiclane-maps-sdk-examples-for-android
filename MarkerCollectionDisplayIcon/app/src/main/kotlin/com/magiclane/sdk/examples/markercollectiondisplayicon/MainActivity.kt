@@ -18,10 +18,9 @@ package com.magiclane.sdk.examples.markercollectiondisplayicon
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.os.Build
 import android.os.Bundle
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.magiclane.sdk.core.DataBuffer
 import com.magiclane.sdk.core.GemSdk
@@ -105,6 +104,10 @@ class MainActivity : AppCompatActivity()
             /* Center map on result */
             mapView.centerOnCoordinates(predefinedPlaces[0].second, 80)
         }
+        onBackPressedDispatcher.addCallback(this){
+            finish()
+            exitProcess(0)
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -123,14 +126,8 @@ class MainActivity : AppCompatActivity()
 
     private fun getBitmap(drawableRes: Int): Bitmap?
     {
-        val drawable = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-        {
+        val drawable =
             ResourcesCompat.getDrawable(resources, drawableRes, theme)
-        }
-        else
-        {
-            ContextCompat.getDrawable(this, drawableRes)
-        }
 
         drawable ?: return null
 
@@ -152,16 +149,8 @@ class MainActivity : AppCompatActivity()
     {
         super.onDestroy()
 
-        // Deinitialize the SDK.
+        // Release the SDK.
         GemSdk.release()
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    override fun onBackPressed()
-    {
-        finish()
-        exitProcess(0)
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------

@@ -56,7 +56,7 @@ class ApplicationModulePlugin : Plugin<Project> {
                     release {
                         isMinifyEnabled = false
                         proguardFiles(
-                            getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+                            getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
                         )
                         // NOTE: Signing with the debug keys for now.
                         // Add your own signing config for the release build.
