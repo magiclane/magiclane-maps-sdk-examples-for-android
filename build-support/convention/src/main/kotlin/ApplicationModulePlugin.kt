@@ -54,7 +54,8 @@ class ApplicationModulePlugin : Plugin<Project> {
 
                 buildTypes {
                     release {
-                        isMinifyEnabled = false
+						isMinifyEnabled = true
+						isShrinkResources = true
                         proguardFiles(
                             getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
                         )

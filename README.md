@@ -72,6 +72,7 @@ This repository holds a series of example projects using the **Magic Lane - Maps
 * [Truck Profile](TruckProfile) - Calculate the truck routes between 2 given landmarks. Change the truck profile and recalculate routes depending on the new settings.
 * [Voice Downloading](VoiceDownloading) - Gather the list of available voices; download first available voice.
 * [Voice Instructions Route Simulation](VoiceInstrRouteSimulation) - Start simulation between 2 given landmarks if any route can be calculated; use TTS to play navigation instructions.
+* [Weather](Weather) - Show how to use weather service to display forecast for a selected landmark.
 * [What's Nearby](WhatsNearby) - Searches all landmarks near current position; display a list of found landmarks.
 * [What's Nearby Category](WhatsNearbyCategory) - Searches all landmarks of a specific category near current position; display a list of found landmarks.
 

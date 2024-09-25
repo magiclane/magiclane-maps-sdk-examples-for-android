@@ -2,9 +2,7 @@
 
 This example app demonstrates the following features:
 - Present a map.
-- Starts a navigation from the current position to a given landmark.
-- Displays the current speed and the legal speed limit.
-- Sends a TTS warning each time the current speed overcomes the legal speed limit.
+- How to use weather service to display forecast for a selected landmark.
 
 ## Requirements
 

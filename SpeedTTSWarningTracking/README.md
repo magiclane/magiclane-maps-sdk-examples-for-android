@@ -1,13 +1,13 @@
 ## Overview
 
 This example app demonstrates the following features:
-- Presents a map.
+- Present a map.
 - Displays the current speed and the legal speed limit.
 - Sends a TTS warning each time the current speed overcomes the legal speed limit.
 
 ## Requirements
 
-- Deployment target device must run min Android API 19.
+- Deployment target device must run Android 5.0 (API level 21) or higher.
 - Deployment target device must be connected to internet.
 
 ## Build instructions

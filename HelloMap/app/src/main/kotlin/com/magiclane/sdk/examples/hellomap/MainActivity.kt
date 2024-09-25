@@ -19,7 +19,15 @@ package com.magiclane.sdk.examples.hellomap
 import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import com.magiclane.sdk.core.ErrorCode
+import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.core.GemSurfaceView
+import com.magiclane.sdk.core.Image
+import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.d3scene.BasicShapeDrawer
+import com.magiclane.sdk.util.SdkCall
+import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -32,7 +40,21 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true){
+        val gemSurface = findViewById<GemSurfaceView>(R.id.gem_surface)
+        SdkSettings.onMapDataReady = { map ->
+            SdkCall.postSync {
+                gemSurface.gemScreen?.canvases?.let {
+                    assert(it.size > 0) { it.size }
+                    val canvas = it[0]
+                    val bsd = BasicShapeDrawer.produce(canvas)
+                    assert(bsd != null) { "Basic Shape Drawer is null" }
+                    val err = bsd?.createTexture(Image(), 100, 100)
+                    assert(err == 0) { GemError.getMessage(error = err as ErrorCode) }
+                }
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true)
+        {
             override fun handleOnBackPressed()
             {
                 finish()
@@ -47,7 +69,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onDestroy()
 
-        // Rekease the SDK.
+        // Release the SDK.
         GemSdk.release()
     }
 

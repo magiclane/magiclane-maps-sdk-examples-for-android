@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Weather</string>
+    <string name="current_forecast">Current forecast</string>
+    <string name="daily_forecast">Daily forecast</string>
+    <string name="error">Error</string>
+    <string name="hourly_forecast">Hourly Forecast</string>
+    <string name="my_position">My position</string>
+    <string name="ok">OK</string>
+</resources>

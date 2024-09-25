@@ -36,7 +36,6 @@ import com.magiclane.sdk.places.SearchService
 import com.magiclane.sdk.util.SdkCall
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -54,7 +53,7 @@ import org.junit.runners.model.Statement
 // -------------------------------------------------------------------------------------------------
 @LargeTest
 @RunWith(AndroidJUnit4ClassRunner::class)
-class SearchAroundServiceInstrumentedTests
+class WhatsNearbyInstrumentedTests
 {
 
     companion object {
