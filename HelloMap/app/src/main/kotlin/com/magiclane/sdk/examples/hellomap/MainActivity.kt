@@ -16,6 +16,7 @@ package com.magiclane.sdk.examples.hellomap
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -41,15 +42,16 @@ class MainActivity : AppCompatActivity()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         val gemSurface = findViewById<GemSurfaceView>(R.id.gem_surface)
-        SdkSettings.onMapDataReady = { map ->
-            SdkCall.postSync {
-                gemSurface.gemScreen?.canvases?.let {
-                    assert(it.size > 0) { it.size }
-                    val canvas = it[0]
-                    val bsd = BasicShapeDrawer.produce(canvas)
-                    assert(bsd != null) { "Basic Shape Drawer is null" }
-                    val err = bsd?.createTexture(Image(), 100, 100)
-                    assert(err == 0) { GemError.getMessage(error = err as ErrorCode) }
+        SdkSettings.onMapDataReady = {
+            gemSurface.onDrawFrameCustom = { _ ->
+                SdkCall.execute {
+                    gemSurface.gemScreen?.canvases?.let {
+                        assert(it.size > 0) { it.size }
+                        val canvas = it[0]
+                        val bsd = BasicShapeDrawer.produce(canvas)
+                        assert(bsd != null) { "Basic Shape Drawer is null" }
+                        bsd?.drawRectangle(10f, 10f, 200f, 400f, Color.BLACK, true, 2f)
+                    }
                 }
             }
         }

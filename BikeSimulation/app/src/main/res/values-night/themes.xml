@@ -1,0 +1,39 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.GEMSdk" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">#c8bfff</item>
+        <item name="colorOnPrimary">#30285f</item>
+        <item name="colorSecondary">#c8bfff</item>
+        <item name="colorOnSecondary">#30285f</item>
+        <item name="colorTertiary">#bfc2ff</item>
+        <item name="colorOnTertiary">#272b60</item>
+        <item name="colorPrimaryContainer">#473f77</item>
+        <item name="colorOnPrimaryContainer">#e5deff</item>
+        <item name="colorSecondaryContainer">#463f77</item>
+        <item name="colorOnSecondaryContainer">#e5deff</item>
+        <item name="colorTertiaryContainer">#3e4278</item>
+        <item name="colorOnTertiaryContainer">#e0e0ff</item>
+        <item name="colorError">#ffb4ab</item>
+        <item name="colorOnError">#690005</item>
+        <item name="colorErrorContainer">#93000a</item>
+        <item name="colorOnErrorContainer">#ffdad6</item>
+        <item name="colorSurfaceDim">#141318</item>
+        <item name="colorSurface">#141318</item>
+        <item name="colorSurfaceBright">#3a383e</item>
+        <item name="colorSurfaceContainerLowest">#0e0d13</item>
+        <item name="colorSurfaceContainerLow">#1c1b20</item>
+        <item name="colorSurfaceContainer">#201f25</item>
+        <item name="colorSurfaceContainerHigh">#2a292f</item>
+        <item name="colorSurfaceContainerHighest">#35343a</item>
+        <item name="colorOnSurface">#e5e1e9</item>
+        <item name="colorOnSurfaceVariant">#c9c5d0</item>
+        <item name="colorOutline">#928f99</item>
+        <item name="colorOutlineVariant">#48454f</item>
+        <item name="colorSurfaceInverse">#e5e1e9</item>
+        <item name="colorOnSurfaceInverse">#313036</item>
+        <item name="colorPrimaryInverse">#5f5791</item>
+        <item name="scrimBackground">#000000</item>
+        <item name="android:shadowColor">#000000</item>
+        <item name="floatingActionButtonStyle">@style/Widget.App.FloatingActionButton</item>
+    </style>
+</resources>

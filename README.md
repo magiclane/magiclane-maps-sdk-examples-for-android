@@ -9,6 +9,8 @@ This repository holds a series of example projects using the **Magic Lane - Maps
 * [Android Auto Route Navigation](AndroidAutoRouteNavigation) - Start navigation from the current position to a given landmark if a route can be calculated.
 * [Apply Custom Map Style](ApplyCustomMapStyle) - Present a map; apply a custom map style.
 * [Apply Map Style](ApplyMapStyle) - Get the map style items from the server; download and apply a map style.
+* [Bike Simulation](BikeSimulation) - Setup a bike routing profile and start simulation from the current position to a given landmark if a route can be calculated.
+* [Basic Shape Drawer](BasicShapeDrawer) - Shows how to use `BasicShapeDrawer` class to do various drawings on a map.
 * [BLE Client](BLEClient) - BLE client for BLEServer example. It displays navigation instructions received from server.
 * [BLE Server](BLEServer) - Start simulated navigation between 2 given landmarks. Displays turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance. Acts like BLE server. Send navigation info (next turn image id, distance to next turn, next navigation instruction) to the BLE client.
 * [BLE Client1](BLEClient1) - BLE client for BLEServer1 example. It displays navigation instructions received from server. Turn images are transferred as bitmaps.
@@ -69,6 +71,7 @@ This repository holds a series of example projects using the **Magic Lane - Maps
 * [Speed TTS Warning Navigation](SpeedTTSWarningNavigation) - Starts a navigation from the current position to a given landmark. Displays the current speed and the legal speed limit. Sends a TTS warning each time the current speed overcomes the legal speed limit.
 * [Speed TTS Warning Tracking](SpeedTTSWarningTracking) - Displays the current speed and the legal speed limit. Sends a TTS warning each time the current speed overcomes the legal speed limit.
 * [Speed Watcher](SpeedWatcher) - Start simulation between 2 given landmarks. Display the current speed and the legal speed limit.
+* [Track Postions](TrackPostions) - Mocks navigation from point A to point B using external data source while tracking positions. Displays path using tracked positions.
 * [Truck Profile](TruckProfile) - Calculate the truck routes between 2 given landmarks. Change the truck profile and recalculate routes depending on the new settings.
 * [Voice Downloading](VoiceDownloading) - Gather the list of available voices; download first available voice.
 * [Voice Instructions Route Simulation](VoiceInstrRouteSimulation) - Start simulation between 2 given landmarks if any route can be calculated; use TTS to play navigation instructions.

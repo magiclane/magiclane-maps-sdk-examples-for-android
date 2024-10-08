@@ -53,7 +53,7 @@ import org.junit.runners.model.Statement
 
 @LargeTest
 @RunWith(AndroidJUnit4ClassRunner::class)
-class GPXThumbnailImageInstrumentedTests
+class GPXImgWithRoutingInstrumentedTests
 {
     companion object
     {

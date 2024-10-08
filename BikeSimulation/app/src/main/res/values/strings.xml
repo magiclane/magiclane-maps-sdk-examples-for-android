@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">BikeSimulation</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+    <string name="search">Search...</string>
+    <string name="bike_type_text">Bike Type</string>
+    <string name="bike_settings_text">Bike Settings</string>
+    <string name="city">City</string>
+    <string name="cross">Cross</string>
+    <string name="mountain">Mountain</string>
+    <string name="road">Road</string>
+    <string name="start_simulation_text">Start Simulation</string>
+    <string name="search_for_destination">Search for a destination</string>
+    <string name="calculate_route">Calculate Route</string>
+    <string name="start_simulation">Start Simulation</string>
+    <string name="cancel_simulation">Cancel Simulation</string>
+    <string name="choose_destination">Please choose a destination!</string>
+</resources>

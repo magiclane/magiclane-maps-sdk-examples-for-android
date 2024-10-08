@@ -180,7 +180,7 @@ class MainActivity : AppCompatActivity()
     private val navRoute: Route?
         get() = navigationService.getNavigationRoute(navigationListener)
 
-    var timer : Timer? = null
+    private var timer : Timer? = null
     
     /*
     Define a navigation listener that will receive notifications from the
@@ -319,7 +319,7 @@ class MainActivity : AppCompatActivity()
                     externalDataSource?.let { dataSource ->
                         timer = fixedRateTimer("timer", false, 0L, 1000) {
                             SdkCall.execute {
-                                val externalPosition = ExternalPosition.produceExternalPosition(
+                                val externalPosition = PositionData.produce(
                                     System.currentTimeMillis(),
                                     positions[index].first,
                                     positions[index].second,
@@ -429,13 +429,14 @@ class MainActivity : AppCompatActivity()
     /**
      * @return estimated time of arrival
      */
+    @SuppressLint("DefaultLocale")
     private fun Route.getEta(): String
     {
         val etaNumber = this.getTimeDistance(true)?.totalTime ?: 0
 
         val time = Time()
         time.setLocalTime()
-        time.longValue = time.longValue + etaNumber * 1000
+        time.longValue += etaNumber * 1000
         return String.format("%d:%02d", time.hour, time.minute)
     }
 
@@ -539,7 +540,7 @@ fun Array<Pair<Double, Double>>.getBearing(index: Int): Double
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------------------------------------
-public object EspressoIdlingResource {
+object EspressoIdlingResource {
     val espressoIdlingResource = CountingIdlingResource("ApplyMapStyleInstrumentedTestsIdlingResource")
     fun increment() = espressoIdlingResource.increment()
     fun decrement() = if(!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit

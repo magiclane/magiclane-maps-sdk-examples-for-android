@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Widget.App.FloatingActionButton" parent="Widget.Material3.FloatingActionButton.Primary">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.App.FloatingActionButton</item>
+    </style>
+    <style name="ThemeOverlay.App.FloatingActionButton" parent="">
+        <item name="colorContainer">@color/primary_color</item>
+        <item name="colorOnContainer">@color/on_primary_color</item>
+    </style>
+    
+    <style name="Widget.App.SearchView" parent="Widget.Material3.SearchView">
+        <item name="android:textAppearance">@style/TextAppearance.App.SearchView</item>
+    </style>
+    <style name="TextAppearance.App.SearchView" parent="Base.TextAppearance.Material3.Search">
+        <item name="android:textSize">@dimen/big_text_size</item>
+        <!--        customise SearchView text here-->
+    </style>
+
+
+    <style name="Widget.App.SearchBar" parent="Widget.Material3.SearchBar">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.App.Search</item>
+        <item name="android:textAppearance">@style/TextAppearance.App.SearchView</item>
+    </style>
+    <style name="ThemeOverlay.App.Search" parent="ThemeOverlay.Material3.Search">
+        <item name="actionMenuTextColor">@color/primary_color</item>
+        <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
+    </style>
+    <style name="TextAppearance.App.SearchBar" parent="TextAppearance.Material3.SearchBar">
+        <item name="android:textSize">@dimen/big_text_size</item>
+        <!--        customise SearchBar text here-->
+    </style>
+</resources>

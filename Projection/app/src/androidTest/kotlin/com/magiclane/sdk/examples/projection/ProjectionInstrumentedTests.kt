@@ -23,7 +23,6 @@ import androidx.core.view.children
 import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.action.MotionEvents
@@ -39,10 +38,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.android.material.textview.MaterialTextView
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
-import com.magiclane.sdk.core.Xy
+import com.magiclane.sdk.d3scene.Animation
+import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.util.SdkCall
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.anyOf
@@ -70,7 +69,7 @@ class ProjectionInstrumentedTests
     @Before
     fun registerIdlingResource(): Unit = runBlocking {
         activityScenarioRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
+        //IdlingRegistry.getInstance().register(EspressoIdlingResource.espressoIdlingResource)
         activityScenarioRule.scenario.onActivity { activity ->
             activityRes = activity
         }
@@ -83,31 +82,29 @@ class ProjectionInstrumentedTests
     @After
     fun closeActivity()
     {
-        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
+        //IdlingRegistry.getInstance().unregister(EspressoIdlingResource.espressoIdlingResource)
         activityScenarioRule.scenario.close()
     }
 
     @Test
     fun checkProjectionResults(): Unit = runBlocking {
+        delay(10000)
         onView(withId(R.id.gem_surface_view)).check(matches(isDisplayed()))
-        delay(5000)
         val surface = activityRes.findViewById<GemSurfaceView>(R.id.gem_surface_view)
         val center = Pair(
             surface.measuredWidth / 2,
             surface.measuredHeight / 2
         )
-        async {
-            SdkCall.execute {
-                val centerXy = Xy(center.first, center.second)
-                surface.mapView?.centerOnCoordinates(
-                    Coordinates(40.689846, -74.047690), //Liberty Island
-                    zoomLevel = -1,
-                    xy = centerXy,
-                )
-            }
-        }.await()
+        //540,880
+        SdkCall.execute {
+            surface.mapView?.centerOnCoordinates(
+                Coordinates(45.651160,25.604815), //gm
+                zoomLevel = -1,
+                animation = Animation(EAnimation.None, duration = 0)
+            )
+        }
 
-        delay(10000)
+        delay(3000)
 
         onView(withId(R.id.gem_surface_view)).perform(
             touchDownAndUp(

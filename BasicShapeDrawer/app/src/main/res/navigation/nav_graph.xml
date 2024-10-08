@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_grapgh"
+    app:startDestination="@id/speed_limits_panel">
+
+    <fragment
+        android:id="@+id/population"
+        android:name="com.magiclane.sdk.examples.basicshapedrawer.Population"
+        android:label="fragment_population"
+        tools:layout="@layout/fragment_population" >
+        <action
+            android:id="@+id/action_population_to_dataVisualization"
+            app:destination="@id/speed_limits_panel" />
+    </fragment>
+    <fragment
+        android:id="@+id/speed_limits_panel"
+        android:name="com.magiclane.sdk.examples.basicshapedrawer.SpeedLimitsPanel"
+        android:label="fragment_data_visualization"
+        tools:layout="@layout/speeds_limits_fragment" >
+        <action
+            android:id="@+id/action_speed_limits_panel_to_population"
+            app:destination="@id/population" />
+    </fragment>
+</navigation>

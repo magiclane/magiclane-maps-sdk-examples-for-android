@@ -27,14 +27,12 @@ import com.magiclane.sdk.routesandnavigation.NavigationListener
 import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.sensordatasource.DataSourceFactory
 import com.magiclane.sdk.sensordatasource.ExternalDataSource
-import com.magiclane.sdk.sensordatasource.ExternalPosition
 import com.magiclane.sdk.sensordatasource.PositionData
 import com.magiclane.sdk.sensordatasource.PositionListener
 import com.magiclane.sdk.sensordatasource.PositionService
 import com.magiclane.sdk.sensordatasource.enums.EDataType
 import com.magiclane.sdk.util.SdkCall
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -168,7 +166,7 @@ class ExternalPositionTests
             externalDataSource?.let { dataSource ->
                 timer = fixedRateTimer("timer", false, 0L, 1000) {
                     SdkCall.execute {
-                        val externalPosition = ExternalPosition.produceExternalPosition(
+                        val externalPosition = PositionData.produce(
                             System.currentTimeMillis(),
                             MainActivity.positions[index].first,
                             MainActivity.positions[index].second,

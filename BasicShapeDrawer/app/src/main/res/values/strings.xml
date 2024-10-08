@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">BasicShapeDrawer</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+    <string name="population">Population Stickers</string>
+    <string name="speeds_panel">Speed limits panel</string>
+</resources>

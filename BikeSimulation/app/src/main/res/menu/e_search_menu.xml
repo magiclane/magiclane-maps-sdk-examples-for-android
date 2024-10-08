@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/e_bike_type"
+        android:icon="@drawable/ebikecity"
+        android:title="@string/bike_type_text"
+        app:showAsAction="always">
+        <menu>
+            <item
+                android:id="@+id/e_bike_city"
+                android:icon="@drawable/ebikecity"
+                android:title="@string/city" />
+            <item
+                android:id="@+id/e_bike_cross"
+                android:icon="@drawable/ebikecross"
+                android:title="@string/cross" />
+            <item
+                android:id="@+id/e_bike_mountain"
+                android:icon="@drawable/ebikemountain"
+                android:title="@string/mountain" />
+            <item
+                android:id="@+id/e_bike_road"
+                android:icon="@drawable/ebikeroad"
+                android:title="@string/road" />
+        </menu>
+    </item>
+    <item
+        android:id="@+id/start_simulation"
+        android:icon="@drawable/start_nav"
+        android:title="@string/start_simulation"
+        app:showAsAction="always" />
+</menu>
+

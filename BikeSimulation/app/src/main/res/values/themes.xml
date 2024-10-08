@@ -1,0 +1,43 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.GEMSdk" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color. -->
+       <item name="colorPrimary">#5D49C8</item>
+       <item name="colorOnPrimary">#ffffff</item>
+       <item name="colorSecondary">#5e5791</item>
+       <item name="colorOnSecondary">#ffffff</item>
+        <item name="colorTertiary">#565992</item>
+        <item name="colorOnTertiary">#ffffff</item>
+        <item name="colorPrimaryContainer">#e5deff</item>
+        <item name="colorOnPrimaryContainer">#1b1249</item>
+        <item name="colorSecondaryContainer">#e5deff</item>
+        <item name="colorOnSecondaryContainer">#1a1249</item>
+        <item name="colorTertiaryContainer">#e0e0ff</item>
+        <item name="colorOnTertiaryContainer">#11144b</item>
+        <item name="colorError">#ba1a1a</item>
+        <item name="colorOnError">#ffffff</item>
+        <item name="colorErrorContainer">#ffdad6</item>
+        <item name="colorOnErrorContainer">#410002</item>
+        <item name="colorSurfaceDim">#ddd8e0</item>
+        <item name="colorSurface">#fdf8ff</item>
+        <item name="colorSurfaceBright">#fdf8ff</item>
+        <item name="colorSurfaceContainerLowest">#ffffff</item>
+        <item name="colorSurfaceContainerLow">#f7f2fa</item>
+        <item name="colorSurfaceContainer">#f1ecf4</item>
+        <item name="colorSurfaceContainerHigh">#ebe6ee</item>
+        <item name="colorSurfaceContainerHighest">#e5e1e9</item>
+        <item name="colorOnSurface">#1c1b20</item>
+        <item name="colorOnSurfaceVariant">#48454f</item>
+        <item name="colorOutline">#78767f</item>
+        <item name="colorOutlineVariant">#c9c5d0</item>
+        <item name="colorSurfaceInverse">#313036</item>
+        <item name="colorOnSurfaceInverse">#f4eff7</item>
+        <item name="colorPrimaryInverse">#c8bfff</item>
+        <item name="scrimBackground">#000000</item>
+        <item name="android:shadowColor">#000000</item>
+        <item name="floatingActionButtonStyle">@style/Widget.App.FloatingActionButton</item>
+        <item name="materialSearchViewStyle">@style/Widget.App.SearchView</item>
+        <item name="materialSearchBarStyle">@style/Widget.App.SearchBar</item>
+        <!-- Customize your theme here. -->
+    </style>
+</resources>

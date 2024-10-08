@@ -13,7 +13,7 @@ import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.NavigationListener
 import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.sensordatasource.DataSourceFactory
-import com.magiclane.sdk.sensordatasource.ExternalPosition
+import com.magiclane.sdk.sensordatasource.PositionData
 import com.magiclane.sdk.sensordatasource.PositionListener
 import com.magiclane.sdk.sensordatasource.PositionService
 import com.magiclane.sdk.sensordatasource.enums.EDataType
@@ -155,7 +155,7 @@ class RoutingNavigationInstrumentedTests
                     }
                     onProgressCompletedPassed = true
                 },
-                onStatusChanged = { status ->
+                onStatusChanged = { _ ->
                     onProgressStatusChangedPassed = true
                 }
             )
@@ -180,7 +180,7 @@ class RoutingNavigationInstrumentedTests
             }
             PositionService.dataSource = externalDataSource
             PositionService.addListener(positionListener)
-            val externalPosition = ExternalPosition.produceExternalPosition(
+            val externalPosition = PositionData.produce(
                 System.currentTimeMillis(),
                 waypoints[0].coordinates!!.latitude,
                 waypoints[0].coordinates!!.longitude

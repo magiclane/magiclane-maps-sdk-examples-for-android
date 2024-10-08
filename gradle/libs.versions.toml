@@ -1,45 +1,46 @@
 [versions]
-magicLaneMapsKotlinVersion = "1.2.1"
+magicLaneMapsKotlinVersion = "1.3.0"
 
 minSdkVersion = "21"
 targetSdkVersion = "34"
 compileSdkVersion = "34"
 
-gradlePlugin = "8.5.1"
-kotlinPlugin = "1.9.24"
+gradlePlugin = "8.7.0"
+kotlinPlugin = "1.9.21"
 
 ktlintGradle = "12.1.1"
 detekt = "1.23.6"
 
+activityKtx = "1.9.0"
 annotation = "1.8.0"
-coreKtx = "1.13.1"
+appcompat = "1.7.0"
+asynclayoutinflater = "1.0.0"
 carApp = "1.4.0"
-junit = "4.13.2"
-junitVersion = "1.2.1"
+cardview = "1.0.0"
+constraintlayout = "2.1.4"
+coreKtx = "1.13.1"
+espressoContrib = "3.6.1"
 espressoCore = "3.6.1"
 espressoIdlingResource = "3.6.1"
 espressoIntents = "3.6.1"
-espressoContrib = "3.6.1"
-activityKtx = "1.9.0"
-lifecycleViewmodelKtx = "2.8.3"
+fragmentKtx = "1.8.4"
+jetbrainsCoAndroid = "1.8.1"
+jetbrainsCoCore = "1.8.1"
+junit = "4.13.2"
+junitVersion = "1.2.1"
 lifecycleLivedataKtx = "2.8.3"
-appcompat = "1.7.0"
-asynclayoutinflater = "1.0.0"
-cardview = "1.0.0"
-constraintlayout = "2.1.4"
+lifecycleViewmodelKtx = "2.8.3"
+material = "1.12.0"
+media = "1.7.0"
 navigationFragmentKtx = "2.7.7"
 navigationUIKtx = "2.7.7"
 recyclerview = "1.3.2"
-media = "1.7.0"
+sortableTableView = "2.8.1"
+swiperefreshlayout = "1.1.0"
 testCoreKtx = "1.6.1"
 testRules = "1.6.1"
 testRunner = "1.6.1"
 testUIAutomator = "2.3.0"
-swiperefreshlayout = "1.1.0"
-sortableTableView = "2.8.1"
-material = "1.12.0"
-jetbrainsCoAndroid = "1.8.1"
-jetbrainsCoCore = "1.8.1"
 
 [libraries]
 build-android-gradle = { module = "com.android.tools.build:gradle", version.ref = "gradlePlugin" }
@@ -48,35 +49,36 @@ detekt-gradle = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", v
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 ktlint-gradle = { module = "org.jlleitschuh.gradle:ktlint-gradle", version.ref = "ktlintGradle" }
 
+androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
 androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-asynclayoutinflater = { group = "androidx.asynclayoutinflater", name = "asynclayoutinflater", version.ref = "asynclayoutinflater" }
 androidx-car = { group = "androidx.car.app", name = "app", version.ref = "carApp" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
-androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-espresso-contrib = { group = "androidx.test.espresso", name = "espresso-contrib", version.ref = "espressoContrib" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-espresso-idlingresource = { group = "androidx.test.espresso", name = "espresso-idling-resource", version.ref = "espressoIdlingResource" }
 androidx-espresso-intents = { group = "androidx.test.espresso", name = "espresso-intents", version.ref = "espressoIntents" }
-androidx-espresso-contrib = { group = "androidx.test.espresso", name = "espresso-contrib", version.ref = "espressoContrib" }
-androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
-androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
+androidx-fragment-ktx = {group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtx"}
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycleLivedataKtx" }
-androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
-androidx-asynclayoutinflater = { group = "androidx.asynclayoutinflater", name = "asynclayoutinflater", version.ref = "asynclayoutinflater" }
-androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
-androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
+androidx-media = { group = "androidx.media", name = "media", version.ref = "media" }
 androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
 androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUIKtx" }
-androidx-media = { group = "androidx.media", name = "media", version.ref = "media" }
 androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
+androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "testCoreKtx" }
 androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "testRules" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
 androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "testUIAutomator" }
-androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
-sortabletableview = { group = "com.github.ISchwarz23", name = "SortableTableView", version.ref = "sortableTableView" }
-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 jetbrains-kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "jetbrainsCoAndroid" }
 jetbrains-kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "jetbrainsCoCore" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+sortabletableview = { group = "com.github.ISchwarz23", name = "SortableTableView", version.ref = "sortableTableView" }
 
 magiclane-maps-kotlin = { group = "com.magiclane", name = "maps-kotlin", version.ref = "magicLaneMapsKotlinVersion"}
 
