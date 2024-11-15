@@ -21,7 +21,7 @@ android {
 }
 
 dependencies {
-    // implementation(shared.magiclane.maps.kotlin)
+    implementation(shared.magiclane.maps.kotlin)
 
     implementation(shared.androidx.core.ktx)
     implementation(shared.androidx.appcompat)

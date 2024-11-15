@@ -14,6 +14,7 @@
 
 package com.magiclane.sdk.examples.bikesimulation
 
+// -------------------------------------------------------------------------------------------------
 import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
@@ -26,7 +27,12 @@ import com.google.android.material.slider.Slider
 import com.google.android.material.textview.MaterialTextView
 import com.magiclane.sdk.examples.bikesimulation.R
 
+// -------------------------------------------------------------------------------------------------
+
 class SettingsAdapter : ListAdapter<SettingsItem, RecyclerView.ViewHolder>(settingsDiffUtil) {
+    
+    // -------------------------------------------------------------------------------------------------
+    
     companion object {
         val settingsDiffUtil = object : DiffUtil.ItemCallback<SettingsItem>() {
             override fun areItemsTheSame(oldItem: SettingsItem, newItem: SettingsItem): Boolean = oldItem.title == newItem.title
@@ -34,52 +40,62 @@ class SettingsAdapter : ListAdapter<SettingsItem, RecyclerView.ViewHolder>(setti
             override fun areContentsTheSame(oldItem: SettingsItem, newItem: SettingsItem): Boolean = false
         }
     }
+    
+    // -------------------------------------------------------------------------------------------------
 
     enum class ESettingsItemType {
         SWITCH,
         SLIDER
     }
-
+    
+    // -------------------------------------------------------------------------------------------------
+    
     class SwitchItemView(view: View) : RecyclerView.ViewHolder(view) {
         private val titleTxt = view.findViewById<MaterialTextView>(R.id.setting_item_text)
         private val switch = view.findViewById<MaterialSwitch>(R.id.setting_item_switch)
-        private var m_callback: ((Boolean) -> Unit)? = null
+        private var mCallback: ((Boolean) -> Unit)? = null
         init {
             switch.setOnCheckedChangeListener { _, isChecked ->
                 if (adapterPosition == RecyclerView.NO_POSITION) return@setOnCheckedChangeListener
-                m_callback?.invoke(isChecked)
+                mCallback?.invoke(isChecked)
             }
         }
 
         fun bind(item: SettingsSwitchItem) {
-            m_callback = item.callback
+            mCallback = item.callback
             titleTxt.text = item.title
         }
     }
 
+    // -------------------------------------------------------------------------------------------------
+    
     @SuppressLint("DefaultLocale")
-    class SliderItemView(private val view: View) : RecyclerView.ViewHolder(view) {
+    class SliderItemView(view: View) : RecyclerView.ViewHolder(view) {
         private val titleTxt = view.findViewById<MaterialTextView>(R.id.setting_item_text)
         private val valueFromTxt = view.findViewById<MaterialTextView>(R.id.value_from_text)
         private val valueTxt = view.findViewById<MaterialTextView>(R.id.value_text)
         private val valueToTxt = view.findViewById<MaterialTextView>(R.id.value_to_text)
         private val slider = view.findViewById<Slider>(R.id.item_slider)
-        private var m_unit = ""
-        private var m_callback: ((Float) -> Unit)? = null
-
+        private var mUnit = ""
+        private var mCallback: ((Float) -> Unit)? = null
+        
+        // -------------------------------------------------------------------------------------------------
+        
         init {
             slider.addOnChangeListener { _, value, fromUser ->
                 if (!fromUser) return@addOnChangeListener
                 if (adapterPosition == RecyclerView.NO_POSITION) return@addOnChangeListener
-                valueTxt.text = String.format("%.2f %s", value, m_unit)
-                m_callback?.invoke(value)
+                valueTxt.text = String.format("%.2f %s", value, mUnit)
+                mCallback?.invoke(value)
             }
         }
+
+        // -------------------------------------------------------------------------------------------------
         
         fun bind(item: SettingsSliderItem) {
             item.run {
-                m_callback = callback
-                m_unit = unit
+                mCallback = callback
+                mUnit = unit
                 titleTxt.text = title
                 valueFromTxt.text = String.format("%.2f %s", valueFrom, unit)
                 valueTxt.text = String.format("%.2f %s", value, unit)
@@ -89,7 +105,10 @@ class SettingsAdapter : ListAdapter<SettingsItem, RecyclerView.ViewHolder>(setti
                 slider.valueTo = valueTo
             }
         }
+        // -------------------------------------------------------------------------------------------------
     }
+    
+    // -------------------------------------------------------------------------------------------------
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         if (viewType < 0) return object: RecyclerView.ViewHolder(View(parent.context)){}
@@ -100,6 +119,8 @@ class SettingsAdapter : ListAdapter<SettingsItem, RecyclerView.ViewHolder>(setti
         }
     }
 
+    // -------------------------------------------------------------------------------------------------
+    
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val type = ESettingsItemType.entries[getItemViewType(position)]
         when (type) {
@@ -108,10 +129,14 @@ class SettingsAdapter : ListAdapter<SettingsItem, RecyclerView.ViewHolder>(setti
         }
     }
 
+    // -------------------------------------------------------------------------------------------------
+    
     override fun getItemViewType(position: Int): Int {
         val item = getItem(position)
         if (item is SettingsSwitchItem) return ESettingsItemType.SWITCH.ordinal
         if (item is SettingsSliderItem) return ESettingsItemType.SLIDER.ordinal
         return -1
     }
+    // -------------------------------------------------------------------------------------------------
 }
+// -------------------------------------------------------------------------------------------------

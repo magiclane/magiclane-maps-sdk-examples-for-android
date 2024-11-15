@@ -14,6 +14,8 @@
 
 package com.magiclane.sdk.examples.bikesimulation
 
+// -------------------------------------------------------------------------------------------------
+
 data class SettingsSliderItem(
     override val title: String = "",
     val valueFrom: Float = 0f,
@@ -22,3 +24,4 @@ data class SettingsSliderItem(
     val unit: String = "",
     val callback: (Float) -> Unit
 ) : SettingsItem(title)
+// -------------------------------------------------------------------------------------------------

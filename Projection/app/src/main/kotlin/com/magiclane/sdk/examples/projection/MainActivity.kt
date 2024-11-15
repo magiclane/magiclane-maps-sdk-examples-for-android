@@ -33,14 +33,13 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.SdkSettings
-import com.magiclane.sdk.core.Xy
 import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.places.Landmark
@@ -57,8 +56,6 @@ import com.magiclane.sdk.projection.ProjectionW3W
 import com.magiclane.sdk.projection.ProjectionWGS84
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.magiclane.sdk.places.Coordinates
 import java.util.Locale
 import kotlin.system.exitProcess
 
@@ -120,8 +117,7 @@ class MainActivity : AppCompatActivity()
                     // tell the map view where the touch event happened
                     gemSurfaceView.mapView?.cursorScreenPosition = xy
 
-                    val centerXy =
-                        Xy(gemSurfaceView.measuredWidth / 2, gemSurfaceView.measuredHeight / 2)
+                    val centerXy = gemSurfaceView.mapView?.viewport?.center
 
                     val landmarks = gemSurfaceView.mapView?.cursorSelectionLandmarks
                     if (!landmarks.isNullOrEmpty())
@@ -693,8 +689,8 @@ class MainActivity : AppCompatActivity()
     // ---------------------------------------------------------------------------------------------
 }
 // ---------------------------------------------------------------------------------------------------------------------------
-public object EspressoIdlingResource {
-    val espressoIdlingResource = CountingIdlingResource("ApplyMapStyleInstrumentedTestsIdlingResource")
+object EspressoIdlingResource {
+    val espressoIdlingResource = CountingIdlingResource("ProjectionInstrumentedTestsIdlingResource")
     fun increment() = espressoIdlingResource.increment()
     fun decrement() = if(!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
 }

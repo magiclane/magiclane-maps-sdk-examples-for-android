@@ -25,10 +25,10 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
-import androidx.test.espresso.action.MotionEvents
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.hasMinimumChildCount
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.withClassName
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withSubstring
 import androidx.test.ext.junit.rules.ActivityScenarioRule
@@ -42,10 +42,15 @@ import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.util.SdkCall
+import com.magiclane.sdk.util.Util
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.anyOf
 import org.hamcrest.Matcher
+import org.hamcrest.Matchers.`is`
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -90,30 +95,8 @@ class ProjectionInstrumentedTests
     fun checkProjectionResults(): Unit = runBlocking {
         delay(10000)
         onView(withId(R.id.gem_surface_view)).check(matches(isDisplayed()))
-        val surface = activityRes.findViewById<GemSurfaceView>(R.id.gem_surface_view)
-        val center = Pair(
-            surface.measuredWidth / 2,
-            surface.measuredHeight / 2
-        )
-        //540,880
-        SdkCall.execute {
-            surface.mapView?.centerOnCoordinates(
-                Coordinates(45.651160,25.604815), //gm
-                zoomLevel = -1,
-                animation = Animation(EAnimation.None, duration = 0)
-            )
-        }
-
-        delay(3000)
-
-        onView(withId(R.id.gem_surface_view)).perform(
-            touchDownAndUp(
-                center.first.toFloat(),
-                center.second.toFloat()
-            )
-        )
+        onView(withId(R.id.gem_surface_view)).perform(CenterAndTouch(45.651160,25.604815))
         delay(6000)
-
         //check there is at least a child with one of the substrings of projection types
         onView(withId(R.id.projections_list)).check(matches(hasMinimumChildCount(1)))
         onView(withId(R.id.projections_list)).perform(
@@ -159,35 +142,32 @@ class ProjectionInstrumentedTests
         }
     }
 
-    private fun touchDownAndUp(x: Float, y: Float): ViewAction
-    {
-        return object : ViewAction
-        {
-            override fun getConstraints(): Matcher<View>
-            {
-                return isDisplayed()
-            }
+    class CenterAndTouch(private val lat: Double, private val lon: Double) : ViewAction {
+        override fun getConstraints(): Matcher<View> {
+            return withClassName(`is`(GemSurfaceView::class.qualifiedName))
+        }
 
-            override fun getDescription(): String
-            {
-                return "Send touch events."
-            }
+        override fun getDescription(): String {
+            return "GemSurfaceView class perform Center and Touch event"
+        }
 
-            override fun perform(uiController: UiController, view: View)
-            {
-                // Get view absolute position
-                val location = IntArray(2)
-                view.getLocationOnScreen(location)
-
-                // Offset coordinates by view position
-                val coordinates = floatArrayOf(x + location[0], y + location[1])
-                val precision = floatArrayOf(1f, 1f)
-
-                // Send down event, pause, and send up
-                val down = MotionEvents.sendDown(uiController, coordinates, precision).down
-                uiController.loopMainThreadForAtLeast(200)
-                MotionEvents.sendUp(uiController, down, coordinates)
-            }
+        override fun perform(uiController: UiController?, view: View?) {
+            view?.let {
+                (view as GemSurfaceView).apply {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        SdkCall.execute {
+                            val coordinates = Coordinates(lat, lon)
+                            mapView?.centerOnCoordinates(coordinates, animation = Animation(EAnimation.None, duration = 0))
+                        }
+                        delay(2000)
+                        SdkCall.execute {
+                            val center = mapView?.viewport?.center
+                            if (center != null)
+                                Util.postOnMain { mapView?.onTouch?.invoke(center) }
+                        }
+                    }
+                }
+            } ?: throw IllegalArgumentException()
         }
     }
 }

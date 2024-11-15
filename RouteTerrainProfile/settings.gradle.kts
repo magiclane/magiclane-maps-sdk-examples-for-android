@@ -4,6 +4,8 @@ import java.net.URL
 
 // This will find your GEM_SDK_REGISTRY_TOKEN in ~/.gradle/gradle.properties
 val GEM_SDK_REGISTRY_TOKEN: String? by settings
+// This will find your GEM_SDK_LOCAL_MAVEN_PATH in ~/.gradle/gradle.properties
+val GEM_SDK_LOCAL_MAVEN_PATH: String? by settings
 
 pluginManagement {
 	includeBuild("../build-support")
@@ -33,21 +35,29 @@ dependencyResolutionManagement {
                ------------------------------------------------------------------
             """.trimIndent())
     }
+    
+	val gemSdkLocalMavenPath = GEM_SDK_LOCAL_MAVEN_PATH
+        ?: System.getenv("GEM_SDK_LOCAL_MAVEN_PATH").takeIf { !it.isNullOrBlank() }
+
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
         maven("https://jitpack.io")
-        maven {
-            url = uri("https://issuetracker.magiclane.com/api/v4/packages/maven")
-            credentials(HttpHeaderCredentials::class) {
-                name = "Private-Token"
-                value = gemSdkRegistryToken
-            }
-            authentication {
-                create<HttpHeaderAuthentication>("header")
-            }
-        }
+		if(!gemSdkLocalMavenPath.isNullOrBlank()) {
+			maven { url = uri(gemSdkLocalMavenPath) }
+		} else {
+			maven {
+				url = uri("https://issuetracker.magiclane.com/api/v4/packages/maven")
+				credentials(HttpHeaderCredentials::class) {
+					name = "Private-Token"
+					value = gemSdkRegistryToken
+				}
+				authentication {
+					create<HttpHeaderAuthentication>("header")
+				}
+			}
+		}
     }
     versionCatalogs {
         create("shared") {

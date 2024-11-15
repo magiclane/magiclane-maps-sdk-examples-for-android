@@ -14,14 +14,16 @@
 
 package com.magiclane.sdk.examples.bikesimulation
 
+// -------------------------------------------------------------------------------------------------
+
 import android.graphics.Bitmap
 
 // -------------------------------------------------------------------------------------------------
+
 data class SearchResultItem (
     var bmp : Bitmap? = null,
     var text : String? = null,
     val lat : Double?,
     val lon : Double?
 )
-
 // -------------------------------------------------------------------------------------------------

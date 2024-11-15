@@ -21,6 +21,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.FileUtils
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -58,7 +59,6 @@ import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.EHighlightOptions
 import com.magiclane.sdk.d3scene.HighlightRenderSettings
-import com.magiclane.sdk.examples.bikesimulation.R
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.places.SearchService
@@ -72,6 +72,10 @@ import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
@@ -81,6 +85,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val REQUEST_PERMISSIONS = 110
+        private const val IMAGE_SIZE_PIXELS = 220
         val searchAdapter = SearchAdapter()
     }
 
@@ -170,8 +175,8 @@ class MainActivity : AppCompatActivity() {
         gemSurfaceView = findViewById(R.id.gem_surface)
         followCursorButton = findViewById(R.id.follow_cursor)
         settingsButton = findViewById(R.id.bike_settings_button)
-        searchView = findViewById(R.id.search_view)
-        searchBar = findViewById(R.id.search_bar)
+        searchView = findViewById(R.id.map_search_view)
+        searchBar = findViewById(R.id.map_search_bar)
         searchList = findViewById(R.id.search_results_list)
         fragment = findViewById(R.id.fragment_container)
         cancelSimulationButton = findViewById(R.id.cancel_simulation_button)
@@ -227,7 +232,7 @@ class MainActivity : AppCompatActivity() {
                         SdkCall.execute {
                             val list = results.map { landmark ->
                                 SearchResultItem(
-                                    landmark.image?.asBitmap(200, 200),
+                                    landmark.image?.asBitmap(IMAGE_SIZE_PIXELS, IMAGE_SIZE_PIXELS),
                                     GemUtil.formatName(landmark), landmark.coordinates?.latitude, landmark.coordinates?.longitude
                                 )
                             }.toMutableList()
@@ -271,15 +276,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun centerOnLocation(xy: Xy) = SdkCall.execute {
-        val centerXy =
-            Xy(gemSurfaceView.measuredWidth / 2, gemSurfaceView.measuredHeight / 2)
+        val centerXy = gemSurfaceView.mapView!!.viewport!!.center
         gemSurfaceView.mapView?.cursorScreenPosition = xy
         gemSurfaceView.mapView?.deactivateAllHighlights()
         val landmarks = gemSurfaceView.mapView?.cursorSelectionLandmarks
         if (!landmarks.isNullOrEmpty()) {
             val landmark = landmarks[0]
             landmark.coordinates?.let {
-                viewModel.destination = SearchResultItem(landmark.image?.asBitmap(200, 200), GemUtil.formatName(landmark), it.latitude, it.longitude)
+                viewModel.destination = SearchResultItem(landmark.image?.asBitmap(IMAGE_SIZE_PIXELS, IMAGE_SIZE_PIXELS), GemUtil.formatName(landmark), it.latitude, it.longitude)
             }
             val contour = landmark.getContourGeographicArea()
             if (contour != null && !contour.isEmpty()) {

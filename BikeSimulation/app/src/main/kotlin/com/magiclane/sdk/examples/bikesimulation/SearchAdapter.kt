@@ -28,23 +28,29 @@ import com.magiclane.sdk.examples.bikesimulation.R
 
 class SearchAdapter : ListAdapter<SearchResultItem, SearchAdapter.SearchResultVieHolder>(diffUtil) {
 
+    // -------------------------------------------------------------------------------------------------
+    
     companion object {
         val diffUtil = object : DiffUtil.ItemCallback<SearchResultItem>() {
             override fun areItemsTheSame(oldItem: SearchResultItem, newItem: SearchResultItem): Boolean = oldItem == newItem
 
             override fun areContentsTheSame(oldItem: SearchResultItem, newItem: SearchResultItem): Boolean = false
-
         }
     }
 
-    private var onClickListener: ((SearchResultItem) -> Unit)? = null
+    // -------------------------------------------------------------------------------------------------
 
+    private var onClickListener: ((SearchResultItem) -> Unit)? = null
+    
+    // -------------------------------------------------------------------------------------------------
+    
     fun setOnViewHolderClickListener(listener: (SearchResultItem) -> Unit) {
         onClickListener = listener
     }
 
     // -------------------------------------------------------------------------------------------------
-    inner class SearchResultVieHolder(val view: View) : RecyclerView.ViewHolder(view) {
+    
+    inner class SearchResultVieHolder(private val view: View) : RecyclerView.ViewHolder(view) {
         private var textView = view.findViewById<MaterialTextView>(R.id.item_text)
         private var itemImage = view.findViewById<ImageView>(R.id.item_img)
         fun bind(item: SearchResultItem) {
@@ -53,9 +59,13 @@ class SearchAdapter : ListAdapter<SearchResultItem, SearchAdapter.SearchResultVi
             view.setOnClickListener { onClickListener?.invoke(item) }
         }
     }
-
+    
+    // -------------------------------------------------------------------------------------------------
+    
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SearchResultVieHolder = SearchResultVieHolder(LayoutInflater.from(parent.context).inflate(R.layout.searh_result_item, parent, false))
 
+    // -------------------------------------------------------------------------------------------------
+    
     override fun onBindViewHolder(holder: SearchResultVieHolder, position: Int) = holder.bind(getItem(position))
     // -------------------------------------------------------------------------------------------------
 }

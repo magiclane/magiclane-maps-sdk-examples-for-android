@@ -17,8 +17,6 @@ package com.magiclane.sdk.examples.customgpsarrow
 // -------------------------------------------------------------------------------------------------
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.content.res.AssetManager
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -29,7 +27,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.magiclane.sdk.core.*
+import com.magiclane.sdk.core.DataBuffer
+import com.magiclane.sdk.core.GemError
+import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.core.GemSurfaceView
+import com.magiclane.sdk.core.ProgressListener
+import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.ESceneObjectFileFormat
 import com.magiclane.sdk.d3scene.MapSceneObject
 import com.magiclane.sdk.d3scene.SceneObjectData
@@ -40,18 +43,15 @@ import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.io.InputStream
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
 
-class MainActivity : AppCompatActivity()
-{
+class MainActivity : AppCompatActivity() {
     // ---------------------------------------------------------------------------------------------
-    
+
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var followCursorButton: FloatingActionButton
@@ -100,8 +100,7 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?)
-    {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         EspressoIdlingResource.increment()
@@ -114,33 +113,25 @@ class MainActivity : AppCompatActivity()
             if (!isReady) return@onMapDataReady
 
             // Set custom GPS arrow
-            try
-            {
-                var len: Int
-                val data = ByteArray(1024)
-                val inputStream: InputStream = assets.open("quad.glb")
-                val buffer = ByteArrayOutputStream()
-
-                while (inputStream.read(data, 0, data.size).also { len = it } > 0)
-                {
-                    buffer.write(data, 0, len)
-                }
-
-                buffer.flush()
-                inputStream.close()
-
-                if (buffer.size() > 0)
-                {
+            try {
+                val objList = getSceneObjs(
+                    Pair("quad.glb", ESceneObjectFileFormat.Gltf)
+                )
+                if (objList.isNotEmpty()) {
                     SdkCall.execute {
-                        val sceneObjDataList: SceneObjectDataList = arrayListOf()
-                        sceneObjDataList.add(SceneObjectData(DataBuffer(buffer.toByteArray()), ESceneObjectFileFormat.Gltf))
-
-                        MapSceneObject.customizeDefPositionTracker(sceneObjDataList)
+                        val (obj, err) = MapSceneObject.getDefPositionTracker()
+                        if(GemError.isError(err)) {
+                            Util.postOnMain{showDialog(GemError.getMessage(err))}
+                            return@execute
+                        }
+                        MapSceneObject.customizeDefPositionTracker(objList)
+                        obj?.let {
+                            it.visibility = true
+                            it.scaleFactor = 0.7 //0.0 - 5.0
+                        }
                     }
                 }
-            }
-            catch (e: Exception)
-            {
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
 
@@ -157,12 +148,11 @@ class MainActivity : AppCompatActivity()
             showDialog("TOKEN REJECTED")
         }
 
-        if (!Util.isInternetConnected(this))
-        {
+        if (!Util.isInternetConnected(this)) {
             showDialog("You must be connected to the internet!")
         }
 
-        onBackPressedDispatcher.addCallback(this){
+        onBackPressedDispatcher.addCallback(this) {
             finish()
             exitProcess(0)
         }
@@ -170,18 +160,39 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
-    override fun onDestroy()
-    {
+    private fun getSceneObjs(vararg filesData: Pair<String, ESceneObjectFileFormat>): SceneObjectDataList {
+        val list: SceneObjectDataList = arrayListOf()
+        for (fileData in filesData) {
+            val (fileName, format) = SdkCall.execute { fileData }!!
+            val inputStream: InputStream = assets.open(fileName)
+            var len: Int
+            val data = ByteArray(1024)
+            val buffer = ByteArrayOutputStream()
+            while (inputStream.read(data, 0, data.size).also { len = it } > 0) {
+                buffer.write(data, 0, len)
+            }
+            buffer.flush()
+            inputStream.close()
+            if (buffer.size() > 0) {
+                SdkCall.execute { list.add(SceneObjectData(DataBuffer(buffer.toByteArray()), format)) }
+            }
+        }
+        return list
+    }
+
+
+    // ---------------------------------------------------------------------------------------------
+
+    override fun onDestroy() {
         super.onDestroy()
 
-        // Deinitialize the SDK.
+        // Release the SDK.
         GemSdk.release()
     }
 
     // ---------------------------------------------------------------------------------------------
 
-    private fun enableGPSButton()
-    {
+    private fun enableGPSButton() {
         // Set actions for entering/ exiting following position mode.
         gemSurfaceView.mapView?.apply {
             onExitFollowingPosition = {
@@ -213,8 +224,7 @@ class MainActivity : AppCompatActivity()
     // ---------------------------------------------------------------------------------------------
 
     @SuppressLint("InflateParams")
-    private fun showDialog(text: String)
-    {
+    private fun showDialog(text: String) {
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
             findViewById<TextView>(R.id.title).text = getString(R.string.error)
@@ -232,10 +242,10 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 }
+
 //region --------------------------------------------------FOR TESTING--------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------------
-public object EspressoIdlingResource
-{
+public object EspressoIdlingResource {
     val espressoIdlingResource = CountingIdlingResource("ApplyMapStyleInstrumentedTestsIdlingResource")
     fun increment() = espressoIdlingResource.increment()
     fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit

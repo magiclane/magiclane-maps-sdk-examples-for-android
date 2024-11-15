@@ -77,6 +77,7 @@ function is_mac()
 set -eEuo pipefail
 
 SDK_ARCHIVE_PATH=""
+LOCAL_MAVEN_REPOSITORY=""
 API_TOKEN=""
 RUN_UNIT_TESTS=false
 RUN_INSTRUMENTED_TESTS=false
@@ -103,6 +104,9 @@ Options:
     [OPTIONAL] --sdk-archive=<path>
                     Set path to the Maps SDK for Android archive (tar.bz2 or aar path).
                     If missing, SDK will be retrieved from Maven SDK Registry
+    [OPTIONAL] --local-maven-repository=<path>
+                    Set specific local Maven repository path to search fo Maps SDK for Android.
+                    If given, any other SDK path is ignored, including local SDK archive path
 
     [OPTIONAL] --api-token
                     Specify API token to be hardcoded into examples
@@ -119,6 +123,7 @@ Options:
 
 LONGOPTS_LIST=(
     "sdk-archive:"
+    "local-maven-repository:"
     "api-token:"
     "run-unit-tests"
     "run-instrumented-tests"
@@ -145,6 +150,10 @@ while true; do
         --sdk-archive)
             shift
             SDK_ARCHIVE_PATH="${1}"
+            ;;
+        --local-maven-repository)
+            shift
+            LOCAL_MAVEN_REPOSITORY="${1}"
             ;;
         --api-token)
             shift
@@ -176,11 +185,19 @@ done
 
 msg "Checking prerequisites..."
 
-if [ ! -z "${SDK_ARCHIVE_PATH}" ]; then
-	if [[ ! -f "${SDK_ARCHIVE_PATH}" ]]; then
-		error_msg "You must provide local path to SDK archive"
+if [ -n "${LOCAL_MAVEN_REPOSITORY}" ]; then
+	if [ ! -d "${LOCAL_MAVEN_REPOSITORY}"/com/magiclane ]; then
+		error_msg "Local Maven repository path is invalid"
 		usage
 		exit 1
+	fi
+else
+	if [ -n "${SDK_ARCHIVE_PATH}" ]; then
+		if [ ! -f "${SDK_ARCHIVE_PATH}" ]; then
+			error_msg "You must provide local path to SDK archive"
+			usage
+			exit 1
+		fi
 	fi
 fi
 
@@ -201,25 +218,27 @@ if [ "${JAVA_VERSION}" == "" ]; then
     exit 1
 fi
 
-if [ ! -z "${SDK_ARCHIVE_PATH}" ]; then
-	SDK_ARCHIVE_FILENAME="${SDK_ARCHIVE_PATH##*/}"
-	SDK_AAR_PATH="${SDK_ARCHIVE_PATH}"
-	if [[ ! "${SDK_ARCHIVE_FILENAME}" =~ (.tar.bz2|.aar)$ ]]; then
-		error_msg "Invalid SDK archive provided '${SDK_ARCHIVE_PATH}'"
-		exit 1
-	else
-		if [[ "${SDK_ARCHIVE_FILENAME}" =~ .tar.bz2$ ]]; then
-			msg "Extract SDK..."
+if [ -z "${LOCAL_MAVEN_REPOSITORY}" ]; then
+	if [ -n "${SDK_ARCHIVE_PATH}" ]; then
+		SDK_ARCHIVE_FILENAME="${SDK_ARCHIVE_PATH##*/}"
+		SDK_AAR_PATH="${SDK_ARCHIVE_PATH}"
+		if [[ ! "${SDK_ARCHIVE_FILENAME}" =~ (.tar.bz2|.aar)$ ]]; then
+			error_msg "Invalid SDK archive provided '${SDK_ARCHIVE_PATH}'"
+			exit 1
+		else
+			if [[ "${SDK_ARCHIVE_FILENAME}" =~ .tar.bz2$ ]]; then
+				msg "Extract SDK..."
 
-			SDK_TEMP_DIR="$(mktemp -d)"
-			tar -xvf "${SDK_ARCHIVE_PATH}" --strip-components=1 -C "${SDK_TEMP_DIR}"
-			SDK_AAR_PATH="$(find "${SDK_TEMP_DIR}" -maxdepth 2 -type f -iname "*.aar" | head -1)"
+				SDK_TEMP_DIR="$(mktemp -d)"
+				tar -xvf "${SDK_ARCHIVE_PATH}" --strip-components=1 -C "${SDK_TEMP_DIR}"
+				SDK_AAR_PATH="$(find "${SDK_TEMP_DIR}" -maxdepth 2 -type f -iname "*.aar" | head -1)"
+			fi
 		fi
-	fi
 
-	if [ ! -f "${SDK_AAR_PATH}" ]; then
-		error_msg "Invalid aar path '${SDK_AAR_PATH}'"
-		exit 1
+		if [ ! -f "${SDK_AAR_PATH}" ]; then
+			error_msg "Invalid aar path '${SDK_AAR_PATH}'"
+			exit 1
+		fi
 	fi
 fi
 
@@ -244,37 +263,33 @@ export GRADLE_OPTS
 msg "Build all examples..."
 
 GRADLE_WRAPPER=$(find "${MY_DIR}" -maxdepth 1 -type f -executable -name gradlew -print -quit)
-GEM_TOKEN="${API_TOKEN}" ${GRADLE_WRAPPER} --parallel --no-watch-fs --stacktrace --warning-mode all buildAll || true
+GEM_TOKEN="${API_TOKEN}" GEM_SDK_LOCAL_MAVEN_PATH="${LOCAL_MAVEN_REPOSITORY}" ${GRADLE_WRAPPER} --parallel --no-watch-fs --stacktrace --warning-mode all buildAll || true
 
-if [ -d "_APK" ]; then
-    rm -rf "_APK"
-fi
+[ -d "_APK" ] && rm -rf _APK
 mkdir _APK
 
-if [ -d "_REPORTS" ]; then
-    rm -rf "_REPORTS"
-fi
+[ -d "_REPORTS" ] && rm -rf _REPORTS
 mkdir _REPORTS
 
 for EXAMPLE_PATH in ${EXAMPLE_PROJECTS}; do
     EXAMPLE_NAME="$(basename "${EXAMPLE_PATH}")"
-    mv "${EXAMPLE_PATH}"/build/app/outputs/apk/release/app-release.apk "_APK/${EXAMPLE_NAME}_app-release.apk"
+    if [ -f "${EXAMPLE_PATH}"/build/app/outputs/apk/release/app-release.apk ]; then
+		mv "${EXAMPLE_PATH}"/build/app/outputs/apk/release/app-release.apk "_APK/${EXAMPLE_NAME}_app-release.apk"
+	fi
 done
 
 if ${RUN_UNIT_TESTS}; then
     msg "Run unit tests from all examples..."
-    GEM_TOKEN="${API_TOKEN}" ${GRADLE_WRAPPER} --no-parallel --no-watch-fs --warning-mode all runUnitTestsAll || true
+    GEM_TOKEN="${API_TOKEN}" GEM_SDK_LOCAL_MAVEN_PATH="${LOCAL_MAVEN_REPOSITORY}" ${GRADLE_WRAPPER} --no-parallel --no-watch-fs --warning-mode all runUnitTestsAll || true
 fi
 
 if ${RUN_INSTRUMENTED_TESTS}; then
-    if ! $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --list_installed | grep "system-images;android-34;aosp_atd;x86_64" > /dev/null; then
+    if ! ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --list_installed | grep "system-images;android-34;aosp_atd;x86_64" > /dev/null; then
         error_msg "Please install 'system-images;android-34;aosp_atd;x86_64' SDK package"
         exit 2
     fi
 
-    if [ -d "_REPORTS/androidTests" ]; then
-        rm -rf "_REPORTS/androidTests"
-    fi
+    [ -d "_REPORTS/androidTests" ] && rm -rf _REPORTS/androidTests
 
     msg "Run instrumented tests from all examples..."
     GUI_OPTIONS=""
@@ -283,20 +298,16 @@ if ${RUN_INSTRUMENTED_TESTS}; then
     fi
     for EXAMPLE_PATH in ${EXAMPLE_PROJECTS}; do
         EXAMPLE_NAME="$(basename "${EXAMPLE_PATH}")"
-        GEM_TOKEN="${API_TOKEN}" ${GRADLE_WRAPPER} --no-parallel --no-watch-fs --stacktrace --warning-mode all :${EXAMPLE_NAME}:app:pixel_8api34googleDebugAndroidTest ${GUI_OPTIONS} || true
+        GEM_TOKEN="${API_TOKEN}" GEM_SDK_LOCAL_MAVEN_PATH="${LOCAL_MAVEN_REPOSITORY}" ${GRADLE_WRAPPER} --no-parallel --no-watch-fs --stacktrace --warning-mode all :${EXAMPLE_NAME}:app:pixel_8api34googleDebugAndroidTest ${GUI_OPTIONS} || true
     done
 fi
 
 if ${ANALYZE}; then
-    if [ -d "_REPORTS/detekt" ]; then
-        rm -rf "_REPORTS/detekt"
-    fi
-    if [ -d "_REPORTS/ktlint" ]; then
-        rm -rf "_REPORTS/ktlint"
-    fi
+	[ -d "_REPORTS/detekt" ] && rm -rf _REPORTS/detekt
+	[ -d "_REPORTS/ktlint" ] && rm -rf _REPORTS/ktlint
 
     msg "Analyze Kotlin code for all examples..."
-    GEM_TOKEN="${API_TOKEN}" ${GRADLE_WRAPPER} --no-parallel --no-watch-fs --warning-mode all checkAll || true
+    GEM_TOKEN="${API_TOKEN}" GEM_SDK_LOCAL_MAVEN_PATH="${LOCAL_MAVEN_REPOSITORY}" ${GRADLE_WRAPPER} --no-parallel --no-watch-fs --warning-mode all checkAll || true
    fi
 
 ${GRADLE_WRAPPER} --stop

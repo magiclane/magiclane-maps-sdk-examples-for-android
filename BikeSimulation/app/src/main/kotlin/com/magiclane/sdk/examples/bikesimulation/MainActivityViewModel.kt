@@ -25,6 +25,9 @@ import com.magiclane.sdk.util.SdkCall
 // -------------------------------------------------------------------------------------------------
 
 class MainActivityViewModel : ViewModel() {
+    
+    // -------------------------------------------------------------------------------------------------
+    
     val searchResultListLivedata = MutableLiveData<MutableList<SearchResultItem>>()
     val isElectricBikeProfile = MutableLiveData(false)
     var destination: SearchResultItem? = null
@@ -40,6 +43,9 @@ class MainActivityViewModel : ViewModel() {
     private var auxConsumptionNight = 20f
     private var avoidFerries = false
     private var avoidUnpavedRoads = false
+
+    // -------------------------------------------------------------------------------------------------
+    
     fun initPreferences() = SdkCall.execute {
         electricBikeProfile = ElectricBikeProfile()
         routePreferences = RoutePreferences().apply {
@@ -48,17 +54,23 @@ class MainActivityViewModel : ViewModel() {
             hillsFactor
         }
     }
-
+    
+    // -------------------------------------------------------------------------------------------------
+    
     fun setBikeProfile(type: EBikeProfile) = SdkCall.execute {
         bikeProfile = type
         routePreferences.setBikeProfile(type, if (isElectric) electricBikeProfile else null)
     }
 
-    fun setIsElectric(isElectric: Boolean) = SdkCall.execute {
+    // -------------------------------------------------------------------------------------------------
+    
+    private fun setIsElectric(isElectric: Boolean) = SdkCall.execute {
         this.isElectric = isElectric
         isElectricBikeProfile.postValue(isElectric)
         setBikeProfile(bikeProfile)
     }
+
+    // -------------------------------------------------------------------------------------------------
 
     fun getSettingsList(): MutableList<SettingsItem> {
         settingsList.clear()
@@ -97,6 +109,6 @@ class MainActivityViewModel : ViewModel() {
         }
         return settingsList
     }
+    // -------------------------------------------------------------------------------------------------
 }
-
 // -------------------------------------------------------------------------------------------------

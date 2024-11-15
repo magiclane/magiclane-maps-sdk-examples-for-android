@@ -41,20 +41,6 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val gemSurface = findViewById<GemSurfaceView>(R.id.gem_surface)
-        SdkSettings.onMapDataReady = {
-            gemSurface.onDrawFrameCustom = { _ ->
-                SdkCall.execute {
-                    gemSurface.gemScreen?.canvases?.let {
-                        assert(it.size > 0) { it.size }
-                        val canvas = it[0]
-                        val bsd = BasicShapeDrawer.produce(canvas)
-                        assert(bsd != null) { "Basic Shape Drawer is null" }
-                        bsd?.drawRectangle(10f, 10f, 200f, 400f, Color.BLACK, true, 2f)
-                    }
-                }
-            }
-        }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true)
         {
             override fun handleOnBackPressed()
