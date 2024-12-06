@@ -21,7 +21,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.FileUtils
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -34,8 +33,10 @@ import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
+import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.replace
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -47,6 +48,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.search.SearchBar
 import com.google.android.material.search.SearchView
+import com.google.android.material.textview.MaterialTextView
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
@@ -74,6 +76,7 @@ import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
@@ -99,6 +102,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchList: RecyclerView
     private lateinit var fragment: FragmentContainerView
     private lateinit var cancelSimulationButton: MaterialButton
+    private lateinit var noResultsText: MaterialTextView
 
     private val viewModel: MainActivityViewModel by viewModels()
 
@@ -107,6 +111,7 @@ class MainActivity : AppCompatActivity() {
 
     private val navRoute: Route?
         get() = navigationService.getNavigationRoute(navigationListener)
+    private var job: Job? = null
 
     /* 
     Define a navigation listener that will receive notifications from the
@@ -171,7 +176,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         progressBar = findViewById(R.id.progress_bar)
-        searchProgressBar = findViewById(R.id.search_progress_bar)
+        searchProgressBar = findViewById(R.id.search_progress_barr)
         gemSurfaceView = findViewById(R.id.gem_surface)
         followCursorButton = findViewById(R.id.follow_cursor)
         settingsButton = findViewById(R.id.bike_settings_button)
@@ -180,6 +185,7 @@ class MainActivity : AppCompatActivity() {
         searchList = findViewById(R.id.search_results_list)
         fragment = findViewById(R.id.fragment_container)
         cancelSimulationButton = findViewById(R.id.cancel_simulation_button)
+        noResultsText = findViewById(R.id.no_results_text_view)
         EspressoIdlingResource.increment()
         /// MAGIC LANE
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
@@ -220,26 +226,34 @@ class MainActivity : AppCompatActivity() {
             showDialog("You must be connected to the internet!")
         }
         searchView.editText.addTextChangedListener {
-            searchProgressBar.isVisible = !it.isNullOrBlank()
-            SdkCall.execute {
-                searchService.searchByFilter(
-                    textFilter = searchView.text.trim().toString(),
-                    onCompleted = { results, errorCode, hint ->
-                        if (GemError.isError(errorCode)) {
-                            showDialog(hint)
-                            return@searchByFilter
+            searchProgressBar.isInvisible = it.isNullOrBlank()
+            noResultsText.isVisible = !it.isNullOrEmpty()
+            job?.run { if (isActive) cancel() }
+            job = CoroutineScope(Dispatchers.IO).launch {
+                delay(500)
+                SdkCall.execute {
+                    searchService.cancelSearch()
+                }
+                SdkCall.postAsync({
+                    searchService.searchByFilter(
+                        textFilter = searchView.text.trim().toString(),
+                        onCompleted = { results, errorCode, hint ->
+                            if (GemError.isError(errorCode)) {
+                                showDialog(hint)
+                                return@searchByFilter
+                            }
+                            SdkCall.execute {
+                                val list = results.map { landmark ->
+                                    SearchResultItem(
+                                        landmark.image?.asBitmap(IMAGE_SIZE_PIXELS, IMAGE_SIZE_PIXELS),
+                                        GemUtil.formatName(landmark), landmark.coordinates?.latitude, landmark.coordinates?.longitude
+                                    )
+                                }.toMutableList()
+                                viewModel.searchResultListLivedata.postValue(list)
+                            }
                         }
-                        SdkCall.execute {
-                            val list = results.map { landmark ->
-                                SearchResultItem(
-                                    landmark.image?.asBitmap(IMAGE_SIZE_PIXELS, IMAGE_SIZE_PIXELS),
-                                    GemUtil.formatName(landmark), landmark.coordinates?.latitude, landmark.coordinates?.longitude
-                                )
-                            }.toMutableList()
-                            viewModel.searchResultListLivedata.postValue(list)
-                        }
-                    }
-                )
+                    )
+                }, 200)
             }
         }
         viewModel.isElectricBikeProfile.observe(this) {
@@ -254,7 +268,8 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.searchResultListLivedata.observe(this) {
             searchAdapter.submitList(it)
-            searchProgressBar.isVisible = false
+            searchProgressBar.isInvisible = true
+            noResultsText.isVisible = it.isEmpty()
         }
 
         settingsButton.setOnClickListener {

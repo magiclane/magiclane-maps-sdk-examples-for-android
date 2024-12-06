@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-    
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -46,19 +46,18 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             tools:ignore="ContentDescription" />
-        
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/cancel_simulation_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/big_text_size"
+            android:layout_marginBottom="@dimen/padding_10"
             android:text="@string/cancel_simulation"
+            android:textSize="@dimen/big_text_size"
             android:visibility="gone"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            android:layout_marginBottom="@dimen/padding_20"
-            />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.google.android.material.appbar.AppBarLayout
@@ -85,24 +84,37 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/search_progress_barr"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/padding_20"
+                android:indeterminate="true"
+                android:visibility="invisible"
+                app:layout_constraintTop_toTopOf="parent"
+                app:trackThickness="@dimen/padding_20" />
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/search_results_list"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="0dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/search_progress_barr" />
 
-            <com.google.android.material.progressindicator.LinearProgressIndicator
-                android:id="@+id/search_progress_bar"
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/no_results_text_view"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/padding_10"
-                android:visibility="gone"
-                android:indeterminate="true"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="@string/no_results"
+                android:textSize="@dimen/big_text_size"
+                android:visibility="gone" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.search.SearchView>
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

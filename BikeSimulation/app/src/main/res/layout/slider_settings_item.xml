@@ -8,16 +8,17 @@
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/setting_item_text"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:ellipsize="end"
-        android:maxLines="2"
+        android:maxLines="3"
         android:textStyle="bold"
         android:textAlignment="textStart"
         android:textSize="@dimen/big_text_size"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="Title" />
+        app:layout_constraintEnd_toStartOf="@id/value_text"
+        tools:text="Title Aux Consumption" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/value_text"
@@ -31,6 +32,7 @@
         app:layout_constraintStart_toStartOf="@id/item_guideline"
         app:layout_constraintEnd_toEndOf="@id/item_guideline"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/item_slider"
         tools:text="10 kg" />
 
     <com.google.android.material.textview.MaterialTextView

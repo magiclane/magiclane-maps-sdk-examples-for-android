@@ -15,4 +15,5 @@
     <string name="start_simulation">Start Simulation</string>
     <string name="cancel_simulation">Cancel Simulation</string>
     <string name="choose_destination">Please choose a destination!</string>
+    <string name="no_results">NO RESULTS!</string>
 </resources>

@@ -64,6 +64,7 @@ class SettingsAdapter : ListAdapter<SettingsItem, RecyclerView.ViewHolder>(setti
         fun bind(item: SettingsSwitchItem) {
             mCallback = item.callback
             titleTxt.text = item.title
+            switch.isChecked = item.itIs
         }
     }
 
