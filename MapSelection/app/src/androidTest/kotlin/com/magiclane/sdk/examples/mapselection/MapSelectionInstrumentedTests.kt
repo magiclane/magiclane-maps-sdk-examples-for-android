@@ -120,9 +120,9 @@ class MapSelectionInstrumentedTests {
     @Test
     fun selectLandmark(): Unit = runBlocking {
         delay(5000)
-        onView(withId(R.id.gem_surface)).perform(CenterAndTouch(40.689846, -74.047690))
+        onView(withId(R.id.gem_surface)).perform(CenterAndTouch(40.689254,-74.044518))
         delay(5000)
-        onView(ViewMatchers.withSubstring("Liberty Island")).check(matches(isDisplayed()))
+        onView(ViewMatchers.withSubstring("Statue of Liberty")).check(matches(isDisplayed()))
     }
 
     @Test
