@@ -121,7 +121,7 @@ public class LimitLine extends ComponentBase {
      * Enables the line to be drawn in dashed mode, e.g. like this "- - - - - -"
      * 
      * @param lineLength the length of the line pieces
-     * @param spaceLength the length of space inbetween the pieces
+     * @param spaceLength the length of space between the pieces
      * @param phase offset, in degrees (normally, use 0)
      */
     public void enableDashedLine(float lineLength, float spaceLength, float phase) {

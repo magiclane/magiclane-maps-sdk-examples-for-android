@@ -589,7 +589,7 @@ class MainActivity : AppCompatActivity()
     // ---------------------------------------------------------------------------------------------------------------------------
 
     /**
-     * @return formated string of distance value
+     * @return formatted string of distance value
      */
     private fun NavigationInstruction.getDistanceInMeters(): String
     {

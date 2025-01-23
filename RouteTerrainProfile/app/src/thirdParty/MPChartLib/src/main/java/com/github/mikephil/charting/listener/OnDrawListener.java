@@ -21,7 +21,7 @@ public interface OnDrawListener {
 	void onEntryAdded(Entry entry);
 
 	/**
-	 * Called whenever an entry is moved by the user after beeing highlighted
+	 * Called whenever an entry is moved by the user after being highlighted
 	 * 
 	 * @param entry
 	 */

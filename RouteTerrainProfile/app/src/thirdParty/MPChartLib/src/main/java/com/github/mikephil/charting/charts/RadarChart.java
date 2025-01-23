@@ -60,7 +60,7 @@ public class RadarChart extends PieRadarChartBase<RadarData> {
     private int mSkipWebLineCount = 0;
 
     /**
-     * the object reprsenting the y-axis labels
+     * the object representing the y-axis labels
      */
     private YAxis mYAxis;
 

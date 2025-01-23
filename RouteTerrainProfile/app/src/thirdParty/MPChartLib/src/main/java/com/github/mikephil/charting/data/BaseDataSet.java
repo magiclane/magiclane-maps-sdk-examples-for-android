@@ -44,7 +44,7 @@ public abstract class BaseDataSet<T extends Entry> implements IDataSet<T> {
     protected YAxis.AxisDependency mAxisDependency = YAxis.AxisDependency.LEFT;
 
     /**
-     * if true, value highlightning is enabled
+     * if true, value highlighting is enabled
      */
     protected boolean mHighlightEnabled = true;
 

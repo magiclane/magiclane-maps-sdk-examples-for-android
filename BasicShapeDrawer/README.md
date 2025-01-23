@@ -1,6 +1,6 @@
 ## Overview
 
-This example app present the followings:
+This example app present the following:
 - Shows how to use `BasicShapeDrawer` class to do various drawings on a map 
 
 ## Requirements

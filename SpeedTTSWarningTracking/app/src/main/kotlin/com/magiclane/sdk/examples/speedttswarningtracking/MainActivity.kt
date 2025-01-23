@@ -68,7 +68,7 @@ class MainActivity: AppCompatActivity()
     private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
     //endregion
 
-    // Define a position listener tht will help us get the current speed.
+    // Define a position listener the will help us get the current speed.
     private val positionListener = object : PositionListener()
     {
         override fun onNewPosition(value: PositionData)

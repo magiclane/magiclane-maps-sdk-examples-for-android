@@ -2,7 +2,7 @@
 
 This example app demonstrates the following features:
 - Present a map.
-- Fly to the given coodinates.
+- Fly to the given coordinates.
 
 ## Requirements
 

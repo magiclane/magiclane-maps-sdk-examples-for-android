@@ -263,7 +263,7 @@ public abstract class Utils {
      * @param number
      * @param digitCount
      * @param separateThousands set this to true to separate thousands values
-     * @param separateChar      a caracter to be paced between the "thousands"
+     * @param separateChar      a character to be paced between the "thousands"
      * @return
      */
     public static String formatNumber(float number, int digitCount, boolean separateThousands,
@@ -494,7 +494,7 @@ public abstract class Utils {
     }
 
     /**
-     * Original method view.postInvalidateOnAnimation() only supportd in API >=
+     * Original method view.postInvalidateOnAnimation() only supported in API >=
      * 16, This is a replica of the code from ViewCompat.
      *
      * @param view

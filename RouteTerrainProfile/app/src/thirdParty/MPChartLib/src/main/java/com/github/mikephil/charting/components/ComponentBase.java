@@ -163,7 +163,7 @@ public abstract class ComponentBase {
     }
 
     /**
-     * Returns true if this comonent is enabled (should be drawn), false if not.
+     * Returns true if this component is enabled (should be drawn), false if not.
      *
      * @return
      */

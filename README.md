@@ -28,7 +28,7 @@ This repository holds a series of example projects using the **Magic Lane - Maps
 * [Favourites](Favourites) - Fly to a location and use UI to add or remove that landmark to/ from the favourites folder.
 * [Finger Route](FingerRoute) - Calculates a route that tries to follow finger movement on the map; render route on top of finger line.
 * [Fly to Area](FlyToArea) - Search for a landmark; fly to resulted landmark, if exists.
-* [Fly To Coordinates](FlyToCoordinates) - Fly to given coodinates.
+* [Fly To Coordinates](FlyToCoordinates) - Fly to given coordinates.
 * [Fly to Route Instruction](FlyToRouteInstruction) - Calculate the routes between 2 given landmarks; display the first route on a map, if exists; fly to first route instruction, if exists.
 * [Fly to Traffic](FlyToTraffic) - Calculate the routes between 2 given landmarks; display the first route on a map, if exists; fly to first traffic event available on route, if exists.
 * [GPX Import](GPXImport) - Import a GPX file and display the Path on the map; make a route out of the GPX file.
@@ -71,7 +71,7 @@ This repository holds a series of example projects using the **Magic Lane - Maps
 * [Speed TTS Warning Navigation](SpeedTTSWarningNavigation) - Starts a navigation from the current position to a given landmark. Displays the current speed and the legal speed limit. Sends a TTS warning each time the current speed overcomes the legal speed limit.
 * [Speed TTS Warning Tracking](SpeedTTSWarningTracking) - Displays the current speed and the legal speed limit. Sends a TTS warning each time the current speed overcomes the legal speed limit.
 * [Speed Watcher](SpeedWatcher) - Start simulation between 2 given landmarks. Display the current speed and the legal speed limit.
-* [Track Postions](TrackPostions) - Mocks navigation from point A to point B using external data source while tracking positions. Displays path using tracked positions.
+* [Track Positions](TrackPostions) - Mocks navigation from point A to point B using external data source while tracking positions. Displays path using tracked positions.
 * [Truck Profile](TruckProfile) - Calculate the truck routes between 2 given landmarks. Change the truck profile and recalculate routes depending on the new settings.
 * [Voice Downloading](VoiceDownloading) - Gather the list of available voices; download first available voice.
 * [Voice Instructions Route Simulation](VoiceInstrRouteSimulation) - Start simulation between 2 given landmarks if any route can be calculated; use TTS to play navigation instructions.

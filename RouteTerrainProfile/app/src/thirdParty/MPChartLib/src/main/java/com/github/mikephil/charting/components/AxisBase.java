@@ -138,7 +138,7 @@ public abstract class AxisBase extends ComponentBase {
     protected boolean mCustomAxisMax = false;
 
     /**
-     * don't touch this direclty, use setter
+     * don't touch this directly, use setter
      */
     public float mAxisMaximum = 0f;
 
@@ -156,14 +156,14 @@ public abstract class AxisBase extends ComponentBase {
     private int mAxisMaxLabels = 25;
 
     /**
-     * The minumum number of labels on the axis
+     * The minimum number of labels on the axis
      */
     public int getAxisMinLabels() {
         return mAxisMinLabels;
     }
 
     /**
-     * The minumum number of labels on the axis
+     * The minimum number of labels on the axis
      */
     public void setAxisMinLabels(int labels) {
         if (labels > 0)
@@ -670,7 +670,7 @@ public abstract class AxisBase extends ComponentBase {
     }
 
     /**
-     * By calling this method, any custom maximum value that has been previously set is reseted,
+     * By calling this method, any custom maximum value that has been previously set is reset,
      * and the calculation is
      * done automatically.
      */
@@ -688,7 +688,7 @@ public abstract class AxisBase extends ComponentBase {
     }
 
     /**
-     * By calling this method, any custom minimum value that has been previously set is reseted,
+     * By calling this method, any custom minimum value that has been previously set is reset,
      * and the calculation is
      * done automatically.
      */

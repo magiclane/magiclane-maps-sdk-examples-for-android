@@ -48,7 +48,7 @@ public class CandleDataSet extends LineScatterCandleRadarDataSet<CandleEntry> im
 
     /**
      * paint style when open > close
-     * descreasing candlesticks are traditionally filled
+     * decreasing candlesticks are traditionally filled
      */
     protected Paint.Style mDecreasingPaintStyle = Paint.Style.FILL;
 

@@ -79,7 +79,7 @@ public abstract class LineScatterCandleRadarDataSet<T extends Entry> extends Bar
      * Enables the highlight-line to be drawn in dashed mode, e.g. like this "- - - - - -"
      *
      * @param lineLength the length of the line pieces
-     * @param spaceLength the length of space inbetween the line-pieces
+     * @param spaceLength the length of space between the line-pieces
      * @param phase offset, in degrees (normally, use 0)
      */
     public void enableDashedHighlightLine(float lineLength, float spaceLength, float phase) {

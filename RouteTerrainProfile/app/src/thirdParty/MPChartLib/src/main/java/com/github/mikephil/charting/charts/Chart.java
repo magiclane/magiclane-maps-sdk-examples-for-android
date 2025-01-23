@@ -348,7 +348,7 @@ public abstract class Chart<T extends ChartData<? extends IDataSet<? extends Ent
     /**
      * Lets the chart know its underlying data has changed and performs all
      * necessary recalculations. It is crucial that this method is called
-     * everytime data is changed dynamically. Not calling this method can lead
+     * every time data is changed dynamically. Not calling this method can lead
      * to crashes or unexpected behaviour.
      */
     public abstract void notifyDataSetChanged();
@@ -1193,7 +1193,7 @@ public abstract class Chart<T extends ChartData<? extends IDataSet<? extends Ent
     }
 
     /**
-     * Returns true if log-output is enabled for the chart, fals if not.
+     * Returns true if log-output is enabled for the chart, fails if not.
      *
      * @return
      */
@@ -1492,7 +1492,7 @@ public abstract class Chart<T extends ChartData<? extends IDataSet<? extends Ent
     }
 
     /**
-     * Sets a custom highligher object for the chart that handles / processes
+     * Sets a custom highlighter object for the chart that handles / processes
      * all highlight touch events performed on the chart-view.
      *
      * @param highlighter

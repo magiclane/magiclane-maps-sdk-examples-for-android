@@ -105,7 +105,7 @@ Options:
                     Set path to the Maps SDK for Android archive (tar.bz2 or aar path).
                     If missing, SDK will be retrieved from Maven SDK Registry
     [OPTIONAL] --local-maven-repository=<path>
-                    Set specific local Maven repository path to search fo Maps SDK for Android.
+                    Set specific local Maven repository path to search for Maps SDK for Android.
                     If given, any other SDK path is ignored, including local SDK archive path
 
     [OPTIONAL] --api-token

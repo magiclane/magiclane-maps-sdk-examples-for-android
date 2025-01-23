@@ -471,7 +471,7 @@ public abstract class PieRadarChartBase<T extends ChartData<? extends IDataSet<?
     /** CODE BELOW THIS RELATED TO ANIMATION */
 
     /**
-     * Applys a spin animation to the Chart.
+     * Applies a spin animation to the Chart.
      *
      * @param durationmillis
      * @param fromangle

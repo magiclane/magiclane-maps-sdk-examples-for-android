@@ -1,6 +1,6 @@
 ## Overview
 
-This example app present the followings:
+This example app present the following:
 - Present a map.
 - Start simulation between 2 given landmarks if any route can be calculated.
 - Use TTS to play navigation instructions.

@@ -161,8 +161,8 @@ class FlyToTrafficInstrumentedTests
 
         SdkCall.execute {
             val waypoints = arrayListOf(
-                Landmark("London", 51.5073204, -0.1276475),
-                Landmark("Paris", 48.8566932, 2.3514616)
+                Landmark("Paris", 48.8566932, 2.3514616),
+                Landmark("Bucharest", 44.4268 , 26.1025)
             )
             routingService.calculateRoute(waypoints)
         }
