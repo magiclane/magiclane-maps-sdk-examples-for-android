@@ -185,6 +185,15 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
+    
+    override fun onTTSPlayerInitializationFailed()
+    {
+        Util.postOnMain {
+            showDialog("TTS player initialization failed!")   
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
 
     private fun loadTTSLanguages()
     {

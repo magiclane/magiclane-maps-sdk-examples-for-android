@@ -660,6 +660,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         EspressoIdlingResource.increment()
+
+        SoundUtils.addTTSPlayerInitializationListener(this)
+        
         setContentView(binding.root)
 
         supportActionBar?.hide()
@@ -680,17 +683,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         /// MAGIC LANE
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
-
-            val ttsPlayerIsInitialized =
-                SdkCall.execute { SoundPlayingService.ttsPlayerIsInitialized } ?: false
-
-            if (!ttsPlayerIsInitialized)
-                SoundUtils.addTTSPlayerInitializationListener(this)
-            else
-            {
-                SoundPlayingService.setTTSLanguage("eng-USA")
-                startSimulation()
-            }
+            
+            startSimulation()
         }
 
         SdkSettings.onApiTokenRejected = {
@@ -805,7 +799,13 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     override fun onTTSPlayerInitialized()
     {
         SoundPlayingService.setTTSLanguage("eng-USA")
-        startSimulation()
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+    
+    override fun onTTSPlayerInitializationFailed() 
+    {
+        SoundPlayingService.setDefaultHumanVoice()
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------

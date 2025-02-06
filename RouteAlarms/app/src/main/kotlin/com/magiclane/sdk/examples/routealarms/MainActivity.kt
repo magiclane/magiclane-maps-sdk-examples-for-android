@@ -367,7 +367,14 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     {
         SoundPlayingService.setTTSLanguage("eng-USA")
     }
+    
+    // ---------------------------------------------------------------------------------------------
 
+    override fun onTTSPlayerInitializationFailed()
+    {
+        SoundPlayingService.setDefaultHumanVoice()
+    }
+    
     // ---------------------------------------------------------------------------------------------
 }
 
