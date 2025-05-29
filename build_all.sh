@@ -44,6 +44,7 @@ function on_exit()
         find "${MY_DIR}" -type d -name "build" -exec rm -rf {} +
         find "${MY_DIR}" -type d -name ".gradle" -exec rm -rf {} +
         find "${MY_DIR}" -type d -name ".idea" -exec rm -rf {} +
+        find "${MY_DIR}" -type d -name ".kotlin" -exec rm -rf {} +
         find "${MY_DIR}" -type f -name "local.properties" -exec rm {} +
     fi
 
@@ -118,7 +119,9 @@ Options:
 \033[0m\n"
 }
 
+SHORTOPTS="h"
 LONGOPTS_LIST=(
+	"help"
     "sdk-archive:"
     "local-maven-repository:"
     "api-token:"
@@ -131,7 +134,7 @@ LONGOPTS_LIST=(
 
 if ! PARSED_OPTIONS=$(getopt \
     -s bash \
-    --options "" \
+    --options ${SHORTOPTS} \
     --longoptions "$(printf "%s," "${LONGOPTS_LIST[@]}")" \
     --name "${PROGNAME}" \
     -- "$@"); then
@@ -144,6 +147,10 @@ unset PARSED_OPTIONS
 
 while true; do
     case "${1}" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
         --sdk-archive)
             shift
             SDK_ARCHIVE_PATH="${1}"

@@ -1,0 +1,47 @@
+// SPDX-FileCopyrightText: 1995-2025 Magic Lane International B.V. <info@magiclane.com>
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// Contact Magic Lane at <info@magiclane.com> for commercial licensing options.
+
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    // https://developer.android.com/studio/build/configure-app-module#set-namespace
+    namespace 'com.github.mikephil.charting'
+
+    compileSdk 34
+
+    buildTypes {
+        release {
+            jniDebuggable false
+            shrinkResources false
+            minifyEnabled false
+        }
+
+        profile {
+            initWith debug
+        }
+
+        debug {
+            jniDebuggable true
+        }
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues true // this prevents "not mocked" error
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'src/main/AndroidManifest.xml'
+            java.srcDirs = ['src/main/java']
+        }
+    }
+
+    dependencies {
+        implementation shared.androidx.annotation
+        testImplementation shared.junit
+    }
+}

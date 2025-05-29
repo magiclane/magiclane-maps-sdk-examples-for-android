@@ -6,10 +6,10 @@
     android:layout_height="match_parent"
     tools:context="com.magiclane.sdk.examples.androidauto.activities.MainActivity">
 
-    <!--<com.magiclane.sdk.core.GemSurfaceView
+    <com.magiclane.sdk.core.GemSurfaceView
         android:id="@+id/gem_surface"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />-->
+        android:layout_height="match_parent" />
 
     <ProgressBar
         android:id="@+id/progressBar"

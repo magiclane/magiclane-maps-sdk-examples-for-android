@@ -20,6 +20,7 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.exclude
 import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 import java.io.File
@@ -61,8 +62,8 @@ class ApplicationModulePlugin : Plugin<Project> {
 
                 buildTypes {
                     release {
-						isMinifyEnabled = true
-						isShrinkResources = true
+                        isMinifyEnabled = true
+                        isShrinkResources = true
                         proguardFiles(
                             getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
                         )
@@ -84,8 +85,8 @@ class ApplicationModulePlugin : Plugin<Project> {
                 }
 
                 tasks.withType<KotlinCompile>().configureEach {
-                    kotlinOptions {
-                        jvmTarget = JavaVersion.VERSION_11.toString()
+                    compilerOptions {
+                        jvmTarget.set(JvmTarget.JVM_11)
                     }
                 }
 
@@ -157,7 +158,7 @@ class ApplicationModulePlugin : Plugin<Project> {
                 isIncludeAndroidResources = true
             }
             managedDevices {
-                devices {
+                allDevices {
                     deviceConfigs.forEach { deviceConfig ->
                         maybeCreate(deviceConfig.taskName, ManagedVirtualDevice::class.java).apply {
                             device = deviceConfig.device
@@ -169,7 +170,7 @@ class ApplicationModulePlugin : Plugin<Project> {
                 groups {
                     maybeCreate("ci").apply {
                         deviceConfigs.forEach { deviceConfig ->
-                            targetDevices.add(devices[deviceConfig.taskName])
+                            targetDevices.add(allDevices[deviceConfig.taskName])
                         }
                     }
                 }

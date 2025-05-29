@@ -1,12 +1,12 @@
 [versions]
-magicLaneMapsKotlinVersion = "1.5.5"
+magicLaneMapsKotlinVersion = "1.6.0"
 
 minSdkVersion = "21"
-targetSdkVersion = "34"
-compileSdkVersion = "34"
+targetSdkVersion = "36"
+compileSdkVersion = "36"
 
-gradlePlugin = "8.7.0"
-kotlinPlugin = "1.9.21"
+gradlePlugin = "8.10.1"
+kotlinPlugin = "2.0.21"
 
 ktlintGradle = "12.1.1"
 detekt = "1.23.6"

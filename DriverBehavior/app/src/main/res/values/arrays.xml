@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="chart_labels">
+        <item>Speed\nAverage</item>
+        <item>Speed\nVariable</item>
+        <item>Harsh\nAcceleration</item>
+        <item>Harsh\nBraking</item>
+        <item>Swerving</item>
+        <item>Cornering</item>
+        <item>Tailgating</item>
+        <item>Ignored\nstop signs</item>
+        <item>Fatigue</item>
+        <item>Aggregate</item>
+    </array>
+</resources>

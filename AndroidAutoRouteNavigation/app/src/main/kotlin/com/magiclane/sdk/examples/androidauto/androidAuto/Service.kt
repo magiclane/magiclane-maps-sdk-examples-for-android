@@ -17,6 +17,8 @@ import androidx.car.app.CarToast
 import androidx.car.app.Screen
 import androidx.car.app.ScreenManager
 import androidx.car.app.Session
+import androidx.car.app.SessionInfo
+import androidx.car.app.SessionInfo.DISPLAY_TYPE_MAIN
 import androidx.car.app.SurfaceCallback
 import androidx.car.app.SurfaceContainer
 import androidx.car.app.validation.HostValidator
@@ -227,7 +229,7 @@ class Service : CarAppService() {
             get() = session?.context
 
         val session: SessionBase?
-            get() = instance?.currentSession as? SessionBase
+            get() = instance?.getSession(SessionInfo(DISPLAY_TYPE_MAIN, "main")) as? SessionBase
 
         val screenManager: ScreenManager?
             get() = session?.screenManager

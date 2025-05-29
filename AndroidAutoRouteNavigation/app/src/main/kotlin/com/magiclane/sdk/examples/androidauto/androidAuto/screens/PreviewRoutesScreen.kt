@@ -17,6 +17,7 @@ import androidx.car.app.model.Distance
 import androidx.car.app.model.DistanceSpan
 import androidx.car.app.model.DurationSpan
 import androidx.car.app.model.ForegroundCarColorSpan
+import androidx.car.app.model.Header
 import androidx.car.app.model.ItemList
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
@@ -51,8 +52,12 @@ abstract class PreviewRoutesScreen(context: CarContext) : GemScreen(context) {
             builder.setItemList(getItemList())
         }
 
-        builder.setTitle(title)
-        builder.setHeaderAction(Action.BACK)
+        builder.setHeader(
+            Header.Builder()
+                .setTitle(title)
+                .setStartHeaderAction(Action.BACK)
+                .build()
+        )
 
         Util.getActionStrip(context, actionStripModelList)?.let { builder.setActionStrip(it) }
 

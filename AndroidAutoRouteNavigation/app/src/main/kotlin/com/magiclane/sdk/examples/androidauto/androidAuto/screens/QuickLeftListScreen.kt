@@ -15,6 +15,7 @@ import androidx.car.app.CarContext
 import androidx.car.app.model.CarLocation
 import androidx.car.app.model.Distance
 import androidx.car.app.model.DistanceSpan
+import androidx.car.app.model.Header
 import androidx.car.app.model.ItemList
 import androidx.car.app.model.Metadata
 import androidx.car.app.model.Place
@@ -45,11 +46,14 @@ abstract class QuickLeftListScreen(context: CarContext) : GemScreen(context) {
 
         val builder = PlaceListNavigationTemplate.Builder()
 
-        builder.setTitle(title)
+        val headerBuilder = Header.Builder()
+            .setTitle(title)
 
-        headerAction?.let {
-            UIActionModel.createAction(context, it)?.let { it1 -> builder.setHeaderAction(it1) }
+        headerAction?.let { headerAction ->
+            UIActionModel.createAction(context, headerAction)?.let { action -> headerBuilder.setStartHeaderAction(action) }
         }
+        
+        builder.setHeader(headerBuilder.build())
 
         Util.getActionStrip(context, actionStripModelList)?.let { builder.setActionStrip(it) }
 

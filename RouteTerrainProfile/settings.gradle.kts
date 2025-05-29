@@ -1,6 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
-import java.net.URL
+import java.net.URI
 
 // This will find your GEM_SDK_REGISTRY_TOKEN in ~/.gradle/gradle.properties
 val GEM_SDK_REGISTRY_TOKEN: String? by settings
@@ -30,7 +30,7 @@ dependencyResolutionManagement {
                ------------------------------------------------------------------
                'GEM_SDK_REGISTRY_TOKEN' must to be defined either in gradle 
                properties file or as an env. variable.
-               Check ${URL("https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html")} 
+               Check ${URI("https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html").toURL()} 
                how to create a personal access token.
                ------------------------------------------------------------------
             """.trimIndent())
