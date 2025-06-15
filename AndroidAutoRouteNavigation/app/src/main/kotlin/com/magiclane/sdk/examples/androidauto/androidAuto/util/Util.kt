@@ -68,7 +68,8 @@ object Util {
     fun changeBitmapColor(sourceBitmap: Bitmap?, color: Int): Bitmap? {
         sourceBitmap ?: return null
 
-        val resultBitmap = sourceBitmap.copy(sourceBitmap.config, true)
+        val config = sourceBitmap.config ?: Bitmap.Config.ARGB_8888
+        val resultBitmap = sourceBitmap.copy(config, true)
         val paint = Paint()
         paint.colorFilter = LightingColorFilter(color, 1)
 
