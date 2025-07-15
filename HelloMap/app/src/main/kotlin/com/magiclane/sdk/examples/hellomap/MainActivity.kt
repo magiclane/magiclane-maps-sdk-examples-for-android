@@ -13,19 +13,10 @@ package com.magiclane.sdk.examples.hellomap
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
-import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import com.magiclane.sdk.core.ErrorCode
-import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
-import com.magiclane.sdk.core.GemSurfaceView
-import com.magiclane.sdk.core.Image
-import com.magiclane.sdk.core.SdkSettings
-import com.magiclane.sdk.d3scene.BasicShapeDrawer
-import com.magiclane.sdk.util.SdkCall
-import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------------------------------------

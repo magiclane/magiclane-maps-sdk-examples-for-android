@@ -19,9 +19,11 @@ import android.os.Bundle
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
+import com.magiclane.sdk.core.CircleGeographicArea
 import com.magiclane.sdk.core.DataBuffer
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.Image
+import com.magiclane.sdk.core.PolygonGeographicArea
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.d3scene.EMarkerLabelingMode
 import com.magiclane.sdk.d3scene.EMarkerType
@@ -97,6 +99,15 @@ class MainActivity : AppCompatActivity()
             polylineSettings.polylineInnerSize = 1.5 //mm
 
             mapView.preferences?.markers?.add(polylineCollection, polylineSettings)
+            
+            /* Polygon */
+            val polygonSettings = MarkerCollectionRenderSettings(polylineInnerColor = Rgba.magenta(), polygonFillColor = Rgba(255, 0, 0, 128))
+            polygonSettings.polylineInnerSize = 1.0//mm
+            
+            val polygonCollection = MarkerCollection(EMarkerType.Polygon, "Polyline")
+            val marker = Marker(Coordinates(45.75242654325917, 4.828547972110576), 200);
+            polygonCollection.add(marker)
+            mapView.preferences?.markers?.add(polygonCollection, polygonSettings)
 
             /* Center map on result */
             mapView.centerOnCoordinates(predefinedPlaces[0].second, 80)
