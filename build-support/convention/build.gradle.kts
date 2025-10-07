@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     `kotlin-dsl`
@@ -11,7 +12,9 @@ afterEvaluate {
     }
 
     tasks.withType<KotlinCompile>().configureEach {
-        kotlinOptions { jvmTarget = JavaVersion.VERSION_11.toString() }
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 # Magic Lane - Maps SDK for Android demo applications
 
-This repository holds a series of example projects using the **Magic Lane - Maps SDK for Android**. More information about the API can be found on the [Documentation](https://developer.magiclane.com/documentation) page.
+This repository holds a series of example projects using the **Magic Lane - Maps SDK for Android**. More information about the API can be found on the [Documentation](https://developer.magiclane.com/docs/android) page.
 
 * [Android Auto Route Navigation](AndroidAutoRouteNavigation) - Start navigation from the current position to a given landmark if a route can be calculated.
 * [Apply Custom Map Style](ApplyCustomMapStyle) - Present a map; apply a custom map style.
@@ -34,6 +34,7 @@ This repository holds a series of example projects using the **Magic Lane - Maps
 * [Hello Fragment](HelloFragment) - Display a map on an Android Fragment.
 * [Hello Fragment Custom Style](HelloFragmentCustomStyle) - Display a map on an Android Fragment; apply custom style to a map.
 * [Hello Map](HelloMap) - Display a map.
+* [Hello Map Compose](HelloMapCompose) - [Hello Map](HelloMap) - example using Jetpack Compose.
 * [Hello SDK](HelloSdk) - Show how the Maps SDK for Android can be integrated into your project.
 * [Lane Instructions](LaneInstructions) - Calculate the routes between 2 given landmarks; display the recommended lanes for the next turn instruction.
 * [Location Wikipedia](LocationWikipedia) - Search for a landmark; request Wikipedia info about first resulted landmark, if exists.
@@ -41,6 +42,7 @@ This repository holds a series of example projects using the **Magic Lane - Maps
 * [Map Gestures](MapGestures) - Display an interactive map supporting pan, zoom, rotate, tilt that displays logs about what gestures the user made on the map.
 * [Map Perspective Change](MapPerspectiveChange) - Display an interactive map with a button that changes the view perspective between 2D and 3D.
 * [Map Selection](MapSelection) - Present a map. Calculate the routes between 2 given landmarks. Illustrates how to tap on different map overlays.
+* [Map Selection Compose](MapSelectionCompose) - [Map Selection](MapSelection) example using Jetpack Compose.
 * [Marker Collection Display Icon](MarkerCollectionDisplayIcon) - Shows usage of `MarkerCollection`.
 * [Multiple surfaces in Fragment](MultipleSurfacesInFragment) - Display a variable list of maps on an Android Fragment.
 * [Multiple surfaces in Fragment Recycler](MultipleSurfacesInFragmentRecycler) - Displaying a variable list of maps on an Android Fragment.
@@ -48,17 +50,20 @@ This repository holds a series of example projects using the **Magic Lane - Maps
 * [Projection](Projection) - Show various types of projections for landmarks.
 * [Public Transit Routing on Map](PublicTransitRoutingOnMap) - Calculate the public transport routes between 2 given landmarks; display all results on the map and fly to the main route, if exists.
 * [Range Finder](RangeFinder) - Calculate the routes between 2 given landmarks; display and fly to the first route in the resulting route list, if it exists.
+* [Range Finder Compose](RangeFinderCompose) - [Range Finder](RangeFinder) example using Jetpack Compose.
 * [Route Alarms](RouteAlarms) - Start simulated navigation between 2 given landmarks if a route can be calculated.
 * [Route Instructions](RouteInstructions) - Calculate the routes between 2 given landmarks; display a list with all route instructions, if exists.
 * [Route Navigation](RouteNavigation) - Start navigation from the current position to a given landmark if any route can be calculated.
 * [Route Simulation](RouteSimulation) - Start simulation between 2 given landmarks if any route can be calculated.
 * [Route Simulation with Instructions](RouteSimulationWithInstructions) - Start simulation between 2 given landmarks. Displays turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance.
+* [Route Simulation with Instructions Compose](RouteSimulationWithInstructionsCompose) - [Route Simulation with Instructions](RouteSimulationWithInstructions) example using Jetpack Compose.
 * [Route Simulation without Map](RouteSimulationWithoutMap) - Start simulated navigation between 2 given landmarks. Displays turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance. No map is displayed.
 * [Route Terrain Profile](RouteTerrainProfile) - Calculate the routes between 2 given landmarks; display some of the route terrain profile details available for a route.
 * [Routing](Routing) - Calculate the routes between 2 given landmarks.
 * [Routing on Map](RoutingOnMap) - Calculate the routes between 2 given landmarks; display and fly to the first resulted route, if exists.
 * [Routing on Map Java](RoutingOnMapJava) - Calculate the routes between 2 given landmarks; display and fly to the first resulted route, if exists.
 * [Search](Search) - Searches for landmarks based on user input; display a list with landmarks found.
+* [Search Compose](SearchCompose) - [Search](Search) example using Jetpack Compose.
 * [Search Along Route](SearchAlongRoute) - Start simulation between 2 landmarks. Search for gas stations along the route if the search button is pressed.
 * [Send Debug Info](SendDebugInfo) - This example app shows how to send the app log and latest crash report, if any, to Magic Lane support.
 * [Set TTS Language](SetTTSLanguage) - Shows usage of `SoundPlayingService` class and setting TTS language.
@@ -83,4 +88,4 @@ This repository holds a series of example projects using the **Magic Lane - Maps
 
 Copyright (C) 1995-2025 Magic Lane International B.V.
 
-Contact Magic Lane at info@magiclane.com for commercial licensing options.
+Contact Magic Lane at <info@magiclane.com> for SDK licensing options.

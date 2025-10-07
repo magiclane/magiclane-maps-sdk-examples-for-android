@@ -1,45 +1,15 @@
-# SPDX-FileCopyrightText: 1995-2025 Magic Lane International B.V. <info@magiclane.com>
-# SPDX-License-Identifier: BSD-3-Clause
-#
-# Contact Magic Lane at <info@magiclane.com> for commercial licensing options.
-
 version = 1
 
-SPDX-PackageName = "Maps SDK Examples for Android"
-SPDX-PackageSupplier = "Magic Lane International B.V."
-SPDX-PackageDownloadLocation = "https://issuetracker.magiclane.com/magiclane/maps-sdk-examples-for-android"
-SPDX-PackageComment = "Example projects using the Magic Lane - Maps SDK Examples for Android"
+SPDX-PackageName = "maps-sdk-examples-for-android"
+SPDX-PackageSupplier = "magiclane-developer@users.noreply.github.com"
+SPDX-PackageDownloadLocation = "https://github.com/magiclane-international/maps-sdk-examples-for-android"
+SPDX-PackageComment = "Real-world use cases for the Magic Lane Maps SDK on Android to support faster app development and feature exploration."
 
 [[annotations]]
-path = [
-    "**/build.gradle.kts",
-    "**/settings.gradle.kts",
-    "**/libs.versions.toml",
-    "**/proguard-rules.pro",
-    "**/app/src/main/res/**",
-    "**.glb",
-    "**.gpx",
-    "**.jpeg",
-    "**.jpg",
-    "**.png",
-    "**.webp",
-    "**.cmap",
-    "**.map",
-    "**.style",
-    "**/.gitignore",
-    "**/README.md",
-    "**/dhu_start",
-    "detekt.yml",
-    "CODE_OF_CONDUCT.md",
-    "README.md",
-    ".git-blame-ignore-revs",
-    ".gitignore",
-    ".gitreview",
-    "REUSE.toml"
-]
+path = "**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "1995-2025 Magic Lane International B.V. <info@magiclane.com>"
-SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
 path = [

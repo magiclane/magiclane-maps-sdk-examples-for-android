@@ -1,5 +1,13 @@
 @file:Suppress("UnstableApiUsage")
 
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
 dependencyResolutionManagement {
     repositories {
         google()
@@ -16,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "buildSupport"
 include(":convention")
+include(":utils")

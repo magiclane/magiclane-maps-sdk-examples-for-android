@@ -1,8 +1,8 @@
 /*
  * SPDX-FileCopyrightText: 1995-2025 Magic Lane International B.V. <info@magiclane.com>
- * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Contact Magic Lane at <info@magiclane.com> for commercial licensing options.
+ * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
  */
 
 @file:Suppress("UnstableApiUsage")
@@ -34,17 +34,22 @@ class ApplicationModulePlugin : Plugin<Project> {
             with(pluginManager) {
                 apply("com.android.application")
                 apply("org.jetbrains.kotlin.android")
+                apply("kotlin-kapt")
                 apply("com.magiclane.examples.sdk.gradle.detekt")
                 apply("com.magiclane.examples.sdk.gradle.ktlint")
             }
+
+            project.extensions.extraProperties["kapt.incremental.apt"] = "false"
+            project.extensions.extraProperties["kapt.correctErrorTypes"] = "true"
+            project.extensions.extraProperties["kapt.use.worker.api"] = "true"
 
             extensions.configure<ApplicationExtension> {
                 defaultConfig {
                     versionCode = 1
                     versionName = "1.0"
 
-					val token = System.getenv("GEM_TOKEN").takeIf { !it.isNullOrBlank() } ?: ""
-					if(token.isEmpty()) {
+                    val token = System.getenv("GEM_TOKEN").takeIf { !it.isNullOrBlank() } ?: ""
+                    if(token.isEmpty()) {
                         logger.warn(
                             """
                                ------------------------------------------------------------------
@@ -58,6 +63,10 @@ class ApplicationModulePlugin : Plugin<Project> {
                     manifestPlaceholders["GEM_TOKEN"] = token
 
                     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                }
+
+                buildFeatures {
+                    dataBinding = true
                 }
 
                 buildTypes {
@@ -106,32 +115,36 @@ class ApplicationModulePlugin : Plugin<Project> {
                 }
             }
 
+            dependencies {
+                add("implementation", "buildSupport:utils")
+            }
+
             val localPropFile = File(rootProject.projectDir, "../local.properties")
             if (localPropFile.exists()) {
                 // Check if path to direct downloaded Maps SDK for Android exists
-				val localProp = Properties()
-				localPropFile.inputStream().use {
-					localProp.load(it)
-				}
-				val gemSDKPath = localProp.getProperty("aarPath.dir", null)
-				if (!gemSDKPath.isNullOrEmpty()) {
+                val localProp = Properties()
+                localPropFile.inputStream().use {
+                    localProp.load(it)
+                }
+                val gemSDKPath = localProp.getProperty("aarPath.dir", null)
+                if (!gemSDKPath.isNullOrEmpty()) {
                     logger.warn(
                         """
                             ------------------------------------------------------------------
                             Using AAR ('${gemSDKPath}') dependency
                             ------------------------------------------------------------------
                         """.trimIndent())
-					dependencies {
-						add("implementation", fileTree(mapOf("dir" to gemSDKPath, "include" to listOf("*.jar", "*.aar"))))
-					}
+                    dependencies {
+                        add("implementation", fileTree(mapOf("dir" to gemSDKPath, "include" to listOf("*.jar", "*.aar"))))
+                    }
                     configurations.forEach { it.exclude("com.magiclane", "maps-kotlin") }
                 }
             } else {
-				// Check if direct downloaded Maps SDK for Android exists in libs folder
-				val libsDir = File(rootProject.projectDir, "app/libs")
-				val regex = Regex("MAGICLANE-(ADAS|MAPS)-SDK-.*\\.aar")
-				val aarFile = libsDir.listFiles()?.find { it.name.matches(regex) }
-				if (aarFile != null) {
+                // Check if direct downloaded Maps SDK for Android exists in libs folder
+                val libsDir = File(rootProject.projectDir, "app/libs")
+                val regex = Regex("MAGICLANE-(ADAS|MAPS)-SDK-.*\\.aar")
+                val aarFile = libsDir.listFiles()?.find { it.name.matches(regex) }
+                if (aarFile != null) {
                     logger.warn(
                         """
                             ------------------------------------------------------------------
@@ -142,8 +155,8 @@ class ApplicationModulePlugin : Plugin<Project> {
                         add("implementation", fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
                     }
                     configurations.forEach { it.exclude("com.magiclane", "maps-kotlin") }
-				}
-			}
+                }
+            }
         }
     }
 

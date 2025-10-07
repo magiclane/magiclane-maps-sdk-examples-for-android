@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Stay Inside Geofence Area</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+</resources>

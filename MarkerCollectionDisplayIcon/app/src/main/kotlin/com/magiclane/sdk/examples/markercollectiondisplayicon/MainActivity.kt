@@ -2,9 +2,9 @@
 
 /*
  * SPDX-FileCopyrightText: 1995-2025 Magic Lane International B.V. <info@magiclane.com>
- * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Contact Magic Lane at <info@magiclane.com> for commercial licensing options.
+ * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
  */
 
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity()
             val polygonSettings = MarkerCollectionRenderSettings(polylineInnerColor = Rgba.magenta(), polygonFillColor = Rgba(255, 0, 0, 128))
             polygonSettings.polylineInnerSize = 1.0//mm
             
-            val polygonCollection = MarkerCollection(EMarkerType.Polygon, "Polyline")
+            val polygonCollection = MarkerCollection(EMarkerType.Polygon, "Polygon")
             val marker = Marker(Coordinates(45.75242654325917, 4.828547972110576), 200);
             polygonCollection.add(marker)
             mapView.preferences?.markers?.add(polygonCollection, polygonSettings)

@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">MapSelectionCompose</string>
+    <string name="my_position">My position</string>
+    <string name="safety_camera">Safety camera</string>
+    <string name="road">Route</string>
+    <string name="traffic_event">Traffic event</string>
+    <string name="social_report">Social report</string>
+    <string name="location_details">Location Details</string>
+    <string name="added_on">Added on: </string>
+</resources>

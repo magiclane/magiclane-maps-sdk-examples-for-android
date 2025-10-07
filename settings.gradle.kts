@@ -1,5 +1,6 @@
+includeBuild("build-support")
+
 pluginManagement {
-	includeBuild("build-support")
     repositories {
         google()
         mavenCentral()

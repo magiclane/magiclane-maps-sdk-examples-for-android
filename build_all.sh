@@ -2,9 +2,9 @@
 # vim:ts=4:sts=4:sw=4:et
 
 # SPDX-FileCopyrightText: 1995-2025 Magic Lane International B.V. <info@magiclane.com>
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 #
-# Contact Magic Lane at <info@magiclane.com> for commercial licensing options.
+# Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
 
 declare -r PROGNAME=${0##*/}
 
@@ -106,7 +106,7 @@ Options:
                     Set specific local Maven repository path to search for Maps SDK for Android.
                     If given, any other SDK path is ignored, including local SDK archive path
 
-    [OPTIONAL] --api-token
+    [OPTIONAL] --api-token=<token>
                     Specify API token to be hardcoded into examples
     [OPTIONAL] --run-unit-tests
                     Run unit tests locally

@@ -1,14 +1,11 @@
 @file:Suppress("UnstableApiUsage")
 
-import java.net.URI
+// This will find your gemSdkLocalMavenPath in ~/.gradle/gradle.properties
+val gemSdkLocalMavenPath: String? by settings
 
-// This will find your GEM_SDK_REGISTRY_TOKEN in ~/.gradle/gradle.properties
-val GEM_SDK_REGISTRY_TOKEN: String? by settings
-// This will find your GEM_SDK_LOCAL_MAVEN_PATH in ~/.gradle/gradle.properties
-val GEM_SDK_LOCAL_MAVEN_PATH: String? by settings
+includeBuild("../build-support")
 
 pluginManagement {
-	includeBuild("../build-support")
     repositories {
         google {
             content {
@@ -22,40 +19,18 @@ pluginManagement {
     }
 }
 dependencyResolutionManagement {
-    val gemSdkRegistryToken = GEM_SDK_REGISTRY_TOKEN
-        ?: System.getenv("GEM_SDK_REGISTRY_TOKEN").takeIf { !it.isNullOrBlank() }
-    if(gemSdkRegistryToken.isNullOrBlank()) {
-        throw IllegalStateException(
-            """
-               ------------------------------------------------------------------
-               'GEM_SDK_REGISTRY_TOKEN' must to be defined either in gradle 
-               properties file or as an env. variable.
-               Check ${URI("https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html").toURL()} 
-               how to create a personal access token.
-               ------------------------------------------------------------------
-            """.trimIndent())
-    }
-    
-	val gemSdkLocalMavenPath = GEM_SDK_LOCAL_MAVEN_PATH
+    val localMavenPath = gemSdkLocalMavenPath
         ?: System.getenv("GEM_SDK_LOCAL_MAVEN_PATH").takeIf { !it.isNullOrBlank() }
 
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        maven("https://jitpack.io")
-		if(!gemSdkLocalMavenPath.isNullOrBlank()) {
-			maven { url = uri(gemSdkLocalMavenPath) }
+		if(!localMavenPath.isNullOrBlank()) {
+			maven { url = uri(localMavenPath) }
 		} else {
 			maven {
-				url = uri("https://issuetracker.magiclane.com/api/v4/packages/maven")
-				credentials(HttpHeaderCredentials::class) {
-					name = "Private-Token"
-					value = gemSdkRegistryToken
-				}
-				authentication {
-					create<HttpHeaderAuthentication>("header")
-				}
+				url = uri("https://developer.magiclane.com/packages/android")
 			}
 		}
     }

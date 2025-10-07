@@ -1,8 +1,8 @@
 /*
  * SPDX-FileCopyrightText: 1995-2025 Magic Lane International B.V. <info@magiclane.com>
- * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Contact Magic Lane at <info@magiclane.com> for commercial licensing options.
+ * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
  */
 
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
@@ -60,7 +60,7 @@ class DetektConventionPlugin : Plugin<Project> {
             }
 
             dependencies.apply {
-				add("detektPlugins", libs.findLibrary("detekt-formatting").get())
+                add("detektPlugins", libs.findLibrary("detekt-formatting").get())
             }
         }
     }
