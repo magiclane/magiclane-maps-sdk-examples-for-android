@@ -170,8 +170,7 @@ class MainActivity : AppCompatActivity()
                     it.image = ImageDatabase().getImageById(SdkImages.Core.Waypoint_Finish.value)
                 }
                 
-                val highlightSettings = HighlightRenderSettings().also { 
-                    it.options = EHighlightOptions.ShowLandmark
+                val highlightSettings = HighlightRenderSettings(EHighlightOptions.ShowLandmark).also {
                     it.imageSize = 4.0
                 }
                 

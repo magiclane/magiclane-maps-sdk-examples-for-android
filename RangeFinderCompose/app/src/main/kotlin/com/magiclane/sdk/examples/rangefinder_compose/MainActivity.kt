@@ -1,5 +1,4 @@
 // -------------------------------------------------------------------------------------------------------------------------------
-
 /*
  * SPDX-FileCopyrightText: 1995-2025 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
@@ -10,8 +9,6 @@
 // -------------------------------------------------------------------------------------------------------------------------------
 
 package com.magiclane.sdk.examples.rangefinder_compose
-
-// ---------------------------------------------------------------------------------------------------------------------------------------------------
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -36,21 +33,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -63,7 +60,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalTextInputService
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -76,22 +73,15 @@ import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.examples.rangefinder_compose.ui.theme.RangeFinderTheme
 import com.magiclane.sdk.routesandnavigation.ERouteTransportMode
 
-// ---------------------------------------------------------------------------------------------------------------------------------------------------
-
 class MainActivity : ComponentActivity()
 {
-    // -----------------------------------------------------------------------------------------------------------------------------------------------
-
     private lateinit var viewModel: RangeFinderModel
-
-    // -----------------------------------------------------------------------------------------------------------------------------------------------
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
         setContent {
             RangeFinderTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -110,22 +100,15 @@ class MainActivity : ComponentActivity()
         }
 
         SdkSettings.onApiTokenRejected = {
-            /*
-            The TOKEN you provided in the AndroidManifest.xml file was rejected.
-            Make sure you provide the correct value, or if you don't have a TOKEN,
-            check the magiclane.com website, sign up/sign in and generate one.
-             */
             viewModel.errorMessage = "Token rejected!"
         }
 
-        onBackPressedDispatcher.addCallback(this /* lifecycle owner */, object : OnBackPressedCallback(true) {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 finish()
             }
         })
     }
-
-    // -----------------------------------------------------------------------------------------------------------------------------------------------
 
     override fun onDestroy()
     {
@@ -136,14 +119,11 @@ class MainActivity : ComponentActivity()
 
         if (isFinishing)
         {
-            GemSdk.release() // Release the SDK.
+            GemSdk.release()
         }
     }
-
-    // -----------------------------------------------------------------------------------------------------------------------------------------------
 }
 
-// ---------------------------------------------------------------------------------------------------------------------------------------------------
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -379,8 +359,6 @@ fun RangeFinderScreen(modifier: Modifier = Modifier, viewModel: RangeFinderModel
     }
 }
 
-// ---------------------------------------------------------------------------------------------------------------------------------------------------
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AvoidItem(text: String, selected: MutableState<Boolean>)
@@ -397,13 +375,12 @@ fun AvoidItem(text: String, selected: MutableState<Boolean>)
     )
 }
 
-// ---------------------------------------------------------------------------------------------------------------------------------------------------
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropdownMenuBox(options: List<String>, selectedText: MutableState<String>, onSelectionChanged: (Int)->Unit)
 {
     var expanded by remember { mutableStateOf(false) }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     MaterialTheme(
         shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(16.dp))
@@ -415,28 +392,27 @@ fun DropdownMenuBox(options: List<String>, selectedText: MutableState<String>, o
                 expanded = expanded,
                 onExpandedChange = {
                     expanded = !expanded
+                    if (expanded) {
+                        keyboardController?.hide()
+                    }
                 }
             ) {
 
-                CompositionLocalProvider(
-                    LocalTextInputService provides null
-                ) {
-                    TextField(
-                        value = selectedText.value,
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .border(2.dp, SolidColor(Color.Blue), shape = RoundedCornerShape(15.dp)),
-                        colors = ExposedDropdownMenuDefaults.textFieldColors(
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent
-                        )
+                TextField(
+                    value = selectedText.value,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                        .border(2.dp, SolidColor(Color.Blue), shape = RoundedCornerShape(15.dp)),
+                    colors = ExposedDropdownMenuDefaults.textFieldColors(
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent
                     )
-                }
+                )
 
                 ExposedDropdownMenu(
                     modifier = Modifier.background(Color.White),
@@ -456,7 +432,7 @@ fun DropdownMenuBox(options: List<String>, selectedText: MutableState<String>, o
 
                         if (i != options.lastIndex)
                         {
-                            Divider(color = Color.LightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 10.dp))
+                            HorizontalDivider(color = Color.LightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 10.dp))
                         }
                     }
                 }
@@ -464,8 +440,6 @@ fun DropdownMenuBox(options: List<String>, selectedText: MutableState<String>, o
         }
     }
 }
-
-// ---------------------------------------------------------------------------------------------------------------------------------------------------
 
 @Composable
 fun ErrorDialog(viewModel: RangeFinderModel)
@@ -489,8 +463,6 @@ fun ErrorDialog(viewModel: RangeFinderModel)
     )
 }
 
-// ---------------------------------------------------------------------------------------------------------------------------------------------------
-
 @Preview(showBackground = true)
 @Composable
 fun RangeFinderPreview() {
@@ -498,5 +470,3 @@ fun RangeFinderPreview() {
         RangeFinderScreen()
     }
 }
-
-// ---------------------------------------------------------------------------------------------------------------------------------------------------

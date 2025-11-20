@@ -135,7 +135,7 @@ class MainActivity : AppCompatActivity()
                             if (item.countryCodes?.contains(countryCode) == true)
                             {
                                 voiceHasBeenDownloaded = true
-                                onVoiceReady(item.filename!!)
+                                onVoiceReady(item.fileName!!)
                                 return@execute // already exists
                             }
                         }
@@ -156,7 +156,7 @@ class MainActivity : AppCompatActivity()
                                             {
                                                 item.asyncDownload(onCompleted = { _, _ ->
                                                     SdkCall.execute {
-                                                        onVoiceReady(item.filename!!)
+                                                        onVoiceReady(item.fileName!!)
                                                     }
                                                 })
                                                 break

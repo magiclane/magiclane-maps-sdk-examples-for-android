@@ -9,9 +9,7 @@
 
 // -------------------------------------------------------------------------------------------------------------------------------
 
-package com.magiclane.sdk.examples.search_compose
-
-// --------------------------------------------------------------------------------------------------------------------------------------------------
+package com.magiclane.sdk.examples.search_compose.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
@@ -24,8 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-// --------------------------------------------------------------------------------------------------------------------------------------------------
 
 @Composable
 fun SearchResultItem(
@@ -71,5 +67,3 @@ fun SearchResultItem(
         }
     }
 }
-
-// --------------------------------------------------------------------------------------------------------------------------------------------------

@@ -299,7 +299,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             val availableWidthForMiddlePanel =
                 topPanelWidth - max(turnImageSize, turnMinWidth) - 3 * navigationPanelPadding
             val signPostImage =
-                getSignpostImage(instr, availableWidthForMiddlePanel, signPostImageSize).second
+                getSignpostImage(instr, availableWidthForMiddlePanel, signPostImageSize)
 
             binding.navigationTopPanel.apply {
                 signPost.isVisible = signPostImage != null
@@ -318,7 +318,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                         instr,
                         availableWidthForMiddlePanel,
                         navigationImageSize
-                    ).second
+                    )
                     roadCode.isVisible = roadCodeImage != null
                     roadCodeImage?.let {
                         roadCode.setImageBitmap(it)
@@ -357,8 +357,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
             // lane info / current street name / current road code
             val availableWidthForLaneInfo = topPanelWidth - 2 * navigationPanelPadding
-            val laneInfoImage: Bitmap? =
-                getLaneInfoImage(instr, availableWidthForLaneInfo, navigationImageSize).second
+            val laneInfoImage: Bitmap? = getLaneInfoImage(instr, availableWidthForLaneInfo, navigationImageSize)
 
             binding.navigationLanePanel.run {
                 laneInfoImage?.let {
@@ -395,7 +394,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                         availableWidthForMiddlePanel,
                         currentRoadCodeImageSize,
                         false
-                    ).second
+                    )
 
                     currentRoadCodeImg?.let {
                         binding.currentRoadCodeImage.setImageBitmap(it)
@@ -573,9 +572,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         navInstr: NavigationInstruction,
         width: Int,
         height: Int
-    ): Pair<Int, Bitmap?>
+    ): Bitmap?
     {
-        var result: Pair<Int, Bitmap?> = Pair(0, null)
+        var result: Bitmap? = null
         SdkCall.execute {
             if (navInstr.hasSignpostInfo())
             {
@@ -594,13 +593,13 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         width: Int,
         height: Int,
         nextRoadCode: Boolean = true
-    ): Pair<Int, Bitmap?>
+    ): Bitmap?
     {
         return SdkCall.execute {
             val roadsInfo = if (nextRoadCode)
-                navInstr.nextRoadInformation ?: return@execute Pair(0, null)
+                navInstr.nextRoadInformation ?: return@execute null
             else
-                navInstr.currentRoadInformation ?: return@execute Pair(0, null)
+                navInstr.currentRoadInformation ?: return@execute null
 
             if (roadsInfo.isNotEmpty())
             {
@@ -612,8 +611,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
                 GemUtilImages.asBitmap(image, resultWidth, height)
             } else
-                Pair(0, null)
-        } ?: Pair(0, null)
+                null
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -622,7 +621,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         navInstr: NavigationInstruction,
         width: Int,
         height: Int
-    ): Pair<Int, Bitmap?>
+    ): Bitmap?
     {
         return SdkCall.execute {
             var resultWidth = width
@@ -635,7 +634,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
             val image = navInstr.laneImage
 
-            val resultPair = GemUtilImages.asBitmap(
+            val bmp = GemUtilImages.asBitmap(
                 image,
                 resultWidth,
                 height,
@@ -643,11 +642,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 activeColor,
                 inactiveColor
             )
-
-            resultWidth = resultPair.first
-
-            return@execute Pair(resultWidth, resultPair.second)
-        } ?: Pair(0, null)
+            
+            return@execute bmp
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -1002,7 +999,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         trafficDelayTimeText = ""
         trafficDelayTimeUnitText = ""
 
-        if (!trafficEvent.isRoadblock())
+        if (!trafficEvent.isRoadblock)
         {
             if (insideTrafficEvent)
             {

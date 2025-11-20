@@ -1,11 +1,11 @@
 [versions]
-magicLaneMapsKotlinVersion = "1.7.0"
+magicLaneMapsKotlinVersion = "1.7.1"
 
 minSdkVersion = "21"
 targetSdkVersion = "36"
 compileSdkVersion = "36"
 
-gradlePlugin = "8.13.0"
+gradlePlugin = "8.13.1"
 kotlinPlugin = "2.1.20"
 
 ktlintGradle = "12.1.1"

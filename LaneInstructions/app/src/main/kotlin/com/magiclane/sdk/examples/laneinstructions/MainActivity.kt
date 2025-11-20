@@ -21,6 +21,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -46,7 +47,10 @@ class MainActivity : AppCompatActivity()
     private lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var progressBar: ProgressBar
     private lateinit var laneImage: ImageView
+    private lateinit var laneImagePanel: ConstraintLayout
     private lateinit var followCursorButton: FloatingActionButton
+    private var lanePanelHeight = 0
+    private var availableWidth = 0
 
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
@@ -78,12 +82,16 @@ class MainActivity : AppCompatActivity()
         onNavigationInstructionUpdated = { instr ->
             // Fetch the bitmap for recommended lanes.
             val lanes = SdkCall.execute {
-                instr.laneImage?.asBitmap(150, 30, activeColor = Rgba.white())
-            }?.second
+                instr.laneImage?.asBitmap(availableWidth, lanePanelHeight, activeColor = Rgba.white())
+            }
 
             // Show the lanes instruction.
-            laneImage.isVisible = lanes != null
-            lanes?.let { laneImage.setImageBitmap(it)}
+            laneImagePanel.isVisible = lanes != null
+            lanes?.let { 
+                laneImage.setImageBitmap(it)
+                laneImage.layoutParams.width = it.width
+                laneImage.layoutParams.height = it.height
+            }
         }
     )
 
@@ -110,7 +118,10 @@ class MainActivity : AppCompatActivity()
         progressBar = findViewById(R.id.progressBar)
         gemSurfaceView = findViewById(R.id.gem_surface)
         laneImage = findViewById(R.id.laneImage)
+        laneImagePanel = findViewById(R.id.laneImagePanel)
         followCursorButton = findViewById(R.id.followCursor)
+        lanePanelHeight = resources.getDimension(R.dimen.lane_panel_height).toInt()
+        availableWidth = resources.displayMetrics.widthPixels - 2 * resources.getDimension(R.dimen.big_padding).toInt()
 
         /// MAGIC LANE
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->

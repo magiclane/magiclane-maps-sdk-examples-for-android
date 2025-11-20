@@ -18,8 +18,10 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.view.WindowInsets
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -47,11 +49,9 @@ import kotlin.system.exitProcess
 
 // -------------------------------------------------------------------------------------------------
 
-class MainActivity : AppCompatActivity()
-{
+class MainActivity : AppCompatActivity() {
     // ---------------------------------------------------------------------------------------------
-    companion object
-    {
+    companion object {
         private const val REQUEST_PERMISSIONS = 110
     }
 
@@ -61,26 +61,35 @@ class MainActivity : AppCompatActivity()
     // ---------------------------------------------------------------------------------------------
     // region OVERRIDDEN METHODS--------------------------------------------------------------------
 
-    override fun onCreate(savedInstanceState: Bundle?)
-    {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         imageSize = resources.getDimension(R.dimen.image_size).toInt()
         binding.buttonsGroup.isVisible = false
-
+        //set window insets
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            binding.frame.setOnApplyWindowInsetsListener { view, insets ->
+                val systemBarsInsets = insets.getInsets(WindowInsets.Type.systemBars())
+                view.setPadding(
+                    systemBarsInsets.left,
+                    systemBarsInsets.top,
+                    systemBarsInsets.right,
+                    systemBarsInsets.bottom
+                )
+                insets
+            }
+        }
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
             // Set GPS button if location permission is granted, otherwise request permission
             SdkCall.execute {
                 val hasLocationPermission =
                     PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                if (hasLocationPermission)
-                {
+                if (hasLocationPermission) {
                     Util.postOnMain { enableGPSButton() }
-                } else
-                {
+                } else {
                     requestPermissions(this)
                 }
             }
@@ -100,8 +109,7 @@ class MainActivity : AppCompatActivity()
                                 myPosition,
                                 MapSceneObject.getDefPositionTracker().first!!
                             )
-                        )
-                        {
+                        ) {
                             showOverlayContainer(
                                 getString(R.string.my_position),
                                 "",
@@ -124,8 +132,7 @@ class MainActivity : AppCompatActivity()
                         }
 
                         val landmarks = gemSurfaceView.mapView?.cursorSelectionLandmarks
-                        if (!landmarks.isNullOrEmpty())
-                        {
+                        if (!landmarks.isNullOrEmpty()) {
                             val landmark = landmarks[0]
                             landmark.run {
                                 showOverlayContainer(
@@ -136,8 +143,7 @@ class MainActivity : AppCompatActivity()
                             }
 
                             val contour = landmark.getContourGeographicArea()
-                            if (contour != null && !contour.isEmpty())
-                            {
+                            if (contour != null && !contour.isEmpty()) {
                                 contour.let {
                                     gemSurfaceView.mapView?.centerOnArea(
                                         it,
@@ -158,8 +164,7 @@ class MainActivity : AppCompatActivity()
                                         displaySettings
                                     )
                                 }
-                            } else
-                            {
+                            } else {
                                 landmark.coordinates?.let {
                                     gemSurfaceView.mapView?.centerOnCoordinates(
                                         it,
@@ -188,12 +193,11 @@ class MainActivity : AppCompatActivity()
             Make sure you provide the correct value, or if you don't have a TOKEN,
             check the magiclane.com website, sign up/sign in and generate one. 
              */
-            Utils.showDialog("TOKEN REJECTED",this)
+            Utils.showDialog("TOKEN REJECTED", this)
         }
 
-        if (!Util.isInternetConnected(this))
-        {
-            Utils.showDialog("You must be connected to the internet!",this)
+        if (!Util.isInternetConnected(this)) {
+            Utils.showDialog("You must be connected to the internet!", this)
         }
 
         onBackPressedDispatcher.addCallback(this) {
@@ -205,8 +209,7 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
-    override fun onDestroy()
-    {
+    override fun onDestroy() {
         super.onDestroy()
         // Release the SDK.
         GemSdk.release()
@@ -218,17 +221,14 @@ class MainActivity : AppCompatActivity()
         requestCode: Int,
         permissions: Array<out String>,
         grantResults: IntArray
-    )
-    {
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         if (requestCode != REQUEST_PERMISSIONS) return
 
-        for (item in grantResults)
-        {
-            if (item != PackageManager.PERMISSION_GRANTED)
-            {
-                Utils.showDialog("Location permission is required in order to select the current position cursor.",this)
+        for (item in grantResults) {
+            if (item != PackageManager.PERMISSION_GRANTED) {
+                Utils.showDialog("Location permission is required in order to select the current position cursor.", this)
                 return
             }
         }
@@ -238,11 +238,9 @@ class MainActivity : AppCompatActivity()
             PermissionsHelper.onRequestPermissionsResult(this, requestCode, grantResults)
 
             lateinit var positionListener: PositionListener
-            if (PositionService.position?.isValid() == true)
-            {
+            if (PositionService.position?.isValid() == true) {
                 Util.postOnMain { enableGPSButton() }
-            } else
-            {
+            } else {
                 positionListener = PositionListener {
                     if (!it.isValid()) return@PositionListener
 
@@ -257,8 +255,7 @@ class MainActivity : AppCompatActivity()
     // endregion -----------------------------------------------------------------------------------
     // ---------------------------------------------------------------------------------------------
     // region PRIVATE FUNCTIONS---------------------------------------------------------------------
-    private fun setupForecastButtons(coordinates: Coordinates?, name: String)
-    {
+    private fun setupForecastButtons(coordinates: Coordinates?, name: String) {
         val intent = Intent(this@MainActivity, ForecastActivity::class.java)
         SdkCall.execute {
             coordinates?.run {
@@ -326,8 +323,7 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
-    private fun enableGPSButton()
-    {
+    private fun enableGPSButton() {
         // Set actions for entering/ exiting following position mode.
         binding.gemSurfaceView.mapView?.apply {
             val isFollowingPosition = SdkCall.execute { isFollowingPosition() }
@@ -354,8 +350,7 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
-    private fun requestPermissions(activity: Activity): Boolean
-    {
+    private fun requestPermissions(activity: Activity): Boolean {
         val permissions = arrayListOf(
             Manifest.permission.INTERNET,
             Manifest.permission.ACCESS_NETWORK_STATE,
@@ -370,10 +365,10 @@ class MainActivity : AppCompatActivity()
 
     // ---------------------------------------------------------------------------------------------
 
-/*    private fun Context.isDarkThemeOn(): Boolean
-    {
-        return resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-    }*/
+    /*    private fun Context.isDarkThemeOn(): Boolean
+        {
+            return resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+        }*/
 
     // endregion------------------------------------------------------------------------------------
 }
@@ -381,8 +376,7 @@ class MainActivity : AppCompatActivity()
 // -------------------------------------------------------------------------------------------------
 //region --------------------------------------------------FOR TESTING------------------------------
 // -------------------------------------------------------------------------------------------------
-object EspressoIdlingResource
-{
+object EspressoIdlingResource {
     val espressoIdlingResource = CountingIdlingResource("MapSelectionIdlingResource")
     fun increment() = espressoIdlingResource.increment()
     fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit

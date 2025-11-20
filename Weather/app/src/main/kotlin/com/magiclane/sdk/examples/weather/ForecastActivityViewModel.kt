@@ -31,6 +31,7 @@ import java.text.SimpleDateFormat
 import java.time.DayOfWeek
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import kotlin.math.roundToInt
 
 // -------------------------------------------------------------------------------------------------
@@ -74,17 +75,22 @@ class ForecastActivityViewModel : ViewModel()
                     results[0].forecast?.let {
                         val list = mutableListOf<ForecastItem>()
                         //map the conditions list to a list of our data object, ForecastItem
+                        val formatter = SimpleDateFormat("HH:mm", Locale.UK)
+                        val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        val timeOffset = getUTCOffsetInMilliSeconds(coordinates) ?: 0
+                        formatter.timeZone = TimeZone.getTimeZone("GMT")
                         it.mapNotNullTo(list) { forecastItem ->
-                            when (forecastType)
+                            when (forecastType) 
                             {
                                 EForecastType.NOT_ASSIGNED -> null
                                 EForecastType.CURRENT ->
                                 {
+                                    val forecastItemTimestamp = forecastItem.timestamp?.asLong() ?: 0L
                                     updatedAt = results[0].updated?.run {
-                                        "Updated at: " + SimpleDateFormat("HH:MM", Locale.getDefault()).format(Date(asLong()))
+                                        "Updated at: " + formatter.format(Date(asLong() + timeOffset))
                                     } ?: ""
-                                    currentTime = "Current time: " + SimpleDateFormat("HH:MM", Locale.getDefault()).format(Date())
-                                    description = forecastItem.description ?: ""
+                                    currentTime = "Current time: " + formatter.format(Date(forecastItemTimestamp + timeOffset))
+                                    description = forecastItem.description ?: "aaaaaaaaaaaa"
                                     isDay = forecastItem.daylight == EDaylight.Day || forecastItem.daylight == EDaylight.NotAvailable
                                     forecastItem.parameters?.forEach { param ->
                                         when (param.type)
@@ -97,10 +103,8 @@ class ForecastActivityViewModel : ViewModel()
 
                                             "Sunrise", "Sunset" ->
                                             {
-                                                val result = TimezoneResult()
-                                                val offset = TimezoneService.getTimezoneInfoWithCoordinates(result, coordinates, Time.getUniversalTime()!!, ProgressListener(), false) * 1000
-                                                val timeValue = (param.value * 1000) + offset
-                                                val time = SimpleDateFormat("HH:MM", Locale.getDefault()).format(Date(timeValue.toLong()))
+                                                val timeValue = (param.value * 1000).toLong() + timeOffset
+                                                val time = formatter.format(Date(timeValue))
                                                 list.add(
                                                     ForecastItem(
                                                         conditionName = param.type ?: "",
@@ -135,10 +139,11 @@ class ForecastActivityViewModel : ViewModel()
                                 EForecastType.DAILY ->
                                 {
                                     val dateParam = forecastItem.timestamp?.run {
-                                        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(asLong()))
+                                        dateFormatter.format(Date(asLong() + timeOffset))
                                     } ?: ""
                                     val dayOfWeekParam = forecastItem.timestamp?.run {
-                                        DayOfWeek.entries[dayOfWeek - 1].name
+                                        val dayOfWeekIndex = if (dayOfWeek == 1) 6 else dayOfWeek - 2
+                                        DayOfWeek.entries[dayOfWeekIndex].name
                                     } ?: ""
                                     val temperatureHighParam = forecastItem.parameters?.find { param -> param.type == "TemperatureHigh" }?.run {
                                         String.format(Locale.getDefault(), "%d%s", value.roundToInt(), unit)
@@ -158,10 +163,10 @@ class ForecastActivityViewModel : ViewModel()
                                 EForecastType.HOURLY ->
                                 {
                                     val dateParam = forecastItem.timestamp?.run {
-                                        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(asLong()))
+                                        dateFormatter.format(Date(asLong() + timeOffset))
                                     } ?: ""
                                     val timeParam = forecastItem.timestamp?.run {
-                                        SimpleDateFormat("HH:MM", Locale.getDefault()).format(Date(asLong()))
+                                        formatter.format(Date(asLong()+ timeOffset))
                                     } ?: ""
                                     val isDayLight = forecastItem.daylight == EDaylight.Day || forecastItem.daylight == EDaylight.NotAvailable
 
@@ -200,5 +205,19 @@ class ForecastActivityViewModel : ViewModel()
         }
     }
     // ---------------------------------------------------------------------------------------------
+
+    private fun getUTCOffsetInMilliSeconds(coordinates: Coordinates): Int? = SdkCall.execute {
+        val timezoneResult = TimezoneResult()
+        val time = Time()
+
+        time.setUniversalTime()
+
+        TimezoneService.getTimezoneInfoWithCoordinates(
+            timezoneResult, coordinates, time,
+            ProgressListener()
+        )
+
+        timezoneResult.offset * 1000
+    }
 }
 // -------------------------------------------------------------------------------------------------

@@ -31,7 +31,6 @@ import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.Time
 import com.magiclane.sdk.core.TimezoneResult
 import com.magiclane.sdk.core.TimezoneService
-import com.magiclane.sdk.core.Xy
 import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.ECommonOverlayId
@@ -742,8 +741,7 @@ class MapSelectionModel : ViewModel() {
             landmark.coordinates?.let {
                 mapView.centerOnCoordinates(it, 84, visibleArea.center, animation, Double.MAX_VALUE, 0.0)
 
-                val displaySettings = HighlightRenderSettings()
-                displaySettings.setOptions(EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value)
+                val displaySettings = HighlightRenderSettings(EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value)
 
                 mapView.activateHighlightLandmarks(landmark, displaySettings)
             }
@@ -772,12 +770,11 @@ class MapSelectionModel : ViewModel() {
                     mapView.centerOnRectArea(it, -1, visibleArea, animation)
 
                     val displaySettings = HighlightRenderSettings(
-                        EHighlightOptions.ShowContour,
+                        EHighlightOptions.ShowContour.value or EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
                         Rgba(255, 98, 0, 255),
                         Rgba(255, 98, 0, 255),
                         0.75
                     )
-                    displaySettings.setOptions(EHighlightOptions.ShowContour.value or EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value)
 
                     mapView.activateHighlightLandmarks(landmark, displaySettings)
                 }
@@ -785,8 +782,7 @@ class MapSelectionModel : ViewModel() {
                 landmark.coordinates?.let {
                     mapView.centerOnCoordinates(it, -1, visibleArea.center, animation, Double.MAX_VALUE, 0.0)
 
-                    val displaySettings = HighlightRenderSettings(EHighlightOptions.ShowLandmark)
-                    displaySettings.setOptions(EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value)
+                    val displaySettings = HighlightRenderSettings(EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value)
 
                     mapView.activateHighlightLandmarks(landmark, displaySettings)
                 }

@@ -45,7 +45,7 @@ object CarNavigationDataFiller {
 
         val width = 500
         val height = 74
-        val lanesImage = getLanesImage(instr, width, height)?.second
+        val lanesImage = getLanesImage(instr, width, height)
 
         val distanceInMeters = instr?.timeDistanceToNextTurn?.totalDistance?: 0
 
@@ -130,7 +130,7 @@ object CarNavigationDataFiller {
         instr: NavigationInstruction?,
         width: Int,
         height: Int
-    ): Pair<Int, Bitmap?>? {
+    ): Bitmap? {
         instr ?: return null
         val bkColor = Rgba(0, 0, 0, 0)
         val activeColor = Rgba(255, 255, 255, 255)
@@ -142,6 +142,6 @@ object CarNavigationDataFiller {
             bkColor,
             activeColor,
             inactiveColor
-        ) ?: return null
+        )
     }
 }

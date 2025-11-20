@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity()
                     if (!trafficEvents.isNullOrEmpty())
                     {
                         val trafficEvent = trafficEvents[0]
-                        if (trafficEvent.isRoadblock())
+                        if (trafficEvent.isRoadblock)
                         {
                             return@execute
                         }

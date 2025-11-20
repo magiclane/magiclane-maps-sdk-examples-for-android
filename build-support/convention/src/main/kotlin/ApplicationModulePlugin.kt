@@ -162,7 +162,7 @@ class ApplicationModulePlugin : Plugin<Project> {
 
     private fun Project.configureGradleManagedDevices(commonExtension: CommonExtension<*, *, *, *, *, *>) {
         val deviceConfigs = listOf(
-            DeviceConfig("Pixel 8", 34, "google")
+            DeviceConfig("Pixel 9", 36, "google")
         )
 
         commonExtension.testOptions {
@@ -173,10 +173,13 @@ class ApplicationModulePlugin : Plugin<Project> {
             managedDevices {
                 allDevices {
                     deviceConfigs.forEach { deviceConfig ->
-                        maybeCreate(deviceConfig.taskName, ManagedVirtualDevice::class.java).apply {
+                        register(deviceConfig.taskName, ManagedVirtualDevice::class.java) {
                             device = deviceConfig.device
                             apiLevel = deviceConfig.apiLevel
                             systemImageSource = deviceConfig.systemImageSource
+                            pageAlignment = ManagedVirtualDevice.PageAlignment.FORCE_16KB_PAGES
+                            testedAbi = "x86_64"
+                            require64Bit = true
                         }
                     }
                 }

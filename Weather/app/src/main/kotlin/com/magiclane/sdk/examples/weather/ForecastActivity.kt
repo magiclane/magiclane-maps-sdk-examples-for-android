@@ -14,7 +14,9 @@ package com.magiclane.sdk.examples.weather
 // -------------------------------------------------------------------------------------------------
 
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
+import android.view.WindowInsets
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -50,6 +52,19 @@ class ForecastActivity : AppCompatActivity()
         //setup binding's layout as the content of th screen
         binding = ActivityForecastBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        //set window insets
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            binding.forecastBackground.setOnApplyWindowInsetsListener { view, insets ->
+                val systemBarsInsets = insets.getInsets(WindowInsets.Type.systemBars())
+                view.setPadding(
+                    systemBarsInsets.left,
+                    systemBarsInsets.top,
+                    systemBarsInsets.right,
+                    systemBarsInsets.bottom
+                )
+                insets
+            }
+        }
         //get arguments
         val latitude = intent.getDoubleExtra(LATITUDE_ARG_ID, 0.0)
         val longitude = intent.getDoubleExtra(LONGITUDE_ARG_ID, 0.0)
@@ -67,7 +82,7 @@ class ForecastActivity : AppCompatActivity()
             //when another sdk call is done on the sdk thread the process will be run synchronously  
             viewModel.getForecastList(forecastType, coordinatesReference)
         }
-        // use mutable date to observe the list when it is updated
+        // use mutable data to observe the list when it is updated
         viewModel.forecastItemsList.observe(this) { newList ->
 
             if (forecastType == EForecastType.CURRENT)

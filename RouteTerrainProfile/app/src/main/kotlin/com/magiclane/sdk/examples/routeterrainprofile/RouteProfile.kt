@@ -802,13 +802,10 @@ class RouteProfile(
                 highlightedLandmarkList.first().coordinates = it
                 mapView?.deactivateHighlight()
 
-                val settings = HighlightRenderSettings().also { settings ->
-                    settings.setOptions(
-                        EHighlightOptions.ShowLandmark.value
-                            or EHighlightOptions.Overlap.value
-                            or EHighlightOptions.NoFading.value
-                    )
-                }
+                val settings = HighlightRenderSettings(EHighlightOptions.ShowLandmark.value
+                    or EHighlightOptions.Overlap.value
+                    or EHighlightOptions.NoFading.value)
+                
                 mapView?.activateHighlightLandmarks(landmarkList, settings)
                 
                 Util.postOnMain { updateElevationChartPinPosition(distance.toFloat()) }
@@ -1751,13 +1748,9 @@ class RouteProfile(
             {
                 mapView?.deactivateHighlight()
                 
-                val settings = HighlightRenderSettings().also { 
-                    it.setOptions(
-                        EHighlightOptions.ShowContour.value  
-                        or EHighlightOptions.Overlap.value
-                        or EHighlightOptions.NoFading.value
-                    )
-                }
+                val settings = HighlightRenderSettings(EHighlightOptions.ShowContour.value
+                    or EHighlightOptions.Overlap.value
+                    or EHighlightOptions.NoFading.value)
                 
                 val task = {
                     parentActivity.gemSurfaceView.mapView?.activateHighlightLandmarks(highlightedLandmarkList, settings)
@@ -1766,13 +1759,9 @@ class RouteProfile(
             }
             else
             {
-                val settings = HighlightRenderSettings().also {
-                    it.setOptions(
-                        EHighlightOptions.ShowLandmark.value
-                            or EHighlightOptions.Overlap.value
-                            or EHighlightOptions.NoFading.value
-                    )
-                }
+                val settings = HighlightRenderSettings(EHighlightOptions.ShowLandmark.value
+                    or EHighlightOptions.Overlap.value
+                    or EHighlightOptions.NoFading.value)
                 mapView?.activateHighlightLandmarks(highlightedLandmarkList, settings)
                 
                 previousTouchXMeters = if (event == TTouchChartEvent.EDown.ordinal)

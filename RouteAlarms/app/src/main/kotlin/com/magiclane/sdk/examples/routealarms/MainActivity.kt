@@ -343,9 +343,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             val lmkList = LandmarkList()
             lmkList.add(landmark)
 
-            val displaySettings = HighlightRenderSettings().also { settings ->
-                settings.setOptions(EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value)
-            }
+            val displaySettings = HighlightRenderSettings(EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value)
 
             mapView.activateHighlightLandmarks(lmkList, displaySettings, 0)
         }
