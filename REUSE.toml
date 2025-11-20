@@ -2,7 +2,7 @@ version = 1
 
 SPDX-PackageName = "maps-sdk-examples-for-android"
 SPDX-PackageSupplier = "magiclane-developer@users.noreply.github.com"
-SPDX-PackageDownloadLocation = "https://github.com/magiclane-international/maps-sdk-examples-for-android"
+SPDX-PackageDownloadLocation = "https://github.com/magiclane/magiclane-maps-sdk-examples-for-android"
 SPDX-PackageComment = "Real-world use cases for the Magic Lane Maps SDK on Android to support faster app development and feature exploration."
 
 [[annotations]]
