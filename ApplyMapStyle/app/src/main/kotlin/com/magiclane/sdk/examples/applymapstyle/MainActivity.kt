@@ -34,14 +34,7 @@ class MainActivity : AppCompatActivity() {
 
     private val listener = ProgressListener.create(onCompleted = { errorCode, _ ->
         if (errorCode != GemError.NoError) {
-            showDialog(
-                "This example requires a valid token. " +
-                    "If you don't have a token, " +
-                    "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.",
-            ) {
-                finish()
-                exitProcess(0)
-            }
+            showInvalidTokenDialog()
         } else {
             fetchAvailableStyles()
         }
@@ -55,6 +48,22 @@ class MainActivity : AppCompatActivity() {
 
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        SdkSettings.onConnectionStatusUpdated = { isConnected ->
+            if (isConnected) {
+                showStatusMessage("Check application token", true)
+                SdkSettings.appAuthorization?.let {
+                    SdkCall.execute {
+                        SdkSettings.verifyAppAuthorization(it, listener)
+                    }
+                } ?: run {
+                    showInvalidTokenDialog()
+                }
+
+                SdkSettings.onConnectionStatusUpdated = {}
+            }
+        }
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -64,34 +73,6 @@ class MainActivity : AppCompatActivity() {
                 showDialog(errorMessage) {
                     finish()
                     exitProcess(0)
-                }
-            }
-        }
-
-        val onConnected = {
-            showStatusMessage("Check application token", true)
-            SdkSettings.appAuthorization?.let {
-                SdkCall.execute {
-                    SdkSettings.verifyAppAuthorization(it, listener)
-                }
-            } ?: run {
-                showDialog(
-                    "This example requires a valid token. " +
-                        "If you don't have a token, " +
-                        "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.",
-                ) {
-                    finish()
-                    exitProcess(0)
-                }
-            }
-        }
-        if (SdkSettings.isMapDataReady) {
-            onConnected()
-        } else {
-            SdkSettings.onConnectionStatusUpdated = { isConnected ->
-                if (isConnected) {
-                    onConnected()
-                    SdkSettings.onConnectionStatusUpdated = {}
                 }
             }
         }
@@ -139,6 +120,17 @@ class MainActivity : AppCompatActivity() {
             setCancelable(false)
             setContentView(dialogBinding.root)
             show()
+        }
+    }
+
+    private fun showInvalidTokenDialog() {
+        showDialog(
+            "This example requires a valid token. " +
+                "If you don't have a token, " +
+                "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.",
+        ) {
+            finish()
+            exitProcess(0)
         }
     }
 
