@@ -1,6 +1,0 @@
-<resources>
-    <string name="app_name">DisplayCurrentStreetName</string>
-    <string name="error">Error</string>
-    <string name="ok">OK</string>
-    <string name="not_connected">You must be connected to the internet!</string>
-</resources>

@@ -7,21 +7,24 @@
 
 package com.magiclane.sdk.examples.gpximport
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.Path
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.examples.gpximport.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.gpximport.databinding.DialogLayoutBinding
 import com.magiclane.sdk.routesandnavigation.ERouteTransportMode
 import com.magiclane.sdk.routesandnavigation.RoutingService
 import com.magiclane.sdk.util.SdkCall
@@ -32,29 +35,38 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
+    private var inflate = 0
+
     private val routingService = RoutingService(
         onStarted = {
             binding.progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { _, errorCode, _ ->
+        onCompleted = { routes, errorCode, _ ->
             binding.progressBar.visibility = View.GONE
 
             when (errorCode) {
-                GemError.NoError,
-                GemError.Cancel,
-                ->
-                    {
-                        // No action.
-                    }
+                GemError.NoError -> {
+                    if (!routes.isEmpty()) {
+                        val route = routes[0]
 
-                else ->
-                    {
-                        // There was a problem at computing the routing operation.
-                        showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
+                        SdkCall.execute {
+                            binding.gemSurfaceView.mapView?.presentRoute(route,
+                                                                        displayBubble = true,
+                                                                        displayRouteName = true,
+                                                                        displayTrafficIcon = false,
+                                                                        displayFerryIcon = false,
+                                                                        displayTollIcon = false,
+                                                                        edgeAreaInsets = getInsetsRect())
+                        }
                     }
+                }
+                else -> {
+                    // There was a problem at computing the routing operation.
+                    showDialog(getString(R.string.routing_error, GemError.getMessage(errorCode, this)))
+                }
             }
-        },
+        }
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,25 +75,34 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
+        inflate = resources.getDimension(R.dimen.padding_40).toInt()
 
-            // Defines an action that should be done when the world map is ready (Updated/ loaded).
-            calculateRouteFromGPX()
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            Util.postOnMain {
+                showDialog(errorMessage) {
+                    finish()
+                    exitProcess(0)
+                }
+            }
+        }
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+
+                calculateRouteFromGPX()
+            }
         }
 
         SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
+            showDialog(getString(R.string.token_rejected_message))
         }
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
+            showDialog(getString(R.string.internet_required))
         }
+
         onBackPressedDispatcher.addCallback(this) {
             finish()
             exitProcess(0)
@@ -102,32 +123,49 @@ class MainActivity : AppCompatActivity() {
         val input = applicationContext.resources.assets.open(gpxAssetsFilename)
 
         // Produce a Path based on the data in the buffer.
-        val track = Path.produceWithGpx(input/*.readBytes()*/) ?: return@execute
+        val track = Path.produceWithGpx(input) ?: return@execute
 
         val mapView = binding.gemSurfaceView.mapView ?: return@execute
 
         // Set the line color to red and display the path on the map.
         val lineColor = Rgba.red()
-        mapView.presentPath(track, lineColor, lineColor)
+        mapView.presentPath(track, lineColor, lineColor, 0.0, 0.6, false)
 
         // Set the transport mode to bike and calculate the route.
         routingService.calculateRoute(track, ERouteTransportMode.Bicycle)
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
+    }
+
+    fun getInsetsRect(): Rect {
+        val root = binding.root
+        val insets = ViewCompat.getRootWindowInsets(root)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+
+        val left = (insets?.left ?: 0) + inflate
+        val right = (insets?.right ?: 0) + inflate
+        val topInset = (insets?.top ?: 0) + inflate
+        val toolbarBottom = (binding.toolbar.bottom.takeIf { it > 0 } ?: 0) + inflate
+        val top = maxOf(topInset, toolbarBottom)
+        val bottom = (insets?.bottom ?: 0) + inflate
+
+        return Rect(left, top, right, bottom)
     }
 }

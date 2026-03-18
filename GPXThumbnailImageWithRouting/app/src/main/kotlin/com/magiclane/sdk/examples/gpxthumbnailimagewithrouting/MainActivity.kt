@@ -7,30 +7,26 @@
 
 package com.magiclane.sdk.examples.gpxthumbnailimagewithrouting
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
-import androidx.activity.OnBackPressedCallback
+import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemOffscreenSurfaceView
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.Path
 import com.magiclane.sdk.core.Rect
-import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
-import com.magiclane.sdk.d3scene.Animation
-import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.EViewCameraTransitionStatus
 import com.magiclane.sdk.d3scene.EViewDataTransitionStatus
 import com.magiclane.sdk.examples.gpxthumbnailimagewithrouting.databinding.ActivityMainBinding
-import com.magiclane.sdk.routesandnavigation.ELineType
+import com.magiclane.sdk.examples.gpxthumbnailimagewithrouting.databinding.DialogLayoutBinding
 import com.magiclane.sdk.routesandnavigation.ERouteTransportMode
 import com.magiclane.sdk.routesandnavigation.RouteRenderSettings
 import com.magiclane.sdk.routesandnavigation.RoutingService
@@ -54,7 +50,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val padding by lazy {
-        resources.getDimension(R.dimen.padding).toInt()
+        resources.getDimension(R.dimen.big_padding).toInt()
     }
 
     private val routingService = RoutingService(
@@ -72,15 +68,13 @@ class MainActivity : AppCompatActivity() {
 
                     SdkCall.execute {
                         gemOffscreenSurfaceView.mapView?.let { mapView ->
-                            mapView.preferences?.mapLabelsFading = false
                             mapView.onViewRendered = onViewRendered@{ tivStatus, camStatus ->
                                 if (screenshotTaken) return@onViewRendered
 
-                                if (tivStatus == EViewDataTransitionStatus.Complete && camStatus == EViewCameraTransitionStatus.Stationary) {
+                                if ((tivStatus == EViewDataTransitionStatus.Complete) &&
+                                    (camStatus == EViewCameraTransitionStatus.Stationary)) {
                                     Util.postOnMain {
-                                        binding.statusText.text = getString(
-                                            R.string.taking_screenshot,
-                                        )
+                                        binding.statusText.text = getString(R.string.taking_screenshot)
                                     }
                                     gemOffscreenSurfaceView.takeScreenshot { bitmap ->
                                         Util.postOnMain {
@@ -93,42 +87,28 @@ class MainActivity : AppCompatActivity() {
                                             }
                                         }
                                         screenshotTaken = true
+                                        gemOffscreenSurfaceView.destroy()
                                     }
 
-                                    gemOffscreenSurfaceView.mapView?.onViewRendered = null
+                                    mapView.onViewRendered = null
                                 }
                             }
 
-                            val margin = 2 * padding
                             val routeRenderSettings = RouteRenderSettings().also {
-                                it.innerColor = Rgba.orange()
-                                it.outerColor = Rgba.black()
                                 it.innerSize = 1.0
-                                it.outerSize = 0.5
-                                it.lineType = ELineType.LT_Solid
                             }
                             mapView.presentRoute(
                                 routes[0],
-                                animation = Animation(
-                                    animation = EAnimation.Linear,
-                                    duration = 10,
-                                ),
-                                edgeAreaInsets = Rect(margin, margin, margin, margin),
-                                routeRenderSettings = routeRenderSettings,
+                                edgeAreaInsets = Rect(padding, padding, padding, padding),
+                                routeRenderSettings = routeRenderSettings
                             )
                         }
                     }
                 }
-
-                GemError.Cancel -> {
-                    binding.progressBar.isVisible = false
-                    // No action.
-                }
-
                 else -> {
                     binding.progressBar.isVisible = false
                     // There was a problem at computing the routing operation.
-                    showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
+                    showDialog(getString(R.string.routing_error, GemError.getMessage(errorCode, this)))
                 }
             }
         },
@@ -139,58 +119,51 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
-        }
-
-        if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!") {
-                exitProcess(0)
-            }
-        }
-
-        if (GemSdk.initSdkWithDefaults(this) != GemError.NoError) {
-            // The SDK initialization was not completed.
-            finish()
-        }
-
-        gemOffscreenSurfaceView = GemOffscreenSurfaceView(
-            thumbnailWidth,
-            thumbnailHeight,
-            resources.displayMetrics.densityDpi,
-        )
-
-        binding.statusText.text = getString(R.string.waiting_for_data)
-
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
-
-            binding.statusText.text = getString(R.string.map_data_ready)
-
-            calculateRouteFromGPX()
-        }
-
-        onBackPressedDispatcher.addCallback(
-            this, /* lifecycle owner */
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    // Back is pressed... Finishing the activity
+        val error = GemSdk.initSdkWithDefaults(this)
+        if (error != GemError.NoError) {
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            Util.postOnMain {
+                showDialog(errorMessage) {
                     finish()
                     exitProcess(0)
                 }
-            },
-        )
+            }
+        }
+
+        gemOffscreenSurfaceView = GemOffscreenSurfaceView(thumbnailWidth, thumbnailHeight, resources.displayMetrics.densityDpi, onDefaultMapViewCreated = { mapView ->
+            mapView.preferences?.apply {
+                mapLabelsFading = false
+            }
+        })
+
+        binding.statusText.text = getString(R.string.waiting_for_data)
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+
+                binding.statusText.text = getString(R.string.map_data_ready)
+
+                calculateRouteFromGPX()
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            showDialog(getString(R.string.token_rejected_message))
+        }
+
+        if (!Util.isInternetConnected(this)) {
+            showDialog(getString(R.string.internet_required))
+        }
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-
-        gemOffscreenSurfaceView.destroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
@@ -203,26 +176,32 @@ class MainActivity : AppCompatActivity() {
         val input = applicationContext.resources.assets.open(gpxAssetsFilename)
 
         // Produce a Path based on the data in the buffer.
-        val track = Path.produceWithGpx(input/*.readBytes()*/) ?: return@execute
+        val track = Path.produceWithGpx(input) ?: return@execute
 
-        // Set the transport mode to bike and calculate the route.
-        routingService.calculateRoute(track, ERouteTransportMode.Car)
+        // Set the transport mode to car and calculate the route.
+        val error = routingService.calculateRoute(track, ERouteTransportMode.Car)
+        if (error != GemError.NoError) {
+            Util.postOnMain {
+                showDialog(getString(R.string.routing_error, GemError.getMessage(error, this)))
+            }
+        }
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String, dialogButtonCallback: () -> Unit = {}) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
-                dialogButtonCallback()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }

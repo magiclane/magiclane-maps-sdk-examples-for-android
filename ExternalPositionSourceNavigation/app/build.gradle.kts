@@ -27,6 +27,7 @@ dependencies {
     implementation(shared.androidx.junit)
     implementation(shared.androidx.espresso.core)
     implementation(shared.material)
+    implementation(shared.androidx.media)
 
     testImplementation(shared.junit)
     androidTestImplementation(project(":build-testing"))

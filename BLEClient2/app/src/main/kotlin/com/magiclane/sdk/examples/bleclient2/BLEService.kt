@@ -86,7 +86,7 @@ class BLEService : Service() {
                         val result = it.discoverServices()
                         Log.i(
                             tag,
-                            "BluetoothGattCallback.onConnectionStateChange(): attempting to start service discovery:" + result,
+                            "BluetoothGattCallback.onConnectionStateChange(): attempting to start service discovery:$result",
                         )
                     }
                 }
@@ -109,13 +109,15 @@ class BLEService : Service() {
             }
         }
 
+        @Suppress("DEPRECATION")
+        @Deprecated("Deprecated in Java")
         override fun onCharacteristicRead(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
-            status: Int,
+            status: Int
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic)
+                broadcastUpdate(characteristic, characteristic.value)
             }
 
             if ((characteristic.properties or BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
@@ -123,8 +125,30 @@ class BLEService : Service() {
             }
         }
 
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray,
+            status: Int
+        ) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                broadcastUpdate(characteristic, value)
+            }
+
+            if ((characteristic.properties or BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                setCharacteristicNotification(characteristic, true)
+            }
+        }
+
+        @Suppress("DEPRECATION")
+        @Deprecated("Deprecated in Java")
         override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
-            broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic)
+            broadcastUpdate(characteristic, characteristic.value)
+        }
+
+        @Suppress("DEPRECATION")
+        override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, value: ByteArray) {
+            broadcastUpdate(characteristic, characteristic.value)
         }
 
         override fun onServiceChanged(gatt: BluetoothGatt) {
@@ -153,15 +177,10 @@ class BLEService : Service() {
         sendBroadcast(intent)
     }
 
-    private fun broadcastUpdate(action: String, characteristic: BluetoothGattCharacteristic) {
-        val intent = Intent(action)
+    private fun broadcastUpdate(characteristic: BluetoothGattCharacteristic, data: ByteArray) {
+        val intent = Intent(ACTION_DATA_AVAILABLE)
 
-        // This is special handling for the Heart Rate Measurement profile.  Data parsing is
-        // carried out as per profile specifications:
-        // http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
-
-        val data = characteristic.value
-        if ((data != null) && data.isNotEmpty()) {
+        if (data.isNotEmpty()) {
             if (TURN_INSTRUCTION == characteristic.uuid) {
                 if (turnInstructionSize == 0) {
                     when (data[0].toInt()) {
@@ -457,6 +476,7 @@ class BLEService : Service() {
      * @param characteristic Characteristic to act on.
      * @param enabled If true, enable notification.  False otherwise.
      */
+    @Suppress("DEPRECATION")
     fun setCharacteristicNotification(characteristic: BluetoothGattCharacteristic, enabled: Boolean) {
         if ((bluetoothAdapter == null) || (bluetoothGatt == null)) {
             Log.w(tag, "BluetoothAdapter not initialized")
@@ -475,8 +495,13 @@ class BLEService : Service() {
         }
 
         val descriptor = characteristic.getDescriptor(CLIENT_CONFIG)
-        descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-        bluetoothGatt?.writeDescriptor(descriptor)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            bluetoothGatt?.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+        }
+        else {
+            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            bluetoothGatt?.writeDescriptor(descriptor)
+        }
     }
 
     /**

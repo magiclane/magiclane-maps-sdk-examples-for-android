@@ -8,14 +8,13 @@
 	android:focusable="true"
     android:layoutDirection="ltr"
 	android:background="@drawable/rounded_left_corners_white"
-    tools:targetApi="jelly_bean_mr1">
-	
+    >
+
 	<include android:id="@+id/nav_speed_limit_sign"
 		layout="@layout/nav_speed_limit_sign"
 		android:layout_width="@dimen/nav_speed_panel_sign_size"
 		android:layout_height="@dimen/nav_speed_panel_sign_size"
 		android:layout_marginStart="@dimen/nav_speed_panel_sign_padding"
-        android:layout_marginLeft="@dimen/nav_speed_panel_sign_padding"
 		app:layout_constraintStart_toStartOf="parent"
 		app:layout_constraintTop_toTopOf="parent"
 		app:layout_constraintBottom_toBottomOf="parent"
@@ -25,22 +24,19 @@
 		android:id="@+id/nav_current_speed"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		app:layout_constraintTop_toTopOf="parent" 
+		app:layout_constraintTop_toTopOf="parent"
 		app:layout_constraintStart_toEndOf="@id/nav_speed_limit_sign"
 		app:layout_constraintBottom_toTopOf="@id/nav_current_speed_unit"
 		app:layout_constraintEnd_toEndOf="parent"
 		android:paddingStart="@dimen/list_item_padding"
-        android:paddingLeft="@dimen/list_item_padding"
 		app:layout_goneMarginStart="@dimen/nav_speed_panel_lateral_padding"
 		android:layout_marginEnd="@dimen/list_item_padding"
-        android:layout_marginRight="@dimen/list_item_padding"
 		android:paddingEnd="@dimen/route_status_text_lateral_padding"
-        android:paddingRight="@dimen/route_status_text_lateral_padding"
 		app:layout_constraintVertical_bias="0.65"
 		app:layout_constraintVertical_chainStyle="packed"
 		android:textSize="@dimen/speed_panel_text_size"
-		android:textStyle="bold"/>
-		
+		android:textStyle="bold"
+        tools:ignore="SpUsage" />
 
 	<TextView
 		android:id="@+id/nav_current_speed_unit"
@@ -52,7 +48,6 @@
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_goneMarginStart="@dimen/nav_speed_panel_lateral_padding"
 		android:paddingEnd="@dimen/route_status_text_lateral_padding"
-        android:paddingRight="@dimen/route_status_text_lateral_padding"
 		android:translationY="-6dp"
 		android:textSize="@dimen/small_text_size" />
 

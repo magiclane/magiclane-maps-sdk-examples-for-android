@@ -51,7 +51,7 @@ class NavigationActivity : AppCompatActivity() {
     private var padding: Int = 0
 
     enum class ETurnEvent(val value: Int) {
-        NotAvailable(0),
+        // NotAvailable(0),
         Straight(1),
         Right(2),
         Right1(3),
@@ -78,9 +78,9 @@ class NavigationActivity : AppCompatActivity() {
         ExitRight(24),
         ExitRight1(25),
         ExitRight2(26),
-        InfoGeneric(27),
-        DriveOn(28),
-        ExitNo(29),
+        // InfoGeneric(27),
+        // DriveOn(28),
+        // ExitNo(29),
         ExitLeft(30),
         ExitLeft1(31),
         ExitLeft2(32),
@@ -89,16 +89,15 @@ class NavigationActivity : AppCompatActivity() {
         StayOn(35),
         BoatFerry(36),
         RailFerry(37),
-        InfoLane(38),
-        InfoSign(39),
+        // InfoLane(38),
+        // InfoSign(39),
         LeftRight(40),
         RightLeft(41),
         KeepLeft(42),
         KeepRight(43),
         Start(44),
         Intermediate(45),
-        Stop(46),
-        ;
+        Stop(46);
 
         override fun toString(): String = value.toString()
     }
@@ -132,6 +131,7 @@ class NavigationActivity : AppCompatActivity() {
     // ACTION_DATA_AVAILABLE: received data from the device.  This can be a result of read
     //                        or notification operations.
     private val gattUpdateReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        @SuppressLint("SetTextI18n")
         override fun onReceive(context: Context, intent: Intent) {
             val action = intent.action
             if (BLEService.ACTION_GATT_CONNECTED == action) {
@@ -378,7 +378,7 @@ class NavigationActivity : AppCompatActivity() {
 
                                 if (speedInKmH.isNotEmpty()) {
                                     binding.speed.visibility = View.VISIBLE
-                                    binding.speed.text = speedInKmH + " km/h"
+                                    binding.speed.text = "$speedInKmH km/h"
                                 } else {
                                     binding.speed.visibility = View.GONE
                                 }
@@ -481,13 +481,14 @@ class NavigationActivity : AppCompatActivity() {
         }
     }
 
+    @Suppress("SameParameterValue")
     private fun showError(message: String) {
         Log.e(tag, message)
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     /**
-     * Formats the given time seconds as pair of (value, unit).
+     * Formats the given time seconds as the pair of (value, unit).
      * @param timeInSeconds Value to be formatted.
      * @param bForceHours Forces to format in hours even if timeInSeconds isn't big enough.
      * @param bCapitalizeResult Capitalize the whole result pair.

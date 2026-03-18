@@ -4,4 +4,7 @@
     <string name="pedestrian">Pedestrian</string>
     <string name="error">Error</string>
     <string name="ok">Ok</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="invalid_token">This example requires a valid token. If you don\'t have a token, check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.</string>
 </resources>

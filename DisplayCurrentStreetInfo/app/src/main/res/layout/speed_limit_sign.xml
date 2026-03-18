@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="@dimen/speed_panel_sign_size"
+        android:layout_height="@dimen/speed_panel_sign_size"
+        android:background="@drawable/speed_limit_sign">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/current_speed_limit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:paddingBottom="@dimen/speed_panel_sign_padding"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/speed_panel_text_size"
+            android:textStyle="bold"
+            tools:ignore="SpUsage" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</layout>

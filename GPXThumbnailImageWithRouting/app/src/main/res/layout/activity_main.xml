@@ -34,7 +34,7 @@
 
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progress_bar"
-            style="?android:attr/progressBarStyle"
+            android:indeterminate="true"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="@id/map_thumbnail_image_view"

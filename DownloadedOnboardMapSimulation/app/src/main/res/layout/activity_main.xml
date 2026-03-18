@@ -13,12 +13,12 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            style="?android:attr/progressBarStyle"
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progress_bar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:visibility="gone"
+            android:indeterminate="true"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -50,10 +50,11 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/toolbar"
-            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'>
+            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            >
 
-            <ImageView
+            <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/nav_instruction_icon"
                 android:layout_width="@dimen/turn_image_size"
                 android:layout_height="@dimen/turn_image_size"
@@ -65,7 +66,7 @@
                 app:layout_constraintTop_toTopOf="parent"
                 tools:ignore="ContentDescription" />
 
-            <TextView
+            <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/nav_instruction_distance"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -78,7 +79,7 @@
                 app:layout_constraintStart_toStartOf="@id/nav_instruction_icon"
                 app:layout_constraintTop_toBottomOf="@id/nav_instruction_icon" />
 
-            <TextView
+            <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/nav_instruction"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -106,10 +107,10 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}">
+            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}">
 
-            <TextView
+            <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/eta"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -123,7 +124,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <TextView
+            <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/rtt"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -137,7 +138,7 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
 
-            <TextView
+            <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/rtd"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -153,7 +154,7 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/follow_cursor_button"
+            android:id="@+id/follow_gps_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/big_padding"
@@ -166,7 +167,7 @@
             app:tint="@android:color/white"
             tools:ignore="ContentDescription" />
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/status_text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

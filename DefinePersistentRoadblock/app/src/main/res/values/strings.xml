@@ -5,4 +5,7 @@
     <string name="ok">OK</string>
 
     <string name="hint">Zoom in and tap on any road in order to place a roadblock for 1 minute.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="no_internet_message">You must be connected to the internet!</string>
 </resources>

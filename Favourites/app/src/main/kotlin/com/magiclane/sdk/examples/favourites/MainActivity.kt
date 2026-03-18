@@ -7,34 +7,40 @@
 
 package com.magiclane.sdk.examples.favourites
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.button.MaterialButton
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.ImageDatabase
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.RectangleGeographicArea
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.d3scene.Animation
+import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.EHighlightOptions
 import com.magiclane.sdk.d3scene.HighlightRenderSettings
 import com.magiclane.sdk.examples.favourites.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.favourites.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.places.LandmarkStore
 import com.magiclane.sdk.places.LandmarkStoreService
 import com.magiclane.sdk.places.SearchService
+import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.SdkImages
 import com.magiclane.sdk.util.Util
@@ -43,54 +49,54 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
-    //region TESTING
-    companion object {
-        const val RESOURCE = "GLOBAL"
-    }
-
-    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
-    //endregion
-
     private var imageSize: Int = 0
 
+    private var leftInset = 0
+
+    private var rightInset = 0
+
+    private var bottomInset = 0
+
+    private var inflate = 0
+
+    private var toolbarHeight = 0
+
+    private var bottomDialogHeight = 0
+
     // Define a Landmark Store so we can write the favourite landmarks in the data folder.
-    private lateinit var store: LandmarkStore
+    private var store: LandmarkStore? = null
+
+    private lateinit var landmark: Landmark
 
     private val searchService = SearchService(
         onStarted = {
             binding.progressBar.visibility = View.VISIBLE
-            showStatusMessage("Search service has started!")
+            showStatusMessage(getString(R.string.searching))
         },
 
         onCompleted = { results, errorCode, _ ->
             binding.progressBar.visibility = View.GONE
-            showStatusMessage("Search service completed with error code: $errorCode")
 
             when (errorCode) {
-                GemError.NoError ->
-                    {
-                        if (results.isNotEmpty()) {
-                            val landmark = results[0]
-                            flyTo(landmark)
-                            displayLocationInfo(landmark)
-                            showStatusMessage("The search completed without errors.")
-                        } else { // The search completed without errors, but there were no results found.
-                            showStatusMessage(
-                                "The search completed without errors, but there were no results found.",
-                            )
+                GemError.NoError -> {
+                    if (results.isNotEmpty()) {
+                        landmark = results[0]
+
+                        showLocationDetailsPanel(GemUtil.formatName(landmark), GemUtil.getLandmarkDescription(landmark, true)) {
+                            highlightLandmarkOnMap(landmark, getFreeScreenRect(), isFavourite(landmark))
                         }
+
+                        binding.statusText.visibility = View.GONE
+                    } else {
+                        showStatusMessage(getString(R.string.no_search_results))
                     }
-                GemError.Cancel ->
-                    { // The search action was cancelled.
-                    }
-                else ->
-                    {
-                        // There was a problem at computing the search operation.
-                        showDialog("Search service error: ${GemError.getMessage(errorCode)}")
-                    }
+                }
+                else -> {
+                    showStatusMessage(getString(R.string.search_completed_with_error, GemError.getMessage(errorCode, this)))
+                }
             }
             EspressoIdlingResource.decrement()
-        },
+        }
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -101,39 +107,57 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         imageSize = resources.getDimensionPixelSize(R.dimen.image_size)
+        inflate = resources.getDimension(R.dimen.padding_40).toInt()
 
-        EspressoIdlingResource.increment()
-        val onReady = {
-            // Defines an action that should be done after the world map is ready.
-            SdkCall.execute {
-                createStore()
+        // Measure app bar height after layout
+        binding.toolbar.post {
+            toolbarHeight = binding.toolbar.height
+        }
 
-                val text = "Statue of Liberty New York"
-                val coordinates = Coordinates(40.68925476, -74.04456329)
+        // Set up window insets listener
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            leftInset = systemBars.left + inflate
+            rightInset = systemBars.right + inflate
+            bottomInset = systemBars.bottom + inflate
+            insets
+        }
 
-                searchService.searchByFilter(text, coordinates)
+        binding.gemSurfaceView.onDefaultMapViewCreated = { mapView ->
+            store = LandmarkStoreService().createLandmarkStore("Favourites")?.first
+            store?.let {
+                mapView.preferences?.landmarkStores?.addAllStoreCategories(it.id)
             }
         }
-        if (SdkSettings.isMapDataReady) {
-            onReady()
-        } else {
-            SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-                if (!isReady) return@onMapDataReady
-                onReady()
+
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            Util.postOnMain {
+                showDialog(errorMessage) {
+                    finish()
+                    exitProcess(0)
+                }
+            }
+        }
+
+        EspressoIdlingResource.increment()
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+
+                SdkCall.execute {
+                    searchService.searchByFilter("Statue of Liberty New York", Coordinates(40.68925476, -74.04456329))
+                }
             }
         }
 
         SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
+            showDialog(getString(R.string.token_rejected_message))
         }
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
+            showDialog(getString(R.string.internet_required))
         }
 
         onBackPressedDispatcher.addCallback(this) {
@@ -149,19 +173,21 @@ class MainActivity : AppCompatActivity() {
         GemSdk.release()
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }
@@ -175,78 +201,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun flyTo(landmark: Landmark) = SdkCall.execute {
-        landmark.geographicArea?.let { area ->
-            binding.gemSurfaceView.mapView?.let { mainMapView ->
-                // Center the map on a specific area using the provided animation.
-                mainMapView.centerOnArea(area)
-
-                // Highlights a specific area on the map using the provided settings.
-                val displaySettings = HighlightRenderSettings(
-                    EHighlightOptions.ShowContour,
-                    Rgba(255, 98, 0, 255),
-                    Rgba(255, 98, 0, 255),
-                    0.75,
-                )
-                mainMapView.activateHighlightLandmarks(landmark, displaySettings)
-            }
-        }
-    }
-
-    private fun createStore() {
-        store = LandmarkStoreService().createLandmarkStore("Favourites")?.first!!
-        binding.gemSurfaceView.mapView?.let { mainMapView ->
-            SdkCall.execute {
-                mainMapView.preferences?.landmarkStores?.addAllStoreCategories(store.id)
-            }
-        }
-    }
-
-    private fun displayLocationInfo(landmark: Landmark) {
-        // Display a view containing the necessary information about the landmark.
-        var name = ""
-        var coordinates = ""
-        EspressoIdlingResource.increment()
-
-        SdkCall.execute {
-            name = landmark.name ?: "Unnamed Location"
-            landmark.coordinates?.apply { coordinates = "$latitude, $longitude" }
-        }
-
-        Util.postOnMain {
-            binding.locationDetails.apply {
-                val nameView = findViewById<TextView>(R.id.name)
-                val coordinatesView = findViewById<TextView>(R.id.coordinates)
-                val imageView = findViewById<ImageView>(R.id.favourites_icon)
-
-                // Update the favourites icon based on the status of the landmark.
-                updateFavouritesIcon(imageView, getFavouriteId(landmark) != -1)
-
-                // Display the name and coordinates of the landmark.
-                nameView.text = name
-                coordinatesView.text = coordinates
-
-                // Treat favourites icon click event (Add/ Remove from favourites)
-                imageView.setOnClickListener {
-                    val landmarkId = getFavouriteId(landmark)
-                    if (landmarkId != -1) {
-                        deleteFromFavourites(landmarkId)
-                        updateFavouritesIcon(imageView, false)
-
-                        showStatusMessage("The landmark was deleted from favourites.")
-                    } else {
-                        addToFavourites(landmark)
-                        updateFavouritesIcon(imageView, true)
-                        showStatusMessage("The landmark was added to favourites.")
-                    }
-                }
-                this.visibility = View.VISIBLE
-            }
-
-            EspressoIdlingResource.decrement()
-        }
-    }
-
     private fun getFavouriteId(landmark: Landmark): Int = SdkCall.execute {
         /**
          * Get the ID of the landmark saved in the store so we can use it to remove it
@@ -254,7 +208,7 @@ class MainActivity : AppCompatActivity() {
          */
         val radius = 5.0 // meters
         val area = landmark.coordinates?.let { RectangleGeographicArea(it, radius, radius) }
-        val landmarks = area?.let { store.getLandmarksByArea(it) } ?: return@execute -1
+        val landmarks = area?.let { store?.getLandmarksByArea(it) } ?: return@execute -1
 
         val threshold = 0.00001
         landmarks.forEach {
@@ -270,6 +224,8 @@ class MainActivity : AppCompatActivity() {
         -1
     } ?: -1
 
+    private fun isFavourite(landmark: Landmark): Boolean = getFavouriteId(landmark) != -1
+
     private fun addToFavourites(landmark: Landmark) = SdkCall.execute {
         val lmk = Landmark()
         lmk.assign(landmark)
@@ -280,15 +236,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Add the landmark to the desired LandmarkStore
-        store.addLandmark(lmk)
+        store?.addLandmark(lmk)
     }
 
     private fun deleteFromFavourites(landmarkId: Int) = SdkCall.execute {
         // Remove the landmark associated to this ID from the LandmarkStore.
-        store.removeLandmark(landmarkId)
+        store?.removeLandmark(landmarkId)
     }
 
-    private fun updateFavouritesIcon(imageView: ImageView, isFavourite: Boolean) {
+    private fun setFavouriteButtonIcon(button: MaterialButton, isFavourite: Boolean) {
         val bmp = SdkCall.execute {
             if (isFavourite) {
                 ContextCompat.getDrawable(this, R.drawable.baseline_star_24)
@@ -298,8 +254,122 @@ class MainActivity : AppCompatActivity() {
         }
 
         bmp?.let {
-            // imageView.setImageBitmap(bmp)
-            imageView.setImageDrawable(bmp)
+            button.icon = bmp
+        }
+    }
+
+    private fun getFreeScreenRect(): Rect {
+        return Rect(
+            leftInset,
+            toolbarHeight + inflate,
+            binding.root.width - rightInset,
+            binding.root.height - bottomDialogHeight - inflate,
+        )
+    }
+
+    private fun highlightLandmarkOnMap(landmark: Landmark, rect: Rect, isFavorite: Boolean, flyToLandmark: Boolean = true) = SdkCall.execute {
+        binding.gemSurfaceView.mapView?.let { mapView ->
+            mapView.deactivateAllHighlights()
+
+            landmark.image = ImageDatabase().getImageById(SdkImages.Core.Search_Results_Pin.value)
+
+            val contour = landmark.getContourGeographicArea()
+            var highlightSettings: HighlightRenderSettings
+
+            @Suppress("VerboseNullabilityAndEmptiness")
+            if ((contour != null) && !contour.isEmpty()) {
+                if (flyToLandmark) {
+                    binding.gemSurfaceView.mapView?.centerOnRectArea(
+                        contour,
+                        zoomLevel = -1,
+                        viewRc = rect,
+                        Animation(EAnimation.Linear, 900)
+                    )
+                }
+
+                val highlightOptions = if (isFavorite) {
+                    EHighlightOptions.ShowContour.value
+                } else {
+                    EHighlightOptions.ShowContour.value or EHighlightOptions.ShowLandmark.value
+                }
+
+                highlightSettings = HighlightRenderSettings(
+                    highlightOptions,
+                    Rgba(255, 98, 0, 255),
+                    Rgba(255, 98, 0, 255),
+                    0.75,
+                ).also {
+                    it.imageSize = 6.0
+                }
+
+                mapView.activateHighlightLandmarks(
+                    landmark,
+                    highlightSettings
+                )
+            } else {
+                if (flyToLandmark) {
+                    landmark.coordinates?.let {
+                        binding.gemSurfaceView.mapView?.centerOnCoordinates(
+                            it,
+                            -1,
+                            rect.center,
+                            Animation(EAnimation.Linear, 900),
+                            0.0,
+                            0.0,
+                        )
+                    }
+                }
+
+                if (!isFavorite) {
+                    highlightSettings = HighlightRenderSettings(
+                        EHighlightOptions.ShowLandmark,
+                    ).also {
+                        it.imageSize = 6.0
+                    }
+
+                    mapView.activateHighlightLandmarks(
+                        landmark,
+                        highlightSettings
+                    )
+                }
+            }
+        }
+    }
+
+    private fun showLocationDetailsPanel(
+        title: String,
+        message: String,
+        onViewCreated: (() -> Unit)? = null
+    ) {
+        binding.locationDetailsPanel.apply {
+            this.title.text = title
+            this.message.text = message
+
+            setFavouriteButtonIcon(favoritesButton, isFavourite(landmark))
+
+            favoritesButton.setOnClickListener {
+                val landmarkId = getFavouriteId(landmark)
+                val isFavourite = if (landmarkId != -1) {
+                    deleteFromFavourites(landmarkId)
+                    setFavouriteButtonIcon(favoritesButton, false)
+                    false
+                } else {
+                    addToFavourites(landmark)
+                    setFavouriteButtonIcon(favoritesButton, true)
+                    true
+                }
+
+                highlightLandmarkOnMap(landmark, getFreeScreenRect(), isFavourite, false)
+            }
+
+            // Show the panel
+            root.visibility = View.VISIBLE
+
+            // Measure height after it's shown
+            root.post {
+                bottomDialogHeight = root.height
+                onViewCreated?.invoke()
+            }
         }
     }
 }

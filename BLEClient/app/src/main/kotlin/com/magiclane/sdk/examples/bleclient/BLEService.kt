@@ -40,7 +40,7 @@ import com.magiclane.sdk.examples.bleclient.SampleGattAttributes.TURN_INSTRUCTIO
 class BLEService : Service() {
 
     interface IBLEServiceObserver {
-        fun onCharacteristicRead(characteristic: BluetoothGattCharacteristic)
+        fun onCharacteristicRead(bluetoothGattCharacteristic: BluetoothGattCharacteristic)
     }
 
     private var bluetoothManager: BluetoothManager? = null
@@ -86,7 +86,7 @@ class BLEService : Service() {
                         val result = it.discoverServices()
                         Log.i(
                             tag,
-                            "BluetoothGattCallback.onConnectionStateChange(): attempting to start service discovery:" + result,
+                            "BluetoothGattCallback.onConnectionStateChange(): attempting to start service discovery: $result",
                         )
                     }
                 }
@@ -112,10 +112,11 @@ class BLEService : Service() {
         override fun onCharacteristicRead(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
+            value: ByteArray,
             status: Int,
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic)
+                broadcastUpdate(characteristic, value)
             }
 
             /**
@@ -130,8 +131,42 @@ class BLEService : Service() {
             }
         }
 
-        override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
-            broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic)
+        @Suppress("DEPRECATION")
+        @Deprecated("Deprecated in Java")
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int,
+        ) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                broadcastUpdate(characteristic, characteristic.value)
+            }
+
+            /**
+             * if ((characteristic.properties or BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0)
+             * {
+             * setCharacteristicNotification(characteristic, true)
+             * }
+             */
+
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                bleServiceObserver?.onCharacteristicRead(characteristic)
+            }
+        }
+
+        override fun onCharacteristicChanged(gatt: BluetoothGatt,
+                                             characteristic: BluetoothGattCharacteristic,
+                                             value: ByteArray)
+        {
+            broadcastUpdate(characteristic, value)
+        }
+
+        @Deprecated("Deprecated in Java")
+        override fun onCharacteristicChanged(gatt: BluetoothGatt,
+                                             characteristic: BluetoothGattCharacteristic)
+        {
+            @Suppress("DEPRECATION")
+            broadcastUpdate(characteristic, characteristic.value)
         }
 
         override fun onServiceChanged(gatt: BluetoothGatt) {
@@ -161,15 +196,10 @@ class BLEService : Service() {
         sendBroadcast(intent)
     }
 
-    private fun broadcastUpdate(action: String, characteristic: BluetoothGattCharacteristic) {
-        val intent = Intent(action)
+    private fun broadcastUpdate(characteristic: BluetoothGattCharacteristic, data: ByteArray) {
+        val intent = Intent(ACTION_DATA_AVAILABLE)
 
-        // This is special handling for the Heart Rate Measurement profile.  Data parsing is
-        // carried out as per profile specifications:
-        // http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
-
-        val data = characteristic.value
-        if ((data != null) && data.isNotEmpty()) {
+        if (data.isNotEmpty()) {
             if (TURN_INSTRUCTION == characteristic.uuid) {
                 if ((turnInstructionSize == 0) && (data.size == 1)) {
                     turnInstructionDataOffset = 0

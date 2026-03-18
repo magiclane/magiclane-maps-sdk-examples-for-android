@@ -14,10 +14,11 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/primary"
+            android:background="@color/black"
             app:layout_constraintTop_toTopOf="parent"
             app:title="@string/app_name"
-            app:titleTextColor="@color/on_primary"
+            app:titleTextColor="@color/white"
+            app:navigationIconTint="@color/white"
             app:paddingTopWithSystemWindowInsets='@{"8dp"}'
             app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
             app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
@@ -30,16 +31,16 @@
             android:layout_height="wrap_content"
             android:indeterminate="true"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:indicatorColor="@color/primary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
 
         <include
             android:id="@+id/navigation_top_panel"
             layout="@layout/navigation_top_panel"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             android:visibility="gone"/>
 
         <include

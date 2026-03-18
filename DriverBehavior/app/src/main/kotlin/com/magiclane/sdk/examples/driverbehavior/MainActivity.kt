@@ -9,18 +9,18 @@ package com.magiclane.sdk.examples.driverbehavior
 
 import android.Manifest
 import android.animation.ArgbEvaluator
-import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Canvas
 import android.graphics.Color
+import android.location.LocationManager
 import android.os.Bundle
+import android.provider.Settings
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
+import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.github.mikephil.charting.charts.BarChart
@@ -38,7 +38,9 @@ import com.github.mikephil.charting.utils.MPPointF
 import com.github.mikephil.charting.utils.Transformer
 import com.github.mikephil.charting.utils.Utils
 import com.github.mikephil.charting.utils.ViewPortHandler
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.SdkSettings
@@ -46,6 +48,7 @@ import com.magiclane.sdk.core.Time
 import com.magiclane.sdk.driverbehaviour.DriverBehaviour
 import com.magiclane.sdk.driverbehaviour.DrivingScores
 import com.magiclane.sdk.examples.driverbehavior.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.driverbehavior.databinding.DialogLayoutBinding
 import com.magiclane.sdk.sensordatasource.DataSource
 import com.magiclane.sdk.sensordatasource.DataSourceFactory
 import com.magiclane.sdk.util.PermissionsHelper
@@ -61,6 +64,7 @@ class MainActivity : AppCompatActivity() {
     private var driverBehaviour: DriverBehaviour? = null
     private lateinit var chartLabels: List<String>
     private var timer: Timer? = null
+    private var shouldCheckLocationPermissionOnResume = false
 
     private lateinit var binding: ActivityMainBinding
 
@@ -78,8 +82,8 @@ class MainActivity : AppCompatActivity() {
 
         chartLabels = resources.getStringArray(R.array.chart_labels).toList()
 
-        SdkSettings.onMapDataReady = { isReady ->
-            if (isReady) {
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
                 SdkCall.execute {
                     dataSource = DataSourceFactory.produceLive()
                     dataSource?.let { driverBehaviour = DriverBehaviour.produce(it, false) }
@@ -92,27 +96,56 @@ class MainActivity : AppCompatActivity() {
 
                 binding.progressBar.visibility = View.GONE
                 binding.chartScrollView.visibility = View.VISIBLE
+
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
             }
         }
 
         SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
+            showDialog(getString(R.string.token_rejected_message))
         }
 
-        requestPermissions(this)
+        val errorCode = GemSdk.initSdkWithDefaults(this)
+        if (errorCode != GemError.NoError) {
+            // The SDK initialization failed, we can't continue.
+            showDialog(
+                getString(
+                    R.string.dialog_sdk_initialization_error,
+                    GemError.getMessage(errorCode, this),
+                )
+            ) {
+                finish()
+                exitProcess(0)
+            }
+        }
 
-        if (GemSdk.initSdkWithDefaults(this) != GemError.NoError) {
-            // The SDK initialization was not completed.
-            finish()
+        if (checkLocationStatus()) {
+            requestPermissions()
         }
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
+            showDialog(getString(R.string.internet_required))
+        }
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (shouldCheckLocationPermissionOnResume) {
+            shouldCheckLocationPermissionOnResume = false
+            if (isLocationEnabled()) {
+                requestPermissions()
+            }
+            else {
+                showDialog(getString(R.string.location_services_required)) {
+                    finish()
+                    exitProcess(0)
+                }
+            }
         }
     }
 
@@ -137,44 +170,86 @@ class MainActivity : AppCompatActivity() {
 
         for (item in grantResults) {
             if (item != PackageManager.PERMISSION_GRANTED) {
-                finish()
-                exitProcess(0)
+                showDialog(getString(R.string.location_permission_required)) {
+                    finish()
+                    exitProcess(0)
+                }
+                return
             }
         }
 
-        SdkCall.execute { // Notice permission status had changed
+        SdkCall.execute {
+            // Notice permission status had changed
             PermissionsHelper.onRequestPermissionsResult(this, requestCode, grantResults)
         }
     }
 
-    private fun requestPermissions(activity: Activity): Boolean {
+    private fun requestPermissions(): Boolean {
         val permissions = arrayListOf(
-            Manifest.permission.INTERNET,
-            Manifest.permission.ACCESS_NETWORK_STATE,
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
         )
 
         return PermissionsHelper.requestPermissions(
             REQUEST_PERMISSIONS,
-            activity,
-            permissions.toTypedArray(),
+            this,
+            permissions.toTypedArray()
         )
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun isLocationEnabled(): Boolean {
+        val locationManager = getSystemService(LOCATION_SERVICE) as? LocationManager
+        return locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true
+    }
+
+    private fun checkLocationStatus(): Boolean {
+        if (!isLocationEnabled()) {
+            showLocationDialog(
+                message = getString(R.string.location_disabled),
+                settingsIntent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+            )
+            return false
+        }
+
+        return true
+    }
+
+    private fun showLocationDialog(message: String, settingsIntent: Intent) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.location_status)
+            this.message.text = message
+            button.text = getString(R.string.open_settings)
+            button.setOnClickListener {
+                dialog.dismiss()
+                startActivity(settingsIntent)
+                shouldCheckLocationPermissionOnResume = true
+            }
+        }
+        dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
+            setCancelable(false)
+            setContentView(dialogBinding.root)
+            show()
+        }
+    }
+
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        val dialog = BottomSheetDialog(this)
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }
@@ -322,9 +397,9 @@ class MainActivity : AppCompatActivity() {
         return resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES
     }
 
-    private class DriverBehaviorBarDataSet(val barEntries: List<BarEntry>, label: String) : BarDataSet(
+    private class DriverBehaviorBarDataSet(barEntries: List<BarEntry>, label: String) : BarDataSet(
         barEntries,
-        label,
+        label
     ) {
 
         override fun getColor(index: Int): Int {

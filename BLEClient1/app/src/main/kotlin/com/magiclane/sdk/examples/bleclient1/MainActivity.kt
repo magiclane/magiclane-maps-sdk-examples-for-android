@@ -466,7 +466,7 @@ class MainActivity : AppCompatActivity() {
                     Manifest.permission.ACCESS_COARSE_LOCATION,
                 ),
             )
-        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION))
         } else {
             permissionsAreGranted = true

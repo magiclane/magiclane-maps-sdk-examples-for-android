@@ -7,23 +7,26 @@
 
 package com.magiclane.sdk.examples.definepersistentroadblock
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.Time
 import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.examples.definepersistentroadblock.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.definepersistentroadblock.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.routesandnavigation.ERouteTransportMode
 import com.magiclane.sdk.routesandnavigation.Traffic
@@ -34,6 +37,12 @@ import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
+
+    private var toolbarHeight = 0
+    private var leftInset = 0
+    private var rightInset = 0
+    private var bottomInset = 0
+    private var inflate = 0
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     lateinit var gemSurfaceView: GemSurfaceView
@@ -47,10 +56,25 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         gemSurfaceView = binding.gemSurfaceView
 
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
+        inflate = resources.getDimension(R.dimen.padding_40).toInt()
 
-            gemSurfaceView.mapView?.onTouch = { xy ->
+        // Measure app bar height after layout
+        binding.toolbar.post {
+            toolbarHeight = binding.toolbar.height
+        }
+
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            Util.postOnMain {
+                showDialog(errorMessage) {
+                    finish()
+                    exitProcess(0)
+                }
+            }
+        }
+
+        gemSurfaceView.onDefaultMapViewCreated = { mapView ->
+            mapView.onTouch = { xy ->
                 SdkCall.execute {
                     // tell the map view where the touch event happened
                     gemSurfaceView.mapView?.cursorScreenPosition = xy
@@ -70,20 +94,26 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            binding.hint.visibility = View.VISIBLE
+            Util.postOnMain {
+                binding.hint.visibility = View.VISIBLE
+            }
         }
 
         SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
+            showDialog(getString(R.string.token_rejected_message))
         }
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
+            showDialog(getString(R.string.no_internet_message))
+        }
+
+        // Set up window insets listener
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            leftInset = systemBars.left + inflate
+            rightInset = systemBars.right + inflate
+            bottomInset = systemBars.bottom + inflate
+            insets
         }
 
         onBackPressedDispatcher.addCallback(this) {
@@ -99,11 +129,20 @@ class MainActivity : AppCompatActivity() {
         GemSdk.release()
     }
 
+    private fun getFreeSpaceRectangle(): Rect {
+        return Rect(
+            leftInset,
+            toolbarHeight + inflate,
+            binding.root.width - rightInset,
+            binding.root.height - bottomInset,
+        )
+    }
+
     private fun addPersistentRoadblock(coordinates: Coordinates) {
         val startTime = Time.getUniversalTime()
         val endTime = Time.getUniversalTime().also { endTime -> endTime?.let { it.minute += 1 } }
 
-        if (startTime != null && endTime != null) {
+        if ((startTime != null) && (endTime != null)) {
             val traffic = Traffic()
 
             roadblock?.let { roadblock ->
@@ -121,11 +160,11 @@ class MainActivity : AppCompatActivity() {
 
             if (roadblock?.referencePoint?.valid() == true) {
                 roadblock?.boundingBox?.let {
-                    gemSurfaceView.mapView?.centerOnArea(
+                    gemSurfaceView.mapView?.centerOnRectArea(
                         area = it,
                         zoomLevel = -1,
-                        xy = null,
-                        animation = Animation(EAnimation.Linear),
+                        getFreeSpaceRectangle(),
+                        animation = Animation(EAnimation.Linear, duration = 900),
                     )
                 }
 
@@ -134,19 +173,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }

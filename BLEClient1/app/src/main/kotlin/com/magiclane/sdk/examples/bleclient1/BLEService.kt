@@ -40,7 +40,7 @@ import com.magiclane.sdk.examples.bleclient1.SampleGattAttributes.TURN_INSTRUCTI
 class BLEService : Service() {
 
     interface IBLEServiceObserver {
-        fun onCharacteristicRead(characteristic: BluetoothGattCharacteristic)
+        fun onCharacteristicRead(bluetoothGattCharacteristic: BluetoothGattCharacteristic)
     }
 
     private var bluetoothManager: BluetoothManager? = null
@@ -91,7 +91,7 @@ class BLEService : Service() {
                         val result = it.discoverServices()
                         Log.i(
                             tag,
-                            "BluetoothGattCallback.onConnectionStateChange(): attempting to start service discovery:" + result,
+                            "BluetoothGattCallback.onConnectionStateChange(): attempting to start service discovery:$result",
                         )
                     }
                 }
@@ -114,13 +114,15 @@ class BLEService : Service() {
             }
         }
 
+        @Suppress("DEPRECATION")
+        @Deprecated("Deprecated in Java")
         override fun onCharacteristicRead(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
-            status: Int,
+            status: Int
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic)
+                broadcastUpdate(characteristic, characteristic.value)
             }
 
             if ((characteristic.properties or BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
@@ -132,8 +134,33 @@ class BLEService : Service() {
             }
         }
 
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray,
+            status: Int
+        ) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                broadcastUpdate(characteristic, value)
+            }
+
+            if ((characteristic.properties or BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                setCharacteristicNotification(characteristic, true)
+            }
+
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                bleServiceObserver?.onCharacteristicRead(characteristic)
+            }
+        }
+
+        @Suppress("DEPRECATION")
+        @Deprecated("Deprecated in Java")
         override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
-            broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic)
+            broadcastUpdate(characteristic, characteristic.value)
+        }
+
+        override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, value: ByteArray) {
+            broadcastUpdate(characteristic, value)
         }
 
         override fun onServiceChanged(gatt: BluetoothGatt) {
@@ -169,15 +196,10 @@ class BLEService : Service() {
             (buffer[offset + 3].toInt() and 0xff)
     }
 
-    private fun broadcastUpdate(action: String, characteristic: BluetoothGattCharacteristic) {
-        val intent = Intent(action)
+    private fun broadcastUpdate(characteristic: BluetoothGattCharacteristic, data: ByteArray) {
+        val intent = Intent(ACTION_DATA_AVAILABLE)
 
-        // This is special handling for the Heart Rate Measurement profile.  Data parsing is
-        // carried out as per profile specifications:
-        // http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
-
-        val data = characteristic.value
-        if ((data != null) && data.isNotEmpty()) {
+        if (data.isNotEmpty()) {
             if (TURN_INSTRUCTION == characteristic.uuid) {
                 if ((turnInstructionSize == 0) && (data.size == 1)) {
                     turnInstructionDataOffset = 0
@@ -233,14 +255,16 @@ class BLEService : Service() {
 
                     if (maxX == minX) {
                         for (i in 0 until turnImageSize) {
-                            turnImageData[turnImageDataOffset++] = 0
+                            turnImageData[turnImageDataOffset + i] = 0
                         }
+                        turnImageDataOffset += turnImageSize
                     } else if (maxX > minX) {
                         turnImageLineSize = maxX - minX + 1
 
                         for (i in 0 until minX) {
-                            turnImageData[turnImageDataOffset++] = 0
+                            turnImageData[turnImageDataOffset + i] = 0
                         }
+                        turnImageDataOffset += minX
                     }
 
                     if (turnImageDataOffset == turnImageData.size) {
@@ -260,13 +284,18 @@ class BLEService : Service() {
                     maxX = data[3].toInt()
 
                     for (i in 0 until minX) {
-                        turnImageData[turnImageDataOffset++] = 0
+                        turnImageData[turnImageDataOffset + i] = 0
                     }
 
+                    turnImageDataOffset += minX
+
                     if (minX == minX1) {
+                        val off = turnImageDataOffset - minX1
                         for (i in minX1..maxX1) {
-                            turnImageData[turnImageDataOffset++] = 254.toByte()
+                            turnImageData[off + i] = 254.toByte()
                         }
+
+                        turnImageDataOffset += (maxX1 - minX1 + 1)
 
                         if (maxX > maxX1) {
                             turnImageLineSize = maxX - maxX1
@@ -297,9 +326,12 @@ class BLEService : Service() {
 
                         if (turnImageLineSize == 0) {
                             if (maxX1 > 0) {
+                                val off = turnImageDataOffset - minX1
                                 for (i in minX1..maxX1) {
-                                    turnImageData[turnImageDataOffset++] = 254.toByte()
+                                    turnImageData[off + i] = 254.toByte()
                                 }
+
+                                turnImageDataOffset += (maxX1 - minX1 + 1)
 
                                 if (maxX > maxX1) {
                                     turnImageLineSize = maxX - maxX1
@@ -308,9 +340,12 @@ class BLEService : Service() {
                                 minX1 = 0
                                 maxX1 = 0
                             } else {
+                                val off = maxX + 1
                                 for (i in (maxX + 1) until turnImageSize) {
-                                    turnImageData[turnImageDataOffset++] = 0
+                                    turnImageData[turnImageDataOffset + i - off] = 0
                                 }
+
+                                turnImageDataOffset += (turnImageSize - maxX - 1)
                             }
                         }
 
@@ -538,6 +573,7 @@ class BLEService : Service() {
      * @param characteristic Characteristic to act on.
      * @param enabled If true, enable notification.  False otherwise.
      */
+    @Suppress("DEPRECATION")
     fun setCharacteristicNotification(characteristic: BluetoothGattCharacteristic, enabled: Boolean) {
         if ((bluetoothAdapter == null) || (bluetoothGatt == null)) {
             Log.w(tag, "BluetoothAdapter not initialized")

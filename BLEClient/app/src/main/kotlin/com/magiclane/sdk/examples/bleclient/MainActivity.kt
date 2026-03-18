@@ -8,7 +8,6 @@
 package com.magiclane.sdk.examples.bleclient
 
 import android.Manifest
-import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
@@ -113,7 +112,7 @@ class MainActivity : AppCompatActivity() {
                         finish()
                         @Suppress("DEPRECATION")
                         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) {
-                            overrideActivityTransition(Activity.OVERRIDE_TRANSITION_OPEN, 0, 0)
+                            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0)
                         } else {
                             overridePendingTransition(0, 0)
                         }
@@ -360,9 +359,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        /*
         fun clear() {
             mLeDevices.clear()
         }
+        */
     }
 
     private fun startBLEScan() {
@@ -444,7 +445,7 @@ class MainActivity : AppCompatActivity() {
                     ),
                 )
 
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ->
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ->
                 requestPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION))
 
             else -> permissionsAreGranted = true
@@ -452,7 +453,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isLocationEnabled(context: Context): Boolean {
-        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val locationManager = context.getSystemService(LOCATION_SERVICE) as LocationManager
         return LocationManagerCompat.isLocationEnabled(locationManager)
     }
 

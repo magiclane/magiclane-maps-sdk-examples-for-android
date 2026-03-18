@@ -5,4 +5,5 @@
     <dimen name="big_padding">10dp</dimen>
     <dimen name="no_extra_inset">0dp</dimen>
     <dimen name="small_padding">4dp</dimen>
+    <dimen name="padding_40">40dp</dimen>
 </resources>

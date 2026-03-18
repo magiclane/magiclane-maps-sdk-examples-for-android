@@ -36,7 +36,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.ErrorCode
 import com.magiclane.sdk.core.GemError
@@ -441,10 +443,7 @@ class MainActivity : AppCompatActivity() {
                         )
                 ) {
                     if (CLIENT_CONFIG == descriptor.uuid) {
-                        if (Arrays.equals(
-                                BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE,
-                                value,
-                            )
+                        if (BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE.contentEquals(value)
                         ) {
                             Log.d(TAG, "Subscribe device to notifications: $device")
                             registeredDevices.add(device)
@@ -455,10 +454,7 @@ class MainActivity : AppCompatActivity() {
 
                                 sendTurnDistance()
                             }
-                        } else if (Arrays.equals(
-                                BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE,
-                                value,
-                            )
+                        } else if (BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE.contentEquals(value)
                         ) {
                             Log.d(TAG, "Unsubscribe device from notifications: $device")
                             registeredDevices.remove(device)
@@ -596,20 +592,27 @@ class MainActivity : AppCompatActivity() {
         // Devices with a display should not go to sleep
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
+        binding.gemSurface.onSdkInitFailed = { error ->
+            val errorMessage = "SDK initialization failed: ${GemError.getMessage(error, this)}"
+            Util.postOnMain {
+                showDialog(errorMessage) {
+                    finish()
+                    exitProcess(0)
+                }
+            }
+        }
 
-            // Defines an action that should be done when the world map is ready (Updated/ loaded).
-            startSimulation()
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                startSimulation()
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+            }
         }
 
         SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
+            showDialog("The token you provided in the AndroidManifest.xml file was rejected. " +
+                             "If you don't have a token, check the magiclane.com website, " +
+                             "sign up / in and generate one. Then input it in the AndroidManifest.xml file.")
         }
 
         if (!Util.isInternetConnected(this)) {
@@ -705,7 +708,7 @@ class MainActivity : AppCompatActivity() {
 
         val time = Time()
         time.setLocalTime()
-        time.longValue = time.longValue + etaNumber * 1000
+        time.longValue += etaNumber * 1000
         return String.format("%d:%02d", time.hour, time.minute)
     }
 
@@ -743,18 +746,16 @@ class MainActivity : AppCompatActivity() {
         val n = byteArray.size / 20
         val r = byteArray.size % 20
         var tmp = ByteArray(20)
-        var index = 0
 
         for (i in 1..n) {
-            System.arraycopy(byteArray, index, tmp, 0, 20)
-            index += 20
+            System.arraycopy(byteArray, (i - 1) * 20, tmp, 0, 20)
 
             notifyRegisteredDevices(tmp, TURN_INSTRUCTION)
         }
 
         if (r > 0) {
             tmp = ByteArray(r)
-            System.arraycopy(byteArray, index, tmp, 0, r)
+            System.arraycopy(byteArray, n * 20, tmp, 0, r)
 
             notifyRegisteredDevices(tmp, TURN_INSTRUCTION)
         }
@@ -786,16 +787,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showDialog(text: String) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
             title.text = getString(R.string.error)
             message.text = text
             button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
             setContentView(dialogBinding.root)
             show()

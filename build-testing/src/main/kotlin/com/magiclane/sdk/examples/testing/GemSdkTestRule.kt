@@ -9,9 +9,13 @@ package com.magiclane.sdk.examples.testing
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import com.magiclane.sdk.content.ContentStore
+import com.magiclane.sdk.content.EContentType
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.util.SdkCall
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
@@ -123,7 +127,7 @@ class GemSdkTestRule(
             } else {
                 weInitialized = false
                 isInitialized = true
-                if (!SdkSettings.isMapDataReady && !awaitMapDataReady(timeout)) {
+                if (!awaitMapDataReady(timeout)) {
                     throw AssertionError(
                         """
                         |
@@ -150,27 +154,26 @@ class GemSdkTestRule(
         }
 
         private fun awaitMapDataReady(timeoutMs: Long): Boolean {
-            if (SdkSettings.isMapDataReady) return true
-
+            var mapState = EOffboardListenerStatus.OldData
             val latch = CountDownLatch(1)
-            val previousCallback = SdkSettings.onMapDataReady
-            val ourCallback: (Boolean) -> Unit = { isReady ->
-                previousCallback?.invoke(isReady)
-                if (isReady) latch.countDown()
+
+            SdkSettings.onWorldwideRoadMapSupportStatus = { state ->
+                mapState = state
             }
-            SdkSettings.onMapDataReady = ourCallback
+
+            SdkCall.execute {
+                ContentStore().checkForUpdate(EContentType.RoadMap)
+            }
 
             try {
                 val startTime = System.currentTimeMillis()
                 while (System.currentTimeMillis() - startTime < timeoutMs) {
-                    if (latch.await(POLL_INTERVAL_MS, TimeUnit.MILLISECONDS)) return true
-                    if (SdkSettings.isMapDataReady) return true
+                    latch.await(POLL_INTERVAL_MS, TimeUnit.MILLISECONDS)
+                    if (mapState == EOffboardListenerStatus.UpToDate) return true
                 }
-                return SdkSettings.isMapDataReady
+                return mapState == EOffboardListenerStatus.UpToDate
             } finally {
-                if (SdkSettings.onMapDataReady === ourCallback) {
-                    SdkSettings.onMapDataReady = previousCallback
-                }
+                latch.countDown()
             }
         }
     }

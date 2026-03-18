@@ -7,23 +7,19 @@
 
 package com.magiclane.sdk.examples.customgpsarrow
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.ProgressBar
-import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.magiclane.sdk.core.DataBuffer
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
-import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.ESceneObjectFileFormat
@@ -31,6 +27,7 @@ import com.magiclane.sdk.d3scene.MapSceneObject
 import com.magiclane.sdk.d3scene.SceneObjectData
 import com.magiclane.sdk.d3scene.SceneObjectDataList
 import com.magiclane.sdk.examples.customgpsarrow.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.customgpsarrow.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.NavigationListener
 import com.magiclane.sdk.routesandnavigation.NavigationService
@@ -43,10 +40,6 @@ import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-
-    private lateinit var gemSurfaceView: GemSurfaceView
-    private lateinit var progressBar: ProgressBar
-    private lateinit var followCursorButton: FloatingActionButton
 
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
@@ -63,8 +56,7 @@ class MainActivity : AppCompatActivity() {
     private val navigationListener: NavigationListener = NavigationListener.create(
         onNavigationStarted = {
             SdkCall.execute {
-                gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.enableCursor = false
+                binding.gemSurface.mapView?.let { mapView ->
                     navRoute?.let { route ->
                         mapView.presentRoute(route)
                     }
@@ -80,11 +72,11 @@ class MainActivity : AppCompatActivity() {
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
         onStarted = {
-            progressBar.visibility = View.VISIBLE
+            binding.progressBar.visibility = View.VISIBLE
         },
 
         onCompleted = { _, _ ->
-            progressBar.visibility = View.GONE
+            binding.progressBar.visibility = View.GONE
         },
 
         postOnMain = true,
@@ -93,55 +85,49 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
         EspressoIdlingResource.increment()
-        progressBar = findViewById(R.id.progressBar)
-        gemSurfaceView = findViewById(R.id.gem_surface)
-        followCursorButton = findViewById(R.id.followCursor)
 
-        val onReady = {
-            // Set custom GPS arrow
-            try {
-                val objList = getSceneObjs(
-                    Pair("quad.glb", ESceneObjectFileFormat.Gltf),
-                )
-                if (objList.isNotEmpty()) {
-                    SdkCall.execute {
-                        val (obj, err) = MapSceneObject.getDefPositionTracker()
-                        if (GemError.isError(err)) {
-                            Util.postOnMain { showDialog(GemError.getMessage(err)) }
-                            return@execute
-                        }
-                        MapSceneObject.customizeDefPositionTracker(objList)
-                        obj?.let {
-                            it.visibility = true
-                            it.scaleFactor = 0.7 // 0.0 - 5.0
-                        }
+        binding.gemSurface.onSdkInitFailed = { error ->
+            val errorMessage = "SDK initialization failed: ${GemError.getMessage(error, this)}"
+            Util.postOnMain {
+                showDialog(errorMessage) {
+                    finish()
+                    exitProcess(0)
+                }
+            }
+        }
+
+        binding.gemSurface.onDefaultMapViewCreated = {
+            val objList = getSceneObjs(Pair("quad.glb", ESceneObjectFileFormat.Gltf))
+            if (objList.isNotEmpty()) {
+                val (obj, err) = MapSceneObject.getDefPositionTracker()
+                if (GemError.isError(err)) {
+                    Util.postOnMain { showDialog(GemError.getMessage(err)) }
+                }
+                else {
+                    MapSceneObject.customizeDefPositionTracker(objList)
+                    obj?.let {
+                        it.scaleFactor = 1.0 // 0.0 - 5.0
                     }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
-
-            // Defines an action that should be done when the world map is ready (Updated/ loaded).
-            startSimulation()
         }
-        if (SdkSettings.isMapDataReady) {
-            onReady()
-        } else {
-            SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-                if (!isReady) return@onMapDataReady
-                onReady()
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                startSimulation()
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
             }
         }
 
         SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
+            showDialog(
+                "The token you provided was rejected. " +
+                    "Make sure you provide the correct value, or if you don't have a token, " +
+                    "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.",
+            )
         }
 
         if (!Util.isInternetConnected(this)) {
@@ -156,25 +142,31 @@ class MainActivity : AppCompatActivity() {
 
     private fun getSceneObjs(vararg filesData: Pair<String, ESceneObjectFileFormat>): SceneObjectDataList {
         val list: SceneObjectDataList = arrayListOf()
-        for (fileData in filesData) {
-            val (fileName, format) = SdkCall.execute { fileData }!!
-            val inputStream: InputStream = assets.open(fileName)
-            var len: Int
-            val data = ByteArray(1024)
-            val buffer = ByteArrayOutputStream()
-            while (inputStream.read(data, 0, data.size).also { len = it } > 0) {
-                buffer.write(data, 0, len)
-            }
-            buffer.flush()
-            inputStream.close()
-            if (buffer.size() > 0) {
-                SdkCall.execute {
-                    list.add(
-                        SceneObjectData(DataBuffer(buffer.toByteArray()), format),
-                    )
+
+        try {
+            for (fileData in filesData) {
+                val (fileName, format) = fileData
+                val inputStream: InputStream = assets.open(fileName)
+                var len: Int
+                val data = ByteArray(1024)
+                val buffer = ByteArrayOutputStream()
+
+                while (inputStream.read(data, 0, data.size).also { len = it } > 0) {
+                    buffer.write(data, 0, len)
+                }
+
+                buffer.flush()
+                inputStream.close()
+
+                if (buffer.size() > 0) {
+                    list.add(SceneObjectData(DataBuffer(buffer.toByteArray()), format))
                 }
             }
         }
+        catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         return list
     }
 
@@ -187,17 +179,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun enableGPSButton() {
         // Set actions for entering/ exiting following position mode.
-        gemSurfaceView.mapView?.apply {
+        binding.gemSurface.mapView?.apply {
             onExitFollowingPosition = {
-                followCursorButton.visibility = View.VISIBLE
+                binding.followCursor.visibility = View.VISIBLE
             }
 
             onEnterFollowingPosition = {
-                followCursorButton.visibility = View.GONE
+                binding.followCursor.visibility = View.GONE
             }
 
             // Set on click action for the GPS button.
-            followCursorButton.setOnClickListener {
+            binding.followCursor.setOnClickListener {
                 SdkCall.execute { followPosition() }
             }
         }
@@ -212,26 +204,28 @@ class MainActivity : AppCompatActivity() {
         navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }
 }
 
 //region TESTING
-public object EspressoIdlingResource {
+object EspressoIdlingResource {
     val espressoIdlingResource =
         CountingIdlingResource("ApplyMapStyleInstrumentedTestsIdlingResource")
     fun increment() = espressoIdlingResource.increment()

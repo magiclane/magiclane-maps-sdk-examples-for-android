@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bottom_panel_background"
+        android:elevation="8dp"
+        android:padding="@dimen/big_padding"
+        paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+        paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+        paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/big_text_size"
+            android:textStyle="bold"
+            android:paddingEnd="8dp"
+            app:layout_constraintEnd_toStartOf="@id/favorites_button"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Title"
+            tools:ignore="RtlSymmetry" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/favorites_button"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:iconTint="@color/orange"
+            app:iconSize="36dp"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/message"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/small_padding"
+            android:textSize="@dimen/standard_text_size"
+            app:layout_constraintEnd_toStartOf="@id/favorites_button"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/title"
+            tools:text="Message"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

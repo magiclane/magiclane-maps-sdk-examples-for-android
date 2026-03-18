@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity() {
         showDialog(
             "This example requires a valid token. " +
                 "If you don't have a token, " +
-                "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.",
+                "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file."
         ) {
             finish()
             exitProcess(0)

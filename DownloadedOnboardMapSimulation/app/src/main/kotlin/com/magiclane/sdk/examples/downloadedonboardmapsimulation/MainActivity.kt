@@ -9,25 +9,27 @@
 
 package com.magiclane.sdk.examples.downloadedonboardmapsimulation
 
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.util.Log
-import android.widget.Button
-import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.EUnitSystem
+import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.core.SoundPlayingListener
+import com.magiclane.sdk.core.SoundPlayingPreferences
+import com.magiclane.sdk.core.SoundPlayingService
 import com.magiclane.sdk.core.Time
 import com.magiclane.sdk.examples.downloadedonboardmapsimulation.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.downloadedonboardmapsimulation.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.NavigationInstruction
 import com.magiclane.sdk.routesandnavigation.NavigationListener
@@ -35,15 +37,23 @@ import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
+import com.magiclane.sdk.util.Util
+import com.magiclane.sound.SoundUtils
 import java.util.Locale
 import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationListener {
 
     private lateinit var binding: ActivityMainBinding
 
+    private var emptyApiToken = false
+
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
+
+    private val playingListener = object : SoundPlayingListener() {}
+
+    private val soundPreference = SoundPlayingPreferences()
 
     private val navRoute: Route?
         get() = navigationService.getNavigationRoute(navigationListener)
@@ -68,8 +78,7 @@ class MainActivity : AppCompatActivity() {
 
             binding.topPanel.isVisible = true
             binding.bottomPanel.isVisible = true
-
-            showStatusMessage("Simulation started.")
+            binding.statusText.isVisible = false
         },
         onNavigationInstructionUpdated = { instr ->
             var instrText = ""
@@ -82,7 +91,7 @@ class MainActivity : AppCompatActivity() {
 
             SdkCall.execute {
                 // Fetch data for the navigation top panel (instruction related info).
-                instrText = instr.nextStreetName ?: ""
+                instrText = instr.nextStreetName ?: (instr.nextTurnInstruction ?: "")
                 instrIcon = instr.nextTurnImage?.asBitmap(100, 100)
                 instrDistance = instr.getDistanceInMeters()
 
@@ -103,42 +112,86 @@ class MainActivity : AppCompatActivity() {
                 eta.text = etaText
                 rtt.text = rttText
                 rtd.text = rtdText
-
-                statusText.isVisible = false
             }
             EspressoIdlingResource.decrement()
         },
+        onDestinationReached = {
+            binding.topPanel.isVisible = false
+            binding.bottomPanel.isVisible = false
+            binding.followGpsButton.isVisible = false
+
+            disableGPSButton()
+
+            SdkCall.execute {
+                binding.gemSurfaceView.mapView?.hideRoutes()
+            }
+
+            showStatusMessage(getString(R.string.destination_reached))
+        },
+        onNavigationSound = { sound ->
+            SdkCall.execute {
+                SoundPlayingService.play(sound, playingListener, soundPreference)
+            }
+        },
+        canPlayNavigationSound = true
     )
 
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
         onStarted = {
             binding.progressBar.isVisible = true
-            showStatusMessage("Routing process started.")
+            showStatusMessage(getString(R.string.routing_process_started))
         },
-        onCompleted = { _, _ ->
+        onCompleted = { errorCode, _ ->
             binding.progressBar.isVisible = false
-            showStatusMessage("Routing process completed.")
+            if (errorCode != GemError.NoError) {
+                showDialog(
+                    getString(
+                        R.string.routing_process_failed,
+                        GemError.getMessage(errorCode, this),
+                    ),
+                )
+            }
         },
-        postOnMain = true,
+        postOnMain = true
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
+
+        SoundUtils.addTTSPlayerInitializationListener(this)
+        EspressoIdlingResource.init(this)
+
+        binding.gemSurfaceView.onSdkInitSucceeded = {
+           if (SdkSettings.appAuthorization.isNullOrEmpty()) {
+               emptyApiToken = true
+            }
+        }
+
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_init_failed, GemError.getMessage(error, this))
+            Util.postOnMain {
+                showDialog(errorMessage) {
+                    finish()
+                    exitProcess(0)
+                }
+            }
         }
 
         binding.gemSurfaceView.onDefaultMapViewCreated = {
-            // Defines an action that should be done when the the sdk had been loaded.
-            startSimulation()
+            if (emptyApiToken) {
+                Util.postOnMainDelayed( {
+                    showDialog(getString(R.string.missing_app_authorization)) {
+                        finish()
+                        exitProcess(0)
+                    }
+                }, 500)
+            }
+            else {
+                startSimulation()
+            }
         }
 
         onBackPressedDispatcher.addCallback(this) {
@@ -151,25 +204,27 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         // Release the SDK.
-        Log.e("GEMSDK", "isFinishing = $isFinishing ")
         if (isFinishing) {
+            SoundUtils.removeTTSPlayerInitializationListener(this)
             GemSdk.release()
         }
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }
@@ -184,18 +239,26 @@ class MainActivity : AppCompatActivity() {
         binding.apply {
             gemSurfaceView.mapView?.apply {
                 onExitFollowingPosition = {
-                    followCursorButton.isVisible = true
+                    followGpsButton.isVisible = true
                 }
 
                 onEnterFollowingPosition = {
-                    followCursorButton.isVisible = false
+                    followGpsButton.isVisible = false
                 }
 
                 // Set on click action for the GPS button.
-                followCursorButton.setOnClickListener {
+                followGpsButton.setOnClickListener {
                     SdkCall.execute { followPosition() }
                 }
             }
+        }
+    }
+
+    private fun disableGPSButton() = SdkCall.execute {
+        binding.gemSurfaceView.mapView?.apply {
+            onExitFollowingPosition = null
+            onEnterFollowingPosition = null
+            binding.followGpsButton.setOnClickListener(null)
         }
     }
 
@@ -214,7 +277,7 @@ class MainActivity : AppCompatActivity() {
         val time = Time()
         time.setLocalTime()
         time.longValue += etaNumber * 1000
-        return String.format(Locale.getDefault(), "%d:%02d", time.hour, time.minute)
+        return String.format(Locale.getDefault(), getString(R.string.time_format_hh_mm), time.hour, time.minute)
     }
 
     private fun Route.getRtt(): String {
@@ -239,18 +302,46 @@ class MainActivity : AppCompatActivity() {
             Landmark("Luxembourg", 49.61588784436375, 6.135843869736401),
             Landmark("Mersch", 49.74785494642988, 6.103323786692679),
         )
-        navigationService.startSimulation(
+        val error = navigationService.startSimulation(
             waypoints,
             navigationListener,
             routingProgressListener,
         )
+
+        if (error != GemError.NoError) {
+            showDialog(
+                getString(
+                    R.string.failed_to_start_simulation,
+                    GemError.getMessage(error, this),
+                ),
+            )
+        }
+    }
+
+    // ITTSPlayerInitializationListener
+    override fun onTTSPlayerInitialized() {
+        SoundPlayingService.setTTSLanguage(getString(R.string.tts_language_eng_usa))
+    }
+
+    // ITTSPlayerInitializationListener
+    override fun onTTSPlayerInitializationFailed() {
+        SoundPlayingService.setDefaultHumanVoice()
     }
 }
 
 //region TESTING
 object EspressoIdlingResource {
-    val espressoIdlingResource =
-        CountingIdlingResource("DownloadedOnboardMapSimulationIdlingResource")
+    private var resource: CountingIdlingResource? = null
+
+    fun init(context: android.content.Context) {
+        if (resource == null) {
+            resource = CountingIdlingResource(context.getString(R.string.idling_resource_name))
+        }
+    }
+
+    val espressoIdlingResource: CountingIdlingResource
+        get() = checkNotNull(resource)
+
     fun increment() = espressoIdlingResource.increment()
     fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
 }

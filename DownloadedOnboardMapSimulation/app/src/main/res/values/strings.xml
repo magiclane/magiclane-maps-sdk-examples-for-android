@@ -2,4 +2,13 @@
     <string name="app_name">DownloadedOnboardMapSimulation</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+    <string name="sdk_init_failed">SDK initialization failed: %s</string>
+    <string name="destination_reached">Destination reached.</string>
+    <string name="routing_process_started">Routing process started.</string>
+    <string name="routing_process_failed">Routing process failed: %s</string>
+    <string name="failed_to_start_simulation">Failed to start simulation: %s</string>
+    <string name="tts_language_eng_usa">eng-USA</string>
+    <string name="idling_resource_name">DownloadedOnboardMapSimulationIdlingResource</string>
+    <string name="time_format_hh_mm">%d:%02d</string>
+    <string name="missing_app_authorization">This example requires a valid token. If you don\'t have a token, check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.</string>
 </resources>

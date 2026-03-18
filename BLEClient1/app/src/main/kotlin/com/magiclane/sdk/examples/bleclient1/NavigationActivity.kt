@@ -193,16 +193,16 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver {
         }
     }
 
-    override fun onCharacteristicRead(gattCharacteristic: BluetoothGattCharacteristic) {
+    override fun onCharacteristicRead(bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
         Log.d(
             tag,
             "onCharacteristicRead(): uuid = " + SampleGattAttributes.lookup(
-                gattCharacteristic.uuid.toString(),
-                gattCharacteristic.uuid.toString(),
+                bluetoothGattCharacteristic.uuid.toString(),
+                bluetoothGattCharacteristic.uuid.toString(),
             ),
         )
 
-        val nextUUIDToRead = when (gattCharacteristic.uuid) {
+        val nextUUIDToRead = when (bluetoothGattCharacteristic.uuid) {
             SampleGattAttributes.TURN_IMAGE -> {
                 SampleGattAttributes.TURN_DISTANCE
             }
@@ -318,6 +318,7 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver {
         }
     }
 
+    @Suppress("SameParameterValue")
     private fun showError(message: String) {
         Log.e(tag, message)
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()

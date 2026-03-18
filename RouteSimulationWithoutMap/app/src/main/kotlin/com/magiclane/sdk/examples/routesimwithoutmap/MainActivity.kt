@@ -19,6 +19,7 @@ import android.graphics.drawable.ShapeDrawable
 import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
+import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
@@ -28,6 +29,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.databinding.DataBindingUtil
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -108,12 +111,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private var distanceToTrafficUnitText = ""
     private var dpi = 320
 
-    companion object {
-        const val RESOURCE = "GLOBAL"
-    }
-
-    private var mainActivityIdlingResource = CountingIdlingResource(RESOURCE, true)
-
     private val navigationService = NavigationService()
 
     private var navRoute: Route? = null
@@ -126,7 +123,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         override fun onNewPosition(value: PositionData) {
             if (value.hasSpeed()) {
                 val speed = value.speed
-                val isOverspeeding = (speedLimit > 0.0) && (speed > speedLimit)
+                val isOverSpeeding = (speedLimit > 0.0) && (speed > speedLimit)
 
                 val speedText = GemUtil.getSpeedText(speed, EUnitSystem.Metric)
 
@@ -138,21 +135,24 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
                 Util.postOnMain {
                     binding.navigationSpeedPanel.apply {
-                        root.isVisible = speedText.first.isNotEmpty()
-                        if (speedText.first.isNotEmpty()) {
+                        root.isVisible = binding.navigationTopPanel.root.isVisible && speedText.first.isNotEmpty()
+                        if (root.isVisible) {
                             navSpeedLimitSign.root.isVisible = currentSpeedLimit.isNotEmpty()
                             if (currentSpeedLimit.isNotEmpty()) {
+                                val defaultTextSize = resources.getDimensionPixelSize(R.dimen.nav_speed_panel_text_size).toFloat()
+                                val textSize = if (currentSpeedLimit.length >= 3) defaultTextSize * 0.8f else defaultTextSize
+                                navSpeedLimitSign.navCurrentSpeedLimit.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize)
                                 navSpeedLimitSign.navCurrentSpeedLimit.text = currentSpeedLimit
                             }
 
                             navCurrentSpeed.text = speedText.first
                             navCurrentSpeedUnit.text = speedText.second
 
-                            val textColor = if (isOverspeeding) Color.WHITE else Color.BLACK
+                            val textColor = if (isOverSpeeding) Color.WHITE else Color.BLACK
 
                             setBackgroundColor(
                                 root.background,
-                                if (isOverspeeding) speedPanelBackgroundColor else Color.WHITE,
+                                if (isOverSpeeding) speedPanelBackgroundColor else Color.WHITE,
                             )
                             navCurrentSpeed.setTextColor(textColor)
                             navCurrentSpeedUnit.setTextColor(textColor)
@@ -179,6 +179,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 alarmService = AlarmService.produce(alarmListener)
                 alarmService?.alarmDistance = alarmDistanceMeters
 
+                // the returned array is empty, in absence of map view, but it might change in the future, so we check if the safety overlay is available and add it to the alarm service if it is
                 val availableOverlays = OverlayService().getAvailableOverlays(null)?.first
                 if (availableOverlays != null) {
                     for (item in availableOverlays) {
@@ -283,9 +284,13 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             binding.navigationTopPanel.turnDistance.text = instrDistance
             binding.navigationTopPanel.turnDistanceUnit.text = instrDistanceUnit
 
+            val turnDistSize = getTextWidth(binding.navigationTopPanel.turnDistance) +
+                               getTextWidth(binding.navigationTopPanel.turnDistanceUnit)
+            val turnWidth = max(max(turnDistSize, turnImageSize), turnMinWidth)
+
             // sign post info
             val availableWidthForMiddlePanel =
-                topPanelWidth - max(turnImageSize, turnMinWidth) - 3 * navigationPanelPadding
+                topPanelWidth - turnWidth - 3 * navigationPanelPadding
             val signPostImage =
                 getSignpostImage(instr, availableWidthForMiddlePanel, signPostImageSize)
 
@@ -293,6 +298,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 signPost.isVisible = signPostImage != null
                 signPostImage?.let {
                     signPost.setImageBitmap(it)
+                    signPost.layoutParams.width = it.width
+                    signPost.layoutParams.height = it.height
 
                     bDisplayRoadCode = false
                     bDisplayRouteInstruction = false
@@ -505,6 +512,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
+        onStarted = {
+            binding.progressBar.isVisible = true
+        },
         onCompleted = { errorCode, _ ->
             binding.progressBar.isVisible = false
 
@@ -621,6 +631,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }
     }
 
+    @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -644,25 +655,36 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         topPanelWidth = resources.displayMetrics.widthPixels
 
+        // Set status bar color to black and icons to white
+        window.statusBarColor = ContextCompat.getColor(this, R.color.black)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            window.decorView.systemUiVisibility =
+                window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+        }
+
         SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
             if (!isReady) return@onMapDataReady
 
             startSimulation()
+            SdkSettings.onMapDataReady = {}
         }
 
         SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
+            showDialog("The provided token is invalid. " +
+                             "If you don't have another token, " +
+                             "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.")
         }
 
         // This step of initialization is mandatory if you want to use the SDK without a map.
         if (GemSdk.initSdkWithDefaults(this) != GemError.NoError) {
             // The SDK initialization was not completed.
             finish()
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.navigationTopPanel.root) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, v.paddingBottom)
+            insets
         }
 
         if (!Util.isInternetConnected(this)) {
@@ -683,6 +705,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         GemSdk.release()
     }
 
+    @SuppressLint("DefaultLocale")
     private fun NavigationInstruction.getEta(trafficDelay: Int): String {
         val etaNumber = (remainingTravelTimeDistance?.totalTime ?: 0) + trafficDelay
 
@@ -757,9 +780,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             is ShapeDrawable -> bgnd.paint.color = color
             is GradientDrawable -> bgnd.setColor(color)
             is ColorDrawable -> bgnd.color = color
-            is InsetDrawable -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                (bgnd.drawable as GradientDrawable).setColor(color)
-            }
+            is InsetDrawable -> (bgnd.drawable as GradientDrawable).setColor(color)
         }
     }
 
@@ -951,6 +972,16 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         val metrics = resources.displayMetrics
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpi.toFloat(), metrics)
             .toInt()
+    }
+
+    fun getTextWidth(textView: TextView, maxWidth: Int = Short.MAX_VALUE.toInt()): Int
+    {
+        val widthMeasureSpec: Int =
+            View.MeasureSpec.makeMeasureSpec(maxWidth, View.MeasureSpec.AT_MOST)
+        val heightMeasureSpec: Int =
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        textView.measure(widthMeasureSpec, heightMeasureSpec)
+        return textView.measuredWidth
     }
 }
 

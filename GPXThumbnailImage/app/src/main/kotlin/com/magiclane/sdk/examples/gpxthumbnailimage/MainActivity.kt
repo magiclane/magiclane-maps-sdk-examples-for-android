@@ -7,15 +7,14 @@
 
 package com.magiclane.sdk.examples.gpxthumbnailimage
 
-import android.annotation.SuppressLint
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
-import androidx.activity.OnBackPressedCallback
+import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemOffscreenSurfaceView
 import com.magiclane.sdk.core.GemSdk
@@ -33,6 +32,7 @@ import com.magiclane.sdk.d3scene.EViewDataTransitionStatus
 import com.magiclane.sdk.d3scene.HighlightRenderSettings
 import com.magiclane.sdk.d3scene.OverlayService
 import com.magiclane.sdk.examples.gpxthumbnailimage.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.gpxthumbnailimage.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.SdkImages
@@ -63,76 +63,57 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
-        }
-
-        if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!") {
-                exitProcess(0)
-            }
-        }
-
-        if (GemSdk.initSdkWithDefaults(this) != GemError.NoError) {
-            // The SDK initialization was not completed.
-            finish()
-        }
-
-        gemOffscreenSurfaceView = GemOffscreenSurfaceView(
-            thumbnailWidth,
-            thumbnailHeight,
-            resources.displayMetrics.densityDpi,
-        )
-
-        binding.statusText.text = getString(R.string.waiting_for_data)
-
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
-
-            binding.statusText.text = getString(R.string.map_data_ready)
-
-            SdkCall.execute {
-                val gpxAssetsFileName = "gpx/test_route.gpx"
-
-                // Opens GPX input stream.
-                val input = applicationContext.resources.assets.open(gpxAssetsFileName)
-
-                // Produce a Path based on the data in the buffer.
-                val path = Path.produceWithGpx(input) ?: return@execute
-
-                showPath(path)
-
-                gemOffscreenSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.apply {
-                        mapLabelsFading = false
-                        trafficVisibility = false
-                    }
-                }
-            }
-        }
-
-        onBackPressedDispatcher.addCallback(
-            this,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    // Back is pressed... Finishing the activity
+        val error = GemSdk.initSdkWithDefaults(this)
+        if (error != GemError.NoError) {
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            Util.postOnMain {
+                showDialog(errorMessage) {
                     finish()
                     exitProcess(0)
                 }
-            },
-        )
-    }
+            }
+        }
 
-    override fun onStop() {
-        super.onStop()
+        gemOffscreenSurfaceView = GemOffscreenSurfaceView(thumbnailWidth, thumbnailHeight, resources.displayMetrics.densityDpi, onDefaultMapViewCreated = { mapView ->
+            mapView.preferences?.apply {
+                mapLabelsFading = false
+                trafficVisibility = false
+            }
+        })
 
-        if (isFinishing) {
-            gemOffscreenSurfaceView.destroy()
+        binding.statusText.text = getString(R.string.waiting_for_data)
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+
+                binding.statusText.text = getString(R.string.map_data_ready)
+
+                SdkCall.execute {
+                    val gpxAssetsFileName = "gpx/test_route.gpx"
+
+                    // Opens GPX input stream.
+                    val input = applicationContext.resources.assets.open(gpxAssetsFileName)
+
+                    // Produce a Path based on the data in the buffer.
+                    val path = Path.produceWithGpx(input) ?: return@execute
+
+                    showPath(path)
+                }
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            showDialog(getString(R.string.token_rejected_message))
+        }
+
+        if (!Util.isInternetConnected(this)) {
+            showDialog(getString(R.string.internet_required))
+        }
+
+        onBackPressedDispatcher.addCallback(this) {
+            finish()
+            exitProcess(0)
         }
     }
 
@@ -147,93 +128,81 @@ class MainActivity : AppCompatActivity() {
                     it.image = ImageDatabase().getImageById(SdkImages.Core.Waypoint_Finish.value)
                 }
 
-                val highlightSettings = HighlightRenderSettings(
-                    EHighlightOptions.ShowLandmark,
-                ).also {
-                    it.imageSize = 4.0
-                }
-
-                mapView.activateHighlightLandmarks(
-                    arrayListOf(departureLmk, destinationLmk),
-                    highlightSettings,
-                )
+                val highlightSettings = HighlightRenderSettings(EHighlightOptions.ShowLandmark).also { it.imageSize = 4.0 }
+                mapView.activateHighlightLandmarks(arrayListOf(departureLmk, destinationLmk), highlightSettings)
             }
 
             val pathCollection = mapView.preferences?.paths
-            pathCollection?.add(
-                path,
-                colorBorder = Rgba.black(),
-                colorInner = Rgba.orange(),
-                szBorder = 0.5,
-                szInner = 1.0,
-            )
+            pathCollection?.add(path,
+                                colorBorder = Rgba.black(),
+                                colorInner = Rgba.orange(),
+                                szBorder = 0.5,
+                                szInner = 1.0)
 
             path.area?.let { area ->
-                val margin = 2 * padding
                 mapView.centerOnRectArea(
                     area = area,
-                    viewRc = Rect(
-                        margin,
-                        margin,
-                        thumbnailWidth - margin,
-                        thumbnailHeight - margin,
-                    ),
-                    animation = Animation(
-                        EAnimation.Linear,
-                        10,
-                        onCompleted = onCompleted@{ errorCode, _ ->
-                            if (errorCode != GemError.NoError) return@onCompleted
+                    viewRc = Rect(padding, padding, thumbnailWidth - padding, thumbnailHeight - padding),
+                    animation = Animation(EAnimation.Linear,
+                                         10,
+                                          onCompleted = onCompleted@{ errorCode, _ ->
+                                                if (errorCode != GemError.NoError) return@onCompleted
 
-                            SdkCall.execute {
-                                OverlayService().apply {
-                                    disableOverlay(ECommonOverlayId.SocialReports.value)
-                                    disableOverlay(ECommonOverlayId.Safety.value)
-                                }
+                                                SdkCall.execute {
+                                                    OverlayService().apply {
+                                                        disableOverlay(ECommonOverlayId.SocialReports.value)
+                                                        disableOverlay(ECommonOverlayId.Safety.value)
+                                                    }
 
-                                mapView.onViewRendered = onViewRendered@{ tivStatus, camStatus ->
-                                    if (screenshotTaken) return@onViewRendered
+                                                    gemOffscreenSurfaceView.screen?.needsRender()
 
-                                    if (tivStatus == EViewDataTransitionStatus.Complete &&
-                                        camStatus == EViewCameraTransitionStatus.Stationary
-                                    ) {
-                                        Util.postOnMain {
-                                            binding.statusText.text = getString(R.string.taking_screenshot)
-                                        }
-                                        gemOffscreenSurfaceView.takeScreenshot { bitmap ->
-                                            Util.postOnMain {
-                                                binding.apply {
-                                                    mapThumbnailImage.setImageBitmap(bitmap)
-                                                    progressBar.isVisible = false
-                                                    statusText.text = getString(R.string.screenshot_taken)
+                                                    mapView.onViewRendered = onViewRendered@{ tivStatus, camStatus ->
+                                                        if (screenshotTaken) return@onViewRendered
+
+                                                        if ((tivStatus == EViewDataTransitionStatus.Complete) &&
+                                                            (camStatus == EViewCameraTransitionStatus.Stationary)) {
+                                                            Util.postOnMain {
+                                                                binding.statusText.text = getString(R.string.taking_screenshot)
+                                                            }
+
+                                                            gemOffscreenSurfaceView.takeScreenshot { bitmap ->
+                                                                Util.postOnMain {
+                                                                    binding.apply {
+                                                                        mapThumbnailImage.setImageBitmap(bitmap)
+                                                                        progressBar.isVisible = false
+                                                                        statusText.text = getString(R.string.screenshot_taken)
+                                                                    }
+                                                                }
+
+                                                                screenshotTaken = true
+                                                                gemOffscreenSurfaceView.destroy()
+                                                            }
+
+                                                            mapView.onViewRendered = null
+                                                        }
+                                                    }
                                                 }
-                                            }
-                                            screenshotTaken = true
-                                        }
-                                        gemOffscreenSurfaceView.mapView?.onViewRendered = null
-                                    }
-                                }
-                            }
-                        },
-                    ),
+                                          })
                 )
             }
         }
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String, dialogButtonCallback: () -> Unit = {}) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
-                dialogButtonCallback()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="com.magiclane.sdk.examples.displaycurrentstreetinfo.MainActivity">
+
+        <com.magiclane.sdk.core.GemSurfaceView
+            android:id="@+id/gem_surface"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/primary"
+            app:layout_constraintTop_toTopOf="parent"
+            app:title="@string/app_name"
+            app:titleTextColor="@color/on_primary"
+            app:paddingTopWithSystemWindowInsets='@{"8dp"}'
+            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
+            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
+            android:paddingBottom="12dp"
+            />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/speed_limit_sign"
+            android:layout_width="@dimen/speed_panel_sign_size"
+            android:layout_height="@dimen/speed_panel_sign_size"
+            android:background="@drawable/speed_limit_sign"
+            android:layout_marginTop="@dimen/big_padding"
+            android:layout_marginEnd="@dimen/big_padding"
+            app:layout_constraintTop_toBottomOf="@id/toolbar"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            android:visibility="gone">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/current_speed_limit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:paddingBottom="@dimen/speed_panel_sign_padding"
+                android:textColor="@android:color/black"
+                android:textSize="@dimen/speed_panel_text_size"
+                android:textStyle="bold"
+                tools:ignore="SpUsage" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/follow_cursor_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:src="@drawable/ic_baseline_gps_fixed_24"
+            android:visibility="gone"
+            app:backgroundTint="@color/primary"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:tint="@android:color/white"
+            tools:ignore="ContentDescription"
+            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginLeftWithSystemWindowInsets="@{@dimen/small_padding}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"/>
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/current_street_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/surface"
+            android:text="@string/app_name"
+            android:textSize="@dimen/text_size"
+            android:textColor="@color/on_surface"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:paddingLeftWithSystemWindowInsets="@{@dimen/small_padding}"
+            app:paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/current_street_text_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_background_black"
+            android:paddingStart="@dimen/big_padding"
+            android:paddingEnd="@dimen/big_padding"
+            android:paddingTop="@dimen/text_padding"
+            android:paddingBottom="@dimen/text_padding"
+            android:layout_marginBottom="@dimen/very_small_padding"
+            android:focusable="false"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginLeftWithSystemWindowInsets="@{@dimen/small_padding}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            android:visibility="gone">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/current_street_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="@dimen/round_button_padding"
+                android:clickable="false"
+                android:ellipsize="end"
+                android:focusable="false"
+                android:gravity="center"
+                android:singleLine="true"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/standard_text_size"
+                android:visibility="visible"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/current_city_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_background_blue"
+                android:clickable="false"
+                android:ellipsize="end"
+                android:focusable="false"
+                android:gravity="center"
+                android:paddingStart="@dimen/big_padding"
+                android:paddingEnd="@dimen/big_padding"
+                android:layout_marginBottom="@dimen/text_padding"
+                android:layout_marginTop="@dimen/text_padding"
+                android:singleLine="true"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="@dimen/standard_text_size"
+                android:visibility="visible"
+                app:layout_constraintTop_toBottomOf="@id/current_street_text"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

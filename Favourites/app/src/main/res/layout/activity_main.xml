@@ -38,64 +38,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/location_details"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/location_details_height"
-            android:layout_margin="@dimen/list_item_padding"
-            android:background="@color/surface"
-            android:visibility="gone"
-            app:layout_constraintBottom_toTopOf="@id/status_text"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}">
-
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/name"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/list_item_padding"
-                android:layout_marginTop="@dimen/list_item_padding"
-                android:layout_marginEnd="@dimen/list_item_padding"
-                android:layout_marginBottom="5dp"
-                android:textSize="@dimen/big_text_size"
-                android:textColor="@color/on_surface"
-                app:layout_constraintBottom_toTopOf="@id/coordinates"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/coordinates"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/list_item_padding"
-                android:layout_marginEnd="@dimen/list_item_padding"
-                android:layout_marginBottom="@dimen/list_item_padding"
-                android:textColor="@color/on_surface"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/favourites_icon"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/name" />
-
-            <ImageView
-                android:id="@+id/favourites_icon"
-                android:layout_width="@dimen/image_size"
-                android:layout_height="@dimen/image_size"
-                android:layout_marginTop="@dimen/list_item_padding"
-                android:layout_marginEnd="@dimen/big_padding"
-                android:layout_marginBottom="@dimen/list_item_padding"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.1"
-                app:layout_constraintHorizontal_chainStyle="packed"
-                app:layout_constraintStart_toEndOf="@id/coordinates"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="ContentDescription" />
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/status_text"
             android:layout_width="0dp"
@@ -112,6 +54,16 @@
             app:paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}" />
+
+        <include
+            android:id="@+id/location_details_panel"
+            layout="@layout/location_details_panel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:visibility="gone" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">DisplayCurrentStreetInfo</string>
+    <string name="error">Error</string>
+    <string name="info">Info</string>
+    <string name="ok">OK</string>
+    <string name="not_connected">This example requires an Internet connection!</string>
+    <string name="location_status">Location Status</string>
+    <string name="location_permission_denied">Location permission is not granted. The app needs location access to show your position on the map and provide navigation. Please go to Settings -> Apps -> Bike Demo -> Permissions and enable Location.</string>
+    <string name="location_disabled">Location service is turned off on your device. The app cannot determine your GPS position. Please go to Settings -> Location and turn on Location services.</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="location_services_required">This app requires location services to be enabled. Please enable location services in device settings and restart the app.</string>
+    <string name="sdk_init_failed">SDK initialization failed: %1$s</string>
+    <string name="api_token_rejected">The token you provided was rejected. Make sure you provide the correct value, or if you do not have a token, visit magiclane.com, sign in or sign up, and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="startup_info_message">This example demonstrates how to display the current street / city names and speed limit information using the improved position data provided by the Magic Lane SDK. Use a mock location app or move outside on the streets to see the information displayed on the screen while following the position.</string>
+    <string name="location_permission_required_restart">This example cannot run without location permission! Please grant the permission in app settings and restart the app.</string>
+</resources>

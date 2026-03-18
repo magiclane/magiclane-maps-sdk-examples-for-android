@@ -27,6 +27,7 @@ dependencies {
     implementation(shared.androidx.appcompat)
     implementation(shared.androidx.constraintlayout)
     implementation(shared.material)
+    implementation(shared.androidx.media)
 
     testImplementation(shared.junit)
     androidTestImplementation(project(":build-testing"))

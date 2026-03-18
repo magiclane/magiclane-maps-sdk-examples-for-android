@@ -47,7 +47,7 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver {
     private var padding: Int = 0
 
     enum class ETurnEvent(val value: Int) {
-        NotAvailable(0),
+        // NotAvailable(0),
         Straight(1),
         Right(2),
         Right1(3),
@@ -74,9 +74,9 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver {
         ExitRight(24),
         ExitRight1(25),
         ExitRight2(26),
-        InfoGeneric(27),
-        DriveOn(28),
-        ExitNo(29),
+        // InfoGeneric(27),
+        // DriveOn(28),
+        // ExitNo(29),
         ExitLeft(30),
         ExitLeft1(31),
         ExitLeft2(32),
@@ -85,8 +85,8 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver {
         StayOn(35),
         BoatFerry(36),
         RailFerry(37),
-        InfoLane(38),
-        InfoSign(39),
+        // InfoLane(38),
+        // InfoSign(39),
         LeftRight(40),
         RightLeft(41),
         KeepLeft(42),
@@ -339,16 +339,16 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver {
         }
     }
 
-    override fun onCharacteristicRead(gattCharacteristic: BluetoothGattCharacteristic) {
+    override fun onCharacteristicRead(bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
         Log.d(
             tag,
             "onCharacteristicRead(): uuid = " + SampleGattAttributes.lookup(
-                gattCharacteristic.uuid.toString(),
-                gattCharacteristic.uuid.toString(),
+                bluetoothGattCharacteristic.uuid.toString(),
+                bluetoothGattCharacteristic.uuid.toString(),
             ),
         )
 
-        val nextUUIDToRead = when (gattCharacteristic.uuid) {
+        val nextUUIDToRead = when (bluetoothGattCharacteristic.uuid) {
             SampleGattAttributes.TURN_IMAGE -> {
                 SampleGattAttributes.TURN_DISTANCE
             }
@@ -469,6 +469,7 @@ class NavigationActivity : AppCompatActivity(), BLEService.IBLEServiceObserver {
         }
     }
 
+    @Suppress("SameParameterValue")
     private fun showError(message: String) {
         Log.e(tag, message)
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()

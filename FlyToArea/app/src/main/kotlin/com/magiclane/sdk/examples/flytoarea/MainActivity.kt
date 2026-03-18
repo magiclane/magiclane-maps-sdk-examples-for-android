@@ -7,22 +7,27 @@
 
 package com.magiclane.sdk.examples.flytoarea
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
+import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.d3scene.Animation
+import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.EHighlightOptions
 import com.magiclane.sdk.d3scene.HighlightRenderSettings
 import com.magiclane.sdk.examples.flytoarea.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.flytoarea.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.places.SearchService
@@ -33,41 +38,30 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
+    private var inflate = 0
+
     private val searchService = SearchService(
         onStarted = {
             binding.progressBar.visibility = View.VISIBLE
-            showStatusMessage("Search service has started!")
+            showStatusMessage(getString(R.string.searching))
         },
 
         onCompleted = { results, errorCode, _ ->
             binding.progressBar.visibility = View.GONE
-            showStatusMessage("Search service completed with error code: $errorCode")
 
             when (errorCode) {
                 GemError.NoError -> {
                     if (results.isNotEmpty()) {
-                        showStatusMessage("Fly to area started")
-                        val landmark = results[0]
-                        flyTo(landmark)
-                        showStatusMessage("Fly to area completed")
+                        flyTo(results[0])
                     } else {
-                        // The search completed without errors, but there were no results found.
-                        showStatusMessage(
-                            "The search completed without errors, but there were no results found.",
-                        )
+                        showStatusMessage(getString(R.string.no_search_results))
                     }
                 }
-
-                GemError.Cancel -> {
-                    // The search action was cancelled.
-                }
-
                 else -> {
-                    // There was a problem at computing the search operation.
-                    showDialog("Search service error: ${GemError.getMessage(errorCode)}")
+                    showStatusMessage(getString(R.string.search_completed_with_error, GemError.getMessage(errorCode, this)))
                 }
             }
-        },
+        }
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,29 +70,34 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
+        inflate = resources.getDimension(R.dimen.padding_40).toInt()
 
-            // Defines an action that should be done after the world map is ready.
-            SdkCall.execute {
-                val text = "Statue of Liberty New York"
-                val coordinates = Coordinates(40.68925476, -74.04456329)
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            Util.postOnMain {
+                showDialog(errorMessage) {
+                    finish()
+                    exitProcess(0)
+                }
+            }
+        }
 
-                searchService.searchByFilter(text, coordinates)
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+
+                SdkCall.execute {
+                    searchService.searchByFilter("Statue of Liberty New York", Coordinates(40.68925476, -74.04456329))
+                }
             }
         }
 
         SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
+            showDialog(getString(R.string.token_rejected_message))
         }
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
+            showDialog(getString(R.string.internet_required))
         }
 
         onBackPressedDispatcher.addCallback(this) {
@@ -116,32 +115,43 @@ class MainActivity : AppCompatActivity() {
 
     private fun flyTo(landmark: Landmark) = SdkCall.execute {
         landmark.geographicArea?.let { area ->
-            binding.gemSurfaceView.mapView?.let { mainMapView ->
+            binding.gemSurfaceView.mapView?.let { mapView ->
+                // Center the map on a specific area using the provided animation.
+                mapView.centerOnRectArea(
+                    area,
+                    zoomLevel = -1,
+                    viewRc = getFreeScreenRect(),
+                    Animation(EAnimation.Linear, 900, onStarted = {
+                        showStatusMessage(getString(R.string.fly_to_area_started))
+                    }, onCompleted = { _, _ ->
+                        showStatusMessage(getString(R.string.fly_to_area_completed))
+                    })
+                )
+
                 // Define highlight settings for displaying the area contour on map.
                 val settings = HighlightRenderSettings(EHighlightOptions.ShowContour)
 
-                // Center the map on a specific area using the provided animation.
-                mainMapView.centerOnArea(area)
-
                 // Highlights a specific area on the map using the provided settings.
-                mainMapView.activateHighlightLandmarks(landmark, settings)
+                mapView.activateHighlightLandmarks(landmark, settings)
             }
         }
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }
@@ -153,5 +163,31 @@ class MainActivity : AppCompatActivity() {
             }
             statusText.text = text
         }
+    }
+
+    private fun getFreeScreenRect(): Rect {
+        val root = binding.root
+        val insets = ViewCompat.getRootWindowInsets(root)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+
+        val width = root.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+        val height = root.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
+
+        val left = insets?.left ?: 0
+        val right = (width - (insets?.right ?: 0)).coerceAtLeast(left)
+
+        val topInset = insets?.top ?: 0
+        val toolbarBottom = binding.toolbar.bottom.takeIf { it > 0 } ?: 0
+        val top = maxOf(topInset, toolbarBottom)
+
+        val insetBottom = height - (insets?.bottom ?: 0)
+        val statusTop = if (binding.statusText.isVisible && binding.statusText.top > 0) {
+            binding.statusText.top
+        } else {
+            insetBottom
+        }
+        val bottom = minOf(insetBottom, statusTop).coerceAtLeast(top)
+
+        return Rect(left + inflate, top + inflate, right - inflate, bottom - inflate)
     }
 }

@@ -5,4 +5,6 @@
     <dimen name="big_text_size">20sp</dimen>
     <dimen name="no_extra_inset">0dp</dimen>
     <dimen name="small_padding">4dp</dimen>
+    <dimen name="padding_40">40dp</dimen>
+    <dimen name="big_padding">20dp</dimen>
 </resources>

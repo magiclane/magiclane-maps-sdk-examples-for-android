@@ -27,12 +27,12 @@
             android:paddingBottom="12dp"
             />
 
-        <ProgressBar
+        <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progress_bar"
-            style="?android:attr/progressBarStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:visibility="gone"
+            android:indeterminate="true"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -51,33 +51,43 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/toolbar"
-            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'>
+            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}">
 
-            <ImageView
-                android:id="@+id/nav_icon"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="20dp"
-                app:layout_constraintBottom_toTopOf="@id/instruction_distance"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="ContentDescription" />
-
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/instruction_distance"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/turn_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
-                android:textColor="@android:color/white"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="@id/nav_icon"
-                app:layout_constraintStart_toStartOf="@id/nav_icon"
-                app:layout_constraintTop_toBottomOf="@id/nav_icon" />
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/nav_icon"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    app:layout_constraintBottom_toTopOf="@id/instruction_distance"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:ignore="ContentDescription" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/instruction_distance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:textColor="@android:color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/nav_icon" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/nav_instruction"
@@ -91,7 +101,7 @@
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/nav_icon"
+                app:layout_constraintStart_toEndOf="@id/turn_container"
                 app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -107,8 +117,8 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
+            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             >
 
@@ -139,7 +149,6 @@
                 app:layout_constraintStart_toEndOf="@id/eta"
                 app:layout_constraintTop_toTopOf="parent" />
 
-
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/rtd"
                 android:layout_width="wrap_content"
@@ -156,7 +165,7 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/follow_cursor_button"
+            android:id="@+id/follow_gps_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="10dp"

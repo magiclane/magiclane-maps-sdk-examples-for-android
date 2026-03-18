@@ -72,7 +72,7 @@ class UIExternalPositionTests {
         delay(1000)
         onView(withId(R.id.gem_surface_view)).perform(slowSwipeLeft())
         delay(500)
-        onView(withId(R.id.follow_cursor_button)).check(matches(isDisplayed()))
-        onView(withId(R.id.follow_cursor_button)).perform(click())
+        onView(withId(R.id.follow_gps_button)).check(matches(isDisplayed()))
+        onView(withId(R.id.follow_gps_button)).perform(click())
     }
 }

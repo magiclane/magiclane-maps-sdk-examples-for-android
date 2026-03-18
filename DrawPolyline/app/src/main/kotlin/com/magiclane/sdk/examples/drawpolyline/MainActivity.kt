@@ -7,27 +7,30 @@
 
 package com.magiclane.sdk.examples.drawpolyline
 
-import android.annotation.SuppressLint
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
-import com.magiclane.sdk.core.GemSurfaceView
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.d3scene.Animation
+import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.EMarkerType
 import com.magiclane.sdk.d3scene.Marker
 import com.magiclane.sdk.d3scene.MarkerCollection
 import com.magiclane.sdk.d3scene.MarkerCollectionRenderSettings
 import com.magiclane.sdk.examples.drawpolyline.databinding.ActivityMainBinding
-import com.magiclane.sdk.util.SdkCall
+import com.magiclane.sdk.examples.drawpolyline.databinding.DialogLayoutBinding
 import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 import kotlinx.coroutines.delay
@@ -36,39 +39,63 @@ import kotlinx.coroutines.launch
 class MainActivity : AppCompatActivity() {
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    lateinit var gemSurfaceView: GemSurfaceView
-
     private lateinit var binding: ActivityMainBinding
+
+    private var toolbarHeight = 0
+
+    private var leftInset = 0
+
+    private var rightInset = 0
+
+    private var bottomInset = 0
+
+    private var inflate = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        gemSurfaceView = binding.gemSurface
+
+        inflate = resources.getDimension(R.dimen.padding_40).toInt()
+
+        // Measure app bar height after layout
+        binding.toolbar.post {
+            toolbarHeight = binding.toolbar.height
+        }
+
+        binding.gemSurface.onSdkInitFailed = { error ->
+            val errorMessage = String.format(getString(R.string.sdk_initialization_failed), GemError.getMessage(error, this))
+            Util.postOnMain {
+                showDialog(errorMessage) {
+                    finish()
+                    exitProcess(0)
+                }
+            }
+        }
 
         EspressoIdlingResource.increment()
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
-
-            // Defines an action that should be done when the map is ready.
+        binding.gemSurface.onDefaultMapViewCreated = {
             flyToPolyline()
+
             lifecycleScope.launch {
                 delay(3000)
                 EspressoIdlingResource.decrement()
             }
         }
+
         SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
+            showDialog(getString(R.string.token_rejected_message))
         }
 
-        if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
+        // Set up window insets listener
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            leftInset = systemBars.left + inflate
+            rightInset = systemBars.right + inflate
+            bottomInset = systemBars.bottom + inflate
+            insets
         }
 
         onBackPressedDispatcher.addCallback(this) {
@@ -84,25 +111,27 @@ class MainActivity : AppCompatActivity() {
         GemSdk.release()
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }
 
-    private fun flyToPolyline() = SdkCall.execute {
-        gemSurfaceView.mapView?.let { mapView ->
+    private fun flyToPolyline() {
+        binding.gemSurface.mapView?.let { mapView ->
             /**
              * Make a MarkerCollection and a Marker item that will be stored in the collection.
              * You can create multiple Marker items that can be added in the same collection.
@@ -135,8 +164,24 @@ class MainActivity : AppCompatActivity() {
             mapView.preferences?.markers?.add(markerCollection, settings)
 
             // Center the map on this marker collection's area.
-            markerCollection.area?.let { mapView.centerOnArea(it) }
+            markerCollection.area?.let {
+                mapView.centerOnRectArea(
+                    area = it,
+                    zoomLevel = -1,
+                    getFreeSpaceRectangle(),
+                    animation = Animation(EAnimation.Linear, duration = 900),
+                )
+            }
         }
+    }
+
+    private fun getFreeSpaceRectangle(): Rect {
+        return Rect(
+            leftInset,
+            toolbarHeight + inflate,
+            binding.root.width - rightInset,
+            binding.root.height - bottomInset,
+        )
     }
 }
 

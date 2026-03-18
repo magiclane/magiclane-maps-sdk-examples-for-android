@@ -14,18 +14,20 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
-import android.widget.Button
+import android.view.View
 import android.widget.ProgressBar
-import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.DataBuffer
 import com.magiclane.sdk.core.EPathFileFormat
@@ -33,19 +35,23 @@ import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.Path
+import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.Rgba
+import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.Xy
 import com.magiclane.sdk.d3scene.EMarkerType
 import com.magiclane.sdk.d3scene.MapView
 import com.magiclane.sdk.d3scene.Marker
-import com.magiclane.sdk.d3scene.MarkerCollection
-import com.magiclane.sdk.d3scene.MarkerCollectionRenderSettings
+import com.magiclane.sdk.d3scene.MarkerRenderSettings
 import com.magiclane.sdk.examples.fingerroute.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.fingerroute.databinding.DialogLayoutBinding
+import com.magiclane.sdk.routesandnavigation.ERouteStatus
 import com.magiclane.sdk.routesandnavigation.ERouteTransportMode
 import com.magiclane.sdk.routesandnavigation.RoutingService
 import com.magiclane.sdk.util.GEMLog
 import com.magiclane.sdk.util.SdkCall
+import com.magiclane.sdk.util.Util
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.system.exitProcess
@@ -71,6 +77,20 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var path: Path
 
+    private val fingerLineMarker = Marker()
+
+    private val fingerLineRenderSettings = MarkerRenderSettings()
+
+    private var fingerLineMarkerIndex = -1
+
+    private var appBarHeight = 0
+
+    private val checkAuthorizationListener = ProgressListener.create(onCompleted = { errorCode, _ ->
+        if (errorCode != GemError.NoError) {
+            showInvalidTokenDialog()
+        }
+    })
+
     private var routingIsActive = false
         set(value) {
             field = value
@@ -89,12 +109,18 @@ class MainActivity : AppCompatActivity() {
                 SdkCall.execute {
                     val mapRoutes = mapSurface.mapView?.preferences?.routes
                     mapRoutes?.let {
-                        polylineCollection.clear()
                         if (it.size > 0) {
                             it.clear()
                         } else {
                             routingService.cancelRoute()
                         }
+                    }
+
+                    fingerLineMarker.delPart(0)
+
+                    if (fingerLineMarkerIndex > 0) {
+                        mapSurface.mapView?.preferences?.markers?.sketches(EMarkerType.Polyline)?.del(fingerLineMarkerIndex)
+                        fingerLineMarkerIndex = -1
                     }
                 }
             }
@@ -104,13 +130,17 @@ class MainActivity : AppCompatActivity() {
 
     private var fingerRouteIsVisible = true
 
-    private val fingerPolyline: ArrayList<Pair<Float, Float>> = arrayListOf()
+    private var mapButtonSize = 0
 
-    private lateinit var polylineCollection: MarkerCollection
+    private var mapButtonMargin = 0
 
-    private lateinit var polylineSettings: MarkerCollectionRenderSettings
+    private var leftInset = 0
 
-    private var inset = 0
+    private var rightInset = 0
+
+    private var bottomInset = 0
+
+    private var inflate = 0
 
     private var transportMode = ERouteTransportMode.Bicycle
 
@@ -124,38 +154,41 @@ class MainActivity : AppCompatActivity() {
             progressBar.isVisible = false
 
             when (error) {
-                GemError.NoError ->
-                    {
-                        SdkCall.execute {
-                            if (routes.isNotEmpty()) {
-                                mapSurface.mapView?.presentRoute(
-                                    routes[0],
-                                    edgeAreaInsets = Rect(inset, 2 * inset, inset, 2 * inset),
-                                )
-                            }
+                GemError.NoError -> {
+                    SdkCall.execute {
+                        if (routes.isNotEmpty()) {
+                            mapSurface.mapView?.presentRoute(
+                                routes[0],
+                                edgeAreaInsets = Rect(leftInset, getAppBarHeight() + mapButtonSize + mapButtonMargin + inflate, rightInset, bottomInset),
+                                displayBubble = true,
+                                displayRouteName = true,
+                                displayTrafficIcon = false
+                            )
                         }
-
-                        fingerRouteIsVisible = true
-                        binding.topRightButton.isVisible = true
-                        setupLiningButton(true)
-                        binding.bottomLeftButton.isVisible = true
                     }
 
-                GemError.Cancel ->
-                    {
-                        // The routing action was cancelled.
-                        showDialog("The routing action was cancelled.")
-                        routingIsActive = false
-                    }
+                    fingerRouteIsVisible = true
+                    binding.topRightButton.isVisible = true
+                    setupLiningButton(true)
+                    binding.bottomLeftButton.isVisible = true
+                }
 
-                else ->
-                    {
-                        // There was a problem at computing the routing operation.
-                        showDialog("Routing service error: ${GemError.getMessage(error)}")
-                        routingIsActive = false
-                    }
+                GemError.Cancel -> {
+                    routingIsActive = false
+                }
+
+                else -> {
+                    // There was a problem at computing the routing operation.
+                    showDialog(GemError.getMessage(error, this))
+                    routingIsActive = false
+                }
             }
         },
+        onStatusChanged = { status ->
+           if (status == ERouteStatus.WaitingInternetConnection.value) {
+                showDialog(getString(R.string.internet_required))
+           }
+        }
     )
 
     private class ShareGPXTask(
@@ -179,7 +212,7 @@ class MainActivity : AppCompatActivity() {
                         activity,
                         activity.packageName + ".provider",
                         gpxFile,
-                    ),
+                    )
                 )
             } catch (e: Exception) {
                 GEMLog.error(this, "ShareGPXTask.doInBackground(): error = ${e.message}")
@@ -212,20 +245,54 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
 
         mapSurface = binding.gemSurface
-
         progressBar = binding.progressBar
+        inflate = resources.getDimension(R.dimen.padding_40).toInt()
+        mapButtonSize = resources.getDimension(R.dimen.map_button_size).toInt()
+        mapButtonMargin = resources.getDimension(R.dimen.map_buttons_margin).toInt()
 
-        inset = resources.getDimension(R.dimen.inset).toInt()
+        // Set up window insets listener
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            leftInset = systemBars.left + inflate
+            rightInset = systemBars.right + inflate
+            bottomInset = systemBars.bottom + inflate + mapButtonSize + mapButtonMargin
+            insets
+        }
+
+        SdkSettings.onConnectionStatusUpdated = { isConnected ->
+            if (isConnected) {
+                SdkSettings.appAuthorization?.let {
+                    SdkCall.execute {
+                        SdkSettings.verifyAppAuthorization(it, checkAuthorizationListener)
+                    }
+                } ?: run {
+                    showInvalidTokenDialog()
+                }
+
+                SdkSettings.onConnectionStatusUpdated = {}
+            }
+        }
+
+        mapSurface.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            Util.postOnMain {
+                showDialog(errorMessage) {
+                    finish()
+                    exitProcess(0)
+                }
+            }
+        }
 
         mapSurface.onDefaultMapViewCreated = {
-            polylineCollection = MarkerCollection(EMarkerType.Polyline, "Polyline")
-            polylineSettings = MarkerCollectionRenderSettings(polylineInnerColor = Rgba.magenta())
-            polylineSettings.polylineInnerSize = 1.5 // mm
+            fingerLineRenderSettings.apply {
+                polylineInnerColor = Rgba.magenta()
+                polylineInnerSize = 1.5
+            }
 
-            mapSurface.mapView?.preferences?.markers?.add(polylineCollection, polylineSettings)
-
-            routingService.preferences.ignoreRestrictionsOverTrack = true
-            routingService.preferences.accurateTrackMatch = false
+            routingService.preferences.apply {
+                ignoreRestrictionsOverTrack = true
+                accurateTrackMatch = false
+            }
 
             applyCustomAssetStyle(mapSurface.mapView)
         }
@@ -233,10 +300,48 @@ class MainActivity : AppCompatActivity() {
         mapSurface.onPreHandleTouchListener = { event ->
             if (fingerRouteMode) {
                 event?.let {
-                    fingerPolyline.add(Pair(it.x, it.y))
-                    if (it.action == MotionEvent.ACTION_UP) {
-                        prepareMarker()
-                        fingerPolyline.clear()
+                    SdkCall.execute {
+                        mapSurface.mapView?.let { mapView ->
+                            mapView.transformScreenToWgs(Xy(it.x, it.y))?.let { coordinates ->
+                                when (it.action) {
+                                    MotionEvent.ACTION_DOWN -> {
+                                        fingerLineMarker.delPart(0)
+
+                                        if (fingerLineMarkerIndex < 0) {
+                                            fingerLineMarkerIndex = mapView.preferences?.markers?.sketches(EMarkerType.Polyline)?.add(fingerLineMarker, fingerLineRenderSettings) ?: -1
+                                        }
+
+                                        fingerLineMarker.add(coordinates)
+                                    }
+
+                                    MotionEvent.ACTION_MOVE -> {
+                                        val n = fingerLineMarker.getCoordinates()?.size ?: 0
+                                        if (n > 0) {
+                                            fingerLineMarker.getCoordinates()?.get(n - 1)?.let { lastCoordinates ->
+                                                if (lastCoordinates.getDistance(coordinates) >= 5) {
+                                                    fingerLineMarker.add(coordinates)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    else -> {
+                                        fingerLineMarker.add(coordinates)
+
+                                        val coordinatesList = fingerLineMarker.getCoordinates()
+                                        coordinatesList?.let { coordinates ->
+                                            path = Path.produceWithCoords(coordinates)
+                                            val error = routingService.calculateRoute(path, transportMode)
+                                            if (error != GemError.NoError) {
+                                                showDialog(GemError.getMessage(error, this))
+                                                setupTopLeftButton(TopLeftButtonState.ROUTING_OFF)
+                                            }
+                                            fingerRouteMode = false
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 false
@@ -255,7 +360,7 @@ class MainActivity : AppCompatActivity() {
                         TopLeftButtonState.ROUTING_ON
                     } else {
                         TopLeftButtonState.ROUTING_OFF
-                    },
+                    }
                 )
             }
         }
@@ -263,18 +368,16 @@ class MainActivity : AppCompatActivity() {
         binding.topRightButton.setOnClickListener {
             fingerRouteIsVisible = !fingerRouteIsVisible
             setupLiningButton(fingerRouteIsVisible)
-            if (fingerRouteIsVisible) {
-                SdkCall.execute {
-                    mapSurface.mapView?.preferences?.markers?.add(
-                        polylineCollection,
-                        polylineSettings,
-                    )
-                }
-            } else {
-                SdkCall.execute {
-                    mapSurface.mapView?.preferences?.markers?.removeCollection(
-                        polylineCollection,
-                    )
+            SdkCall.execute {
+                mapSurface.mapView?.preferences?.markers?.sketches(EMarkerType.Polyline)?.let { polylineMarkers ->
+                    if (fingerRouteIsVisible) {
+                        fingerLineMarkerIndex = polylineMarkers.add(fingerLineMarker, fingerLineRenderSettings)
+                    } else {
+                        if (fingerLineMarkerIndex >= 0) {
+                            polylineMarkers.del(fingerLineMarkerIndex)
+                            fingerLineMarkerIndex = -1
+                        }
+                    }
                 }
             }
         }
@@ -297,6 +400,14 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            showInvalidTokenDialog()
+        }
+
+        if (!Util.isInternetConnected(this)) {
+            showDialog(getString(R.string.internet_required))
         }
 
         onBackPressedDispatcher.addCallback(this) {
@@ -338,23 +449,35 @@ class MainActivity : AppCompatActivity() {
         GemSdk.release()
     }
 
-    private fun showDialog(text: String) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }
 
-    private fun applyCustomAssetStyle(mapView: MapView?) = SdkCall.execute {
+    private fun showInvalidTokenDialog() {
+        showDialog(
+            getString(R.string.invalid_token),
+        ) {
+            finish()
+            exitProcess(0)
+        }
+    }
+
+    private fun applyCustomAssetStyle(mapView: MapView?) {
         val filename = "CustomBasic.style"
 
         // Opens style input stream.
@@ -362,41 +485,9 @@ class MainActivity : AppCompatActivity() {
 
         // Take bytes.
         val data = inputStream.readBytes()
-        if (data.isEmpty()) return@execute
-
-        // Apply style.
-        mapView?.preferences?.setMapStyleByDataBuffer(DataBuffer(data))
-    }
-
-    private fun prepareMarker() = SdkCall.execute {
-        mapSurface.mapView?.let { mapView ->
-            polylineCollection.clear()
-            Marker().run {
-                for (point in fingerPolyline)
-                    mapView.transformScreenToWgs(Xy(point.first, point.second))
-                        ?.let { coordinates -> add(coordinates) }
-
-                polylineCollection.add(this)
-
-                val coordinatesList = getCoordinates(0)
-                coordinatesList?.let { coordinates ->
-                    path = Path.produceWithCoords(coordinates)
-                    val waypoints = arrayListOf(path.toLandmark())
-                    val error =
-                        routingService.calculateRoute(waypoints, transportMode)
-                    if (error != GemError.NoError) {
-                        showDialog(
-                            "Routing service error: ${
-                                GemError.getMessage(
-                                    error,
-                                )
-                            }",
-                        )
-                        setupTopLeftButton(TopLeftButtonState.ROUTING_OFF)
-                    }
-                    fingerRouteMode = false
-                }
-            }
+        if (!data.isEmpty()) {
+            // Apply style.
+            mapView?.preferences?.setMapStyleByDataBuffer(DataBuffer(data))
         }
     }
 
@@ -407,7 +498,7 @@ class MainActivity : AppCompatActivity() {
                 TopLeftButtonState.ROUTING_ON, TopLeftButtonState.ROUTING_OFF -> R.drawable.touch
                 TopLeftButtonState.CANCEL_ROUTING -> R.drawable.ic_close_24
             },
-            theme,
+            theme
         )
 
         binding.topLeftButton.iconTint = ContextCompat.getColorStateList(
@@ -415,7 +506,7 @@ class MainActivity : AppCompatActivity() {
             when (state) {
                 TopLeftButtonState.ROUTING_ON, TopLeftButtonState.ROUTING_OFF -> R.color.white
                 TopLeftButtonState.CANCEL_ROUTING -> R.color.red
-            },
+            }
         )
 
         binding.topLeftButton.setBackgroundColor(
@@ -425,8 +516,8 @@ class MainActivity : AppCompatActivity() {
                     TopLeftButtonState.ROUTING_ON -> R.color.green
                     TopLeftButtonState.ROUTING_OFF -> R.color.gray
                     TopLeftButtonState.CANCEL_ROUTING -> R.color.white
-                },
-            ),
+                }
+            )
         )
     }
 
@@ -437,5 +528,26 @@ class MainActivity : AppCompatActivity() {
                 if (isActive) R.color.green else R.color.gray,
             ),
         )
+    }
+
+    fun getAppBarHeight(): Int {
+        // Return stored value if available
+        if (appBarHeight > 0) {
+            return appBarHeight
+        }
+
+        // Try to get current height
+        val currentHeight = binding.appBar.height
+        if (currentHeight > 0) {
+            appBarHeight = currentHeight
+            return appBarHeight
+        }
+
+        // Fallback: measure the app bar layout
+        binding.appBar.measure(
+            View.MeasureSpec.makeMeasureSpec(binding.appBar.width, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        return binding.appBar.measuredHeight
     }
 }
