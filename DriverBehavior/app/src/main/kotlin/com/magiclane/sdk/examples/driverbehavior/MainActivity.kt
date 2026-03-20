@@ -20,7 +20,6 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.github.mikephil.charting.charts.BarChart
@@ -126,11 +125,6 @@ class MainActivity : AppCompatActivity() {
         if (!Util.isInternetConnected(this)) {
             showDialog(getString(R.string.internet_required))
         }
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
     }
 
     override fun onResume() {
@@ -143,7 +137,6 @@ class MainActivity : AppCompatActivity() {
             else {
                 showDialog(getString(R.string.location_services_required)) {
                     finish()
-                    exitProcess(0)
                 }
             }
         }
@@ -162,6 +155,7 @@ class MainActivity : AppCompatActivity() {
 
         // Deinitialize the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
@@ -172,7 +166,6 @@ class MainActivity : AppCompatActivity() {
             if (item != PackageManager.PERMISSION_GRANTED) {
                 showDialog(getString(R.string.location_permission_required)) {
                     finish()
-                    exitProcess(0)
                 }
                 return
             }

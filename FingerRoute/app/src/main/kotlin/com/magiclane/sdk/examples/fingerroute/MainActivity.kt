@@ -16,7 +16,6 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.widget.ProgressBar
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -409,11 +408,6 @@ class MainActivity : AppCompatActivity() {
         if (!Util.isInternetConnected(this)) {
             showDialog(getString(R.string.internet_required))
         }
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -447,6 +441,7 @@ class MainActivity : AppCompatActivity() {
 
         // Deinitialize the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {

@@ -8,12 +8,14 @@
 package com.magiclane.sdk.examples.hellofragmentcustomstyle
 
 import android.os.Bundle
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.examples.hellofragmentcustomstyle.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.hellofragmentcustomstyle.databinding.DialogLayoutBinding
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
@@ -26,14 +28,12 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // This step of initialization is mandatory if you want to use the SDK without a map.
-        if (GemSdk.initSdkWithDefaults(this) != GemError.NoError) {
-            // The SDK initialization was not completed.
-            finish()
-        }
-        onBackPressedDispatcher.addCallback {
-            finish()
-            exitProcess(0)
+        val error = GemSdk.initSdkWithDefaults(this)
+        if (error != GemError.NoError) {
+            showDialog(GemError.getMessage(error, this)) {
+                finish()
+                exitProcess(0)
+            }
         }
     }
 
@@ -42,5 +42,25 @@ class MainActivity : AppCompatActivity() {
 
         // Release the SDK.
         GemSdk.release()
+        exitProcess(0)
+    }
+
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        val dialog = BottomSheetDialog(this)
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
+            setCancelable(false)
+            setContentView(dialogBinding.root)
+            show()
+        }
     }
 }

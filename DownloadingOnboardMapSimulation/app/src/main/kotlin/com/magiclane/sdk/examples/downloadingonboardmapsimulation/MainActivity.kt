@@ -7,14 +7,8 @@
 
 package com.magiclane.sdk.examples.downloadingonboardmapsimulation
 
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.widget.Button
-import android.widget.TextView
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
@@ -22,44 +16,60 @@ import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.content.ContentStore
 import com.magiclane.sdk.content.ContentStoreItem
 import com.magiclane.sdk.content.EContentStoreItemStatus
 import com.magiclane.sdk.content.EContentType
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.EUnitSystem
+import com.magiclane.sdk.core.ErrorCode
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.MapDetails
 import com.magiclane.sdk.core.ProgressListener
+import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.core.SoundPlayingListener
+import com.magiclane.sdk.core.SoundPlayingPreferences
+import com.magiclane.sdk.core.SoundPlayingService
 import com.magiclane.sdk.core.Time
 import com.magiclane.sdk.examples.downloadingonboardmapsimulation.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.downloadingonboardmapsimulation.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Landmark
+import com.magiclane.sdk.routesandnavigation.ENavigationStatus
+import com.magiclane.sdk.routesandnavigation.ERouteStatus
 import com.magiclane.sdk.routesandnavigation.NavigationInstruction
 import com.magiclane.sdk.routesandnavigation.NavigationListener
 import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.util.GemUtil
+import com.magiclane.sdk.util.GemUtilImages
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
+import com.magiclane.sound.SoundUtils
 import java.util.Locale
 import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationListener {
+    class TSameImage(var value: Boolean = false)
+
     private lateinit var binding: ActivityMainBinding
+
+    private val turnImageSize: Int by lazy {
+        resources.getDimension(R.dimen.turn_image_size).toInt()
+    }
+
+    private var lastTurnImageId: Long = Long.MAX_VALUE
 
     private val mapName = "Luxembourg"
 
-    private val kDefaultToken = "YOUR_TOKEN"
-
-    private var mapsCatalogRequested = false
-
-    private var connected = false
-
-    private var mapReady = false
-
     private var requiredMapHasBeenDownloaded = false
+
+    private val playingListener = object : SoundPlayingListener() {}
+
+    private val soundPreference = SoundPlayingPreferences()
 
     // Define a content store that will deliver us the map.
     private val contentStore = ContentStore()
@@ -67,8 +77,21 @@ class MainActivity : AppCompatActivity() {
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
 
+    private var navigationStatus = ENavigationStatus.Running
+
     private val navRoute: Route?
         get() = navigationService.getNavigationRoute(navigationListener)
+
+    private val checkAuthorizationListener = ProgressListener.create(onCompleted = { errorCode, _ ->
+        if (errorCode != GemError.NoError) {
+            showInvalidTokenDialog()
+        }
+        else {
+            if (!requiredMapHasBeenDownloaded) {
+                loadMaps()
+            }
+        }
+    })
 
     /**
      * Define a navigation listener that will receive notifications from the
@@ -78,7 +101,6 @@ class MainActivity : AppCompatActivity() {
         onNavigationStarted = {
             SdkCall.execute {
                 binding.gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.enableCursor = false
                     navRoute?.let { route ->
                         mapView.presentRoute(route)
                     }
@@ -90,13 +112,14 @@ class MainActivity : AppCompatActivity() {
 
             binding.topPanel.isVisible = true
             binding.bottomPanel.isVisible = true
+            binding.statusText.isVisible = false
 
-            showStatusMessage("Simulation started.")
             EspressoIdlingResource.decrementNavigationResource()
         },
         onNavigationInstructionUpdated = { instr ->
             var instrText = ""
             var instrIcon: Bitmap? = null
+            val sameTurnImage = TSameImage()
             var instrDistance = ""
 
             var etaText = ""
@@ -105,7 +128,12 @@ class MainActivity : AppCompatActivity() {
 
             SdkCall.execute { // Fetch data for the navigation top panel (instruction related info).
                 instrText = instr.nextStreetName ?: ""
-                instrIcon = instr.nextTurnImage?.asBitmap(100, 100)
+
+                if (instrText.isEmpty()) {
+                    instrText = instr.nextTurnInstruction ?: ""
+                }
+
+                instrIcon = getNextTurnImage(instr, turnImageSize, turnImageSize, sameTurnImage)
                 instrDistance = instr.getDistanceInMeters()
 
                 // Fetch data for the navigation bottom panel (route related info).
@@ -119,18 +147,32 @@ class MainActivity : AppCompatActivity() {
             // Update the navigation panels info.
             binding.apply {
                 navInstruction.text = instrText
-                navInstructionIcon.setImageBitmap(instrIcon)
-                navInstructionDistance.text = instrDistance
+                if (!sameTurnImage.value) {
+                    navIcon.setImageBitmap(instrIcon)
+                }
+                instructionDistance.text = instrDistance
 
                 eta.text = etaText
                 rtt.text = rttText
                 rtd.text = rtdText
-
-                if (statusText.isVisible) {
-                    statusText.isVisible = false
-                }
             }
         },
+        onDestinationReached = {
+            onNavigationEnded()
+        },
+        onNotifyStatusChange = { status ->
+            navigationStatus = status
+            refreshStatusMessage()
+        },
+        onNavigationError = { error ->
+            onNavigationEnded(error)
+        },
+        onNavigationSound = { sound ->
+            SdkCall.execute {
+                SoundPlayingService.play(sound, playingListener, soundPreference)
+            }
+        },
+        canPlayNavigationSound = true
     )
 
     // Define a listener that will let us know the progress of the routing process.
@@ -231,71 +273,16 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
+        SoundUtils.addTTSPlayerInitializationListener(this)
+
         if (EspressoIdlingResource.isDownloadingTest) {
             EspressoIdlingResource.incrementDownloadingResource()
         } else {
             EspressoIdlingResource.incrementNavigationResource()
         }
-        val loadMaps = {
-            mapsCatalogRequested = true
-            val loadMapsCatalog = {
-                SdkCall.execute {
-                    // Call to the content store to asynchronously retrieve the list of maps.
-                    contentStore.asyncGetStoreContentList(EContentType.RoadMap, contentListener)
-                }
-            }
-
-            val token = GemSdk.getTokenFromManifest(this)
-
-            if (!token.isNullOrEmpty() && (token != kDefaultToken)) {
-                loadMapsCatalog()
-            } else {
-                binding.progressBar.isVisible = true
-
-                // If token is not present try to avoid content server
-                // requests limitation by delaying the voices catalog request
-                Handler(Looper.getMainLooper()).postDelayed(
-                    {
-                        loadMapsCatalog()
-                    },
-                    3000,
-                )
-            }
-        }
-
-        SdkSettings.onMapDataReady = { it ->
-            if (!requiredMapHasBeenDownloaded) {
-                mapReady = it
-                if (connected && mapReady && !mapsCatalogRequested) loadMaps()
-            }
-        }
-
-        SdkSettings.onConnectionStatusUpdated = { it ->
-            if (!requiredMapHasBeenDownloaded) {
-                connected = it
-                if (connected && mapReady && !mapsCatalogRequested) loadMaps()
-            }
-        }
-
-        // If SDK is already initialized (e.g. by GemSdkTestRule), callbacks above won't fire.
-        if (SdkSettings.isMapDataReady && !requiredMapHasBeenDownloaded) {
-            mapReady = true
-            connected = true
-            if (!mapsCatalogRequested) loadMaps()
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
-        }
 
         binding.gemSurfaceView.onSdkInitSucceeded = onSdkInitSucceeded@{
-            val localMaps =
-                contentStore.getLocalContentList(EContentType.RoadMap) ?: return@onSdkInitSucceeded
+            val localMaps = contentStore.getLocalContentList(EContentType.RoadMap) ?: return@onSdkInitSucceeded
 
             for (map in localMaps) {
                 val mapName = map.name ?: continue
@@ -305,26 +292,46 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            // Defines an action that should be done when the the sdk had been loaded.
-            if (requiredMapHasBeenDownloaded) onOnboardMapReady()
+            if (requiredMapHasBeenDownloaded) {
+                onOnboardMapReady()
+            }
+            else {
+                runOnUiThread {
+                    if (!Util.isInternetConnected(this)) {
+                        showDialog(getString(R.string.internet_required))
+                    }
+                }
+            }
         }
 
-        if (!requiredMapHasBeenDownloaded && !Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            Util.postOnMain {
+                showDialog(errorMessage) {
+                    finish()
+                    exitProcess(0)
+                }
+            }
         }
 
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+
+                if (!requiredMapHasBeenDownloaded) {
+                    SdkSettings.appAuthorization?.let {
+                        SdkCall.execute {
+                            SdkSettings.verifyAppAuthorization(it, checkAuthorizationListener)
+                        }
+                    } ?: run {
+                        showInvalidTokenDialog()
+                    }
+                }
+            }
         }
-    }
 
-    override fun onStop() {
-        super.onStop()
-
-        // Release the SDK.
-        if (isFinishing) {
-            GemSdk.release()
+        SdkSettings.onApiTokenRejected = {
+            showInvalidTokenDialog()
         }
     }
 
@@ -354,7 +361,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onProgressUpdated(progress: Int) {
-        binding.downloadProgressBar.progress = progress
+        binding.downloadProgressBar.setProgressCompat(progress, true)
     }
 
     private fun onOnboardMapReady() {
@@ -375,20 +382,30 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
+        }
+    }
+
+    private fun showInvalidTokenDialog() {
+        showDialog(
+            getString(R.string.invalid_token),
+        ) {
+            finish()
         }
     }
 
@@ -432,6 +449,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Deinitialize the SDK.
+        GemSdk.release()
+        exitProcess(0)
+    }
+
     private fun enableGPSButton() { // Set actions for entering/ exiting following position mode.
         binding.apply {
             gemSurfaceView.mapView?.apply {
@@ -447,6 +472,96 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    // ITTSPlayerInitializationListener
+    override fun onTTSPlayerInitialized() {
+        SoundPlayingService.setTTSLanguage("eng-USA")
+    }
+
+    // ITTSPlayerInitializationListener
+    override fun onTTSPlayerInitializationFailed() {
+        SoundPlayingService.setDefaultHumanVoice()
+    }
+
+    private fun onNavigationEnded(errorCode: ErrorCode = GemError.NoError) {
+        runOnUiThread {
+            if ((errorCode != GemError.NoError) && (errorCode != GemError.Cancel)) {
+                showDialog(GemError.getMessage(errorCode))
+            }
+
+            binding.apply {
+                binding.topPanel.isVisible = false
+                binding.bottomPanel.isVisible = false
+            }
+        }
+
+        SdkCall.execute {
+            binding.gemSurfaceView.mapView?.hideRoutes()
+        }
+    }
+
+    private fun refreshStatusMessage() {
+        val statusMessage = getStatusMessage()
+        if (statusMessage.isEmpty()) {
+            binding.turnContainer.isVisible = true
+        } else {
+            binding.turnContainer.isVisible = false
+            binding.navInstruction.text = statusMessage
+        }
+    }
+
+    private fun getNextTurnImage(
+        navInstr: NavigationInstruction,
+        width: Int,
+        height: Int,
+        sameImage: TSameImage
+    ): Bitmap? {
+        if (!navInstr.hasNextTurnInfo()) return null
+        if ((navInstr.nextTurnDetails?.abstractGeometryImage?.uid ?: 0) == lastTurnImageId) {
+            sameImage.value = true
+            return null
+        }
+
+        val image = navInstr.nextTurnDetails?.abstractGeometryImage
+        if (image != null) {
+            lastTurnImageId = image.uid
+        }
+
+        val aInner = Rgba(255, 255, 255, 255)
+        val aOuter = Rgba(0, 0, 0, 255)
+        val iInner = Rgba(128, 128, 128, 255)
+        val iOuter = Rgba(128, 128, 128, 255)
+
+        return GemUtilImages.asBitmap(
+            image,
+            width,
+            height,
+            aInner,
+            aOuter,
+            iInner,
+            iOuter,
+        )
+    }
+
+    private fun getStatusMessage(): String {
+        when (navigationStatus) {
+            ENavigationStatus.WaitingRoute -> {
+                if (navRoute?.status == ERouteStatus.WaitingInternetConnection) {
+                    return getString(R.string.waiting_for_internet_connection)
+                }
+            }
+            else -> {
+                // Do nothing for other statuses
+            }
+        }
+
+        return ""
+    }
+
+    private fun loadMaps() = SdkCall.execute {
+        // Call to the content store to asynchronously retrieve the list of maps.
+        contentStore.asyncGetStoreContentList(EContentType.RoadMap, contentListener)
     }
 }
 

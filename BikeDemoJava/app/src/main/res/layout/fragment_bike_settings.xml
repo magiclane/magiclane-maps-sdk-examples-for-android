@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/background"
+        app:paddingBottomWithSystemWindowInsets='@{@dimen/no_extra_inset}'
+        app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
+        app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
+        app:paddingTopWithSystemWindowInsets='@{@dimen/no_extra_inset}'>
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/bike_settings_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0"
+            app:navigationIcon="@drawable/baseline_arrow_back_24"
+            app:title="@string/bike_settings_text" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/settings_list"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/bike_settings_toolbar"
+            app:layout_constraintVertical_bias="0"
+            tools:itemCount="50" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

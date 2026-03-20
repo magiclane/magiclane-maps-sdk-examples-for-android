@@ -9,7 +9,7 @@ package com.magiclane.sdk.examples.androidautoroutenavigation.activities
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.OnBackPressedCallback
+import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.databinding.DataBindingUtil
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -52,14 +52,9 @@ class MainActivity : BaseActivity() {
             controller.onDefaultMapViewCreated()
         }
 
-        onBackPressedDispatcher.addCallback(
-            this /* lifecycle owner */,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    controller.onBackPressed()
-                }
-            },
-        )
+        onBackPressedDispatcher.addCallback(this) {
+            controller.onBackPressed()
+        }
     }
 
     override fun onDestroy() {

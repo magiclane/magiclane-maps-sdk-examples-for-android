@@ -2,4 +2,15 @@
     <string name="app_name">ApplyMapStyle</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+    <string name="token_rejected_message">This example requires a valid token. If you don\'t have a token, check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="check_application_token">Check application token</string>
+    <string name="download_map_styles_list">Download map styles list.</string>
+    <string name="map_style_list_download_failed">The map style list download failed with error %1$s</string>
+    <string name="map_style_list_empty">The downloaded map style list is empty!</string>
+    <string name="style_applied">Style %1$s was applied.</string>
+    <string name="download_map_style">Download %1$s.</string>
+    <string name="map_style_download_failed">The map style download failed with error %1$s</string>
+    <string name="error_starting_download">Error starting download: %1$s</string>
 </resources>

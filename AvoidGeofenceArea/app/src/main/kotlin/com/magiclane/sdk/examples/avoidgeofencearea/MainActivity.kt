@@ -10,14 +10,15 @@ package com.magiclane.sdk.examples.avoidgeofencearea
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.CircleGeographicArea
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
+import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.Geofence
 import com.magiclane.sdk.core.GeofenceArea
 import com.magiclane.sdk.core.GeofenceAreaList
@@ -39,6 +40,7 @@ import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
+@Suppress("SameParameterValue")
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -47,13 +49,13 @@ class MainActivity : AppCompatActivity() {
 
     private val routingService = RoutingService(
         onStarted = {
-            showStatusMessage("Calculating route...", withProgress = true)
+            showStatusMessage(getString(R.string.calculating_route), withProgress = true)
         },
         onCompleted = onCompleted@{ routes, errorCode, _ ->
-            showStatusMessage("Route calculation completed")
+            showStatusMessage(getString(R.string.route_calculation_completed))
 
             if (errorCode != GemError.NoError) {
-                showDialog("Route calculation failed with error ${GemError.getMessage(errorCode, this)}") {
+                showDialog(getString(R.string.route_calculation_failed, GemError.getMessage(errorCode, this))) {
                     finish()
                     exitProcess(0)
                 }
@@ -77,7 +79,7 @@ class MainActivity : AppCompatActivity() {
 
     private val addAreasProgressListener = ProgressListener.create(onCompleted = { error, _ ->
         if (error != GemError.NoError) {
-            showDialog("Add area to geofence failed with error ${GemError.getMessage(error, this)}") {
+            showDialog(getString(R.string.add_area_failed, GemError.getMessage(error, this))) {
                 finish()
                 exitProcess(0)
             }
@@ -111,7 +113,7 @@ class MainActivity : AppCompatActivity() {
 
     private val loginProgressListener = ProgressListener.create(onCompleted = { error, _ ->
         if (error != GemError.NoError) {
-            showDialog("Login failed with error = ${GemError.getMessage(error, this)}") {
+            showDialog(getString(R.string.login_failed, GemError.getMessage(error, this))) {
                 finish()
                 exitProcess(0)
             }
@@ -120,13 +122,13 @@ class MainActivity : AppCompatActivity() {
                 geofenceAreas = arrayListOf(
                     GeofenceArea(
                         CircleGeographicArea(Coordinates(45.5950875, 25.6359825), 1000),
-                        "Area to avoid",
+                        getString(R.string.area_to_avoid),
                     ),
                 )
                 val error = geofence.addAreas(geofenceAreas, addAreasProgressListener)
                 if (error != GemError.NoError) {
                     Util.postOnMain {
-                        showDialog("Can't add area to geofence. The error is ${GemError.getMessage(error, this)}") {
+                        showDialog(getString(R.string.cant_add_area, GemError.getMessage(error, this))) {
                             finish()
                             exitProcess(0)
                         }
@@ -144,7 +146,7 @@ class MainActivity : AppCompatActivity() {
         inset = getSizeInPixels(85)
 
         binding.gemSurface.onSdkInitFailed = { error ->
-            val errorMessage = "SDK initialization failed: ${GemError.getMessage(error, this)}"
+            val errorMessage = getString(R.string.sdk_init_failed, GemError.getMessage(error, this))
             Util.postOnMain {
                 showDialog(errorMessage) {
                     finish()
@@ -154,15 +156,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.gemSurface.onDefaultMapViewCreated = { _ ->
-            if (!Util.isInternetConnected(this)) {
-                Util.postOnMainDelayed({
-                    showStatusMessage("You must be connected to the internet!")
-                }, 0)
+            Util.postOnMain {
+                if (!Util.isInternetConnected(this)) {
+                    showStatusMessage(getString(R.string.internet_required))
+                }
+                else {
+                    showStatusMessage(getString(R.string.waiting_for_map_data))
+                }
             }
         }
 
-        SdkSettings.onConnectionStatusUpdated = { isConnected ->
-            if (isConnected) {
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
                 SdkCall.execute {
                     val error = Login.registerExternalLogin(
                         "__my_spceial_login_id__",
@@ -170,30 +175,28 @@ class MainActivity : AppCompatActivity() {
                     )
                     if (error != GemError.NoError) {
                         Util.postOnMain {
-                            showDialog("Error registering external login: ${GemError.getMessage(error, this)}") {
+                            showDialog(getString(R.string.external_login_error, GemError.getMessage(error, this))) {
                                 finish()
                                 exitProcess(0)
                             }
                         }
                     }
                 }
-
-                SdkSettings.onConnectionStatusUpdated = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
             }
         }
 
         SdkSettings.onApiTokenRejected = {
-            showDialog(
-                "The token you provided was rejected. " +
-                    "Make sure you provide the correct value, or if you don't have a token, " +
-                    "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.",
-            )
+            showDialog(getString(R.string.token_rejected))
         }
+    }
 
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Deinitialize the SDK.
+        GemSdk.release()
+        exitProcess(0)
     }
 
     private fun calculateRoute() = SdkCall.execute {
@@ -202,12 +205,12 @@ class MainActivity : AppCompatActivity() {
             Landmark("Predeal", 45.5052, 25.5742),
         )
 
-        routingService.preferences.avoidGeofenceAreas = arrayListOf("Area to avoid")
+        routingService.preferences.avoidGeofenceAreas = arrayListOf(getString(R.string.area_to_avoid))
 
         val error = routingService.calculateRoute(waypoints)
         if (error != GemError.NoError) {
             Util.postOnMain {
-                showDialog("Route calculation failed with error ${GemError.getMessage(error, this)}") {
+                showDialog(getString(R.string.route_calculation_failed, GemError.getMessage(error, this))) {
                     finish()
                     exitProcess(0)
                 }

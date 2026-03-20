@@ -8,7 +8,6 @@
 package com.magiclane.sdk.examples.hellofragment
 
 import android.os.Bundle
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.magiclane.sdk.core.GemSdk
@@ -24,11 +23,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
     }
 
     override fun onDestroy() {
@@ -36,5 +30,6 @@ class MainActivity : AppCompatActivity() {
 
         // Release the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 }

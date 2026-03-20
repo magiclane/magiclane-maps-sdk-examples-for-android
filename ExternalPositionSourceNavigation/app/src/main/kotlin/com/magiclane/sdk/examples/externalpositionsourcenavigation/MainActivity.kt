@@ -12,7 +12,6 @@ package com.magiclane.sdk.examples.externalpositionsourcenavigation
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -380,11 +379,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         if (!Util.isInternetConnected(this)) {
             showDialog(getString(R.string.internet_required))
         }
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
     }
 
     override fun onDestroy() {
@@ -393,6 +387,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         timer = null
         // Deinitialize the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {

@@ -24,6 +24,7 @@ Explore the examples to learn the capabilities of the Magic Lane Maps Android SD
 * [Avoid Geofence Area](AvoidGeofenceArea) - Calculate routes that avoid specific geographic areas.
 * [Basic Shape Drawer](BasicShapeDrawer) - Show how to use `BasicShapeDrawer` class to do various drawings on a map.
 * [Bike Demo](BikeDemo) - Setup a bike routing profile and start simulation from the current position to a given landmark if a route can be calculated.
+* [Bike Demo Java](BikeDemoJava) - Java version of Bike Demo.
 * [BLE Client](BLEClient) - BLE client for BLEServer example. It displays navigation instructions received from server.
 * [BLE Client1](BLEClient1) - BLE client for BLEServer1 example. It displays navigation instructions received from server. Turn images are transferred as bitmaps.
 * [BLE Client2](BLEClient2) - BLE client for BLEServer2 example. It displays navigation instructions received from server. Turn images are transferred as IDs.
@@ -47,6 +48,7 @@ Explore the examples to learn the capabilities of the Magic Lane Maps Android SD
 * [Fly to Traffic](FlyToTraffic) - Calculate the routes between 2 given landmarks; display the first route on a map, if exists; fly to first traffic event available on route, if exists.
 * [GPX Import](GPXImport) - Import a GPX file and display the Path on the map; make a route out of the GPX file.
 * [GPX Route Simulation](GPXRouteSimulation) - Import a GPX file; Make a route based on the GPX and start a simulation.
+* [GPX Route Simulation Java](GPXRouteSimulationJava) - Java version of GPX Route Simulation.
 * [GPX Thumbnail Image](GPXThumbnailImage) - Present a thumbnail image for a route based on a GPX file without using a routing service.
 * [GPX Thumbnail Image With Routing](GPXThumbnailImageWithRouting) - Calculate a route based on a GPX file and present a thumbnail image for it using a routing service.
 * [Hello Fragment](HelloFragment) - Display a map on an Android Fragment.

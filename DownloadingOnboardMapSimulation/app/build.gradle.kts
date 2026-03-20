@@ -27,6 +27,7 @@ dependencies {
     implementation(shared.androidx.espresso.idlingresource)
     implementation(shared.junit)
     implementation(shared.material)
+    implementation(shared.androidx.media)
 
     androidTestImplementation(project(":build-testing"))
     androidTestImplementation(shared.androidx.junit)

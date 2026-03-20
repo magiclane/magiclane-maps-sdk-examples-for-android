@@ -10,7 +10,6 @@ package com.magiclane.sdk.examples.basicshapedrawer
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -134,11 +133,6 @@ class MainActivity : AppCompatActivity() {
                     "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.",
             )
         }
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
     }
 
     override fun onDestroy() {
@@ -146,6 +140,7 @@ class MainActivity : AppCompatActivity() {
 
         // Release the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
     private fun drawSpeedLimitRow(left: Float, top: Float, right: Float, bottom: Float, textureId: Int, speedLimit: String) {

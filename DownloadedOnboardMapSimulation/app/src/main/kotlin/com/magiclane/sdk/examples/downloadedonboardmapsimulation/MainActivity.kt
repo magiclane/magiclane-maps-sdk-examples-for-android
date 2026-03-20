@@ -11,7 +11,6 @@ package com.magiclane.sdk.examples.downloadedonboardmapsimulation
 
 import android.graphics.Bitmap
 import android.os.Bundle
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -185,7 +184,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 Util.postOnMainDelayed( {
                     showDialog(getString(R.string.missing_app_authorization)) {
                         finish()
-                        exitProcess(0)
                     }
                 }, 500)
             }
@@ -194,10 +192,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             }
         }
 
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
         EspressoIdlingResource.increment()
     }
 
@@ -207,6 +201,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         if (isFinishing) {
             SoundUtils.removeTTSPlayerInitializationListener(this)
             GemSdk.release()
+            exitProcess(0)
         }
     }
 

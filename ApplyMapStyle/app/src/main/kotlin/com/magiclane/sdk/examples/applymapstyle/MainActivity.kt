@@ -9,7 +9,6 @@ package com.magiclane.sdk.examples.applymapstyle
 
 import android.os.Bundle
 import android.view.View
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -21,6 +20,7 @@ import com.magiclane.sdk.content.ContentStoreItem
 import com.magiclane.sdk.content.EContentStoreItemStatus
 import com.magiclane.sdk.content.EContentType
 import com.magiclane.sdk.core.GemError
+import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.examples.applymapstyle.databinding.ActivityMainBinding
@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
 
         SdkSettings.onConnectionStatusUpdated = { isConnected ->
             if (isConnected) {
-                showStatusMessage("Check application token", true)
+                showStatusMessage(getString(R.string.check_application_token), true)
                 SdkSettings.appAuthorization?.let {
                     SdkCall.execute {
                         SdkSettings.verifyAppAuthorization(it, listener)
@@ -68,7 +68,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.gemSurface.onSdkInitFailed = { error ->
-            val errorMessage = "SDK initialization failed: ${GemError.getMessage(error, this)}"
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
             Util.postOnMain {
                 showDialog(errorMessage) {
                     finish()
@@ -78,13 +78,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
+            showDialog(getString(R.string.internet_required))
         }
+    }
 
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Deinitialize the SDK.
+        GemSdk.release()
+        exitProcess(0)
     }
 
     private fun showStatusMessage(text: String, withProgress: Boolean = false) {
@@ -124,11 +127,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showInvalidTokenDialog() {
-        showDialog(
-            "This example requires a valid token. " +
-                "If you don't have a token, " +
-                "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file."
-        ) {
+        showDialog(getString(R.string.token_rejected_message)) {
             finish()
             exitProcess(0)
         }
@@ -139,21 +138,21 @@ class MainActivity : AppCompatActivity() {
         contentStore.asyncGetStoreContentList(
             EContentType.ViewStyleHighRes,
             onStarted = {
-                showStatusMessage("Download map styles list.", true)
+                showStatusMessage(getString(R.string.download_map_styles_list), true)
             },
 
             onCompleted = onCompleted@{ styles, errorCode, _ ->
                 if (errorCode != GemError.NoError) {
                     EspressoIdlingResource.decrement()
                     showDialog(
-                        "The map style list download failed with error ${GemError.getMessage(errorCode, this)}",
+                        getString(R.string.map_style_list_download_failed, GemError.getMessage(errorCode, this)),
                     ) {
                         finish()
                         exitProcess(0)
                     }
                 } else {
                     if (styles.isEmpty()) {
-                        showDialog("The downloaded map style list is empty!") {
+                        showDialog(getString(R.string.map_style_list_empty)) {
                             finish()
                             exitProcess(0)
                         }
@@ -179,32 +178,32 @@ class MainActivity : AppCompatActivity() {
     private fun startDownloadingStyle(style: ContentStoreItem) = SdkCall.execute {
         if (style.status == EContentStoreItemStatus.Completed) {
             applyStyle(style)
-            showStatusMessage("Style ${style.name} was applied.")
+            showStatusMessage(getString(R.string.style_applied, style.name))
             EspressoIdlingResource.decrement()
             return@execute
         } else {
             // Start downloading a map style item.
             val errorCode = style.asyncDownload(
                 onStarted = {
-                    showStatusMessage("Download ${style.name}.", true)
+                    showStatusMessage(getString(R.string.download_map_style, style.name), true)
                 },
 
                 onCompleted = { error, _ ->
                     if (error != GemError.NoError) {
-                        showDialog("The map style download failed with error ${GemError.getMessage(error, this)}") {
+                        showDialog(getString(R.string.map_style_download_failed, GemError.getMessage(error, this))) {
                             finish()
                             exitProcess(0)
                         }
                     } else {
                         applyStyle(style)
-                        showStatusMessage("Style ${style.name} was applied.")
+                        showStatusMessage(getString(R.string.style_applied, style.name))
                         EspressoIdlingResource.decrement()
                     }
                 },
             )
 
             if (errorCode != GemError.NoError) {
-                showDialog("Error starting download: ${GemError.getMessage(errorCode, this)}") {
+                showDialog(getString(R.string.error_starting_download, GemError.getMessage(errorCode, this))) {
                     finish()
                     exitProcess(0)
                 }

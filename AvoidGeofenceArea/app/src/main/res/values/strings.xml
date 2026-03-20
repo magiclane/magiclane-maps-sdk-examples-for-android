@@ -2,4 +2,16 @@
     <string name="app_name">Avoid Geofence Area</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+            <string name="calculating_route">Calculating route…</string>
+            <string name="route_calculation_completed">Route calculation completed</string>
+            <string name="route_calculation_failed">Route calculation failed with error %1$s</string>
+            <string name="add_area_failed">Add area to geofence failed with error %1$s</string>
+            <string name="cant_add_area">Can\'t add area to geofence. The error is %1$s</string>
+            <string name="sdk_init_failed">SDK initialization failed: %1$s</string>
+            <string name="internet_required">You must be connected to the internet!</string>
+            <string name="waiting_for_map_data">Waiting for map data …</string>
+            <string name="login_failed">Login failed with error = %1$s</string>
+            <string name="area_to_avoid">Area to avoid</string>
+            <string name="external_login_error">Error registering external login: %1$s</string>
+            <string name="token_rejected">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.</string>
 </resources>

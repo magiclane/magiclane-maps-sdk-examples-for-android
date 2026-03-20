@@ -83,7 +83,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
             SdkCall.execute {
                 binding.gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.enableCursor = false
                     navRoute?.let { route ->
                         mapView.presentRoute(route)
                     }
@@ -224,11 +223,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         if (!Util.isInternetConnected(this)) {
             showDialog(getString(R.string.internet_required))
         }
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
     }
 
     override fun onDestroy() {
@@ -236,6 +230,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         // Deinitialize the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
     private fun enableGPSButton() {

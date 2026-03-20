@@ -15,34 +15,36 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.magiclane.sdk.core.DataBuffer
-import com.magiclane.sdk.d3scene.MapView
+import com.magiclane.sdk.d3scene.MapViewPreferences
 import com.magiclane.sdk.examples.hellofragmentcustomstyle.databinding.FragmentSecondBinding
-import com.magiclane.sdk.util.SdkCall
 
 class SecondFragment : Fragment() {
 
     private var binding: FragmentSecondBinding? = null
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate<FragmentSecondBinding>(inflater, R.layout.fragment_second, container, false)
-        return binding!!.root
+        return binding?.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding?.buttonSecond?.setOnClickListener {
-            findNavController().navigate(R.id.action_SecondFragment_to_FirstFragment)
+        binding?.gemSurfaceView?.onDefaultMapViewCreated = { mapView ->
+            mapView.preferences?.let {
+                applyCustomAssetStyle(it)
+            }
         }
-        binding?.gemSurfaceView?.onDefaultMapViewCreated = {
-            applyCustomAssetStyle(it)
+
+        binding?.buttonSecond?.setOnClickListener {
+            findNavController().popBackStack()
         }
     }
 
-    private fun applyCustomAssetStyle(mapView: MapView?) {
-        val filename = "(Desktop) Monochrome Deep Blue (5a1da93a-dbf2-4a36-9b5c-1370386c1496).style"
+    private fun applyCustomAssetStyle(mapViewPreferences: MapViewPreferences) {
+        val filename = "Basic_1_Oldtime_with_Elevation.style"
 
-        // Opens GPX input stream.
+        // Opens style input stream.
         val inputStream = resources.assets.open(filename)
 
         // Take bytes.
@@ -50,6 +52,6 @@ class SecondFragment : Fragment() {
         if (data.isEmpty()) return
 
         // Apply style.
-        mapView?.preferences?.setMapStyleByDataBuffer(DataBuffer(data))
+        mapViewPreferences.setMapStyleByDataBuffer(DataBuffer(data))
     }
 }

@@ -8,7 +8,6 @@
 package com.magiclane.sdk.examples.gpxthumbnailimage
 
 import android.os.Bundle
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -110,11 +109,14 @@ class MainActivity : AppCompatActivity() {
         if (!Util.isInternetConnected(this)) {
             showDialog(getString(R.string.internet_required))
         }
+    }
 
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Release the SDK.
+        GemSdk.release()
+        exitProcess(0)
     }
 
     private fun showPath(path: Path) {

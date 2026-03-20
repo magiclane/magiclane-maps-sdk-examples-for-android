@@ -36,7 +36,6 @@ import android.os.ParcelUuid
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -1078,11 +1077,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             registerForSystemBluetoothEvents()
         }
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
     }
 
     override fun onDestroy() {
@@ -1098,6 +1092,7 @@ class MainActivity : AppCompatActivity() {
 
         // Deinitialize the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

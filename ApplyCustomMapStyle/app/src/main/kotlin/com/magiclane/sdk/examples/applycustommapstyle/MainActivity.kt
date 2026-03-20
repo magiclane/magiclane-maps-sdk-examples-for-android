@@ -8,7 +8,6 @@
 package com.magiclane.sdk.examples.applycustommapstyle
 
 import android.os.Bundle
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.test.espresso.idling.CountingIdlingResource
@@ -21,7 +20,6 @@ import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.MapView
 import com.magiclane.sdk.examples.applycustommapstyle.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.applycustommapstyle.databinding.DialogLayoutBinding
-import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
@@ -47,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.gemSurface.onSdkInitFailed = { error ->
-            val errorMessage = "SDK initialization failed: ${GemError.getMessage(error, this)}"
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
             Util.postOnMain {
                 showDialog(errorMessage) {
                     finish()
@@ -57,20 +55,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         SdkSettings.onApiTokenRejected = {
-            showDialog(
-                "The token you provided was rejected. " +
-                    "Make sure you provide the correct value, or if you don't have a token, " +
-                    "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.",
-            )
+            showDialog(getString(R.string.token_rejected_message))
         }
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
-        }
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
+            showDialog(getString(R.string.internet_required))
         }
     }
 
@@ -79,6 +68,7 @@ class MainActivity : AppCompatActivity() {
 
         // Deinitialize the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
@@ -100,7 +90,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun applyCustomAssetStyle(mapView: MapView?) = SdkCall.execute {
+    private fun applyCustomAssetStyle(mapView: MapView?) {
         val filename = "Basic_1_Oldtime_with_Elevation.style"
 
         // Opens style input stream.
@@ -108,7 +98,7 @@ class MainActivity : AppCompatActivity() {
 
         // Take bytes.
         val data = inputStream.readBytes()
-        if (data.isEmpty()) return@execute
+        if (data.isEmpty()) return
 
         // Apply style.
         mapView?.preferences?.setMapStyleByDataBuffer(DataBuffer(data))

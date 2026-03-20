@@ -8,7 +8,6 @@
 package com.magiclane.sdk.examples.drawpolyline
 
 import android.os.Bundle
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
@@ -97,11 +96,6 @@ class MainActivity : AppCompatActivity() {
             bottomInset = systemBars.bottom + inflate
             insets
         }
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
     }
 
     override fun onDestroy() {
@@ -109,6 +103,7 @@ class MainActivity : AppCompatActivity() {
 
         // Deinitialize the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {

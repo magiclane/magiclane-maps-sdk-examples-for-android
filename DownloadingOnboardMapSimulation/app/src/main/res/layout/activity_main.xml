@@ -6,7 +6,6 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:paddingBottomWithSystemWindowInsets='@{@dimen/small_padding}'
         tools:context="com.magiclane.sdk.examples.downloadingonboardmapsimulation.MainActivity"
         >
 
@@ -29,11 +28,11 @@
             android:paddingBottom="12dp"
             />
 
-        <ProgressBar
+        <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progressBar"
-            style="?android:attr/progressBarStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:indeterminate="true"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -55,30 +54,40 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/toolbar">
 
-            <ImageView
-                android:id="@+id/nav_instruction_icon"
-                android:layout_width="@dimen/progress_bar_size"
-                android:layout_height="@dimen/progress_bar_size"
-                android:layout_marginStart="@dimen/top_panel_margin"
-                android:layout_marginTop="@dimen/big_padding"
-                android:layout_marginEnd="@dimen/top_panel_margin"
-                app:layout_constraintBottom_toTopOf="@id/nav_instruction_distance"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="ContentDescription" />
-
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/nav_instruction_distance"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/turn_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/big_padding"
-                android:textColor="@android:color/white"
-                android:textSize="@dimen/medium_text_size"
-                android:textStyle="bold"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="@id/nav_instruction_icon"
-                app:layout_constraintStart_toStartOf="@id/nav_instruction_icon"
-                app:layout_constraintTop_toBottomOf="@id/nav_instruction_icon" />
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/nav_icon"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    app:layout_constraintBottom_toTopOf="@id/instruction_distance"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:ignore="ContentDescription" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/instruction_distance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:textColor="@android:color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/nav_icon" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/nav_instruction"
@@ -92,7 +101,7 @@
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/nav_instruction_icon"
+                app:layout_constraintStart_toEndOf="@id/turn_container"
                 app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -106,7 +115,10 @@
             android:visibility="gone"
             app:layout_constraintBottom_toTopOf="@id/status_text"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
+            app:layout_constraintStart_toStartOf="parent"
+            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}">
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/eta"
@@ -175,7 +187,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toTopOf="@id/status_text">
 
-            <ImageView
+            <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/flag_icon"
                 android:layout_width="@dimen/icon_size"
                 android:layout_height="@dimen/icon_size"
@@ -226,21 +238,22 @@
                 app:layout_constraintEnd_toStartOf="@id/download_progress_bar"
                 app:layout_constraintBottom_toBottomOf="parent" />
 
-            <ProgressBar
+            <com.google.android.material.progressindicator.CircularProgressIndicator
                 android:id="@+id/download_progress_bar"
-                android:layout_width="@dimen/progress_bar_size"
-                android:layout_height="@dimen/progress_bar_size"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:progressDrawable="@drawable/circular_progress_bar"
-                android:background="@drawable/circle_shape"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:indeterminate="false"
+                android:max="100"
+                android:progress="0"
                 android:layout_margin="@dimen/big_padding"
                 android:visibility="invisible"
+                app:indicatorSize="@dimen/progress_bar_size"
+                app:trackThickness="6dp"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent" />
 
-            <ImageView
+            <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/downloaded_icon"
                 android:layout_width="@dimen/icon_size"
                 android:layout_height="@dimen/icon_size"
@@ -259,21 +272,23 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <com.google.android.material.textview.MaterialTextView
+            android:clickable="true"
             android:id="@+id/status_text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="@color/surface"
+            android:focusable="true"
             android:padding="@dimen/big_padding"
-            android:textStyle="bold"
             android:textSize="@dimen/standard_text_size"
+            android:textStyle="bold"
             android:visibility="gone"
             android:textColor="@color/on_surface"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"/>
+            app:layout_constraintStart_toStartOf="parent"
+            app:paddingBottomWithSystemWindowInsets='@{@dimen/no_extra_inset}'
+            app:paddingRightWithSystemWindowInsets="@{@dimen/small_padding}"
+            app:paddingLeftWithSystemWindowInsets='@{1f}' />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

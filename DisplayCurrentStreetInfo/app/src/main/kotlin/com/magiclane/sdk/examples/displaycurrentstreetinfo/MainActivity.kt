@@ -16,7 +16,6 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.TypedValue
 import android.view.View
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
@@ -148,11 +147,6 @@ class MainActivity : AppCompatActivity() {
         if (!Util.isInternetConnected(this)) {
             showErrorDialog(getString(R.string.not_connected))
         }
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
     }
 
     override fun onResume() {
@@ -165,7 +159,6 @@ class MainActivity : AppCompatActivity() {
             else {
                 showErrorDialog(getString(R.string.location_services_required)) {
                     finish()
-                    exitProcess(0)
                 }
             }
         }
@@ -176,6 +169,7 @@ class MainActivity : AppCompatActivity() {
 
         // Release the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
     private fun showStartupInfoDialog() {

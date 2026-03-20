@@ -12,12 +12,11 @@
         <com.magiclane.sdk.core.GemSurfaceView
             android:id="@+id/gem_surface_view"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/surface_height"
+            android:layout_height="match_parent"
             app:layout_constraintBottom_toTopOf="@id/button_second"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
-
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"

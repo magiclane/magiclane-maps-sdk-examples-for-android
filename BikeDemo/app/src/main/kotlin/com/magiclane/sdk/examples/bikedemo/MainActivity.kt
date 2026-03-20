@@ -96,7 +96,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private var topInset = 0
     private var leftInset = 0
     private var rightInset = 0
-    private var bottomInset = 0
 
     private var inflate = 0
     private var appBarHeight = 0
@@ -106,7 +105,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private var lastTurnImageId: Long = Long.MAX_VALUE
     private var turnImageSize: Int = 0
-    private var padding: Int = 0
     private var shouldCheckLocationPermissionOnResume = false
 
     private val checkAuthorizationListener = ProgressListener.create(onCompleted = { errorCode, _ ->
@@ -137,8 +135,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                             }
 
                             val message = formatRouteName(routesList[0])
-
-                            binding.mapSearchBar.isVisible = false
 
                             showStartNavigationDialog(title, message,
                                 onStartNavigation = {
@@ -265,7 +261,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         onNavigationStarted = {
             SdkCall.execute {
                 binding.gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.enableCursor = false
                     navRoute?.let { route ->
                         mapView.presentRoute(route)
                     }
@@ -366,7 +361,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         SoundUtils.addTTSPlayerInitializationListener(this)
 
         turnImageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
-        padding = resources.getDimension(R.dimen.big_padding).toInt()
 
         SdkSettings.onConnectionStatusUpdated = { isConnected ->
             if (isConnected) {
@@ -397,7 +391,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             topInset = systemBars.top + inflate
             leftInset = systemBars.left + inflate
             rightInset = systemBars.right + inflate
-            bottomInset = systemBars.bottom + inflate
             insets
         }
 
@@ -432,44 +425,60 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
             Util.postOnMain {
                 binding.apply {
-                    gemSurfaceView.mapView?.onTouch = { xy ->
+                    mapView.onTouch = { xy ->
                         SdkCall.execute {
                             if (navigationService.isNavigationActive() || navigationService.isSimulationActive()) {
                                 return@execute
                             }
 
-                            binding.gemSurfaceView.mapView?.cursorScreenPosition = xy
+                            mapView.cursorScreenPosition = xy
 
                             val routes = gemSurfaceView.mapView?.cursorSelectionRoutes
                             if (!routes.isNullOrEmpty()) {
                                 // set the touched route as the main route and center on it
-                                binding.gemSurfaceView.mapView?.preferences?.routes?.mainRoute = routes[0]
-                                binding.gemSurfaceView.mapView?.centerOnRoutes(routesList, viewRc = getFreeScreenRect(), animation = Animation(EAnimation.Linear, 900))
+                                mapView.preferences?.routes?.mainRoute = routes[0]
+                                mapView.centerOnRoutes(routesList, viewRc = getFreeScreenRect(), animation = Animation(EAnimation.Linear, 900))
 
                                 return@execute
                             }
 
-                            val landmarks = binding.gemSurfaceView.mapView?.cursorSelectionLandmarks
+                            var landmark: Landmark? = null
+
+                            val landmarks = mapView.cursorSelectionLandmarks
                             if (!landmarks.isNullOrEmpty()) {
-                                val landmark = landmarks[0]
-                                landmark.coordinates?.let {
-                                    viewModel.destination = landmark
-                                    showCalculateRouteDialog(GemUtil.formatName(landmark), GemUtil.getLandmarkDescription(landmark, true),
-                                        onCalculateRoute = {
-                                            PositionService.position?.let { position ->
-                                                val departure = Landmark("My position", position.latitude, position.longitude)
-                                                calculateRoute(departure, landmark)
-                                            } ?: run {
-                                                showDialog(getString(R.string.current_position_not_available))
-                                            }
-                                        },
-                                        onViewCreated = {
-                                            highlightLandmarkOnMap(landmark)
-                                        },
-                                        onViewClosed = {
-                                            deactivateHighlights()
-                                        })
+                                landmark = landmarks[0]
+                            }
+                            else {
+                                val overlays = mapView.cursorSelectionOverlayItems
+                                if (!overlays.isNullOrEmpty()) {
+                                    val overlay = overlays[0]
+                                    overlay.coordinates?.let {
+                                        landmark = Landmark(
+                                            name = overlay.name ?: "Unknown",
+                                            latitude = it.latitude,
+                                            longitude = it.longitude
+                                        )
+                                    }
                                 }
+                            }
+
+                            landmark?.let { landmark ->
+                                viewModel.destination = landmark
+                                showCalculateRouteDialog(GemUtil.formatName(landmark), GemUtil.getLandmarkDescription(landmark, true),
+                                    onCalculateRoute = {
+                                        PositionService.position?.let { position ->
+                                            val departure = Landmark("My position", position.latitude, position.longitude)
+                                            calculateRoute(departure, landmark)
+                                        } ?: run {
+                                            showDialog(getString(R.string.current_position_not_available))
+                                        }
+                                    },
+                                    onViewCreated = {
+                                        highlightLandmarkOnMap(landmark)
+                                    },
+                                    onViewClosed = {
+                                        deactivateHighlights()
+                                    })
                             }
                         }
                     }
@@ -650,7 +659,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             }
 
             finish()
-            exitProcess(0)
         }
     }
 
@@ -664,7 +672,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             else {
                 showDialog(getString(R.string.location_services_required)) {
                     finish()
-                    exitProcess(0)
                 }
             }
         }
@@ -681,6 +688,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             val contour = landmark.getContourGeographicArea()
             var highlightSettings: HighlightRenderSettings
 
+            @Suppress("VerboseNullabilityAndEmptiness")
             if ((contour != null) && !contour.isEmpty()) {
                 binding.gemSurfaceView.mapView?.centerOnRectArea(
                     contour,
@@ -809,6 +817,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         // Release the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
     private fun enableGPSButton() {
@@ -853,7 +862,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             if (item != PackageManager.PERMISSION_GRANTED) {
                 showDialog(getString(R.string.location_permission_required)) {
                     finish()
-                    exitProcess(0)
                 }
                 return
             }
@@ -1035,7 +1043,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             getString(R.string.invalid_token),
         ) {
             finish()
-            exitProcess(0)
         }
     }
 

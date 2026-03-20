@@ -9,7 +9,6 @@ package com.magiclane.sdk.examples.customgpsarrow
 
 import android.os.Bundle
 import android.view.View
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
@@ -133,11 +132,6 @@ class MainActivity : AppCompatActivity() {
         if (!Util.isInternetConnected(this)) {
             showDialog("You must be connected to the internet!")
         }
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
     }
 
     private fun getSceneObjs(vararg filesData: Pair<String, ESceneObjectFileFormat>): SceneObjectDataList {
@@ -175,6 +169,7 @@ class MainActivity : AppCompatActivity() {
 
         // Release the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
     private fun enableGPSButton() {
