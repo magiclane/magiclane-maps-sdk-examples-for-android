@@ -45,9 +45,9 @@ fun TitleDescriptionColumn(modifier: Modifier = Modifier, title: String? = null,
         modifier = modifier,
         verticalArrangement = Arrangement.SpaceEvenly,
     ) {
-        title?.let { Text(it, style = MaterialTheme.typography.titleMedium, maxLines = 3) }
+        title?.let { Text(it, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 3) }
         if (description?.isNotEmpty() == true) {
-            Text(description, style = MaterialTheme.typography.bodyMedium)
+            Text(description, style = MaterialTheme.typography.bodyMedium, color = Color(128, 128, 128, 255))
         }
     }
 }
@@ -81,7 +81,13 @@ fun ImageAndLargeTitle(modifier: Modifier = Modifier, img: ImageBitmap? = null, 
 }
 
 @Composable
-fun TopAppBar(modifier: Modifier = Modifier, toolbarColor: Color, title: String, iconOnClick: (() -> Unit)? = null) {
+fun TopAppBar(
+    modifier: Modifier = Modifier,
+    toolbarColor: Color,
+    title: String,
+    titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    iconOnClick: (() -> Unit)? = null,
+) {
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -89,25 +95,29 @@ fun TopAppBar(modifier: Modifier = Modifier, toolbarColor: Color, title: String,
         color = toolbarColor,
     ) {
         Row(
-            Modifier
+            modifier = Modifier
                 .padding(4.dp)
                 .fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            iconOnClick?.let {
+            iconOnClick?.let { onBack ->
                 IconButton(
-                    onClick = it,
+                    onClick = onBack,
                     modifier = Modifier.size(60.dp),
-                    content = {
-                        Icon(
-                            painter = painterResource(R.drawable.arrow_back_24dp),
-                            contentDescription = "Back arrow, navigate back",
-                        )
-                    },
-
-                )
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.arrow_back_24dp),
+                        contentDescription = "Back arrow, navigate back",
+                        tint = titleColor,
+                    )
+                }
             }
-            Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 1)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = titleColor,
+                maxLines = 1,
+            )
         }
     }
 }

@@ -51,8 +51,11 @@ import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.EHighlightOptions
 import com.magiclane.sdk.d3scene.HighlightRenderSettings
+import com.magiclane.sdk.d3scene.MapView
 import com.magiclane.sdk.examples.bikedemo.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.bikedemo.databinding.DialogLayoutBinding
+import com.magiclane.sdk.places.Coordinates
+import com.magiclane.sdk.places.EAddressField
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.places.SearchService
 import com.magiclane.sdk.routesandnavigation.EBikeProfile
@@ -83,251 +86,77 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationListener {
 
-    class TSameImage(var value: Boolean = false)
-
     private lateinit var binding: ActivityMainBinding
 
+    // UI Dimensions
     private var searchIconSize = 0
-
-    private var searchFilter = ""
-
-    private var routesList = ArrayList<Route>()
-
+    private var turnImageSize: Int = 0
     private var topInset = 0
     private var leftInset = 0
     private var rightInset = 0
-
     private var inflate = 0
     private var appBarHeight = 0
     private var bottomDialogHeight = 0
 
-    private var navigationStatus = ENavigationStatus.Running
+    // Search state
+    private var searchFilter = ""
 
+    // Route and Navigation state
+    private var routesList = ArrayList<Route>()
+    private var navigationStatus = ENavigationStatus.Running
     private var lastTurnImageId: Long = Long.MAX_VALUE
-    private var turnImageSize: Int = 0
+
+    // Permission handling
     private var shouldCheckLocationPermissionOnResume = false
 
-    private val checkAuthorizationListener = ProgressListener.create(onCompleted = { errorCode, _ ->
-        if (errorCode != GemError.NoError) {
-            showInvalidTokenDialog()
-        }
-    })
-
-    private val routingService = RoutingService(
-        onStarted = {
-            binding.progressBar.visibility = View.VISIBLE
-            binding.cancelButton.visibility = View.VISIBLE
-        },
-
-        onCompleted = { routes, errorCode, _ ->
-            binding.progressBar.visibility = View.GONE
-            binding.cancelButton.visibility = View.GONE
-
-            when (errorCode) {
-                GemError.NoError -> {
-                    SdkCall.execute {
-                        routesList = routes
-
-                        if (routesList.isNotEmpty()) {
-                            var title = ""
-                            viewModel.destination?.let {
-                                title = getString(R.string.route_to, GemUtil.formatName(it))
-                            }
-
-                            val message = formatRouteName(routesList[0])
-
-                            showStartNavigationDialog(title, message,
-                                onStartNavigation = {
-                                    SdkCall.execute {
-                                        binding.gemSurfaceView.mapView?.preferences?.routes?.let { routes ->
-                                            routes.mainRoute?.let { mainRoute ->
-
-                                                val error = navigationService.startNavigationWithRoute(
-                                                    mainRoute,
-                                                    navigationListener,
-                                                    navigationProgressListener
-                                                )
-
-                                                if (error != GemError.NoError) {
-                                                    Util.postOnMain {
-                                                        showDialog(getString(R.string.route_navigation_error, GemError.getMessage(error)))
-                                                    }
-                                                }
-
-                                                routes.clear()
-                                                routesList.clear()
-                                            }
-                                        }
-                                    }
-                                },
-                                onStartSimulation = {
-                                    SdkCall.execute {
-                                        binding.gemSurfaceView.mapView?.preferences?.routes?.let { routes ->
-                                            routes.mainRoute?.let { mainRoute ->
-
-                                                val error = navigationService.startSimulationWithRoute(
-                                                    mainRoute,
-                                                    navigationListener,
-                                                    navigationProgressListener
-                                                )
-
-                                                if (error != GemError.NoError) {
-                                                    Util.postOnMain {
-                                                        showDialog(getString(R.string.route_simulation_error, GemError.getMessage(error)))
-                                                    }
-                                                }
-
-                                                routes.clear()
-                                                routesList.clear()
-                                            }
-                                        }
-                                    }
-                                },
-                                onViewCreated = {
-                                    SdkCall.execute {
-                                        binding.gemSurfaceView.mapView?.presentRoutes(
-                                            routesList,
-                                            displayBubble = true,
-                                            displayTollIcon = false,
-                                            displayFerryIcon = false,
-                                            displayTrafficIcon = false,
-                                            edgeAreaInsets = Rect(
-                                                leftInset,
-                                                getTopInset(),
-                                                rightInset,
-                                                bottomDialogHeight + inflate
-                                            )
-                                        )
-                                    }
-                                },
-                                onViewClosed = {
-                                    binding.mapSearchBar.isVisible = true
-                                    SdkCall.execute {
-                                        binding.gemSurfaceView.mapView?.preferences?.routes?.clear()
-                                        routesList.clear()
-                                    }
-                                }
-                            )
-                        }
-                    }
-                }
-
-                GemError.Cancel -> {
-                    // The routing action was cancelled.
-                }
-
-                else -> {
-                    // There was a problem at computing the routing operation.
-                    showDialog(getString(R.string.routing_error, GemError.getMessage(errorCode)))
-                }
-            }
-        },
-        onStatusChanged = { status ->
-            if (status == ERouteStatus.WaitingInternetConnection.value) {
-                showDialog(getString(R.string.internet_required))
+    private val checkAuthorizationListener = ProgressListener.create(
+        onCompleted = { errorCode, _ ->
+            if (errorCode != GemError.NoError) {
+                showInvalidTokenDialog()
             }
         }
     )
 
-    companion object {
-        private const val REQUEST_PERMISSIONS = 110
-    }
+    private val routingService = RoutingService(
+        onStarted = { showRoutingProgress() },
+        onCompleted = { routes, errorCode, _ -> handleRoutingCompleted(routes, errorCode) },
+        onStatusChanged = { status -> handleRoutingStatusChanged(status) }
+    )
 
-    val searchAdapter = SearchAdapter()
-
+    // Services and listeners
     private val viewModel: MainActivityViewModel by viewModels()
-
-    // Define a navigation service from which we will start the simulation.
+    private val searchAdapter = SearchAdapter()
     private val navigationService = NavigationService()
+    private val searchService = SearchService()
+    private val playingListener = object : SoundPlayingListener() {}
+    private val soundPreference = SoundPlayingPreferences()
+
+    private lateinit var positionListener: PositionListener
+    private var searchJob: Job? = null
 
     private val navRoute: Route?
         get() = navigationService.getNavigationRoute(navigationListener)
 
-    private val playingListener = object : SoundPlayingListener() {}
-
-    private val soundPreference = SoundPlayingPreferences()
-
-    private var job: Job? = null
-
-    private lateinit var positionListener: PositionListener
+    companion object {
+        private const val REQUEST_PERMISSIONS = 110
+        private const val SEARCH_DEBOUNCE_MS = 300L
+        private const val ANIMATION_DURATION_MS = 900
+        private const val HIGHLIGHT_ALPHA = 0.75
+        private const val HIGHLIGHT_IMAGE_SIZE = 6.0
+    }
 
     /**
-     * Define a navigation listener that will receive notifications from the
-     * navigation service.
-     * We will use just the onNavigationStarted method, but for more available
-     * methods you should check the documentation.
+     * Navigation listener that receives notifications from the navigation service.
      */
     private val navigationListener: NavigationListener = NavigationListener.create(
-        onNavigationStarted = {
-            SdkCall.execute {
-                binding.gemSurfaceView.mapView?.let { mapView ->
-                    navRoute?.let { route ->
-                        mapView.presentRoute(route)
-                    }
-                    mapView.followPosition()
-                }
-            }
-            binding.apply {
-                mapSearchBar.isVisible = false
-                bikeSettingsButton.isVisible = false
-                topPanel.isVisible = true
-                bottomPanel.isVisible = true
-            }
-        },
-        onNavigationInstructionUpdated = { instr ->
-            var instrText = ""
-            var instrIcon: Bitmap? = null
-            val sameTurnImage = TSameImage()
-            var instructionDistance = ""
-
-            var etaText = ""
-            var rttText = ""
-            var rtdText = ""
-
-            SdkCall.execute {
-                // Fetch data for the navigation top panel (instruction related info).
-                instrText = instr.nextStreetName ?: ""
-
-                if (instrText.isEmpty()) {
-                    instrText = instr.nextTurnInstruction ?: ""
-                }
-
-                instrIcon = getNextTurnImage(instr, turnImageSize, turnImageSize, sameTurnImage)
-
-                instructionDistance = instr.getDistanceInMeters()
-
-                // Fetch data for the navigation bottom panel (route related info).
-                navRoute?.apply {
-                    etaText = getEta() // estimated time of arrival
-                    rttText = getRtt() // remaining travel time
-                    rtdText = getRtd() // remaining travel distance
-                }
-            }
-
-            // Update the navigation panels info.
-            binding.apply {
-                if (!sameTurnImage.value) {
-                    navIcon.setImageBitmap(instrIcon)
-                }
-
-                navInstruction.text = instrText
-                instrDistance.text = instructionDistance
-
-                eta.text = etaText
-                rtt.text = rttText
-                rtd.text = rtdText
-            }
-        },
-        onDestinationReached = {
-            onNavigationEnded()
-        },
+        onNavigationStarted = { handleNavigationStarted() },
+        onNavigationInstructionUpdated = { instr -> updateNavigationInstruction(instr) },
+        onDestinationReached = { onNavigationEnded() },
         onNotifyStatusChange = { status ->
             navigationStatus = status
             refreshStatusMessage()
         },
-        onNavigationError = { error ->
-            onNavigationEnded(error)
-        },
+        onNavigationError = { error -> onNavigationEnded(error) },
         onNavigationSound = { sound ->
             SdkCall.execute {
                 SoundPlayingService.play(sound, playingListener, soundPreference)
@@ -337,20 +166,213 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     )
 
     private val navigationProgressListener = ProgressListener.create(
-        onStatusChanged = {
-            refreshStatusMessage()
-        }
+        onStatusChanged = { refreshStatusMessage() }
     )
-
-    private val searchService = SearchService()
 
     private fun refreshStatusMessage() {
         val statusMessage = getStatusMessage()
-        if (statusMessage.isEmpty()) {
-            binding.turnContainer.isVisible = true
-        } else {
-            binding.turnContainer.isVisible = false
+        binding.turnContainer.isVisible = statusMessage.isEmpty()
+
+        if (statusMessage.isNotEmpty()) {
             binding.navInstruction.text = statusMessage
+        }
+    }
+
+    // Helper methods for routing service callbacks
+    private fun showRoutingProgress() {
+        binding.progressBar.visibility = View.VISIBLE
+        binding.cancelButton.visibility = View.VISIBLE
+    }
+
+    private fun handleRoutingCompleted(routes: ArrayList<Route>, errorCode: ErrorCode) {
+        binding.progressBar.visibility = View.GONE
+        binding.cancelButton.visibility = View.GONE
+
+        when (errorCode) {
+            GemError.NoError -> processSuccessfulRoute(routes)
+            GemError.Cancel -> { /* Routing action was cancelled */ }
+            else -> showDialog(getString(R.string.routing_error, GemError.getMessage(errorCode)))
+        }
+    }
+
+    private fun handleRoutingStatusChanged(status: Int) {
+        if (status == ERouteStatus.WaitingInternetConnection.value) {
+            showDialog(getString(R.string.internet_required))
+        }
+    }
+
+    private fun processSuccessfulRoute(routes: ArrayList<Route>) = SdkCall.execute {
+        routesList = routes
+
+        if (routesList.isNotEmpty()) {
+            val title = viewModel.destination?.let {
+                getString(R.string.route_to, GemUtil.formatName(it))
+            } ?: ""
+            val message = formatRouteName(routesList[0])
+
+            showStartNavigationDialog(
+                title,
+                message,
+                onStartNavigation = { startNavigationWithRoute() },
+                onStartSimulation = { startSimulationWithRoute() },
+                onViewCreated = { presentRoutesOnMap() },
+                onViewClosed = { clearRoutesAndHideDialog() }
+            )
+        }
+    }
+
+    private fun startNavigationWithRoute() = SdkCall.execute {
+        binding.gemSurfaceView.mapView?.preferences?.routes?.mainRoute?.let { mainRoute ->
+            val error = navigationService.startNavigationWithRoute(
+                mainRoute,
+                navigationListener,
+                navigationProgressListener
+            )
+
+            if (error != GemError.NoError) {
+                Util.postOnMain {
+                    showDialog(getString(R.string.route_navigation_error, GemError.getMessage(error)))
+                }
+            }
+
+            clearRoutesData()
+        }
+    }
+
+    private fun startSimulationWithRoute() = SdkCall.execute {
+        binding.gemSurfaceView.mapView?.preferences?.routes?.mainRoute?.let { mainRoute ->
+            val error = navigationService.startSimulationWithRoute(
+                mainRoute,
+                navigationListener,
+                navigationProgressListener
+            )
+
+            if (error != GemError.NoError) {
+                Util.postOnMain {
+                    showDialog(getString(R.string.route_simulation_error, GemError.getMessage(error)))
+                }
+            }
+
+            clearRoutesData()
+        }
+    }
+
+    private fun presentRoutesOnMap() = SdkCall.execute {
+        binding.gemSurfaceView.mapView?.presentRoutes(
+            routesList,
+            displayBubble = true,
+            displayTollIcon = false,
+            displayFerryIcon = false,
+            displayTrafficIcon = false,
+            edgeAreaInsets = Rect(
+                leftInset,
+                getTopInset(),
+                rightInset,
+                bottomDialogHeight + inflate
+            )
+        )
+    }
+
+    private fun clearRoutesAndHideDialog() {
+        binding.mapSearchBar.isVisible = true
+        SdkCall.execute {
+            binding.gemSurfaceView.mapView?.preferences?.routes?.clear()
+            routesList.clear()
+        }
+    }
+
+    private fun clearRoutesData() {
+        binding.gemSurfaceView.mapView?.preferences?.routes?.clear()
+        routesList.clear()
+    }
+
+    // Helper methods for navigation listener callbacks
+    private fun handleNavigationStarted() {
+        SdkCall.execute {
+            binding.gemSurfaceView.mapView?.let { mapView ->
+                navRoute?.let { route ->
+                    mapView.presentRoute(route)
+                }
+                mapView.followPosition()
+            }
+        }
+        binding.apply {
+            mapSearchBar.isVisible = false
+            bikeSettingsButton.isVisible = false
+            topPanel.isVisible = true
+            bottomPanel.isVisible = true
+        }
+    }
+
+    private fun updateNavigationInstruction(instr: NavigationInstruction) {
+        data class NavigationData(
+            val instrText: String = "",
+            val instrIcon: Bitmap? = null,
+            val sameTurnImage: Boolean = false,
+            val instructionDistance: String = "",
+            val etaText: String = "",
+            val rttText: String = "",
+            val rtdText: String = ""
+        )
+
+        val navData = SdkCall.execute {
+            val instrText = instr.nextStreetName?.takeIf { it.isNotEmpty() }
+                ?: instr.nextTurnInstruction ?: ""
+
+            var sameTurnImage = false
+            val instrIcon = getNextTurnImage(instr, turnImageSize, turnImageSize) { isSame ->
+                sameTurnImage = isSame
+            }
+
+            val instructionDistance = instr.getDistanceInMeters()
+
+            val (etaText, rttText, rtdText) = navRoute?.let {
+                Triple(it.getEta(), it.getRtt(), it.getRtd())
+            } ?: Triple("", "", "")
+
+            NavigationData(instrText, instrIcon, sameTurnImage, instructionDistance, etaText, rttText, rtdText)
+        } ?: return
+
+        binding.apply {
+            if (!navData.sameTurnImage) {
+                navIcon.setImageBitmap(navData.instrIcon)
+            }
+            navInstruction.text = navData.instrText
+            instrDistance.text = navData.instructionDistance
+            eta.text = navData.etaText
+            rtt.text = navData.rttText
+            rtd.text = navData.rtdText
+        }
+    }
+
+    private fun performSearch(filter: String) {
+        searchJob = CoroutineScope(Dispatchers.IO).launch {
+            delay(SEARCH_DEBOUNCE_MS)
+
+            SdkCall.runSynced {
+                searchService.searchByFilter(
+                    textFilter = filter,
+                    onCompleted = { results, errorCode, _ ->
+                        when (errorCode) {
+                            GemError.Cancel -> return@searchByFilter
+                            GemError.NoError -> {
+                                SdkCall.execute {
+                                    val list = results.map { landmark ->
+                                        SearchResultItem(
+                                            landmark.image?.asBitmap(searchIconSize, searchIconSize),
+                                            GemUtil.formatName(landmark),
+                                            GemUtil.getLandmarkDescription(landmark, true),
+                                            landmark
+                                        )
+                                    }.toMutableList()
+                                    viewModel.searchResultListLivedata.postValue(list)
+                                }
+                            }
+                            else -> viewModel.searchResultListLivedata.postValue(mutableListOf())
+                        }
+                    }
+                )
+            }
         }
     }
 
@@ -410,13 +432,17 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         binding.gemSurfaceView.onDefaultMapViewCreated = { mapView ->
             mapView.followPosition()
 
-            positionListener = PositionListener {
-                if (!it.isValid()) return@PositionListener
-
-                PositionService.removeListener(positionListener)
+            if (PositionService.position?.isValid() == true) {
                 Util.postOnMain { enableGPSButton() }
+            } else {
+                positionListener = PositionListener {
+                    if (!it.isValid()) return@PositionListener
+
+                    PositionService.removeListener(positionListener)
+                    Util.postOnMain { enableGPSButton() }
+                }
+                PositionService.addListener(positionListener, EDataType.Position)
             }
-            PositionService.addListener(positionListener, EDataType.Position)
 
             viewModel.initPreferences()
 
@@ -453,24 +479,37 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                                 if (!overlays.isNullOrEmpty()) {
                                     val overlay = overlays[0]
                                     overlay.coordinates?.let {
+                                        val name = when {
+                                            !overlay.name.isNullOrEmpty() -> overlay.name!!
+                                            !overlay.overlayInfo?.name.isNullOrEmpty() -> overlay.overlayInfo?.name!!
+                                            else -> "Unknown"
+                                        }
+
                                         landmark = Landmark(
-                                            name = overlay.name ?: "Unknown",
+                                            name = name,
                                             latitude = it.latitude,
                                             longitude = it.longitude
-                                        )
+                                        ).apply {
+                                            image = overlay.image
+                                            description = getLandmarkDescription(mapView, it)
+                                        }
                                     }
                                 }
                             }
 
                             landmark?.let { landmark ->
                                 viewModel.destination = landmark
-                                showCalculateRouteDialog(GemUtil.formatName(landmark), GemUtil.getLandmarkDescription(landmark, true),
+                                val details = GemUtil.pairFormatLandmarkDetails(landmark, true)
+                                showCalculateRouteDialog(details.first, details.second,
                                     onCalculateRoute = {
-                                        PositionService.position?.let { position ->
-                                            val departure = Landmark("My position", position.latitude, position.longitude)
-                                            calculateRoute(departure, landmark)
-                                        } ?: run {
-                                            showDialog(getString(R.string.current_position_not_available))
+                                        SdkCall.execute {
+                                            val position = PositionService.position
+                                            if ((position != null) && position.isValid()) {
+                                                val departure = Landmark("My position", position.latitude, position.longitude)
+                                                calculateRoute(departure, landmark)
+                                            } else {
+                                                runOnUiThread { showDialog(getString(R.string.current_position_not_available)) }
+                                            }
                                         }
                                     },
                                     onViewCreated = {
@@ -501,12 +540,15 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             SdkCall.execute {
                 showCalculateRouteDialog(item.text ?: "", item.subText ?: "",
                 onCalculateRoute = {
-                    PositionService.position?.let {
-                        val departure = Landmark(getString(R.string.my_position), it.latitude, it.longitude)
-                        val destination = item.landmark
-                        calculateRoute(departure, destination)
-                    } ?: run {
-                        showDialog(getString(R.string.current_position_not_available))
+                    SdkCall.execute {
+                        val position = PositionService.position
+                        if ((position != null) && position.isValid()) {
+                            val departure = Landmark(getString(R.string.my_position), position.latitude, position.longitude)
+                            val destination = item.landmark
+                            calculateRoute(departure, destination)
+                        } else {
+                            runOnUiThread { showDialog(getString(R.string.current_position_not_available)) }
+                        }
                     }
                 },
                 onViewCreated = {
@@ -536,53 +578,18 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         binding.mapSearchView.editText.addTextChangedListener {
             val filter = it.toString().trim()
+            if (filter == searchFilter) return@addTextChangedListener
 
-            if (filter != searchFilter) {
-                searchFilter = filter
+            searchFilter = filter
+            SdkCall.execute { searchService.cancelSearch() }
 
-                SdkCall.execute {
-                    searchService.cancelSearch()
-                }
+            binding.searchProgressBar.isInvisible = searchFilter.isBlank()
+            searchJob?.cancel()
 
-                binding.searchProgressBar.isInvisible = searchFilter.isBlank()
-                job?.run { if (isActive) cancel() }
-
-                if (searchFilter.isNotBlank())
-                {
-                    job = CoroutineScope(Dispatchers.IO).launch {
-                        delay(300)
-
-                        SdkCall.runSynced {
-                            searchService.searchByFilter(
-                                textFilter = binding.mapSearchView.text.trim().toString(),
-                                onCompleted = { results, errorCode, _ ->
-                                    if (errorCode == GemError.Cancel) return@searchByFilter
-                                    if (errorCode == GemError.NoError) {
-                                        SdkCall.execute {
-                                            val list = results.map { landmark ->
-                                                SearchResultItem(
-                                                    landmark.image?.asBitmap(
-                                                        searchIconSize,
-                                                        searchIconSize,
-                                                    ),
-                                                    GemUtil.formatName(landmark),
-                                                    GemUtil.getLandmarkDescription(landmark, true),
-                                                    landmark
-                                                )
-                                            }.toMutableList()
-                                            viewModel.searchResultListLivedata.postValue(list)
-                                        }
-                                    }
-                                    else {
-                                        viewModel.searchResultListLivedata.postValue(mutableListOf())
-                                    }
-                                })
-                        }
-                    }
-                }
-                else {
-                    viewModel.searchResultListLivedata.postValue(mutableListOf())
-                }
+            if (searchFilter.isNotBlank()) {
+                performSearch(searchFilter)
+            } else {
+                viewModel.searchResultListLivedata.postValue(mutableListOf())
             }
         }
 
@@ -686,48 +693,45 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             landmark.image = ImageDatabase().getImageById(SdkImages.Core.Search_Results_Pin.value)
 
             val contour = landmark.getContourGeographicArea()
-            var highlightSettings: HighlightRenderSettings
+            val highlightSettings: HighlightRenderSettings
 
             @Suppress("VerboseNullabilityAndEmptiness")
             if ((contour != null) && !contour.isEmpty()) {
-                binding.gemSurfaceView.mapView?.centerOnRectArea(
+                mapView.centerOnRectArea(
                     contour,
                     zoomLevel = -1,
                     viewRc = rect,
-                    Animation(EAnimation.Linear, 900)
+                    Animation(EAnimation.Linear, ANIMATION_DURATION_MS)
                 )
 
                 highlightSettings = HighlightRenderSettings(
-                    EHighlightOptions.ShowContour.value or EHighlightOptions.ShowLandmark.value,
+                    EHighlightOptions.ShowContour.value or EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
                     Rgba(255, 98, 0, 255),
                     Rgba(255, 98, 0, 255),
-                    0.75,
-                ).also {
-                    it.imageSize = 6.0
+                    HIGHLIGHT_ALPHA,
+                ).apply {
+                    imageSize = HIGHLIGHT_IMAGE_SIZE
                 }
             } else {
                 highlightSettings = HighlightRenderSettings(
-                    EHighlightOptions.ShowLandmark,
-                ).also {
-                    it.imageSize = 6.0
+                    EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
+                ).apply {
+                    imageSize = HIGHLIGHT_IMAGE_SIZE
                 }
 
                 landmark.coordinates?.let {
-                    binding.gemSurfaceView.mapView?.centerOnCoordinates(
+                    mapView.centerOnCoordinates(
                         it,
                         -1,
                         rect.center,
-                        Animation(EAnimation.Linear, 900),
+                        Animation(EAnimation.Linear, ANIMATION_DURATION_MS),
                         0.0,
                         0.0,
                     )
                 }
             }
 
-            mapView.activateHighlightLandmarks(
-                landmark,
-                highlightSettings
-            )
+            mapView.activateHighlightLandmarks(landmark, highlightSettings)
         }
     }
 
@@ -1011,14 +1015,14 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                     onViewClosed?.invoke()
                 }
 
-                // Set up start navigationn button
+                // Set up start navigation button
                 buttonStartNavigation.setOnClickListener {
                     root.visibility = View.GONE
                     bottomDialogHeight = 0
                     onStartNavigation()
                 }
 
-                // Set up start navigationn button
+                // Set up start navigation button
                 buttonStartSimulation.setOnClickListener {
                     root.visibility = View.GONE
                     bottomDialogHeight = 0
@@ -1129,11 +1133,12 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         navInstr: NavigationInstruction,
         width: Int,
         height: Int,
-        sameImage: TSameImage
+        onSameImage: (Boolean) -> Unit = {}
     ): Bitmap? {
         if (!navInstr.hasNextTurnInfo()) return null
+
         if ((navInstr.nextTurnDetails?.abstractGeometryImage?.uid ?: 0) == lastTurnImageId) {
-            sameImage.value = true
+            onSameImage(true)
             return null
         }
 
@@ -1212,6 +1217,50 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         SdkCall.execute {
             binding.gemSurfaceView.mapView?.hideRoutes()
         }
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun getLandmarkDescription(mapView: MapView, coordinates: Coordinates, isMyPosition: Boolean = false): String {
+        var description = ""
+        var descriptionContainsLatLon = false
+
+        var address = mapView.getClosestAddress(coordinates, 50, false)
+        if (address != null) {
+            description = GemUtil.formatLandmarkDetails(address, true)
+        }
+
+        if (description.isEmpty()) {
+            address = mapView.getClosestAddress(coordinates, 300, false)
+            if (address != null) {
+                description = address.addressInfo?.getField(EAddressField.City) ?: ""
+            }
+
+            if (description.isEmpty()) {
+                address = mapView.getClosestAddress(coordinates, 2500, true)
+                if (address != null) {
+                    val city = address.addressInfo?.getField(EAddressField.City) ?: ""
+                    if (city.isNotEmpty()) {
+                        description = "Near $city"
+                    }
+                }
+
+                if (description.isEmpty()) {
+                    description = String.format("%.5f, %.5f", coordinates.latitude, coordinates.longitude)
+                    descriptionContainsLatLon = true
+                }
+            }
+        }
+
+        if (isMyPosition) {
+            if (!descriptionContainsLatLon) {
+                description += "\nLatitude: ${String.format("%.5f", coordinates.latitude)}"
+                description += "\nLongitude: ${String.format("%.5f", coordinates.longitude)}"
+            }
+
+            description += "\nAltitude: ${coordinates.altitude.toInt()}m"
+        }
+
+        return description
     }
 
     // ITTSPlayerInitializationListener

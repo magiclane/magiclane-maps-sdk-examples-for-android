@@ -35,29 +35,37 @@ import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
+    private val demoSearchQuery = "Statue of Liberty New York"
+
+    private val flyToAnimationDurationMs = 900
+
     private lateinit var binding: ActivityMainBinding
 
-    private var inflate = 0
+    private var mapInsetPaddingPx = 0
 
     private val searchService = SearchService(
         onStarted = {
-            binding.progressBar.visibility = View.VISIBLE
-            showStatusMessage(getString(R.string.searching))
+            runOnAliveUi {
+                binding.progressBar.visibility = View.VISIBLE
+                showStatusMessage(getString(R.string.searching))
+            }
         },
 
         onCompleted = { results, errorCode, _ ->
-            binding.progressBar.visibility = View.GONE
+            runOnAliveUi {
+                binding.progressBar.visibility = View.GONE
 
-            when (errorCode) {
-                GemError.NoError -> {
-                    if (results.isNotEmpty()) {
-                        flyTo(results[0])
-                    } else {
-                        showStatusMessage(getString(R.string.no_search_results))
+                when (errorCode) {
+                    GemError.NoError -> {
+                        if (results.isNotEmpty()) {
+                            flyTo(results[0])
+                        } else {
+                            showStatusMessage(getString(R.string.no_search_results))
+                        }
                     }
-                }
-                else -> {
-                    showStatusMessage(getString(R.string.search_completed_with_error, GemError.getMessage(errorCode, this)))
+                    else -> {
+                        showStatusMessage(getString(R.string.search_completed_with_error, GemError.getMessage(errorCode, this)))
+                    }
                 }
             }
         }
@@ -69,31 +77,9 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        inflate = resources.getDimension(R.dimen.padding_40).toInt()
+        mapInsetPaddingPx = resources.getDimension(R.dimen.padding_40).toInt()
 
-        binding.gemSurfaceView.onSdkInitFailed = { error ->
-            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
-            Util.postOnMain {
-                showDialog(errorMessage) {
-                    finish()
-                    exitProcess(0)
-                }
-            }
-        }
-
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
-            if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
-
-                SdkCall.execute {
-                    searchService.searchByFilter("Statue of Liberty New York", Coordinates(40.68925476, -74.04456329))
-                }
-            }
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            showDialog(getString(R.string.token_rejected_message))
-        }
+        registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
             showDialog(getString(R.string.internet_required))
@@ -101,10 +87,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+        clearSdkListeners()
 
-        // Release the SDK.
+        // Release the SDK before the activity is fully destroyed.
         GemSdk.release()
+
+        super.onDestroy()
         exitProcess(0)
     }
 
@@ -116,7 +104,7 @@ class MainActivity : AppCompatActivity() {
                     area,
                     zoomLevel = -1,
                     viewRc = getFreeScreenRect(),
-                    Animation(EAnimation.Linear, 900, onStarted = {
+                    Animation(EAnimation.Linear, flyToAnimationDurationMs, onStarted = {
                         showStatusMessage(getString(R.string.fly_to_area_started))
                     }, onCompleted = { _, _ ->
                         showStatusMessage(getString(R.string.fly_to_area_completed))
@@ -133,6 +121,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
+
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
             title.text = getString(R.string.error)
@@ -152,6 +142,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showStatusMessage(text: String) {
+        if (!isActivityAlive()) return
+
         binding.apply {
             if (!statusText.isVisible) {
                 statusText.visibility = View.VISIBLE
@@ -183,6 +175,54 @@ class MainActivity : AppCompatActivity() {
         }
         val bottom = minOf(insetBottom, statusTop).coerceAtLeast(top)
 
-        return Rect(left + inflate, top + inflate, right - inflate, bottom - inflate)
+        val paddedLeft = left + mapInsetPaddingPx
+        val paddedTop = top + mapInsetPaddingPx
+        val paddedRight = (right - mapInsetPaddingPx).coerceAtLeast(paddedLeft)
+        val paddedBottom = (bottom - mapInsetPaddingPx).coerceAtLeast(paddedTop)
+
+        return Rect(paddedLeft, paddedTop, paddedRight, paddedBottom)
+    }
+
+    private fun registerSdkListeners() {
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnAliveUi {
+                showDialog(errorMessage) { finish() }
+            }
+        }
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+
+                SdkCall.execute {
+                    val demoSearchCenter = Coordinates(40.68925476, -74.04456329)
+                    searchService.searchByFilter(demoSearchQuery, demoSearchCenter)
+                }
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnAliveUi {
+                showDialog(getString(R.string.token_rejected_message))
+            }
+        }
+    }
+
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+    }
+
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain {
+            if (isActivityAlive()) {
+                block()
+            }
+        }
+    }
+
+    private fun isActivityAlive(): Boolean {
+        return !isFinishing && !isDestroyed
     }
 }

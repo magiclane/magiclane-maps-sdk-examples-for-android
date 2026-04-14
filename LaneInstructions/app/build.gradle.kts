@@ -26,6 +26,7 @@ dependencies {
     implementation(shared.androidx.appcompat)
     implementation(shared.androidx.activity.ktx)
     implementation(shared.material)
+    implementation(shared.androidx.media)
 
     testImplementation(shared.junit)
     androidTestImplementation(project(":build-testing"))

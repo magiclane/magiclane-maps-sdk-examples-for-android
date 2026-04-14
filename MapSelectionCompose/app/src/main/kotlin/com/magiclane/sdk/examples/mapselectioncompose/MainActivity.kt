@@ -12,7 +12,7 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.OnBackPressedCallback
+import androidx.activity.addCallback
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -52,6 +52,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.magiclane.sdk.core.EOffboardListenerStatus
+import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.SdkSettings
@@ -63,6 +65,7 @@ import com.magiclane.sdk.sensordatasource.enums.EDataType
 import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
+import kotlin.system.exitProcess
 
 class MainActivity : ComponentActivity() {
 
@@ -84,12 +87,12 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        SdkSettings.onMapDataReady = { isReady ->
-            if (isReady) {
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+
                 viewModel.detailsPanelImageSize = resources.getDimension(R.dimen.image_size).toInt()
-                viewModel.overlayImageSize = resources.getDimension(
-                    R.dimen.overlay_image_size,
-                ).toInt()
+                viewModel.overlayImageSize = resources.getDimension(R.dimen.overlay_image_size).toInt()
                 viewModel.padding = resources.getDimension(R.dimen.big_padding).toInt()
 
                 // Set GPS button if location permission is granted, otherwise request permission
@@ -103,30 +106,21 @@ class MainActivity : ComponentActivity() {
         }
 
         SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            viewModel.errorMessage = "Token rejected!"
+            viewModel.errorMessage = getString(R.string.token_rejected_message)
         }
 
-        onBackPressedDispatcher.addCallback(
-            this /* lifecycle owner */,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    if (viewModel.isBottomViewVisible()) {
-                        if (::mapSurfaceView.isInitialized) {
-                            mapSurfaceView.mapView?.let { viewModel.deactivateHighlights(it) }
-                        } else {
-                            finish()
-                        }
-                    } else {
-                        finish()
-                    }
+        onBackPressedDispatcher.addCallback(this) {
+            if (viewModel.isBottomViewVisible()) {
+                if (::mapSurfaceView.isInitialized) {
+                    mapSurfaceView.mapView?.let { viewModel.hideBottomView(it) }
+                } else {
+                    finish()
                 }
-            },
-        )
+            } else {
+                finish()
+            }
+        }
+
     }
 
     private fun checkPermissions() = PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -185,9 +179,8 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        if (isFinishing) {
-            GemSdk.release() // Release the SDK.
-        }
+        GemSdk.release() // Release the SDK.
+        exitProcess(0)
     }
 
     private fun configureWindow() {
@@ -224,27 +217,8 @@ fun MapSelectionApp(viewModel: MapSelectionModel = viewModel(), mapSurfaceViewSe
                 .windowInsetsPadding(WindowInsets.navigationBars)
                 .align(Alignment.BottomCenter),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.Start,
+            horizontalAlignment = Alignment.End,
         ) {
-            if (viewModel.flyToRoutesButtonIsVisible) {
-                FloatingActionButton(
-                    modifier = Modifier.padding(
-                        start = 8.dp,
-                        bottom = 8.dp,
-                    ),
-                    onClick = {
-                        activity?.getGemSurfaceView()?.mapView?.let { mapview ->
-                            viewModel.showRoutes(mapview)
-                        }
-                    },
-                ) {
-                    Icon(
-                        painterResource(R.drawable.ic_baseline_route_24),
-                        contentDescription = "Zoom to routes",
-                    )
-                }
-            }
-
             if (viewModel.followGpsButtonIsVisible) {
                 FloatingActionButton(
                     modifier = Modifier.padding(
@@ -267,13 +241,15 @@ fun MapSelectionApp(viewModel: MapSelectionModel = viewModel(), mapSurfaceViewSe
             BottomContent(
                 Modifier.fillMaxWidth()
                     .onGloballyPositioned {
-                        viewModel.bottomPartHeight = it.size.height /*+ navBarHeight*/
-                        activity?.getGemSurfaceView()?.let {
-                            viewModel.setVisibleArea(it)
+                        if (viewModel.bottomPartHeight != it.size.height /*+ navBarHeight*/) {
+                            viewModel.bottomPartHeight = it.size.height /*+ navBarHeight*/
+                            activity?.getGemSurfaceView()?.let {
+                                viewModel.setVisibleArea(it)
+                            }
                         }
                     },
                 iconOnClick = {
-                    viewModel.hideBottomView()
+                    viewModel.hideBottomView(activity?.getGemSurfaceView()?.mapView)
                 },
             )
         }
@@ -289,7 +265,7 @@ fun MapSelectionApp(viewModel: MapSelectionModel = viewModel(), mapSurfaceViewSe
                         minWidth = 50.dp,
                         minHeight = 50.dp,
                     ),
-                    color = Color.Cyan,
+                    color = MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 )
             }
@@ -301,15 +277,18 @@ fun MapSelectionApp(viewModel: MapSelectionModel = viewModel(), mapSurfaceViewSe
 fun MapSurface(
     modifier: Modifier = Modifier,
     mapSurfaceViewSetter: (GemSurfaceView) -> Unit,
-    viewModel: MapSelectionModel,
-) {
+    viewModel: MapSelectionModel) {
     AndroidView(modifier = modifier, factory = { context ->
-        GemSurfaceView(context).also {
-            it.onDefaultMapViewCreated = { _ ->
-                viewModel.initialize(it)
+        GemSurfaceView(context).also { surfaceView ->
+            surfaceView.onDefaultMapViewCreated = {
+                viewModel.initialize(surfaceView)
             }
 
-            mapSurfaceViewSetter(it)
+            surfaceView.onSdkInitFailed = { error ->
+                viewModel.errorMessage = context.getString(R.string.sdk_initialization_failed, GemError.getMessage(error, context))
+            }
+
+            mapSurfaceViewSetter(surfaceView)
         }
     })
 }
@@ -318,8 +297,7 @@ fun MapSurface(
 fun BottomContent(
     modifier: Modifier = Modifier,
     viewModel: MapSelectionModel = viewModel(),
-    iconOnClick: (() -> Unit)? = null,
-) {
+    iconOnClick: (() -> Unit)? = null) {
     // Fire highlight after layout (and map visible area update)
     LaunchedEffect(viewModel.invokeHighlight) {
         if (viewModel.invokeHighlight) {

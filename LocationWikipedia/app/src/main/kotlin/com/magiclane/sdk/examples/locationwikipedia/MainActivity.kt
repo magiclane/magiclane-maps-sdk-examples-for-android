@@ -7,30 +7,30 @@
 
 package com.magiclane.sdk.examples.locationwikipedia
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.Resources
 import android.graphics.Bitmap
-import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
-import android.widget.TextView
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.databinding.DataBindingUtil
+import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.magiclane.sdk.core.EExternalImageQuality
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.ErrorCode
 import com.magiclane.sdk.core.ExternalInfo
 import com.magiclane.sdk.core.GemError
@@ -39,16 +39,27 @@ import com.magiclane.sdk.core.Image
 import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.SdkSettings
-import com.magiclane.sdk.core.Xy
+import com.magiclane.sdk.d3scene.Animation
+import com.magiclane.sdk.d3scene.EAnimation
+import com.magiclane.sdk.d3scene.EHighlightOptions
+import com.magiclane.sdk.d3scene.HighlightRenderSettings
 import com.magiclane.sdk.examples.locationwikipedia.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.locationwikipedia.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.places.SearchService
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
+import kotlin.math.max
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        private const val BOTTOM_SHEET_HEIGHT_RATIO = 0.5
+        private const val DEFAULT_SEARCH_NAME = "Statue Of Liberty"
+        private const val FLY_TO_ANIMATION_DURATION_MS = 900
+    }
+
     private lateinit var binding: ActivityMainBinding
 
     private var wikipediaImagesList = mutableListOf<WikipediaImageModel>()
@@ -60,27 +71,41 @@ class MainActivity : AppCompatActivity() {
 
     private var wikipediaListAdapter: WikipediaListAdapter? = null
 
+    private var mapInsetPaddingPx = 0
+    private lateinit var currentLandmark: Landmark
+
     private val searchService = SearchService(
         onStarted = {
-            binding.progressBar.visibility = View.VISIBLE
+            runOnAliveUi {
+                binding.progressBar.visibility = View.VISIBLE
+            }
         },
 
         onCompleted = { results, errorCode, _ ->
-            binding.progressBar.visibility = View.GONE
+            runOnAliveUi {
+                binding.progressBar.visibility = View.GONE
 
-            if (errorCode == GemError.NoError) {
-                if (results.isNotEmpty()) {
-                    val landmark = results[0]
-                    flyTo(landmark)
-                    val name = SdkCall.execute { landmark.name }
-                    binding.locationName.text = name
-                    requestWiki(results[0])
-                } else {
-                    // The search completed without errors, but there were no results found.
-                    showDialog("No results!")
+                when (errorCode) {
+                    GemError.NoError -> {
+                        if (results.isNotEmpty()) {
+                            currentLandmark = results[0]
+                            val name = SdkCall.execute { currentLandmark.name }
+                            binding.locationName.text = name
+                            requestWiki(currentLandmark)
+                        } else {
+                            showDialog(getString(R.string.no_search_results))
+                        }
+                    }
+                    else -> {
+                        showDialog(
+                            getString(R.string.search_completed_with_error,
+                                GemError.getMessage(errorCode, this@MainActivity)
+                            )
+                        )
+                    }
                 }
             }
-        },
+        }
     )
 
     private val wikipediaProgressListener = ProgressListener.create(
@@ -102,11 +127,14 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         EspressoIdlingResource.increment()
 
+        mapInsetPaddingPx = resources.getDimension(R.dimen.padding_40).toInt()
+
         binding.wikipediaContainer.layoutParams.height =
-            (Resources.getSystem().displayMetrics.heightPixels * 0.5).toInt()
+            (Resources.getSystem().displayMetrics.heightPixels * BOTTOM_SHEET_HEIGHT_RATIO).toInt()
 
         standardHeight = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_MM,
@@ -114,47 +142,51 @@ class MainActivity : AppCompatActivity() {
             resources.displayMetrics,
         ).toInt()
 
-        val onReady = {
-            search()
+        registerSdkListeners()
+
+        if (!Util.isInternetConnected(this)) {
+            showDialog(getString(R.string.internet_required))
         }
-        if (SdkSettings.isMapDataReady) {
-            onReady()
-        } else {
-            SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-                if (!isReady) return@onMapDataReady
-                onReady()
+    }
+
+    private fun registerSdkListeners() {
+        binding.gemSurface.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnAliveUi {
+                showDialog(errorMessage) { finish() }
+            }
+        }
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+
+                SdkCall.execute {
+                    val searchCenter = Coordinates(40.68925476, -74.04456329)
+                    searchService.searchByFilter(DEFAULT_SEARCH_NAME, searchCenter)
+                }
             }
         }
 
         SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
+            runOnAliveUi {
+                showDialog(getString(R.string.token_rejected_message))
+            }
         }
+    }
 
-        if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
-        }
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
     }
 
     override fun onDestroy() {
+        clearSdkListeners()
         super.onDestroy()
 
-        // Release the SDK.
+        // Release the SDK before the activity is fully destroyed.
         GemSdk.release()
-    }
-
-    private fun search() = SdkCall.execute {
-        val name = "Statue Of Liberty"
-        val coordinates = Coordinates(40.68917616239407, -74.04452185917404)
-        searchService.searchByFilter(name, coordinates)
+        exitProcess(0)
     }
 
     private fun requestWiki(value: Landmark) = SdkCall.execute {
@@ -181,19 +213,84 @@ class MainActivity : AppCompatActivity() {
 
     private fun flyTo(landmark: Landmark) = SdkCall.execute {
         landmark.geographicArea?.let { area ->
-            binding.gemSurface.mapView?.let { mainMapView ->
-                val rect =
-                    Rect(
-                        Xy(0, binding.wikipediaContainer.layoutParams.height),
-                        Xy(binding.gemSurface.measuredWidth, 0),
-                    )
-                // Center the map on a specific area using the provided animation.
-                mainMapView.centerOnRectArea(area, -1, rect)
+            binding.gemSurface.mapView?.let { mapView ->
+                mapView.centerOnRectArea(
+                    area,
+                    viewRc = getFreeScreenRect(),
+                    animation = Animation(EAnimation.Linear, FLY_TO_ANIMATION_DURATION_MS)
+                )
 
-                // Highlights a specific area on the map using the provided settings.
-                mainMapView.activateHighlightLandmarks(landmark)
+                val settings = HighlightRenderSettings(EHighlightOptions.ShowContour)
+                mapView.activateHighlightLandmarks(landmark, settings)
             }
         }
+    }
+
+    private fun getFreeScreenRect(): Rect {
+        val root = binding.root
+        val insets = ViewCompat.getRootWindowInsets(root)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+
+        val width = root.width.takeIf { it > 0 } ?: Resources.getSystem().displayMetrics.widthPixels
+        val height = root.height.takeIf { it > 0 } ?: Resources.getSystem().displayMetrics.heightPixels
+
+        val left = insets?.left ?: 0
+        val right = (width - (insets?.right ?: 0)).coerceAtLeast(left)
+
+        val topInset = insets?.top ?: 0
+        val toolbarBottom = binding.toolbar.bottom.takeIf { it > 0 } ?: 0
+        val top = max(topInset, toolbarBottom)
+
+        val insetBottom = height - (insets?.bottom ?: 0)
+
+        // Account for visible Wikipedia panel at the bottom
+        val bottom = if (binding.wikipediaContainer.isVisible && binding.wikipediaContainer.top > 0) {
+            binding.wikipediaContainer.top.coerceAtMost(insetBottom)
+        } else {
+            insetBottom
+        }.coerceAtLeast(top)
+
+        val mapFocusPadding = mapInsetPaddingPx.takeIf { it > 0 } ?: 0
+        val paddedLeft = left + mapFocusPadding
+        val paddedTop = top + mapFocusPadding
+        val paddedRight = (right - mapFocusPadding).coerceAtLeast(paddedLeft)
+        val paddedBottom = (bottom - mapFocusPadding).coerceAtLeast(paddedTop)
+
+        return Rect(paddedLeft, paddedTop, paddedRight, paddedBottom)
+    }
+
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
+
+        val dialog = BottomSheetDialog(this)
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
+            setCancelable(false)
+            setContentView(dialogBinding.root)
+            show()
+        }
+    }
+
+
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain {
+            if (isActivityAlive()) {
+                block()
+            }
+        }
+    }
+
+    private fun isActivityAlive(): Boolean {
+        return !isFinishing && !isDestroyed
     }
 
     private fun displayWikipediaInfo() {
@@ -212,7 +309,9 @@ class MainActivity : AppCompatActivity() {
         binding.wikipediaTitle.apply {
             text = wikipediaTitleString
             setOnClickListener {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(wikipediaUrl)))
+                if (isActivityAlive()) {
+                    startActivity(Intent(Intent.ACTION_VIEW, wikipediaUrl.toUri()))
+                }
             }
         }
         binding.wikipediaDescription.text = wikipediaDescriptionString
@@ -236,22 +335,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.wikipediaContainer.visibility = View.VISIBLE
-    }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
-        val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
-                dialog.dismiss()
-            }
-        }
-        dialog.apply {
-            setCancelable(false)
-            setContentView(view)
-            show()
+        binding.wikipediaContainer.post {
+            // Fly to the landmark now that the panel is displayed
+            flyTo(currentLandmark)
         }
     }
 
@@ -378,3 +465,4 @@ object EspressoIdlingResource {
     fun increment() = espressoIdlingResource.increment()
     fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
 }
+

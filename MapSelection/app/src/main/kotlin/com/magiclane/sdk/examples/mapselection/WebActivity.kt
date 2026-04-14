@@ -17,8 +17,10 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
+import com.magiclane.sdk.examples.mapselection.databinding.ActivityWebBinding
 
 class WebActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityWebBinding
 
     private lateinit var webView: WebView
     private lateinit var progressBar: ProgressBar
@@ -27,7 +29,11 @@ class WebActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_web)
+        binding = ActivityWebBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        webView = binding.webView
+        progressBar = binding.progressBar
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 

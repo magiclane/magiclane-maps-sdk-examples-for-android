@@ -9,57 +9,50 @@ package com.magiclane.sdk.examples.hellomapcompose
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.view.WindowCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.examples.hellomapcompose.ui.theme.HelloMapComposeTheme
-import com.magiclane.sdk.util.Util
+import kotlin.system.exitProcess
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        enableEdgeToEdge()
-        configureWindow()
-
-        if (GemSdk.initSdkWithDefaults(this) != GemError.NoError) {
-            // The SDK initialization was not completed.
-            finish()
-            return
-        }
+        // Make the app draw edge-to-edge with light (white) status-bar icons.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+        )
 
         setContent {
             HelloMapComposeTheme {
@@ -70,72 +63,57 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        GemSdk.release() // Release the SDK.
-    }
+        GemSdk.release()
 
-    private fun configureWindow() {
-        val window = this.window
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        WindowCompat.getInsetsController(
-            window,
-            window.decorView,
-        ).isAppearanceLightStatusBars = false
+        exitProcess(0)
     }
 }
 
 @Composable
 fun MainApp() {
-    val view = LocalView.current
+    val viewModel: MainViewModel = viewModel()
+    val uiState = viewModel.uiState
 
-    var isLoading by remember { mutableStateOf(true) }
-    var isConnected by remember { mutableStateOf(Util.isInternetConnected(view.context)) }
-
-    LaunchedEffect(Unit) {
-        SdkSettings.onMapDataReady = { isLoading = false }
-        if (SdkSettings.isMapDataReady) {
-            isLoading = false
-        }
-        SdkSettings.onConnectionStatusUpdated = { connected ->
-            isConnected = connected
-        }
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        MainContent(uiState = uiState, viewModel = viewModel)
+        MapTopAppBar()
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = { TopAppBar() },
-        contentWindowInsets = WindowInsets.systemBars,
-        containerColor = Color.Black,
-    ) { innerPadding ->
-        MainContent(
-            innerPadding = innerPadding,
-            isLoading = isLoading,
-            isConnected = isConnected,
-        )
+    if (uiState.errorMessage.isNotEmpty()) {
+        ErrorDialog(uiState.errorMessage) { viewModel.dismissError() }
     }
 }
 
 @Composable
-fun MainContent(
-    innerPadding: androidx.compose.foundation.layout.PaddingValues,
-    isLoading: Boolean,
-    isConnected: Boolean,
-) {
-    val contentModifier = Modifier
-        .padding(innerPadding)
-        .fillMaxSize()
-
-    GEMMap(contentModifier)
-
-    when {
-        !isConnected -> NoInternetScreen(contentModifier)
-        isLoading -> LoadingScreen(contentModifier)
+private fun MainContent(uiState: UiState, viewModel: MainViewModel) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        GEMMap(modifier = Modifier.fillMaxSize(), viewModel = viewModel)
+        if (uiState.isLoading) {
+            LoadingScreen(modifier = Modifier.fillMaxSize())
+        }
     }
 }
 
 @Composable
-fun GEMMap(modifier: Modifier = Modifier) {
+private fun GEMMap(modifier: Modifier = Modifier, viewModel: MainViewModel) {
     AndroidView(modifier = modifier, factory = { context ->
-        GemSurfaceView(context)
+        SdkSettings.onApiTokenRejected = {
+            viewModel.onSdkError(context.getString(R.string.token_rejected_message))
+        }
+
+        GemSurfaceView(context).apply {
+            onSdkInitFailed = { error ->
+                viewModel.onSdkError(
+                    context.getString(
+                        R.string.sdk_initialization_failed,
+                        GemError.getMessage(error, context),
+                    )
+                )
+            }
+            onDefaultMapViewCreated = {
+                viewModel.onMapReady()
+            }
+        }
     })
 }
 
@@ -145,61 +123,72 @@ fun LoadingScreen(modifier: Modifier = Modifier) {
         modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
-        CircularProgressIndicator(color = Color.White)
+        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
     }
 }
 
 @Composable
-fun TopAppBar(modifier: Modifier = Modifier) {
+fun MapTopAppBar(modifier: Modifier = Modifier) {
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .height(60.dp),
+        modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.primary,
     ) {
         Box(
             Modifier
-                .padding(4.dp)
-                .fillMaxSize(),
-            contentAlignment = Alignment.CenterStart,
-        ) { Text("Hello Map", style = MaterialTheme.typography.titleLarge) }
-    }
-}
-
-@Composable
-fun NoInternetScreen(modifier: Modifier = Modifier) {
-    Surface(modifier) {
-        Box(
-            modifier = modifier,
-            contentAlignment = Alignment.Center,
+                .fillMaxWidth()
+                .windowInsetsPadding(
+                    WindowInsets.systemBars.only(
+                        WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
+                    )
+                )
         ) {
-            Text(
-                text = stringResource(R.string.no_internet_connection),
-                textAlign = TextAlign.Center,
-                color = Color.Red,
-            )
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Text(
+                    text = stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
         }
     }
 }
 
-@Preview
 @Composable
-private fun TopAppBarPreview() {
+fun ErrorDialog(errorMessage: String, onDismiss: () -> Unit) {
+    AlertDialog(
+        text = { Text(text = errorMessage) },
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.close_button))
+            }
+        },
+    )
+}
+
+@Preview(name = "TopAppBar – Light", showBackground = true)
+@Composable
+private fun MapTopAppBarPreview() {
     HelloMapComposeTheme {
-        TopAppBar()
+        MapTopAppBar()
     }
 }
 
-@Preview()
+@Preview(name = "TopAppBar – Dark", showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun NoInternetScreenPreview() {
-    HelloMapComposeTheme {
-        NoInternetScreen(Modifier.fillMaxSize())
+private fun MapTopAppBarDarkPreview() {
+    HelloMapComposeTheme(darkTheme = true) {
+        MapTopAppBar()
     }
 }
 
-@Preview
+@Preview(name = "Loading Screen", showBackground = true, backgroundColor = 0xFF000000)
 @Composable
 private fun LoadingScreenPreview() {
     HelloMapComposeTheme {

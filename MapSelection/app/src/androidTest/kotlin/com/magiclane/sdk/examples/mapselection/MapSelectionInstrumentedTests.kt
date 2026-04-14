@@ -93,7 +93,7 @@ class MapSelectionInstrumentedTests {
     @Test
     fun selectMyPosition(): Unit = runBlocking {
         delay(10000)
-        onView(withId(R.id.follow_cursor_button)).perform(click())
+        onView(withId(R.id.follow_gps_button)).perform(click())
 
         val center = SdkCall.execute {
             activityRes.gemSurfaceView.mapView?.viewport?.center?.run {
@@ -108,7 +108,7 @@ class MapSelectionInstrumentedTests {
             ),
         )
 
-        onView(withId(R.id.name_view)).check(matches(isDisplayed()))
+        onView(withId(R.id.name)).check(matches(isDisplayed()))
     }
 
     @Test

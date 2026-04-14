@@ -75,7 +75,6 @@ class MapSelectionModel : ViewModel() {
 
     // utils
     var followGpsButtonIsVisible by mutableStateOf(false)
-    var flyToRoutesButtonIsVisible by mutableStateOf(false)
     private var visibleArea = Rect(0, 0, 0, 0)
     private var routesList = ArrayList<Route>()
     private lateinit var animation: Animation
@@ -86,7 +85,7 @@ class MapSelectionModel : ViewModel() {
     var invokeHighlight by mutableStateOf(false)
     var highlightEffect: () -> Unit = {}
 
-    fun initialize(gemSurfaceView: GemSurfaceView) = SdkCall.execute {
+    fun initialize(gemSurfaceView: GemSurfaceView) {
         // create routing service
         routingService = RoutingService(
             onStarted = {
@@ -108,7 +107,6 @@ class MapSelectionModel : ViewModel() {
                                     }
                                 }
                             }
-                            flyToRoutesButtonIsVisible = true
                         }
                     GemError.Cancel -> {
                         // The routing action was cancelled.
@@ -124,7 +122,6 @@ class MapSelectionModel : ViewModel() {
 
         gemSurfaceView.mapView?.apply {
             // handle follow position
-            followGpsButtonIsVisible = SdkCall.execute { isFollowingPosition() } != true
 
             onExitFollowingPosition = {
                 followGpsButtonIsVisible = true
@@ -132,55 +129,35 @@ class MapSelectionModel : ViewModel() {
 
             onEnterFollowingPosition = {
                 followGpsButtonIsVisible = false
-                SdkCall.execute {
-                    deactivateHighlights(this)
-                }
+                hideBottomView(this)
             }
 
             // set on map touch
             onTouch = { xy ->
                 SdkCall.execute {
                     cursorScreenPosition = xy
-                    deactivateHighlights(this)
-                    hideBottomView()
 
-                    // my position
-                    if (centerOnMyPosition(this)) {
+                    if (highlightRoute(this)) {
                         return@execute
                     }
 
-                    // center on landmark
-                    val landmarks = cursorSelectionLandmarks
-                    if (!landmarks.isNullOrEmpty()) {
-                        highlightLandmark(landmarks[0], this)
+                    if (highlightTrafficEvent(this)) {
                         return@execute
                     }
 
-                    // center on traffic event
-                    if (centerOnTrafficEvent(this)) {
+                    if (highlightMyPosition(this)) {
                         return@execute
                     }
 
-                    // center on overlay
-                    if (centerOnOverlayItem(this)) {
+                    if (highlightPointOfInterest(this)) {
                         return@execute
                     }
 
-                    // center on routes
-                    // get the visible routes at the touch event point
-                    val routes = cursorSelectionRoutes
-                    // check if there is any route
-                    if (!routes.isNullOrEmpty()) {
-                        // set the touched route as the main route and center on it
-                        selectRoute(routes[0], this)
+                    if (highlightOverlay(this)) {
                         return@execute
                     }
 
-                    // center on street position
-                    val streets = cursorSelectionStreets
-                    if (!streets.isNullOrEmpty()) {
-                        highlightLandmark(streets[0], this)
-                    }
+                    highlightStreet(this)
                 }
             }
         }
@@ -197,24 +174,54 @@ class MapSelectionModel : ViewModel() {
         routingService.calculateRoute(waypoints)
     }
 
-    private fun centerOnMyPosition(mapView: MapView): Boolean = SdkCall.execute {
+    private fun highlightRoute(mapView: MapView): Boolean = SdkCall.execute {
+        // get the visible routes at the touch event point
+        val routes = mapView.cursorSelectionRoutes
+        // check if there is any route
+        if (!routes.isNullOrEmpty()) {
+            deactivateHighlights(mapView)
+
+            // set the touched route as the main route and center on it
+            selectRoute(routes[0], mapView)
+            return@execute true
+        }
+
+        return@execute false
+    } ?: false
+
+    private fun highlightMyPosition(mapView: MapView): Boolean = SdkCall.execute {
         val myPosition = mapView.cursorSelectionSceneObject
         MapSceneObject.getDefPositionTracker().first?.let { sceneObject -> // the default my position image
             if ((myPosition != null) && isSameMapScene(myPosition, sceneObject)) {
-                fillLocationDetailsInfo(
-                    null,
-                    "My position",
-                    "",
-                )
-
                 myPosition.coordinates?.let { coordinates ->
-                    highlightPlace(coordinates, ImageDatabase.searchResultsPin!!, mapView)
+                    deactivateHighlights(mapView)
+                    val description = getLandmarkDescription(mapView, coordinates, isMyPosition = true)
+
+                    fillLocationDetailsInfo(
+                        null,
+                        "My position",
+                        description,
+                    )
+
+                    myPosition.coordinates?.let { coordinates ->
+                        highlightPlace(coordinates, ImageDatabase.searchResultsPin!!, mapView)
+                    }
+                    return@execute true
                 }
-                return@execute true
             }
         }
         return@execute false
-    }!!
+    } ?: false
+
+    private fun highlightPointOfInterest(mapView: MapView): Boolean = SdkCall.execute {
+        val landmarks = mapView.cursorSelectionLandmarks
+        if (!landmarks.isNullOrEmpty()) {
+            deactivateHighlights(mapView)
+            highlightLandmark(landmarks[0], mapView)
+            return@execute true
+        }
+        return@execute false
+    } ?: false
 
     private var parameters = GemList(Parameter::class)
 
@@ -234,7 +241,7 @@ class MapSelectionModel : ViewModel() {
         },
     )
 
-    private fun centerOnTrafficEvent(mapView: MapView): Boolean = SdkCall.execute {
+    private fun highlightTrafficEvent(mapView: MapView): Boolean = SdkCall.execute {
         val trafficEvents = mapView.cursorSelectionTrafficEvents
         if (!trafficEvents.isNullOrEmpty()) {
             trafficEvent = trafficEvents[0]
@@ -250,6 +257,8 @@ class MapSelectionModel : ViewModel() {
             } else {
                 progressBarIsVisible = true
                 trafficEvent?.referencePoint?.let {
+                    deactivateHighlights(mapView)
+
                     highlightPlace(
                         it,
                         trafficEvent?.image!!,
@@ -260,35 +269,43 @@ class MapSelectionModel : ViewModel() {
             return@execute true
         }
         return@execute false
-    }!!
+    } ?: false
 
-    private fun centerOnOverlayItem(mapView: MapView): Boolean = SdkCall.execute {
+    private fun highlightOverlay(mapView: MapView): Boolean = SdkCall.execute {
         val overlays = mapView.cursorSelectionOverlayItems
         if (!overlays.isNullOrEmpty()) {
+            deactivateHighlights(mapView)
+
             val overlay = overlays[0]
             when (overlay.overlayInfo?.uid) {
                 ECommonOverlayId.Safety.value -> {
                     fillSafetyCameraInfo(overlay)
                     highlightOverlay(mapView, overlay, true)
                 }
-
                 ECommonOverlayId.SocialReports.value -> {
                     fillSocialReportInfo(overlay, mapView)
                     highlightOverlay(mapView, overlay, false)
                 }
-
                 else -> {
-                    overlay.run {
+                    overlay.coordinates?.let {
+                        val name = when {
+                            !overlay.name.isNullOrEmpty() -> overlay.name!!
+                            !overlay.overlayInfo?.name.isNullOrEmpty() -> overlay.overlayInfo?.name!!
+                            else -> "Unknown"
+                        }
+
+                        val description = getLandmarkDescription(mapView, it)
+
                         fillLocationDetailsInfo(
-                            image?.asBitmap(
+                            overlay.image?.asBitmap(
                                 detailsPanelImageSize,
                                 detailsPanelImageSize,
                             )?.asImageBitmap() ?: ImageBitmap(
                                 1,
                                 1,
                             ),
-                            name.toString(),
-                            overlayInfo?.name.toString(),
+                            name,
+                            description,
                         )
                     }
 
@@ -298,11 +315,17 @@ class MapSelectionModel : ViewModel() {
             return@execute true
         }
         return@execute false
-    }!!
+    } ?: false
 
-    fun showRoutes(mapView: MapView) = SdkCall.execute {
-        mapView.preferences?.routes?.mainRoute?.let { selectRoute(it, mapView) }
-    }
+    private fun highlightStreet(mapView: MapView): Boolean = SdkCall.execute {
+        val streets = mapView.cursorSelectionStreets
+        if (!streets.isNullOrEmpty()) {
+            deactivateHighlights(mapView)
+            highlightLandmark(streets[0], mapView)
+            return@execute true
+        }
+        return@execute false
+    } ?: false
 
     fun selectRoute(route: Route, mapView: MapView?) = SdkCall.execute {
         mapView?.apply {
@@ -810,7 +833,7 @@ class MapSelectionModel : ViewModel() {
             mapView.displayOverlayItemFieldOfView(markerRenderSettings, overlayItem, "safety_fov")
         }
 
-        highlightPlace(overlayItem.coordinates!!, overlayItem.image!!, mapView)
+        highlightPlace(overlayItem.coordinates!!, ImageDatabase.searchResultsPin!!, mapView)
     }
 
     private fun highlightPlace(coordinates: Coordinates, image: Image, mapView: MapView) {
@@ -842,7 +865,7 @@ class MapSelectionModel : ViewModel() {
 
     private fun highlightLandmark(landmark: Landmark, mapView: MapView) {
         landmark.run {
-            val details = GemUtil.pairFormatLandmarkDetails(this, false)
+            val details = GemUtil.pairFormatLandmarkDetails(this, true)
             fillLocationDetailsInfo(
                 image?.asBitmap(
                     detailsPanelImageSize,
@@ -898,15 +921,17 @@ class MapSelectionModel : ViewModel() {
     fun deactivateHighlights(mapView: MapView) = SdkCall.execute {
         mapView.deactivateAllHighlights()
         mapView.hideCustomMarkers("safety_fov")
-        hideBottomView()
     }
 
-    fun hideBottomView() {
+    fun hideBottomView(mapView: MapView?) = SdkCall.execute {
         socialReportInfo = null
         locationDetailsInfo = null
         safetyCameraInfo = null
         trafficEventInfo = null
         routeInfo = null
+        mapView?.let {
+            deactivateHighlights(it)
+        }
     }
 
     fun isBottomViewVisible() =
@@ -917,12 +942,10 @@ class MapSelectionModel : ViewModel() {
             visibleArea = Rect(
                 vp.x + padding,
                 vp.y + padding,
-                vp.width - 2 * padding,
-                vp.height - bottomPartHeight - 2 * padding,
+                vp.width - padding,
+                vp.height - bottomPartHeight - padding,
             )
         }
-        invokeHighlight = false
-        highlightEffect.invoke()
     }
 
     fun invokeHighlightEffect() = SdkCall.execute {
@@ -943,4 +966,48 @@ class MapSelectionModel : ViewModel() {
             first.orientation?.y == second.orientation?.y &&
             first.orientation?.z == second.orientation?.z &&
             first.orientation?.w == second.orientation?.w
+
+    @SuppressLint("DefaultLocale")
+    private fun getLandmarkDescription(mapView: MapView, coordinates: Coordinates, isMyPosition: Boolean = false): String {
+        var description = ""
+        var descriptionContainsLatLon = false
+
+        var address = mapView.getClosestAddress(coordinates, 50, false)
+        if (address != null) {
+            description = GemUtil.formatLandmarkDetails(address, true)
+        }
+
+        if (description.isEmpty()) {
+            address = mapView.getClosestAddress(coordinates, 300, false)
+            if (address != null) {
+                description = address.addressInfo?.getField(EAddressField.City) ?: ""
+            }
+
+            if (description.isEmpty()) {
+                address = mapView.getClosestAddress(coordinates, 2500, true)
+                if (address != null) {
+                    val city = address.addressInfo?.getField(EAddressField.City) ?: ""
+                    if (city.isNotEmpty()) {
+                        description = "Near $city"
+                    }
+                }
+
+                if (description.isEmpty()) {
+                    description = String.format("%.5f, %.5f", coordinates.latitude, coordinates.longitude)
+                    descriptionContainsLatLon = true
+                }
+            }
+        }
+
+        if (isMyPosition) {
+            if (!descriptionContainsLatLon) {
+                description += "\nLatitude: ${String.format("%.5f", coordinates.latitude)}"
+                description += "\nLongitude: ${String.format("%.5f", coordinates.longitude)}"
+            }
+
+            description += "\nAltitude: ${coordinates.altitude.toInt()}m"
+        }
+
+        return description
+    }
 }

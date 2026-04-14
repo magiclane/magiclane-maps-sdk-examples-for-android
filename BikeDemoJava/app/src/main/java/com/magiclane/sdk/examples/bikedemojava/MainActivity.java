@@ -25,6 +25,7 @@ import android.view.View;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
@@ -35,6 +36,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.test.espresso.idling.CountingIdlingResource;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.magiclane.sdk.places.EAddressField;
 import com.magiclane.sdk.core.EUnitSystem;
 import com.magiclane.sdk.core.GemError;
 import com.magiclane.sdk.core.GemSdk;
@@ -56,8 +58,10 @@ import com.magiclane.sdk.d3scene.ERouteDisplayMode;
 import com.magiclane.sdk.d3scene.HighlightRenderSettings;
 import com.magiclane.sdk.d3scene.MapView;
 import com.magiclane.sdk.d3scene.MapViewPreferences;
+import com.magiclane.sdk.d3scene.OverlayItem;
 import com.magiclane.sdk.examples.bikedemojava.databinding.ActivityMainBinding;
 import com.magiclane.sdk.examples.bikedemojava.databinding.DialogLayoutBinding;
+import com.magiclane.sdk.places.Coordinates;
 import com.magiclane.sdk.places.Landmark;
 import com.magiclane.sdk.places.SearchService;
 import com.magiclane.sdk.routesandnavigation.EBikeProfile;
@@ -70,6 +74,7 @@ import com.magiclane.sdk.routesandnavigation.NavigationService;
 import com.magiclane.sdk.routesandnavigation.Route;
 import com.magiclane.sdk.routesandnavigation.RoutingService;
 import com.magiclane.sdk.sensordatasource.ESConfigKeys;
+import com.magiclane.sdk.sensordatasource.PositionData;
 import com.magiclane.sdk.sensordatasource.PositionListener;
 import com.magiclane.sdk.sensordatasource.PositionService;
 import com.magiclane.sdk.sensordatasource.enums.EDataType;
@@ -122,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
         @Override
         public void notifyComplete(int errorCode, @NonNull String message) {
             if (errorCode != GemError.NoError) {
-                showInvalidTokenDialog();
+                runOnUiThread(() -> showInvalidTokenDialog());
             }
         }
     };
@@ -509,43 +514,27 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
                             return null;
                         }
 
-                        Landmark selectedLandmark = null;
-                        List<Landmark> landmarks = mapView.getCursorSelectionLandmarks();
-                        if (landmarks != null && !landmarks.isEmpty()) {
-                            selectedLandmark = landmarks.get(0);
-                        } else {
-                            var overlayItems = mapView.getCursorSelectionOverlayItems();
-                            if (overlayItems != null && !overlayItems.isEmpty()) {
-                                var overlay = overlayItems.get(0);
-                                var coordinates = overlay.getCoordinates();
-                                if (coordinates != null) {
-                                    selectedLandmark = new Landmark(
-                                        overlay.getName() != null ? overlay.getName() : "Unknown",
-                                        coordinates.getLatitude(),
-                                        coordinates.getLongitude()
-                                    );
-                                }
-                            }
-                        }
+                        Landmark landmark = getLandmark(mapView);
 
-                        if ((selectedLandmark != null) && (selectedLandmark.getCoordinates() != null)) {
-                            Landmark landmark = selectedLandmark;
+                        if ((landmark != null) && (landmark.getCoordinates() != null)) {
                             viewModel.destination = landmark;
+
+                            Pair<String, String> details = GemUtil.INSTANCE.pairFormatLandmarkDetails(landmark, true);
+
                             showCalculateRouteDialog(
-                                GemUtil.INSTANCE.formatName(landmark),
-                                GemUtil.INSTANCE.getLandmarkDescription(landmark, true),
-                                () -> {
-                                    if (PositionService.INSTANCE.getPosition() != null) {
-                                        Landmark departure = new Landmark(
-                                            "My position",
-                                            PositionService.INSTANCE.getPosition().getLatitude(),
-                                            PositionService.INSTANCE.getPosition().getLongitude()
-                                        );
+                                details.getFirst(),
+                                details.getSecond(),
+                                () -> GemCall.INSTANCE.execute(() -> {
+                                    PositionData position = PositionService.INSTANCE.getPosition();
+                                    if ((position != null) && position.isValid()) {
+                                        Landmark departure = new Landmark("My position", position.getLatitude(), position.getLongitude());
                                         calculateRoute(departure, landmark);
                                     } else {
-                                        showDialog(getString(R.string.current_position_not_available));
+                                        runOnUiThread(() -> showDialog(getString(R.string.current_position_not_available)));
                                     }
-                                },
+
+                                    return null;
+                                }),
                                 () -> highlightLandmarkOnMap(landmark),
                                 this::deactivateHighlights
                             );
@@ -574,19 +563,18 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
                 showCalculateRouteDialog(
                     item.getText() != null ? item.getText() : "",
                     item.getSubText() != null ? item.getSubText() : "",
-                    () -> {
-                        if (PositionService.INSTANCE.getPosition() != null) {
-                            Landmark departure = new Landmark(
-                                getString(R.string.my_position),
-                                PositionService.INSTANCE.getPosition().getLatitude(),
-                                PositionService.INSTANCE.getPosition().getLongitude()
-                            );
+                    () -> GemCall.INSTANCE.execute(() -> {
+                        PositionData position = PositionService.INSTANCE.getPosition();
+                        if ((position != null) && position.isValid()) {
+                            Landmark departure = new Landmark(getString(R.string.my_position), position.getLatitude(), position.getLongitude());
                             Landmark destination = item.getLandmark();
                             calculateRoute(departure, destination);
                         } else {
-                            showDialog(getString(R.string.current_position_not_available));
+                            runOnUiThread(() -> showDialog(getString(R.string.current_position_not_available)));
                         }
-                    },
+
+                        return null;
+                    }),
                     () -> highlightLandmarkOnMap(viewModel.destination),
                     this::deactivateHighlights
                 );
@@ -770,6 +758,41 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
         });
     }
 
+    @Nullable
+    private static Landmark getLandmark(MapView mapView) {
+        Landmark selectedLandmark = null;
+        List<Landmark> landmarks = mapView.getCursorSelectionLandmarks();
+        if (landmarks != null && !landmarks.isEmpty()) {
+            selectedLandmark = landmarks.get(0);
+        } else {
+            List<OverlayItem> overlayItems = mapView.getCursorSelectionOverlayItems();
+            if (overlayItems != null && !overlayItems.isEmpty()) {
+                OverlayItem overlay = overlayItems.get(0);
+
+                Coordinates coordinates = overlay.getCoordinates();
+                if (coordinates != null) {
+                    String name;
+                    if (overlay.getName() != null && !overlay.getName().isEmpty()) {
+                        name = overlay.getName();
+                    } else if (overlay.getOverlayInfo() != null && overlay.getOverlayInfo().getName() != null && !overlay.getOverlayInfo().getName().isEmpty()) {
+                        name = overlay.getOverlayInfo().getName();
+                    } else {
+                        name = "Unknown";
+                    }
+
+                    selectedLandmark = new Landmark(
+                            name,
+                            coordinates.getLatitude(),
+                            coordinates.getLongitude()
+                    );
+
+                    selectedLandmark.setDescription(getLandmarkDescription(mapView, coordinates, false));
+                }
+            }
+        }
+        return selectedLandmark;
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -804,7 +827,7 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
                     );
 
                     highlightSettings = new HighlightRenderSettings(
-                        EHighlightOptions.ShowContour.getValue() | EHighlightOptions.ShowLandmark.getValue(),
+                        EHighlightOptions.ShowContour.getValue() | EHighlightOptions.ShowLandmark.getValue() | EHighlightOptions.Overlap.getValue(),
                         new Rgba(255, 98, 0, 255),
                         new Rgba(255, 98, 0, 255),
                         0.75,
@@ -813,7 +836,7 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
                     highlightSettings.setImageSize(6.0);
                 } else {
                     highlightSettings = new HighlightRenderSettings();
-                    highlightSettings.setOptions(EHighlightOptions.ShowLandmark.getValue());
+                    highlightSettings.setOptions(EHighlightOptions.ShowLandmark.getValue() | EHighlightOptions.Overlap.getValue());
                     highlightSettings.setImageSize(6.0);
 
                     if (landmark.getCoordinates() != null) {
@@ -831,7 +854,7 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
                 binding.gemSurfaceView.getMapView().activateHighlightLandmarks(
                     landmark,
                     highlightSettings,
-                    -1
+                    0
                 );
             }
             return null;
@@ -1344,6 +1367,55 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
         if (binding.gemSurfaceView.getMapView() != null) {
             binding.gemSurfaceView.getMapView().hideRoutes();
         }
+    }
+
+    @SuppressLint("DefaultLocale")
+    private static String getLandmarkDescription(
+            @NonNull MapView mapView,
+            @NonNull Coordinates coordinates,
+            boolean isMyPosition
+    ) {
+        String description = "";
+        boolean descriptionContainsLatLon = false;
+
+        Landmark address = mapView.getClosestAddress(coordinates, 50, false);
+        if (address != null) {
+            description = GemUtil.INSTANCE.formatLandmarkDetails(address, true);
+        }
+
+        if (description.isEmpty()) {
+            address = mapView.getClosestAddress(coordinates, 300, false);
+            if (address != null && address.getAddressInfo() != null) {
+                String city = address.getAddressInfo().getField(EAddressField.City);
+                description = city != null ? city : "";
+            }
+
+            if (description.isEmpty()) {
+                address = mapView.getClosestAddress(coordinates, 2500, true);
+                if (address != null && address.getAddressInfo() != null) {
+                    String city = address.getAddressInfo().getField(EAddressField.City);
+                    if (city != null && !city.isEmpty()) {
+                        description = "Near " + city;
+                    }
+                }
+
+                if (description.isEmpty()) {
+                    description = String.format("%.5f, %.5f", coordinates.getLatitude(), coordinates.getLongitude());
+                    descriptionContainsLatLon = true;
+                }
+            }
+        }
+
+        if (isMyPosition) {
+            if (!descriptionContainsLatLon) {
+                description += "\nLatitude: " + String.format("%.5f", coordinates.getLatitude());
+                description += "\nLongitude: " + String.format("%.5f", coordinates.getLongitude());
+            }
+
+            description += "\nAltitude: " + (int) coordinates.getAltitude() + "m";
+        }
+
+        return description;
     }
 
     // ITTSPlayerInitializationListener

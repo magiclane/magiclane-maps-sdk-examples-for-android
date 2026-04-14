@@ -35,7 +35,7 @@ fun LocationDetailsScreen(modifier: Modifier = Modifier, locationDetailsInfo: Lo
         modifier = modifier
             .fillMaxWidth()
             .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         with(locationDetailsInfo) {

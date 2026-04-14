@@ -2,4 +2,10 @@
     <string name="app_name">MapPerspectiveChange</string>
     <string name="two_dimensional">2D</string>
     <string name="three_dimensional">3D</string>
+    <string name="switch_to_two_dimensional">Switch to 2D map perspective</string>
+    <string name="switch_to_three_dimensional">Switch to 3D map perspective</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
 </resources>

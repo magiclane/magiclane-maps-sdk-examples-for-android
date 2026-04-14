@@ -15,4 +15,8 @@
         <item name="colorSurface">@color/surface</item>
         <item name="colorOnSurface">@color/on_surface</item>
     </style>
+
+    <style name="ShapeAppearanceOverlayCircleFab">
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>

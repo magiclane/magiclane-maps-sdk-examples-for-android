@@ -8,14 +8,33 @@
     android:layout_height="match_parent"
     tools:context="com.magiclane.sdk.examples.hellosdk.MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
+        android:background="@color/primary"
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="@string/app_name"
+        app:titleTextColor="@color/on_primary"
+        app:paddingTopWithSystemWindowInsets='@{"8dp"}'
+        app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
+        app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
+        android:paddingBottom="12dp"
+        />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/sdkStatusText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/big_padding"
+        android:layout_marginEnd="@dimen/big_padding"
+        android:gravity="center"
+        android:textAlignment="center"
+        android:textSize="@dimen/standard_text_size"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

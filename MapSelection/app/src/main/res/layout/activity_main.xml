@@ -11,10 +11,8 @@
         <com.magiclane.sdk.core.GemSurfaceView
             android:id="@+id/gem_surface"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            app:layout_constraintBottom_toTopOf="@id/overlay_container"
+            android:layout_height="match_parent"
             app:layout_constraintTop_toTopOf="parent" />
-
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
@@ -30,45 +28,45 @@
             app:titleTextColor="@color/on_primary" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/follow_cursor_button"
+            android:id="@+id/follow_gps_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/big_padding"
             android:src="@drawable/ic_baseline_gps_fixed_24"
             android:visibility="gone"
             app:backgroundTint="@color/primary"
-            app:layout_constraintBottom_toTopOf="@id/overlay_container"
-            app:layout_constraintStart_toStartOf="parent"
-            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:tint="@color/on_primary"
-            tools:ignore="ContentDescription" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fly_to_routes_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/big_padding"
-            android:src="@drawable/ic_baseline_route_24_night"
-            android:visibility="gone"
-            app:backgroundTint="@color/primary"
-            app:layout_constraintBottom_toTopOf="@id/follow_cursor_button"
-            app:layout_constraintStart_toStartOf="parent"
-            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:layout_constraintBottom_toTopOf="@id/location_details_container"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:tint="@color/on_primary"
             tools:ignore="ContentDescription" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/overlay_container"
+            android:id="@+id/location_details_container"
+            android:clickable="true"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/background"
+            android:focusable="true"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             tools:layout_editor_absoluteX="10dp">
 
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/image"
+                android:layout_width="@dimen/image_size"
+                android:layout_height="@dimen/image_size"
+                android:layout_margin="@dimen/big_padding"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:ignore="ContentDescription" />
+
             <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/name_view"
+                android:id="@+id/name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/big_padding"
@@ -76,38 +74,42 @@
                 android:layout_marginEnd="@dimen/big_padding"
                 android:textColor="@color/on_background"
                 android:textSize="@dimen/big_text_size"
-                app:layout_constraintBottom_toTopOf="@+id/description_view"
-                app:layout_constraintEnd_toStartOf="@id/overlay_image"
-                app:layout_constraintStart_toStartOf="parent"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toTopOf="@+id/description"
+                app:layout_constraintEnd_toStartOf="@id/close_button"
+                app:layout_constraintStart_toEndOf="@id/image"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintVertical_bias="0.5"
                 app:layout_constraintVertical_chainStyle="packed"
                 app:layout_goneMarginBottom="@dimen/big_padding" />
 
             <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/description_view"
+                android:id="@+id/description"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/big_padding"
                 android:layout_marginEnd="@dimen/big_padding"
                 android:layout_marginBottom="@dimen/big_padding"
-                android:textColor="@color/on_background"
+                android:textColor="@color/gray"
                 android:textSize="@dimen/standard_text_size"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/overlay_image"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/name_view"
+                app:layout_constraintEnd_toStartOf="@id/close_button"
+                app:layout_constraintStart_toEndOf="@id/image"
+                app:layout_constraintTop_toBottomOf="@+id/name"
                 app:layout_constraintVertical_bias="0.5" />
 
-            <ImageView
-                android:id="@+id/overlay_image"
-                android:layout_width="@dimen/image_size"
-                android:layout_height="@dimen/image_size"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/close_button"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_margin="@dimen/big_padding"
-                app:layout_constraintBottom_toBottomOf="parent"
+                app:icon="@drawable/cancel_24px"
+                app:iconSize="40dp"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="ContentDescription" />
+                app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

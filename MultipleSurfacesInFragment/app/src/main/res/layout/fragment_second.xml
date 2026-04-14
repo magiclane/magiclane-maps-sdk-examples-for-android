@@ -48,33 +48,52 @@
             app:marginRightWithSystemWindowInsets="@{0f}">
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/bottom_left_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:tint="@color/on_primary"
+                android:id="@+id/add_surface_button"
+                android:layout_width="@dimen/bottom_action_fab_size"
+                android:layout_height="@dimen/bottom_action_fab_size"
                 android:visibility="invisible"
+                app:backgroundTint="@color/primary"
+                app:borderWidth="0dp"
+                app:elevation="0dp"
+                app:pressedTranslationZ="0dp"
+                app:fabCustomSize="@dimen/bottom_action_fab_size"
+                app:maxImageSize="@dimen/bottom_action_fab_icon_size"
+                app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlayCircleFab"
+                app:srcCompat="@drawable/ic_minus_symbol"
+                app:tint="@color/on_primary"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="ContentDescription" />
+                tools:ignore="ContentDescription"
+                tools:visibility="visible"/>
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_second"
+                android:id="@+id/previous_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/previous"
-                app:layout_constraintStart_toEndOf="@id/bottom_left_button"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/bottom_right_button" />
+                app:layout_constraintStart_toEndOf="@id/add_surface_button"
+                app:layout_constraintTop_toTopOf="@id/add_surface_button"
+                app:layout_constraintBottom_toBottomOf="@id/add_surface_button"
+                app:layout_constraintEnd_toStartOf="@id/remove_surface_button" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/bottom_right_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:tint="@color/on_primary"
+                android:id="@+id/remove_surface_button"
+                android:layout_width="@dimen/bottom_action_fab_size"
+                android:layout_height="@dimen/bottom_action_fab_size"
                 android:visibility="invisible"
+                app:backgroundTint="@color/primary"
+                app:borderWidth="0dp"
+                app:elevation="0dp"
+                app:pressedTranslationZ="0dp"
+                app:fabCustomSize="@dimen/bottom_action_fab_size"
+                app:maxImageSize="@dimen/bottom_action_fab_icon_size"
+                app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlayCircleFab"
+                app:srcCompat="@drawable/ic_plus_symbol"
+                app:tint="@color/on_primary"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="ContentDescription" />
+                tools:ignore="ContentDescription"
+                tools:visibility="visible"/>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>

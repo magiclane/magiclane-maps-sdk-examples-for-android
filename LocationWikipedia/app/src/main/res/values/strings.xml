@@ -3,4 +3,12 @@
     <string name="error">Error</string>
     <string name="ok">OK</string>
     <string name="wikipedia">Wikipedia</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="no_search_results">No search results</string>
+    <string name="search_completed_with_error">Search completed with error: %1$s</string>
+    <string name="searching">Searching for landmark…</string>
+    <string name="fly_to_area_started">Focusing on area…</string>
+    <string name="fly_to_area_completed">Area focused</string>
 </resources>

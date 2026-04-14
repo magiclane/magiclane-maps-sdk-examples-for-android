@@ -1,5 +1,5 @@
 [versions]
-magicLaneMapsKotlinVersion = "1.8.3"
+magicLaneMapsKotlinVersion = "1.8.5"
 
 minSdkVersion = "21"
 targetSdkVersion = "36"
@@ -45,6 +45,7 @@ testCoreKtx = "1.6.1"
 testRules = "1.6.1"
 testRunner = "1.6.1"
 testUIAutomator = "2.3.0"
+nordicBle = "2.11.0"
 
 [libraries]
 build-android-gradle = { module = "com.android.tools.build:gradle", version.ref = "gradlePlugin" }
@@ -96,6 +97,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 sortabletableview = { group = "com.github.ISchwarz23", name = "SortableTableView", version.ref = "sortableTableView" }
 
 magiclane-maps-kotlin = { group = "com.magiclane", name = "maps-kotlin", version.ref = "magicLaneMapsKotlinVersion"}
+nordic-ble = { group = "no.nordicsemi.android", name = "ble", version.ref = "nordicBle" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "gradlePlugin" }

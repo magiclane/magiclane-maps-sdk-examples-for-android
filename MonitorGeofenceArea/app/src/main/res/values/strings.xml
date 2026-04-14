@@ -2,4 +2,19 @@
     <string name="app_name">Monitor Geofence Area</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="add_area_progress_listener_error">AddAreaProgressListener.onCompleted(): error = %1$s</string>
+    <string name="login_progress_listener_error">LoginProgressListener.onCompleted(): error = %1$s</string>
+    <string name="add_areas_error">Error adding areas to avoidgeofencearea: %1$s</string>
+    <string name="register_external_login_error">Error registering external login: %1$s</string>
+    <string name="start_simulation_error">Error starting simulation: %1$s</string>
+    <string name="enter_area_message">GeofenceListener.onEnterArea(): user = %1$s entered area with ID = %2$s</string>
+    <string name="exit_area_message">GeofenceListener.onExitArea(): user = %1$s exited area with ID = %2$s</string>
+    <string name="external_login_id" translatable="false">__my_spceial_login_id__</string>
+    <string name="circle_area_1_id" translatable="false">My Circle Area 1</string>
+    <string name="circle_area_2_id" translatable="false">My Circle Area 2</string>
+    <string name="waypoint_brasov" translatable="false">Brasov</string>
+    <string name="waypoint_predeal" translatable="false">Predeal</string>
 </resources>

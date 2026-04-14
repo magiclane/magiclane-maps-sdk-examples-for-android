@@ -1,7 +1,0 @@
-<resources>
-    <dimen name="fab_margin">16dp</dimen>
-    <dimen name="mapButtonMargin">10dp</dimen>
-
-    <dimen name="map_height">200dp</dimen>
-    <dimen name="small_padding">4dp</dimen>
-</resources>

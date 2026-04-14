@@ -56,7 +56,7 @@ class SurfacesInFragmentRecyclerTests {
     @Test
     fun addMapTest() {
         onView(withId(R.id.button_first)).perform(click())
-        onView(withId(R.id.bottom_right_button)).perform(click())
+        onView(withId(R.id.remove_surface_button)).perform(click())
         assert(
             activityRes.findViewById<LinearLayout>(R.id.scrolled_linear_layout).childCount == 2,
         ) {

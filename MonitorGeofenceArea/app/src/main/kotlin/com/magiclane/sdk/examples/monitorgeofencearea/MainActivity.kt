@@ -7,17 +7,16 @@
 
 package com.magiclane.sdk.examples.monitorgeofencearea
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.CircleGeographicArea
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.Geofence
@@ -33,6 +32,7 @@ import com.magiclane.sdk.d3scene.Marker
 import com.magiclane.sdk.d3scene.MarkerCollection
 import com.magiclane.sdk.d3scene.MarkerCollectionRenderSettings
 import com.magiclane.sdk.examples.monitorgeofencearea.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.monitorgeofencearea.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.NavigationListener
@@ -46,6 +46,13 @@ import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        private const val CIRCLE_RADIUS_METERS = 25
+        private const val POSITION_PUBLISH_INTERVAL_SECONDS = 1
+        private const val POLYLINE_INNER_SIZE_MM = 1.0
+        private const val POLYGON_COLLECTION_NAME = "Polygon"
+    }
+
     private lateinit var binding: ActivityMainBinding
 
     private val navigationService = NavigationService()
@@ -58,97 +65,26 @@ class MainActivity : AppCompatActivity() {
     private var geofenceAreas: GeofenceAreaList = arrayListOf()
 
     private val addAreasProgressListener = ProgressListener.create(onCompleted = { error, _ ->
-        if (error != GemError.NoError) {
-            showDialog(
-                "AddAreaProgressListener.onCompleted(): error = ${GemError.getMessage(error)}",
-            )
-        } else {
-            SdkCall.execute {
-                binding.gemSurfaceView.mapView?.let { mapView ->
-                    val polygonSettings =
-                        MarkerCollectionRenderSettings(
-                            polylineInnerColor = Rgba.magenta(),
-                            polygonFillColor = Rgba(255, 0, 0, 128),
-                        )
-                    polygonSettings.polylineInnerSize = 1.0 // mm
-                    val polygonCollection = MarkerCollection(EMarkerType.Polygon, "Polygon")
-
-                    for (geofenceArea in geofenceAreas) {
-                        if (geofenceArea.area is CircleGeographicArea) {
-                            geofenceArea.area?.centerPoint?.let {
-                                val marker = Marker(it, 25)
-                                polygonCollection.add(marker)
-                            }
-                        }
-                    }
-
-                    mapView.preferences?.markers?.add(polygonCollection, polygonSettings)
-
-                    PositionService.positionPublishingPreferences = PositionPublishingPreferences(
-                        true,
-                        1,
-                        false,
-                        EDataType.ImprovedPosition,
-                    )
-                    geofence.startMonitoringAreas(
-                        monitoringAreasListener,
-                        arrayListOf("My Circle Area 1", "My Circle Area 2"),
-                    )
-                    startSimulation()
-                }
-            }
-        }
+        onAddAreasCompleted(error)
     })
 
     private val loginProgressListener = ProgressListener.create(onCompleted = { error, _ ->
-        if (error != GemError.NoError) {
-            showDialog("LoginProgressListener.onCompleted(): error = ${GemError.getMessage(error)}")
-        } else {
-            SdkCall.execute {
-                geofenceAreas = arrayListOf(
-                    GeofenceArea(
-                        CircleGeographicArea(Coordinates(45.65189844, 25.60438562), 25),
-                        "My Circle Area 1",
-                    ),
-                    GeofenceArea(
-                        CircleGeographicArea(
-                            Coordinates(45.65264, 25.60697719),
-                            25,
-                        ),
-                        "My Circle Area 2",
-                    ),
-                )
-                val error = geofence.addAreas(geofenceAreas, addAreasProgressListener)
-                if (error != GemError.NoError) {
-                    Util.postOnMain {
-                        showDialog(
-                            "Error adding areas to avoidgeofencearea: ${GemError.getMessage(error)}",
-                        )
-                    }
-                }
-            }
-        }
+        onLoginCompleted(error)
     })
 
     private val monitoringAreasListener = GeofenceListener.create(onEnterArea = { userId, areaId ->
-        showToast("GeofenceListener.onEnterArea(): user = $userId entered area with ID = $areaId")
+        showToast(getString(R.string.enter_area_message, userId.toString(), areaId))
     }, onExitArea = { userId, areaId ->
-        showToast("GeofenceListener.onExitArea(): user = $userId exited area with ID = $areaId")
+        showToast(getString(R.string.exit_area_message, userId.toString(), areaId))
     })
 
     private val navigationListener: NavigationListener = NavigationListener.create(
         onNavigationStarted = {
-            SdkCall.execute {
-                binding.gemSurfaceView.mapView?.let { mapView ->
-                    navRoute?.let { route ->
-                        mapView.presentRoute(route)
-                    }
-
-                    setfollowCursorButton()
-                    mapView.followPosition()
-                }
-            }
+            onNavigationStarted()
         },
+        onDestinationReached = {
+            onNavigationEnded()
+        }
     )
 
     // Define a listener that will let us know the progress of the routing process.
@@ -167,44 +103,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
-
-            SdkCall.execute {
-                val error = Login.registerExternalLogin(
-                    "__my_spceial_login_id__",
-                    loginProgressListener,
-                )
-                if (error != GemError.NoError) {
-                    Util.postOnMain {
-                        showDialog(
-                            "Error registering external login: ${GemError.getMessage(error)}",
-                        )
-                    }
-                }
-            }
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
-        }
-
-        if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
-        }
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
-        }
+        initView()
+        configureSdkInitFailureHandler()
+        configureRoadMapStatusHandler()
+        configureApiTokenRejectedHandler()
+        validateInternetConnection()
     }
 
     override fun onDestroy() {
@@ -212,9 +115,112 @@ class MainActivity : AppCompatActivity() {
 
         // Release the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
-    private fun setfollowCursorButton() {
+    private fun initView() {
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+    }
+
+    private fun configureSdkInitFailureHandler() {
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnUiThread {
+                showDialog(errorMessage) { finish() }
+            }
+        }
+    }
+
+    private fun configureRoadMapStatusHandler() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                registerExternalLogin()
+            }
+        }
+    }
+
+    private fun registerExternalLogin() = SdkCall.execute {
+        val error = Login.registerExternalLogin(
+            getString(R.string.external_login_id),
+            loginProgressListener,
+        )
+        if (error != GemError.NoError) {
+            postGemErrorDialog(R.string.register_external_login_error, error)
+        }
+    }
+
+    private fun configureApiTokenRejectedHandler() {
+        SdkSettings.onApiTokenRejected = {
+            runOnUiThread {
+                showDialog(getString(R.string.token_rejected_message))
+            }
+        }
+    }
+
+    private fun validateInternetConnection() {
+        if (!Util.isInternetConnected(this)) {
+            showDialog(getString(R.string.internet_required))
+        }
+    }
+
+    private fun onAddAreasCompleted(error: Int) {
+        if (error != GemError.NoError) {
+            showGemErrorDialog(R.string.add_area_progress_listener_error, error)
+            return
+        }
+
+        SdkCall.execute {
+            binding.gemSurfaceView.mapView?.let { mapView ->
+                val polygonSettings = createPolygonRenderSettings()
+                val polygonCollection = createPolygonCollection()
+
+                mapView.preferences?.markers?.add(polygonCollection, polygonSettings)
+
+                startAreaMonitoring()
+                startSimulation()
+            }
+        }
+    }
+
+    private fun onLoginCompleted(error: Int) {
+        if (error != GemError.NoError) {
+            showGemErrorDialog(R.string.login_progress_listener_error, error)
+            return
+        }
+
+        SdkCall.execute {
+            geofenceAreas = createGeofenceAreas()
+            val addAreasError = geofence.addAreas(geofenceAreas, addAreasProgressListener)
+            if (addAreasError != GemError.NoError) {
+                postGemErrorDialog(R.string.add_areas_error, addAreasError)
+            }
+        }
+    }
+
+    private fun onNavigationStarted() {
+        SdkCall.execute {
+            binding.gemSurfaceView.mapView?.let { mapView ->
+                navRoute?.let { route ->
+                    mapView.presentRoute(route)
+                }
+
+                setFollowCursorButton()
+                mapView.followPosition()
+            }
+        }
+    }
+
+    private fun onNavigationEnded() {
+        binding.followCursorButton.visibility = View.GONE
+
+        SdkCall.execute {
+            binding.gemSurfaceView.mapView?.hideRoutes()
+        }
+    }
+
+    private fun setFollowCursorButton() {
         // Set actions for entering/ exiting following position mode.
         binding.apply {
             gemSurfaceView.mapView?.apply {
@@ -235,38 +241,102 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startSimulation() = SdkCall.execute {
-        val waypoints =
-            arrayListOf(
-                Landmark("Brasov", 45.65094531, 25.60403406),
-                Landmark("Predeal", 45.5052, 25.5742),
-            )
+        val waypoints = createSimulationWaypoints()
         val error = navigationService.startSimulation(
             waypoints,
             navigationListener,
             routingProgressListener,
         )
         if (error != GemError.NoError) {
-            Util.postOnMain {
-                showDialog(
-                    "Error starting simulation: ${GemError.getMessage(error)}",
-                )
-            }
+            postGemErrorDialog(R.string.start_simulation_error, error)
         }
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun startAreaMonitoring() {
+        PositionService.positionPublishingPreferences = PositionPublishingPreferences(
+            true,
+            POSITION_PUBLISH_INTERVAL_SECONDS,
+            false,
+            EDataType.ImprovedPosition,
+        )
+        geofence.startMonitoringAreas(monitoringAreasListener, getGeofenceAreaIds())
+    }
+
+    private fun createPolygonRenderSettings() =
+        MarkerCollectionRenderSettings(
+            polylineInnerColor = Rgba.magenta(),
+            polygonFillColor = Rgba(255, 0, 0, 128),
+        ).apply {
+            polylineInnerSize = POLYLINE_INNER_SIZE_MM // mm
+        }
+
+    private fun createPolygonCollection(): MarkerCollection {
+        val polygonCollection = MarkerCollection(EMarkerType.Polygon, POLYGON_COLLECTION_NAME)
+        for (geofenceArea in geofenceAreas) {
+            if (geofenceArea.area is CircleGeographicArea) {
+                geofenceArea.area?.centerPoint?.let { centerPoint ->
+                    polygonCollection.add(Marker(centerPoint, CIRCLE_RADIUS_METERS))
+                }
+            }
+        }
+
+        return polygonCollection
+    }
+
+    private fun createGeofenceAreas(): GeofenceAreaList =
+        arrayListOf(
+            GeofenceArea(
+                CircleGeographicArea(Coordinates(45.65189844, 25.60438562), CIRCLE_RADIUS_METERS),
+                getString(R.string.circle_area_1_id),
+            ),
+            GeofenceArea(
+                CircleGeographicArea(
+                    Coordinates(45.65264, 25.60697719),
+                    CIRCLE_RADIUS_METERS,
+                ),
+                getString(R.string.circle_area_2_id),
+            ),
+        )
+
+    private fun createSimulationWaypoints() =
+        arrayListOf(
+            Landmark(getString(R.string.waypoint_brasov), 45.65094531, 25.60403406),
+            Landmark(getString(R.string.waypoint_predeal), 45.5052, 25.5742),
+        )
+
+    private fun getGeofenceAreaIds(): ArrayList<String> =
+        arrayListOf(
+            getString(R.string.circle_area_1_id),
+            getString(R.string.circle_area_2_id),
+        )
+
+    private fun postGemErrorDialog(@StringRes messageResId: Int, error: Int) {
+        Util.postOnMain {
+            showGemErrorDialog(messageResId, error)
+        }
+    }
+
+    private fun showGemErrorDialog(@StringRes messageResId: Int, error: Int) {
+        showDialog(getString(messageResId, GemError.getMessage(error)))
+    }
+
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
+
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }
@@ -276,4 +346,6 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, message, length).show()
         }
     }
+
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
 }

@@ -12,6 +12,7 @@ import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.magiclane.sdk.examples.testing.GemSdkTestRule
 import org.junit.ClassRule
 import org.junit.Test
+import org.junit.Assert.assertTrue
 import org.junit.runner.RunWith
 
 @LargeTest
@@ -25,6 +26,6 @@ class HelloSdkInstrumentedTests {
 
     @Test
     fun checkSDKInit() {
-        assert(sdkRule.isInitialized)
+        assertTrue("GEM SDK should be initialized before tests run", sdkRule.isInitialized)
     }
 }

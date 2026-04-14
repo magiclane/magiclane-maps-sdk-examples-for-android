@@ -7,31 +7,34 @@
 
 package com.magiclane.sdk.examples.mapgestures
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
-import android.widget.Button
-import android.widget.TextView
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.Xy
 import com.magiclane.sdk.examples.mapgestures.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.mapgestures.databinding.DialogLayoutBinding
 import com.magiclane.sdk.util.SdkCall
-import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        private const val GESTURE_TAG = "Gesture"
+    }
+
     @VisibleForTesting
     lateinit var gemSurfaceView: GemSurfaceView
     private lateinit var binding: ActivityMainBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -39,118 +42,97 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         EspressoIdlingResource.increment()
         gemSurfaceView = binding.gemSurface
-        val onReady = {
-            binding.gemSurface.mapView?.let { mapView ->
-                mapView.onDoubleTouch = {
-                    SdkCall.execute {
-                        Log.i("Gesture", "onDoubleTouch at (${it.x}, ${it.y}).")
-                    }
-                }
 
-                mapView.onLongDown = {
-                    SdkCall.execute {
-                        Log.i("Gesture", "onLongDown at (${it.x}, ${it.y}).")
-                    }
-                }
-
-                mapView.onMove = { start: Xy, end: Xy ->
-                    SdkCall.execute {
-                        Log.i(
-                            "Gesture",
-                            "onMove from (${start.x}, ${start.y}) to (${end.x}, ${end.y}).",
-                        )
-                    }
-                }
-
-                mapView.onPinch = { start1: Xy, start2: Xy, end1: Xy, end2: Xy, center: Xy ->
-                    SdkCall.execute {
-                        Log.i(
-                            "Gesture",
-                            "onPinch from " +
-                                "(${start1.x}, ${start1.y}) and (${start2.x}, ${start2.y}) " +
-                                "to " +
-                                "(${end1.x}, ${end1.y}) and (${end2.x}, ${end2.y})" +
-                                "center " +
-                                "(${center.x}, ${center.y}).",
-                        )
-                    }
-                }
-
-                mapView.onSwipe = { distX: Int, distY: Int, speedMMPerSec: Double ->
-                    SdkCall.execute {
-                        Log.i(
-                            "Gesture",
-                            "onSwipe with " +
-                                "$distX pixels on X and " +
-                                "$distY pixels on Y and " +
-                                "the speed of $speedMMPerSec mm/s.",
-                        )
-                    }
-                }
-
-                mapView.onTouch = {
-                    SdkCall.execute {
-                        Log.i("Gesture", "onTouch at (${it.x}, ${it.y}).")
-                    }
-                }
-
-                mapView.onTwoTouches = {
-                    SdkCall.execute {
-                        Log.i("Gesture", "onTwoTouches with middle point (${it.x}, ${it.y}).")
-                    }
-                }
+        gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnUiThread {
+                showDialog(errorMessage) { finish() }
             }
-            EspressoIdlingResource.decrement()
         }
-        if (SdkSettings.isMapDataReady) {
-            onReady()
-        } else {
-            SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-                if (!isReady) return@onMapDataReady
-                onReady()
+
+        gemSurfaceView.onDefaultMapViewCreated = { mapView ->
+            mapView.onDoubleTouch = {
+                logGesture("onDoubleTouch at (${it.x}, ${it.y}).")
             }
+
+            mapView.onLongDown = {
+                logGesture("onLongDown at (${it.x}, ${it.y}).")
+            }
+
+            mapView.onMove = { start: Xy, end: Xy ->
+                logGesture("onMove from (${start.x}, ${start.y}) to (${end.x}, ${end.y}).")
+            }
+
+            mapView.onPinch = { start1: Xy, start2: Xy, end1: Xy, end2: Xy, center: Xy ->
+                logGesture(
+                    "onPinch from " +
+                        "(${start1.x}, ${start1.y}) and (${start2.x}, ${start2.y}) " +
+                        "to " +
+                        "(${end1.x}, ${end1.y}) and (${end2.x}, ${end2.y}) " +
+                        "center (${center.x}, ${center.y}).",
+                )
+            }
+
+            mapView.onSwipe = { distX: Int, distY: Int, speedMMPerSec: Double ->
+                logGesture(
+                    "onSwipe with " +
+                        "$distX pixels on X and " +
+                        "$distY pixels on Y and " +
+                        "the speed of $speedMMPerSec mm/s.",
+                )
+            }
+
+            mapView.onTouch = {
+                logGesture("onTouch at (${it.x}, ${it.y}).")
+            }
+
+            mapView.onTwoTouches = {
+                logGesture("onTwoTouches with middle point (${it.x}, ${it.y}).")
+            }
+
+            EspressoIdlingResource.decrement()
         }
 
         SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
-        }
-
-        if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
-        }
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
+            runOnUiThread {
+                showDialog(getString(R.string.token_rejected_message))
+            }
         }
     }
 
     override fun onDestroy() {
+        SdkSettings.onApiTokenRejected = {}
         super.onDestroy()
 
         // Release the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (isFinishing || isDestroyed) return
+
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
+        }
+    }
+
+    private fun logGesture(message: String) {
+        SdkCall.execute {
+            Log.i(GESTURE_TAG, message)
         }
     }
 }

@@ -27,25 +27,29 @@
             android:paddingBottom="12dp"
             />
 
-
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/compass"
             android:layout_width="@dimen/compass_height"
             android:layout_height="@dimen/compass_height"
             android:layout_margin="@dimen/big_padding"
+            android:visibility="gone"
             android:background="@drawable/round_shadow"
             android:src="@drawable/ic_north_up_foreground"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/toolbar"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             tools:ignore="ContentDescription" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/btn_enable_live_heading"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/Widget.MapCompass.LiveHeadingFab"
+            android:layout_width="@dimen/live_heading_fab_size"
+            android:layout_height="@dimen/live_heading_fab_size"
             android:layout_margin="@dimen/big_padding"
+            android:visibility="gone"
             android:focusable="true"
             app:borderWidth="0dp"
+            app:fabCustomSize="@dimen/live_heading_fab_size"
             app:layout_constraintBottom_toTopOf="@id/status_text"
             app:layout_constraintEnd_toEndOf="parent"
             app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}" />
@@ -54,7 +58,13 @@
             android:id="@+id/status_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             android:background="@color/surface"
+            android:minHeight="@dimen/status_bar_min_height"
+            android:paddingStart="@dimen/status_bar_horizontal_padding"
+            android:paddingEnd="@dimen/status_bar_horizontal_padding"
+            android:paddingTop="@dimen/status_bar_vertical_padding"
+            android:paddingBottom="@dimen/status_bar_vertical_padding"
             android:text="@string/live_heading_disabled"
             android:textColor="@color/on_surface"
             android:textSize="@dimen/big_text_size"

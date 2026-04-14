@@ -8,11 +8,12 @@
 package com.magiclane.sdk.examples.multiplesurfacesinfragment
 
 import android.os.Bundle
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.examples.multiplesurfacesinfragment.databinding.ActivityMainBinding
+import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,9 +22,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(ActivityMainBinding.inflate(layoutInflater).root)
 
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-        }
+        // Force white (light) status bar icons.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
     }
 
     override fun onDestroy() {
@@ -31,5 +31,6 @@ class MainActivity : AppCompatActivity() {
 
         // Release the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 }
