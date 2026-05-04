@@ -25,7 +25,7 @@
     <string name="location_status">Location Status</string>
     <string name="location_disabled">Location service is turned off on your device. The app cannot determine your GPS position. Please go to Settings → Location and turn on Location services.</string>
     <string name="open_settings">Open Settings</string>
-    <string name="routing_error">Routing service error: %s</string>
+    <string name="routing_error">Routing calculation failed with error: %s</string>
     <string name="sdk_init_failed">SDK initialization failed: %s</string>
     <string name="current_position_not_available">Current position is not available</string>
     <string name="internet_required">This app requires Internet connection for searching and routing features. Please connect to the Internet.</string>

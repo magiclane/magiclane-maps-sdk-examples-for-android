@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity() {
                                 val coordinates = mapView.transformScreenToWgs(center)
                                 coordinates?.let { coord ->
                                     val isoCode = mapDetails.getCountryCode(coord)
-                                    if (!isoCode.isNullOrEmpty() &&  (isoCode != countryIsoCode)) {
+                                    if (!isoCode.isNullOrEmpty() && (isoCode != countryIsoCode)) {
                                         countryIsoCode = isoCode
                                         countryName = mapDetails.getCountryName(countryIsoCode)?.uppercase(getDefault())
                                         speedLimits = mapDetails.getCountrySpeedLimits(countryIsoCode)
@@ -143,7 +143,14 @@ class MainActivity : AppCompatActivity() {
         exitProcess(0)
     }
 
-    private fun drawSpeedLimitRow(left: Float, top: Float, right: Float, bottom: Float, textureId: Int, speedLimit: String) {
+    private fun drawSpeedLimitRow(
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float,
+        textureId: Int,
+        speedLimit: String,
+    ) {
         shapeDrawer?.apply {
             drawCircle(
                 (right + left) / 2,
@@ -220,10 +227,38 @@ class MainActivity : AppCompatActivity() {
 
             for (speedLimit in speedLimits) {
                 when (speedLimit.coverage) {
-                    EMapSpeedLimitCoverage.WithinTownLimits -> drawSpeedLimitRow(left, top, right, bottom, insideUrbanAreasTextureId, speedLimit.speedLimit.toString())
-                    EMapSpeedLimitCoverage.OutsideTownLimits -> drawSpeedLimitRow(left, top, right, bottom, outsideUrbanAreasTextureId, speedLimit.speedLimit.toString())
-                    EMapSpeedLimitCoverage.Freeway -> drawSpeedLimitRow(left, top, right, bottom, 2, speedLimit.speedLimit.toString())
-                    EMapSpeedLimitCoverage.Highway -> drawSpeedLimitRow(left, top, right, bottom, 3, speedLimit.speedLimit.toString())
+                    EMapSpeedLimitCoverage.WithinTownLimits -> drawSpeedLimitRow(
+                        left,
+                        top,
+                        right,
+                        bottom,
+                        insideUrbanAreasTextureId,
+                        speedLimit.speedLimit.toString(),
+                    )
+                    EMapSpeedLimitCoverage.OutsideTownLimits -> drawSpeedLimitRow(
+                        left,
+                        top,
+                        right,
+                        bottom,
+                        outsideUrbanAreasTextureId,
+                        speedLimit.speedLimit.toString(),
+                    )
+                    EMapSpeedLimitCoverage.Freeway -> drawSpeedLimitRow(
+                        left,
+                        top,
+                        right,
+                        bottom,
+                        2,
+                        speedLimit.speedLimit.toString(),
+                    )
+                    EMapSpeedLimitCoverage.Highway -> drawSpeedLimitRow(
+                        left,
+                        top,
+                        right,
+                        bottom,
+                        3,
+                        speedLimit.speedLimit.toString(),
+                    )
                 }
 
                 top = bottom + padding

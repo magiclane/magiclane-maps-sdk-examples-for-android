@@ -81,7 +81,7 @@ class MainActivityViewModel : ViewModel() {
 
     lateinit var currentRangeSettingsProfile: RangeSettingsProfile
 
-    val listOfBikeTypes = ArrayList(EBikeProfile.values().toList())
+    val listOfBikeTypes = ArrayList(EBikeProfile.entries)
 
     val listOfBicycleRangeTypes = ArrayList(
         mutableListOf(

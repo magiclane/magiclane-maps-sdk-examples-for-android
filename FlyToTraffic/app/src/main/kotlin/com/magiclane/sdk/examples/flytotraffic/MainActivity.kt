@@ -43,31 +43,31 @@ class MainActivity : AppCompatActivity() {
 
             when (gemError) {
                 GemError.NoError ->
-                {
-                    if (routes.isEmpty()) return@onCompleted
+                    {
+                        if (routes.isEmpty()) return@onCompleted
 
-                    val route = routes[0]
+                        val route = routes[0]
 
-                    // Get Traffic events from the main route.
-                    val events = SdkCall.execute { route.trafficEvents }
+                        // Get Traffic events from the main route.
+                        val events = SdkCall.execute { route.trafficEvents }
 
-                    if (events.isNullOrEmpty()) {
-                        showDialog(getString(R.string.no_traffic_events))
-                        return@onCompleted
+                        if (events.isNullOrEmpty()) {
+                            showDialog(getString(R.string.no_traffic_events))
+                            return@onCompleted
+                        }
+
+                        SdkCall.execute {
+                            // Add the main route to the map so it can be displayed.
+                            binding.gemSurfaceView.mapView?.presentRoute(route, centerMapView = false)
+
+                            flyToTraffic(events[0])
+                        }
                     }
-
-                    SdkCall.execute {
-                        // Add the main route to the map so it can be displayed.
-                        binding.gemSurfaceView.mapView?.presentRoute(route, centerMapView = false)
-
-                        flyToTraffic(events[0])
-                    }
-                }
                 else ->
-                {
-                    // There was a problem at computing the routing operation.
-                    showDialog(getString(R.string.routing_error, GemError.getMessage(gemError, this)))
-                }
+                    {
+                        // There was a problem at computing the routing operation.
+                        showDialog(getString(R.string.routing_error, GemError.getMessage(gemError, this)))
+                    }
             }
         },
     )
@@ -128,7 +128,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun flyToTraffic(trafficEvent: RouteTrafficEvent) = SdkCall.execute {
         // Center the map on a specific traffic event using the provided animation.
-        binding.gemSurfaceView.mapView?.centerOnRouteTrafficEvent(trafficEvent, rc = getFreeSpaceRect(), animation = Animation(EAnimation.Linear, 900), viewAngle = 0.0)
+        binding.gemSurfaceView.mapView?.centerOnRouteTrafficEvent(
+            trafficEvent,
+            rc = getFreeSpaceRect(),
+            animation = Animation(EAnimation.Linear, 900),
+            viewAngle = 0.0,
+        )
     }
 
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {

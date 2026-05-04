@@ -85,8 +85,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private val checkAuthorizationListener = ProgressListener.create(onCompleted = { errorCode, _ ->
         if (errorCode != GemError.NoError) {
             showInvalidTokenDialog()
-        }
-        else {
+        } else {
             if (!requiredMapHasBeenDownloaded) {
                 loadMaps()
             }
@@ -172,7 +171,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 SoundPlayingService.play(sound, playingListener, soundPreference)
             }
         },
-        canPlayNavigationSound = true
+        canPlayNavigationSound = true,
     )
 
     // Define a listener that will let us know the progress of the routing process.
@@ -294,8 +293,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
             if (requiredMapHasBeenDownloaded) {
                 onOnboardMapReady()
-            }
-            else {
+            } else {
                 runOnUiThread {
                     if (!Util.isInternetConnected(this)) {
                         showDialog(getString(R.string.internet_required))
@@ -515,7 +513,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         navInstr: NavigationInstruction,
         width: Int,
         height: Int,
-        sameImage: TSameImage
+        sameImage: TSameImage,
     ): Bitmap? {
         if (!navInstr.hasNextTurnInfo()) return null
         if ((navInstr.nextTurnDetails?.abstractGeometryImage?.uid ?: 0) == lastTurnImageId) {

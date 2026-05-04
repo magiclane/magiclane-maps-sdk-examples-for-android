@@ -33,6 +33,7 @@
     <string name="same_range_detected_warning">A range with the same value already exists!</string>
     <string name="empty_range_value_warning">Range value is empty!</string>
     <string name="service_error">Routing service error: %s</string>
-    <string name="token_rejected">"TOKEN REJECTED"</string>
-    <string name="internet_connection_warning">"You must be connected to the internet!"</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
 </resources>

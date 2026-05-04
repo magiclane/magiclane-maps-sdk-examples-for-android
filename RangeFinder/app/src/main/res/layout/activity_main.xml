@@ -10,26 +10,31 @@
 
     <com.magiclane.sdk.core.GemSurfaceView
         android:id="@+id/gem_surface_view"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/main_content" />
+        app:layout_constraintTop_toBottomOf="@id/add_range_container" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/main_content"
+        android:id="@+id/add_range_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/color_background"
-        app:layout_constraintBottom_toTopOf="@id/gem_surface_view"
+        android:focusable="true"
+        android:clickable="true"
+        android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent"
-        paddingLeftWithSystemWindowInsets='@{0f}'>
+        app:paddingTopWithSystemWindowInsets='@{"8dp"}'
+        app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'>
 
         <HorizontalScrollView
             android:id="@+id/current_ranges_scroll_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/small_padding"
+            android:layout_marginRight="@dimen/small_padding"
             android:background="@color/color_surface_container"
             android:fadingEdgeLength="15dp"
             android:requiresFadingEdge="horizontal"
@@ -98,8 +103,8 @@
             android:layout_height="30dp"
             android:layout_marginStart="@dimen/big_padding"
             android:layout_marginTop="@dimen/big_padding"
-            android:layout_marginEnd="@dimen/small_padding"
-            android:layout_marginBottom="@dimen/small_padding"
+            android:layout_marginEnd="@dimen/big_padding"
+            android:layout_marginBottom="@dimen/big_padding"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:padding="0dp"
@@ -120,17 +125,17 @@
 
 
     <ScrollView
-        android:id="@+id/scroll"
+        android:id="@+id/settings_container"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         android:background="@color/color_background"
         android:fillViewport="true"
         android:padding="@dimen/small_padding"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/main_content">
+        app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
+        app:layout_constraintStart_toStartOf="@id/add_range_container"
+        app:layout_constraintEnd_toEndOf="@id/add_range_container"
+        app:layout_constraintTop_toBottomOf="@id/add_range_container">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -140,7 +145,7 @@
                 android:id="@+id/transport_mode_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/big_padding"
+                android:layout_marginEnd="@dimen/big_padding"
                 android:ellipsize="end"
                 android:singleLine="true"
                 android:text="@string/transport_mode"
@@ -177,7 +182,7 @@
                 android:id="@+id/bike_type_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/big_padding"
+                android:layout_marginEnd="@dimen/big_padding"
                 android:ellipsize="end"
                 android:singleLine="true"
                 android:text="@string/bike_type"
@@ -198,7 +203,6 @@
                 android:minWidth="0dp"
                 android:minHeight="0dp"
                 android:paddingEnd="@dimen/icon_padding"
-                android:paddingRight="@dimen/icon_padding"
                 android:textAlignment="textStart"
                 android:textColor="@color/text_color"
                 android:textSize="@dimen/big_text_size"
@@ -214,7 +218,7 @@
                 android:id="@+id/range_type_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/big_padding"
+                android:layout_marginEnd="@dimen/big_padding"
                 android:ellipsize="end"
                 android:singleLine="true"
                 android:text="@string/range_type"
@@ -235,7 +239,6 @@
                 android:minWidth="0dp"
                 android:minHeight="0dp"
                 android:paddingEnd="@dimen/icon_padding"
-                android:paddingRight="@dimen/icon_padding"
                 android:textAlignment="textStart"
                 android:textColor="@color/text_color"
                 android:textSize="@dimen/big_text_size"

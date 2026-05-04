@@ -12,8 +12,8 @@ import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
-import androidx.core.view.isVisible
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.EOffboardListenerStatus
@@ -64,11 +64,13 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     else -> {
-                        showStatusMessage(getString(R.string.search_completed_with_error, GemError.getMessage(errorCode, this)))
+                        showStatusMessage(
+                            getString(R.string.search_completed_with_error, GemError.getMessage(errorCode, this)),
+                        )
                     }
                 }
             }
-        }
+        },
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -108,7 +110,7 @@ class MainActivity : AppCompatActivity() {
                         showStatusMessage(getString(R.string.fly_to_area_started))
                     }, onCompleted = { _, _ ->
                         showStatusMessage(getString(R.string.fly_to_area_completed))
-                    })
+                    }),
                 )
 
                 // Define highlight settings for displaying the area contour on map.

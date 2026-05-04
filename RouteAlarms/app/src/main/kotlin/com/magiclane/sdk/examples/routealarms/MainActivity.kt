@@ -7,22 +7,22 @@
 
 package com.magiclane.sdk.examples.routealarms
 
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.EOffboardListenerStatus
+import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.Image
 import com.magiclane.sdk.core.ProgressListener
+import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.SoundPlayingListener
 import com.magiclane.sdk.core.SoundPlayingPreferences
@@ -30,8 +30,10 @@ import com.magiclane.sdk.core.SoundPlayingService
 import com.magiclane.sdk.d3scene.ECommonOverlayId
 import com.magiclane.sdk.d3scene.EHighlightOptions
 import com.magiclane.sdk.d3scene.HighlightRenderSettings
+import com.magiclane.sdk.d3scene.MarkerRenderSettings
 import com.magiclane.sdk.d3scene.OverlayService
 import com.magiclane.sdk.examples.routealarms.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.routealarms.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.places.LandmarkList
@@ -47,7 +49,16 @@ import com.magiclane.sound.SoundUtils
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationListener {
+    private companion object {
+        const val ALARM_DISTANCE_METERS = 500.0
+        const val ALARM_HIGHLIGHT_ID = 0
+        const val ALARM_WARNING_TEXT = "Caution, Speed camera ahead"
+        const val SAFETY_FIELD_OF_VIEW_TAG = "safety_fov"
+    }
+
     private lateinit var binding: ActivityMainBinding
+    private val mapView
+        get() = binding.gemSurfaceView.mapView
 
     private var alarmImageSize = 0
     private var safetyAlarmId = 0
@@ -71,68 +82,61 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         onOverlayItemAlarmsUpdated = {
             SdkCall.execute execute@{
                 // Get the overlay items that are present and relevant.
-                val alarmsList = alarmService?.overlayItemAlarms
-                if ((alarmsList == null) || (alarmsList.size == 0)) {
+                val alarmsList = alarmService?.overlayItemAlarms ?: return@execute
+                if (alarmsList.size == 0) {
                     return@execute
                 }
 
                 // Get the maximum distance until an alarm is reached.
-                val maxDistance = alarmService?.alarmDistance ?: 0.0
+                val maxDistance = alarmService?.alarmDistance ?: ALARM_DISTANCE_METERS
 
                 // Get the distance to the closest alarm marker.
                 val distance = alarmsList.getDistance(0)
-                if (distance <= maxDistance) {
-                    var bmp: Bitmap? = null
-
-                    alarmsList.getItem(0)?.let { alarm ->
-                        val id = alarm.overlayUid
-                        if (id != safetyAlarmId) {
-                            if (safetyAlarmId != 0) {
-                                removeHighlightedAlarm()
-                            }
-
-                            safetyAlarmId = id
-
-                            alarm.image?.let { image ->
-                                bmp = GemUtilImages.asBitmap(image, alarmImageSize, alarmImageSize)
-
-                                alarm.coordinates?.let { coordinates ->
-                                    highlightAlarm(image, coordinates)
-                                }
-                            }
-
-                            if (SoundPlayingService.ttsPlayerIsInitialized) {
-                                val warning = "Caution, Speed camera ahead"
-                                SoundPlayingService.playText(
-                                    warning,
-                                    SoundPlayingListener(),
-                                    SoundPlayingPreferences(),
-                                )
-                            }
-                        }
-                    }
-
-                    // If you are close enough to the alarm item, notify the user.
-                    Util.postOnMain {
-                        binding.apply {
-                            if (!alarmPanel.isVisible) {
-                                alarmPanel.visibility = View.VISIBLE
-                                EspressoIdlingResource.alarmShows = true
-                            }
-
-                            alarmText.text = getString(R.string.alarm_text, distance.toInt())
-                            bmp?.let { alarmImage.setImageBitmap(it) }
-                        }
-                    }
-
-                    // Remove the alarm listener if you want to notify only once.
-                    // alarmService?.setAlarmListener(null)
+                if (distance > maxDistance) {
+                    return@execute
                 }
+
+                val alarm = alarmsList.getItem(0) ?: return@execute
+                if (alarm.overlayUid != safetyAlarmId) {
+                    if (safetyAlarmId != 0) {
+                        removeHighlightedAlarm()
+                    }
+
+                    safetyAlarmId = alarm.overlayUid
+
+                    val alarmBitmap = alarm.image?.let { image ->
+                        alarm.coordinates?.let { coordinates ->
+                            highlightAlarm(image, coordinates)
+                        }
+                        GemUtilImages.asBitmap(image, alarmImageSize, alarmImageSize)
+                    }
+
+                    playAlarmWarning()
+                    mapView?.displayOverlayItemFieldOfView(
+                        createAlarmMarkerRenderSettings(),
+                        alarm,
+                        SAFETY_FIELD_OF_VIEW_TAG,
+                    )
+
+                    Util.postOnMain {
+                        showAlarmPanel(alarmBitmap)
+                    }
+                }
+
+                // If you are close enough to the alarm item, notify the user.
+                Util.postOnMain {
+                    updateAlarmText(distance)
+                }
+
+                // Remove the alarm listener if you want to notify only once.
+                // alarmService?.setAlarmListener(null)
             }
         },
 
         onOverlayItemAlarmsPassedOver = {
-            binding.alarmPanel.visibility = View.GONE
+            Util.postOnMain {
+                hideAlarmPanel()
+            }
             SdkCall.execute {
                 removeHighlightedAlarm()
             }
@@ -150,25 +154,25 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             SdkCall.execute {
                 // Set the overlay for which to be notified.
                 setAlarmOverlay(ECommonOverlayId.Safety)
-                binding.gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.enableCursor = false
+                mapView?.let { currentMapView ->
+                    currentMapView.preferences?.enableCursor = false
                     navRoute?.let { route ->
-                        mapView.presentRoute(route)
+                        currentMapView.presentRoute(route)
                     }
-                    enableGPSButton()
-                    mapView.followPosition()
+                    configureGpsButton()
+                    currentMapView.followPosition()
                 }
             }
         },
 
         onDestinationReached = {
             SdkCall.execute {
-                binding.gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.routes?.clear()
+                mapView?.let { currentMapView ->
+                    currentMapView.preferences?.routes?.clear()
                 }
             }
 
-            binding.followCursorButton.visibility = View.GONE
+            setFollowGpsButtonVisibility(isVisible = false)
         },
     )
 
@@ -193,57 +197,78 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
         alarmImageSize = resources.getDimensionPixelSize(R.dimen.alarm_image_size)
 
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
-
-            // Defines an action that should be done when the world map is ready (Updated/ loaded).
-            startSimulation()
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
-        }
+        registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
-        }
-
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
+            showDialog(getString(R.string.internet_required))
         }
     }
 
     override fun onDestroy() {
+        clearSdkListeners()
+        hideAlarmPanel()
+        alarmService = null
+        removeHighlightedAlarm()
+
         super.onDestroy()
 
         // Deinitialize the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
-    private fun enableGPSButton() {
+    private fun registerSdkListeners() {
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnUiThread {
+                showDialog(errorMessage) { finish() }
+            }
+        }
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+
+                startSimulation()
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnUiThread {
+                showDialog(getString(R.string.token_rejected_message))
+            }
+        }
+    }
+
+    private fun clearSdkListeners() {
+        binding.gemSurfaceView.onSdkInitFailed = { _ -> }
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+    }
+
+    private fun configureGpsButton() {
         // Set actions for entering/ exiting following position mode.
         binding.apply {
-            gemSurfaceView.mapView?.apply {
+            mapView?.apply {
                 onExitFollowingPosition = {
                     if (SdkCall.execute { navigationService.isSimulationActive() } == true) {
-                        followCursorButton.visibility = View.VISIBLE
+                        hideAlarmPanel()
+                        setFollowGpsButtonVisibility(isVisible = true)
                     }
                 }
 
                 onEnterFollowingPosition = {
-                    followCursorButton.visibility = View.GONE
+                    if (safetyAlarmId != 0) {
+                        showAlarmPanel()
+                    }
+                    setFollowGpsButtonVisibility(isVisible = false)
                 }
 
                 // Set on click action for the GPS button.
-                followCursorButton.setOnClickListener {
+                followGpsButton.setOnClickListener {
                     SdkCall.execute { followPosition() }
                 }
             }
@@ -254,7 +279,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private fun setAlarmOverlay(overlay: ECommonOverlayId) {
         SdkCall.execute {
             alarmService = AlarmService.produce(alarmListener)
-            alarmService?.alarmDistance = 500.0 // meters
+            alarmService?.alarmDistance = ALARM_DISTANCE_METERS
             OverlayService().getAvailableOverlays(null)?.first?.let { list ->
                 alarmService?.overlays?.add(ArrayList(list.filter { it.uid == overlay.value }))
             }
@@ -270,25 +295,68 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
+
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }
 
+    private fun createAlarmMarkerRenderSettings() = MarkerRenderSettings().apply {
+        polylineInnerColor = Rgba(243, 51, 243, 128)
+        polylineOuterColor = Rgba(142, 36, 170, 128)
+        polylineInnerSize = 0.0
+        polylineOuterSize = 0.35
+        polygonFillColor = Rgba(243, 51, 243, 128)
+    }
+
+    private fun playAlarmWarning() {
+        if (!SoundPlayingService.ttsPlayerIsInitialized) {
+            return
+        }
+
+        SoundPlayingService.playText(
+            ALARM_WARNING_TEXT,
+            SoundPlayingListener(),
+            SoundPlayingPreferences(),
+        )
+    }
+
+    private fun showAlarmPanel(alarmBitmap: Bitmap? = null) {
+        binding.alarmPanel.visibility = View.VISIBLE
+        alarmBitmap?.let { binding.alarmImage.setImageBitmap(it) }
+        EspressoIdlingResource.updateAlarmVisibility(isVisible = true)
+    }
+
+    private fun hideAlarmPanel() {
+        binding.alarmPanel.visibility = View.GONE
+        EspressoIdlingResource.updateAlarmVisibility(isVisible = false)
+    }
+
+    private fun updateAlarmText(distance: Float) {
+        binding.alarmText.text = getString(R.string.alarm_text, distance.toInt())
+    }
+
+    private fun setFollowGpsButtonVisibility(isVisible: Boolean) {
+        binding.followGpsButton.visibility = if (isVisible) View.VISIBLE else View.GONE
+    }
+
     private fun highlightAlarm(image: Image, coordinates: Coordinates) {
-        binding.gemSurfaceView.mapView?.let { mapView ->
+        mapView?.let { currentMapView ->
             val landmark = Landmark()
             landmark.image = image
             landmark.coordinates = coordinates
@@ -297,16 +365,18 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             lmkList.add(landmark)
 
             val displaySettings =
-                HighlightRenderSettings(
-                    EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
-                )
+                HighlightRenderSettings(EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value)
 
-            mapView.activateHighlightLandmarks(lmkList, displaySettings, 0)
+            currentMapView.activateHighlightLandmarks(lmkList, displaySettings, ALARM_HIGHLIGHT_ID)
         }
     }
 
     private fun removeHighlightedAlarm() {
-        binding.gemSurfaceView.mapView?.deactivateHighlight(0)
+        safetyAlarmId = 0
+        mapView?.let { currentMapView ->
+            currentMapView.deactivateHighlight(ALARM_HIGHLIGHT_ID)
+            currentMapView.hideCustomMarkers(SAFETY_FIELD_OF_VIEW_TAG)
+        }
     }
 
     override fun onTTSPlayerInitialized() {
@@ -316,6 +386,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     override fun onTTSPlayerInitializationFailed() {
         SoundPlayingService.setDefaultHumanVoice()
     }
+
+    private fun isActivityAlive(): Boolean {
+        return !isFinishing && !isDestroyed
+    }
 }
 
 //region TESTING
@@ -323,11 +397,27 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 object EspressoIdlingResource {
     private const val RESOURCE_NAME = "RouteAlarmsIdlingResource"
     var alarmShows = false
+        private set
     val espressoIdlingResource = CountingIdlingResource(RESOURCE_NAME)
     fun increment() = espressoIdlingResource.increment()
-    fun decrement() = if (espressoIdlingResource.isIdleNow) {
-        espressoIdlingResource.decrement()
-    } else {
+
+    fun decrement() {
+        if (!espressoIdlingResource.isIdleNow) {
+            espressoIdlingResource.decrement()
+        }
+    }
+
+    fun updateAlarmVisibility(isVisible: Boolean) {
+        if (alarmShows == isVisible) {
+            return
+        }
+
+        alarmShows = isVisible
+        if (isVisible) {
+            increment()
+        } else {
+            decrement()
+        }
     }
 }
 //endregion

@@ -7,38 +7,28 @@
 
 package com.magiclane.sdk.examples.routeinstructions
 
-import android.annotation.SuppressLint
 import android.content.res.Configuration
-import android.graphics.Bitmap
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
-import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.examples.routeinstructions.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.routeinstructions.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.Route
-import com.magiclane.sdk.routesandnavigation.RouteInstruction
 import com.magiclane.sdk.routesandnavigation.RoutingService
-import com.magiclane.sdk.util.GemUtil
-import com.magiclane.sdk.util.GemUtilImages
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.magiclane.sdk.util.Util.postOnMain
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
@@ -55,21 +45,14 @@ class MainActivity : AppCompatActivity() {
 
             when (errorCode) {
                 GemError.NoError -> {
-                    if (routes.size == 0) return@onCompleted
+                    if (routes.isEmpty()) return@onCompleted
 
                     // Get the main route from the ones that were found.
                     displayRouteInstructions(routes[0])
                 }
-
-                GemError.Cancel -> {
-                    // The routing action was cancelled.
-                    showDialog("The routing action was cancelled.")
-                    EspressoIdlingResource.decrement()
-                }
-
                 else -> {
                     // There was a problem at computing the routing operation.
-                    showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
+                    showDialog(getString(R.string.routing_error, GemError.getMessage(errorCode, this)))
                     EspressoIdlingResource.decrement()
                 }
             }
@@ -82,6 +65,18 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Force light content in the status bar (white icons/text).
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
+        val error = GemSdk.initSdkWithDefaults(this)
+        if (error != GemError.NoError) {
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnUiThread {
+                showDialog(errorMessage) { finish() }
+            }
+            return
+        }
+
         EspressoIdlingResource.increment()
         binding.listView.also {
             it.layoutManager = LinearLayoutManager(this)
@@ -90,58 +85,36 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
-
-            // Defines an action that should be done when the world map is ready (Updated/ loaded).
-            startCalculateRoute()
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
-        }
-
-        // This step of initialization is mandatory if you want to use the SDK without a map.
-        if (GemSdk.initSdkWithDefaults(this) != GemError.NoError) {
-            finish()
-        }
+        registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
-        }
-
-        onBackPressedDispatcher.addCallback {
-            finish()
-            exitProcess(0)
+            showDialog(getString(R.string.internet_required))
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
+        clearSdkListeners()
+
         // Deinitialize the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
     private fun startCalculateRoute() = SdkCall.execute {
         val wayPoints = arrayListOf(
-            Landmark("Frankfurt am Main", 50.11428, 8.68133),
-            Landmark("Karlsruhe", 49.0069, 8.4037),
-            Landmark("Munich", 48.1351, 11.5820),
+            Landmark("Berlin", 52.521944, 13.413056),
+            Landmark("Poznan", 52.406374, 16.925168),
+            Landmark("Copenhagen", 55.676097, 12.568337),
         )
         routingService.calculateRoute(wayPoints)
     }
 
     private fun displayRouteInstructions(route: Route) {
         // Get the instructions from the route.
-        val instructions = SdkCall.execute { route.instructions } ?: arrayListOf()
         val imageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
-        binding.listView.adapter = CustomAdapter(instructions, imageSize, isDarkThemeOn())
+        binding.listView.adapter = RouteTimelineAdapter(this, route, imageSize, isDarkThemeOn())
         EspressoIdlingResource.decrement()
     }
 
@@ -149,97 +122,51 @@ class MainActivity : AppCompatActivity() {
         return resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun registerSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+
+                startCalculateRoute()
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnUiThread {
+                showDialog(getString(R.string.token_rejected_message))
+            }
+        }
+    }
+
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+    }
+
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
+
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }
-}
 
-/**
- * This custom adapter is made to facilitate the displaying of the data from the model
- * and to decide how it is displayed.
- */
-class CustomAdapter(
-    private val dataSet: ArrayList<RouteInstruction>,
-    private val imageSize: Int,
-    private val isDarkThemeOn: Boolean,
-) : RecyclerView.Adapter<CustomAdapter.RouteInstructionViewHolder>() {
-
-    class RouteInstructionViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val turnImage: ImageView = view.findViewById(R.id.turn_image)
-        val text: TextView = view.findViewById(R.id.text)
-        val status: TextView = view.findViewById(R.id.status_text)
-        val description: TextView = view.findViewById(R.id.status_description)
+    private fun isActivityAlive(): Boolean {
+        return !isFinishing && !isDestroyed
     }
-
-    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): RouteInstructionViewHolder {
-        val view = LayoutInflater.from(viewGroup.context)
-            .inflate(R.layout.list_item, viewGroup, false)
-
-        return RouteInstructionViewHolder(view)
-    }
-
-    override fun onBindViewHolder(viewHolder: RouteInstructionViewHolder, position: Int) {
-        val instruction = dataSet[position]
-        var text: String
-        var status: String
-        var description: String
-        var turnImage: Bitmap?
-
-        SdkCall.execute {
-            if (instruction.hasTurnInfo()) {
-                val aInner = if (isDarkThemeOn) Rgba(255, 255, 255, 255) else Rgba(0, 0, 0, 255)
-                val aOuter = if (isDarkThemeOn) Rgba(0, 0, 0, 255) else Rgba(255, 255, 255, 255)
-                val iInner = Rgba(128, 128, 128, 255)
-                val iOuter = Rgba(128, 128, 128, 255)
-
-                turnImage = GemUtilImages.asBitmap(
-                    instruction.turnDetails?.abstractGeometryImage,
-                    imageSize,
-                    imageSize,
-                    aInner,
-                    aOuter,
-                    iInner,
-                    iOuter,
-                )
-
-                text = instruction.turnInstruction ?: ""
-                if (text.isNotEmpty() && text.last() == '.') {
-                    text.removeSuffix(".")
-                }
-
-                val distance = instruction.traveledTimeDistance?.totalDistance?.toDouble() ?: 0.0
-
-                val distText = GemUtil.getDistText(distance.toInt(), SdkSettings.unitSystem)
-                status = distText.first
-                description = distText.second
-                if (status == "0.00") {
-                    status = "0"
-                }
-
-                postOnMain {
-                    viewHolder.turnImage.setImageBitmap(turnImage)
-                    viewHolder.text.text = text
-                    viewHolder.status.text = status
-                    viewHolder.description.text = description
-                }
-            }
-        }
-    }
-
-    override fun getItemCount() = dataSet.size
 }
 
 //region TESTING

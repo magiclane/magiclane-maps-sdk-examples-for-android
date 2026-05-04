@@ -50,13 +50,15 @@ class MainActivity : AppCompatActivity() {
                         val route = routes[0]
 
                         SdkCall.execute {
-                            binding.gemSurfaceView.mapView?.presentRoute(route,
-                                                                        displayBubble = true,
-                                                                        displayRouteName = true,
-                                                                        displayTrafficIcon = false,
-                                                                        displayFerryIcon = false,
-                                                                        displayTollIcon = false,
-                                                                        edgeAreaInsets = getInsetsRect())
+                            binding.gemSurfaceView.mapView?.presentRoute(
+                                route,
+                                displayBubble = true,
+                                displayRouteName = true,
+                                displayTrafficIcon = false,
+                                displayFerryIcon = false,
+                                displayTollIcon = false,
+                                edgeAreaInsets = getInsetsRect(),
+                            )
                         }
                     }
                 }
@@ -65,7 +67,7 @@ class MainActivity : AppCompatActivity() {
                     showDialog(getString(R.string.routing_error, GemError.getMessage(errorCode, this)))
                 }
             }
-        }
+        },
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {

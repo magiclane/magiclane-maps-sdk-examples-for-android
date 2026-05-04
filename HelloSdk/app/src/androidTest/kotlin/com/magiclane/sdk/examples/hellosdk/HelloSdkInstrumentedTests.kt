@@ -10,9 +10,9 @@ package com.magiclane.sdk.examples.hellosdk
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.magiclane.sdk.examples.testing.GemSdkTestRule
+import org.junit.Assert.assertTrue
 import org.junit.ClassRule
 import org.junit.Test
-import org.junit.Assert.assertTrue
 import org.junit.runner.RunWith
 
 @LargeTest

@@ -609,9 +609,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         SdkSettings.onApiTokenRejected = {
-            showDialog("The token you provided in the AndroidManifest.xml file was rejected. " +
-                             "If you don't have a token, check the magiclane.com website, " +
-                             "sign up / in and generate one. Then input it in the AndroidManifest.xml file.")
+            showDialog(
+                "The token you provided in the AndroidManifest.xml file was rejected. " +
+                    "If you don't have a token, check the magiclane.com website, " +
+                    "sign up / in and generate one. Then input it in the AndroidManifest.xml file.",
+            )
         }
 
         if (!Util.isInternetConnected(this)) {

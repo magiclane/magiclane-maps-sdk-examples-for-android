@@ -968,7 +968,11 @@ class MapSelectionModel : ViewModel() {
             first.orientation?.w == second.orientation?.w
 
     @SuppressLint("DefaultLocale")
-    private fun getLandmarkDescription(mapView: MapView, coordinates: Coordinates, isMyPosition: Boolean = false): String {
+    private fun getLandmarkDescription(
+        mapView: MapView,
+        coordinates: Coordinates,
+        isMyPosition: Boolean = false,
+    ): String {
         var description = ""
         var descriptionContainsLatLon = false
 

@@ -88,7 +88,12 @@ class MainActivity : AppCompatActivity() {
             val (polygonCollection, polygonSettings) = createPolygon(focusPlace.coordinates)
             mapView.preferences?.markers?.add(polygonCollection, polygonSettings)
 
-            mapView.centerOnCoordinates(focusPlace.coordinates, initialZoomLevel, xy = getFreeScreenRect().center, animation = Animation(EAnimation.Linear, animationDurationMs))
+            mapView.centerOnCoordinates(
+                focusPlace.coordinates,
+                initialZoomLevel,
+                xy = getFreeScreenRect().center,
+                animation = Animation(EAnimation.Linear, animationDurationMs),
+            )
         }
     }
 
@@ -171,7 +176,9 @@ class MainActivity : AppCompatActivity() {
      */
     private fun getFreeScreenRect(): Rect {
         val root = binding.root
-        val insets = ViewCompat.getRootWindowInsets(root)?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+        val insets = ViewCompat.getRootWindowInsets(
+            root,
+        )?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
 
         val width = root.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
         val height = root.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels

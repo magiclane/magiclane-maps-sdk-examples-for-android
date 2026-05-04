@@ -25,6 +25,8 @@
             app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
             app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
             android:paddingBottom="12dp"
+            app:iconTint="@android:color/white"
+            app:navigationIconTint="@android:color/white"
             />
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progress_bar"

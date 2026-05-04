@@ -65,7 +65,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleSdkInitializationError(error: Int) {
         val errorMessage = getString(
             R.string.sdk_initialization_failed,
-            GemError.getMessage(error, this)
+            GemError.getMessage(error, this),
         )
         Util.postOnMain {
             showErrorDialog(errorMessage, shouldFinish = true)

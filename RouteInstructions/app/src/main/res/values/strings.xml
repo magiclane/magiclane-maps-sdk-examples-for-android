@@ -2,4 +2,18 @@
     <string name="app_name">RouteInstructions</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="time_format_hour">%d hour(s), %d minute(s)</string>
+    <string name="time_format_min">%d minute(s)</string>
+    <string name="time_format_sec">%d second(s)</string>
+    <string name="from_a_to_b">From %s to %s</string>
+    <string name="route_warning_tolls">This route requires tolls.</string>
+    <string name="route_warning_ferry">This route requires a ferry service.</string>
+    <string name="route_croseses_restricted_areas">This route crosses restricted areas.</string>
+    <string name="roadblock">Roadblock</string>
+    <string name="traffic">Traffic</string>
+    <string name="on_road_name">On %s</string>
+    <string name="routing_error">Routing calculation failed with error: %s</string>
 </resources>

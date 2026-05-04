@@ -104,8 +104,7 @@ class MainActivity : AppCompatActivity() {
                 val (obj, err) = MapSceneObject.getDefPositionTracker()
                 if (GemError.isError(err)) {
                     Util.postOnMain { showDialog(GemError.getMessage(err)) }
-                }
-                else {
+                } else {
                     MapSceneObject.customizeDefPositionTracker(objList)
                     obj?.let {
                         it.scaleFactor = 1.0 // 0.0 - 5.0
@@ -156,8 +155,7 @@ class MainActivity : AppCompatActivity() {
                     list.add(SceneObjectData(DataBuffer(buffer.toByteArray()), format))
                 }
             }
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
         }
 

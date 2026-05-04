@@ -45,37 +45,37 @@ class MainActivity : AppCompatActivity() {
 
             when (gemError) {
                 GemError.NoError ->
-                {
-                    if (routes.isEmpty()) return@onCompleted
+                    {
+                        if (routes.isEmpty()) return@onCompleted
 
-                    // Get the main route from the ones that were found.
-                    val route = routes[0]
+                        // Get the main route from the ones that were found.
+                        val route = routes[0]
 
-                    SdkCall.execute {
-                        val instructions = route.instructions
-                        if (instructions.isEmpty()) {
-                            showDialog(getString(R.string.no_route_instruction_found))
-                            return@execute
+                        SdkCall.execute {
+                            val instructions = route.instructions
+                            if (instructions.isEmpty()) {
+                                showDialog(getString(R.string.no_route_instruction_found))
+                                return@execute
+                            }
+
+                            // Get an instruction from the main route.
+                            val instruction = route.instructions.let {
+                                it[5.coerceAtMost(it.size - 1)]
+                            }
+
+                            // Add the main route to the map so it can be displayed.
+                            binding.gemSurfaceView.mapView?.presentRoute(route, centerMapView = false)
+
+                            flyToInstruction(instruction)
                         }
-
-                        // Get an instruction from the main route.
-                        val instruction = route.instructions.let {
-                            it[5.coerceAtMost(it.size - 1)]
-                        }
-
-                        // Add the main route to the map so it can be displayed.
-                        binding.gemSurfaceView.mapView?.presentRoute(route, centerMapView = false)
-
-                        flyToInstruction(instruction)
                     }
-                }
                 else ->
-                {
-                    // There was a problem at computing the routing operation.
-                    showDialog(getString(R.string.routing_error, GemError.getMessage(gemError, this)))
-                }
+                    {
+                        // There was a problem at computing the routing operation.
+                        showDialog(getString(R.string.routing_error, GemError.getMessage(gemError, this)))
+                    }
             }
-        }
+        },
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -128,7 +128,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun flyToInstruction(instruction: RouteInstruction) = SdkCall.execute {
         // Center the map on a specific route instruction using the provided animation.
-        binding.gemSurfaceView.mapView?.centerOnRouteInstruction(instruction, 82, getFreeSpaceRect().center, Animation(EAnimation.Linear, 900), 0.0)
+        binding.gemSurfaceView.mapView?.centerOnRouteInstruction(
+            instruction,
+            82,
+            getFreeSpaceRect().center,
+            Animation(EAnimation.Linear, 900),
+            0.0,
+        )
     }
 
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {

@@ -114,13 +114,13 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             if (errorCode != GemError.NoError) {
                 showInvalidTokenDialog()
             }
-        }
+        },
     )
 
     private val routingService = RoutingService(
         onStarted = { showRoutingProgress() },
         onCompleted = { routes, errorCode, _ -> handleRoutingCompleted(routes, errorCode) },
-        onStatusChanged = { status -> handleRoutingStatusChanged(status) }
+        onStatusChanged = { status -> handleRoutingStatusChanged(status) },
     )
 
     // Services and listeners
@@ -162,11 +162,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 SoundPlayingService.play(sound, playingListener, soundPreference)
             }
         },
-        canPlayNavigationSound = true
+        canPlayNavigationSound = true,
     )
 
     private val navigationProgressListener = ProgressListener.create(
-        onStatusChanged = { refreshStatusMessage() }
+        onStatusChanged = { refreshStatusMessage() },
     )
 
     private fun refreshStatusMessage() {
@@ -216,7 +216,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 onStartNavigation = { startNavigationWithRoute() },
                 onStartSimulation = { startSimulationWithRoute() },
                 onViewCreated = { presentRoutesOnMap() },
-                onViewClosed = { clearRoutesAndHideDialog() }
+                onViewClosed = { clearRoutesAndHideDialog() },
             )
         }
     }
@@ -226,7 +226,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             val error = navigationService.startNavigationWithRoute(
                 mainRoute,
                 navigationListener,
-                navigationProgressListener
+                navigationProgressListener,
             )
 
             if (error != GemError.NoError) {
@@ -244,7 +244,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             val error = navigationService.startSimulationWithRoute(
                 mainRoute,
                 navigationListener,
-                navigationProgressListener
+                navigationProgressListener,
             )
 
             if (error != GemError.NoError) {
@@ -268,8 +268,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 leftInset,
                 getTopInset(),
                 rightInset,
-                bottomDialogHeight + inflate
-            )
+                bottomDialogHeight + inflate,
+            ),
         )
     }
 
@@ -312,7 +312,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             val instructionDistance: String = "",
             val etaText: String = "",
             val rttText: String = "",
-            val rtdText: String = ""
+            val rtdText: String = "",
         )
 
         val navData = SdkCall.execute {
@@ -362,7 +362,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                                             landmark.image?.asBitmap(searchIconSize, searchIconSize),
                                             GemUtil.formatName(landmark),
                                             GemUtil.getLandmarkDescription(landmark, true),
-                                            landmark
+                                            landmark,
                                         )
                                     }.toMutableList()
                                     viewModel.searchResultListLivedata.postValue(list)
@@ -370,7 +370,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                             }
                             else -> viewModel.searchResultListLivedata.postValue(mutableListOf())
                         }
-                    }
+                    },
                 )
             }
         }
@@ -446,7 +446,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
             viewModel.initPreferences()
 
-            val parametersList = arrayListOf(Parameter(ESConfigKeys.Position.ImprovedPosPreferRouteSnap, "1"), Parameter(ESConfigKeys.Position.ImprovedPositionDefTransportMode, "bike"))
+            val parametersList =
+                arrayListOf(
+                    Parameter(ESConfigKeys.Position.ImprovedPosPreferRouteSnap, "1"),
+                    Parameter(ESConfigKeys.Position.ImprovedPositionDefTransportMode, "bike"),
+                )
             PositionService.dataSource?.setPreferences(EDataType.Position, parametersList)
 
             Util.postOnMain {
@@ -463,7 +467,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                             if (!routes.isNullOrEmpty()) {
                                 // set the touched route as the main route and center on it
                                 mapView.preferences?.routes?.mainRoute = routes[0]
-                                mapView.centerOnRoutes(routesList, viewRc = getFreeScreenRect(), animation = Animation(EAnimation.Linear, 900))
+                                mapView.centerOnRoutes(
+                                    routesList,
+                                    viewRc = getFreeScreenRect(),
+                                    animation = Animation(EAnimation.Linear, 900),
+                                )
 
                                 return@execute
                             }
@@ -473,8 +481,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                             val landmarks = mapView.cursorSelectionLandmarks
                             if (!landmarks.isNullOrEmpty()) {
                                 landmark = landmarks[0]
-                            }
-                            else {
+                            } else {
                                 val overlays = mapView.cursorSelectionOverlayItems
                                 if (!overlays.isNullOrEmpty()) {
                                     val overlay = overlays[0]
@@ -488,7 +495,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                                         landmark = Landmark(
                                             name = name,
                                             latitude = it.latitude,
-                                            longitude = it.longitude
+                                            longitude = it.longitude,
                                         ).apply {
                                             image = overlay.image
                                             description = getLandmarkDescription(mapView, it)
@@ -500,15 +507,22 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                             landmark?.let { landmark ->
                                 viewModel.destination = landmark
                                 val details = GemUtil.pairFormatLandmarkDetails(landmark, true)
-                                showCalculateRouteDialog(details.first, details.second,
+                                showCalculateRouteDialog(
+                                    details.first,
+                                    details.second,
                                     onCalculateRoute = {
                                         SdkCall.execute {
                                             val position = PositionService.position
                                             if ((position != null) && position.isValid()) {
-                                                val departure = Landmark("My position", position.latitude, position.longitude)
+                                                val departure =
+                                                    Landmark("My position", position.latitude, position.longitude)
                                                 calculateRoute(departure, landmark)
                                             } else {
-                                                runOnUiThread { showDialog(getString(R.string.current_position_not_available)) }
+                                                runOnUiThread {
+                                                    showDialog(
+                                                        getString(R.string.current_position_not_available),
+                                                    )
+                                                }
                                             }
                                         }
                                     },
@@ -517,7 +531,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                                     },
                                     onViewClosed = {
                                         deactivateHighlights()
-                                    })
+                                    },
+                                )
                             }
                         }
                     }
@@ -538,25 +553,29 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             viewModel.destination = item.landmark
 
             SdkCall.execute {
-                showCalculateRouteDialog(item.text ?: "", item.subText ?: "",
-                onCalculateRoute = {
-                    SdkCall.execute {
-                        val position = PositionService.position
-                        if ((position != null) && position.isValid()) {
-                            val departure = Landmark(getString(R.string.my_position), position.latitude, position.longitude)
-                            val destination = item.landmark
-                            calculateRoute(departure, destination)
-                        } else {
-                            runOnUiThread { showDialog(getString(R.string.current_position_not_available)) }
+                showCalculateRouteDialog(
+                    item.text ?: "",
+                    item.subText ?: "",
+                    onCalculateRoute = {
+                        SdkCall.execute {
+                            val position = PositionService.position
+                            if ((position != null) && position.isValid()) {
+                                val departure =
+                                    Landmark(getString(R.string.my_position), position.latitude, position.longitude)
+                                val destination = item.landmark
+                                calculateRoute(departure, destination)
+                            } else {
+                                runOnUiThread { showDialog(getString(R.string.current_position_not_available)) }
+                            }
                         }
-                    }
-                },
-                onViewCreated = {
-                    highlightLandmarkOnMap(viewModel.destination!!)
-                },
-                onViewClosed = {
-                    deactivateHighlights()
-                })
+                    },
+                    onViewCreated = {
+                        highlightLandmarkOnMap(viewModel.destination!!)
+                    },
+                    onViewClosed = {
+                        deactivateHighlights()
+                    },
+                )
             }
         }
 
@@ -635,8 +654,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 return@addCallback
             }
 
-            if (binding.cancelButton.isVisible)
-            {
+            if (binding.cancelButton.isVisible) {
                 SdkCall.execute {
                     routingService.cancelRoute()
                 }
@@ -675,8 +693,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             shouldCheckLocationPermissionOnResume = false
             if (isLocationEnabled()) {
                 requestPermissions()
-            }
-            else {
+            } else {
                 showDialog(getString(R.string.location_services_required)) {
                     finish()
                 }
@@ -701,7 +718,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                     contour,
                     zoomLevel = -1,
                     viewRc = rect,
-                    Animation(EAnimation.Linear, ANIMATION_DURATION_MS)
+                    Animation(EAnimation.Linear, ANIMATION_DURATION_MS),
                 )
 
                 highlightSettings = HighlightRenderSettings(
@@ -893,7 +910,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private fun calculateRoute(departure: Landmark, destination: Landmark) = SdkCall.execute {
         val waypoints = arrayListOf(
             departure,
-            destination
+            destination,
         )
 
         routingService.preferences = viewModel.routePreferences
@@ -920,7 +937,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         // Fallback: measure the app bar layout
         binding.appBarLayout.measure(
             View.MeasureSpec.makeMeasureSpec(binding.appBarLayout.width, View.MeasureSpec.EXACTLY),
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
         )
         return binding.appBarLayout.measuredHeight
     }
@@ -949,7 +966,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         message: String,
         onCalculateRoute: () -> Unit,
         onViewCreated: (() -> Unit)? = null,
-        onViewClosed: (() -> Unit)? = null
+        onViewClosed: (() -> Unit)? = null,
     ) {
         Util.postOnMain {
             binding.calculateRoutePanel.apply {
@@ -991,7 +1008,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         val distTextPair = GemUtil.getDistText(distInMeters, SdkSettings.unitSystem, bHighResolution = true)
         val timeTextPair = GemUtil.getTimeText(timeInSeconds)
 
-        return@execute String.format("${distTextPair.first} ${distTextPair.second}, " + "${timeTextPair.first} ${timeTextPair.second}")
+        return@execute String.format(
+            "${distTextPair.first} ${distTextPair.second}, " + "${timeTextPair.first} ${timeTextPair.second}",
+        )
     } ?: ""
 
     private fun showStartNavigationDialog(
@@ -1000,7 +1019,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         onStartNavigation: () -> Unit,
         onStartSimulation: () -> Unit,
         onViewCreated: (() -> Unit)? = null,
-        onViewClosed: (() -> Unit)? = null
+        onViewClosed: (() -> Unit)? = null,
     ) {
         Util.postOnMain {
             binding.startNavigationPanel.apply {
@@ -1064,7 +1083,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         if (!isLocationEnabled()) {
             showLocationDialog(
                 message = getString(R.string.location_disabled),
-                settingsIntent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                settingsIntent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS),
             )
             return false
         }
@@ -1133,7 +1152,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         navInstr: NavigationInstruction,
         width: Int,
         height: Int,
-        onSameImage: (Boolean) -> Unit = {}
+        onSameImage: (Boolean) -> Unit = {},
     ): Bitmap? {
         if (!navInstr.hasNextTurnInfo()) return null
 
@@ -1220,7 +1239,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     }
 
     @SuppressLint("DefaultLocale")
-    private fun getLandmarkDescription(mapView: MapView, coordinates: Coordinates, isMyPosition: Boolean = false): String {
+    private fun getLandmarkDescription(
+        mapView: MapView,
+        coordinates: Coordinates,
+        isMyPosition: Boolean = false,
+    ): String {
         var description = ""
         var descriptionContainsLatLon = false
 

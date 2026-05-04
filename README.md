@@ -75,6 +75,7 @@ Explore the examples to learn the capabilities of the Magic Lane Maps Android SD
 * [Route Alarms](RouteAlarms) - Start simulated navigation between 2 given landmarks if a route can be calculated.
 * [Route Instructions](RouteInstructions) - Calculate the routes between 2 given landmarks; display a list with all route instructions, if exists.
 * [Route Navigation](RouteNavigation) - Start navigation from the current position to a given landmark if any route can be calculated.
+* [Route Restrictions](RouteRestrictions) - Start simulated navigation between 2 given landmarks using a truck (lorry) route profile with a mass exceeding 3500 kg. Listen for route restrictions during navigation. Display active route restrictions.
 * [Route Simulation](RouteSimulation) - Start simulation between 2 given landmarks if any route can be calculated.
 * [Route Simulation with Instructions](RouteSimulationWithInstructions) - Start simulation between 2 given landmarks. Display turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance.
 * [Route Simulation with Instructions Compose](RouteSimulationWithInstructionsCompose) - Route simulation with instructions example using Jetpack Compose.

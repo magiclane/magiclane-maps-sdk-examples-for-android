@@ -17,8 +17,8 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemError
-import com.magiclane.sdk.examples.hellofragment.databinding.FragmentSecondBinding
 import com.magiclane.sdk.examples.hellofragment.databinding.DialogLayoutBinding
+import com.magiclane.sdk.examples.hellofragment.databinding.FragmentSecondBinding
 import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
@@ -30,7 +30,8 @@ class SecondFragment : Fragment() {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_second, container, false)
 
         binding?.gemSurfaceView?.onSdkInitFailed = { error ->
-            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, requireContext()))
+            val errorMessage =
+                getString(R.string.sdk_initialization_failed, GemError.getMessage(error, requireContext()))
             Util.postOnMain {
                 showDialog(errorMessage) {
                     activity?.finish()

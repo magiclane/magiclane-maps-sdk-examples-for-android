@@ -114,7 +114,7 @@ class BLEService : Service() {
         override fun onCharacteristicRead(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
-            status: Int
+            status: Int,
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(characteristic, characteristic.value)
@@ -129,7 +129,7 @@ class BLEService : Service() {
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
             value: ByteArray,
-            status: Int
+            status: Int,
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(characteristic, value)
@@ -147,7 +147,11 @@ class BLEService : Service() {
         }
 
         @Suppress("DEPRECATION")
-        override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, value: ByteArray) {
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray,
+        ) {
             broadcastUpdate(characteristic, characteristic.value)
         }
 
@@ -497,8 +501,7 @@ class BLEService : Service() {
         val descriptor = characteristic.getDescriptor(CLIENT_CONFIG)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             bluetoothGatt?.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
-        }
-        else {
+        } else {
             descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
             bluetoothGatt?.writeDescriptor(descriptor)
         }

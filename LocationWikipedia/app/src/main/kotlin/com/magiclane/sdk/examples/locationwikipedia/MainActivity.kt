@@ -27,8 +27,8 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.idling.CountingIdlingResource
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.EExternalImageQuality
 import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.ErrorCode
@@ -98,14 +98,15 @@ class MainActivity : AppCompatActivity() {
                     }
                     else -> {
                         showDialog(
-                            getString(R.string.search_completed_with_error,
-                                GemError.getMessage(errorCode, this@MainActivity)
-                            )
+                            getString(
+                                R.string.search_completed_with_error,
+                                GemError.getMessage(errorCode, this@MainActivity),
+                            ),
                         )
                     }
                 }
             }
-        }
+        },
     )
 
     private val wikipediaProgressListener = ProgressListener.create(
@@ -217,7 +218,7 @@ class MainActivity : AppCompatActivity() {
                 mapView.centerOnRectArea(
                     area,
                     viewRc = getFreeScreenRect(),
-                    animation = Animation(EAnimation.Linear, FLY_TO_ANIMATION_DURATION_MS)
+                    animation = Animation(EAnimation.Linear, FLY_TO_ANIMATION_DURATION_MS),
                 )
 
                 val settings = HighlightRenderSettings(EHighlightOptions.ShowContour)
@@ -279,7 +280,6 @@ class MainActivity : AppCompatActivity() {
             show()
         }
     }
-
 
     private fun runOnAliveUi(block: () -> Unit) {
         Util.postOnMain {
@@ -465,4 +465,3 @@ object EspressoIdlingResource {
     fun increment() = espressoIdlingResource.increment()
     fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
 }
-

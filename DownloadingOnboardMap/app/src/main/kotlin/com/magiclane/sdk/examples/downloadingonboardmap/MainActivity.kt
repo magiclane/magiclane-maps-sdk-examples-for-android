@@ -98,11 +98,11 @@ class MainActivity : AppCompatActivity() {
                                                 R.string.status_item_download_error,
                                                 itemName,
                                                 GemError.getMessage(errorCode, this),
-                                            )
+                                            ),
                                         )
                                     }
                                     EspressoIdlingResource.decrement()
-                                }
+                                },
                             )
 
                             // Start downloading the first map item.
@@ -117,7 +117,9 @@ class MainActivity : AppCompatActivity() {
                                     GemError.UpToDate -> {
                                         // The item is already downloaded and up to date.
                                         Util.postOnMain {
-                                            showStatusMessage(getString(R.string.status_item_already_downloaded, itemName))
+                                            showStatusMessage(
+                                                getString(R.string.status_item_already_downloaded, itemName),
+                                            )
                                         }
                                     }
                                     else -> {
@@ -127,7 +129,7 @@ class MainActivity : AppCompatActivity() {
                                                 getString(
                                                     R.string.status_download_item_error,
                                                     GemError.getMessage(errorCode, this),
-                                                )
+                                                ),
                                             )
                                         }
                                     }
@@ -147,7 +149,7 @@ class MainActivity : AppCompatActivity() {
                         getString(
                             R.string.status_maps_catalog_download_error,
                             GemError.getMessage(errorCode, this),
-                        )
+                        ),
                     )
                     EspressoIdlingResource.decrement()
                 }
@@ -165,7 +167,7 @@ class MainActivity : AppCompatActivity() {
                     getString(
                         R.string.status_maps_catalog_download_error,
                         GemError.getMessage(error, this),
-                    )
+                    ),
                 )
             }
             EspressoIdlingResource.decrement()
@@ -220,7 +222,7 @@ class MainActivity : AppCompatActivity() {
                 getString(
                     R.string.dialog_sdk_initialization_error,
                     GemError.getMessage(errorCode, this),
-                )
+                ),
             ) {
                 finish()
                 exitProcess(0)
@@ -230,8 +232,7 @@ class MainActivity : AppCompatActivity() {
         if (!Util.isInternetConnected(this)) {
             binding.progressBar.visibility = View.GONE
             showDialog(getString(R.string.dialog_internet_required))
-        }
-        else {
+        } else {
             showStatusMessage(getString(R.string.status_connecting_magic_lane_servers))
         }
     }

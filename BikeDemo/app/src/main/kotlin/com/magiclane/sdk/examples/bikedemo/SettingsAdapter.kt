@@ -14,8 +14,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.magiclane.sdk.examples.bikedemo.databinding.SwitchSettingsItemBinding
 import com.magiclane.sdk.examples.bikedemo.databinding.SliderSettingsItemBinding
+import com.magiclane.sdk.examples.bikedemo.databinding.SwitchSettingsItemBinding
 
 class SettingsAdapter : ListAdapter<SettingsItem, RecyclerView.ViewHolder>(settingsDiffUtil) {
 
@@ -91,15 +91,15 @@ class SettingsAdapter : ListAdapter<SettingsItem, RecyclerView.ViewHolder>(setti
                 SwitchSettingsItemBinding.inflate(
                     LayoutInflater.from(parent.context),
                     parent,
-                    false
-                )
+                    false,
+                ),
             )
             ESettingsItemType.SLIDER -> SliderItemView(
                 SliderSettingsItemBinding.inflate(
                     LayoutInflater.from(parent.context),
                     parent,
-                    false
-                )
+                    false,
+                ),
             )
         }
     }

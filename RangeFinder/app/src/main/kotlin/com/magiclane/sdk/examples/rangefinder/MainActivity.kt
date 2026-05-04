@@ -7,35 +7,35 @@
 
 package com.magiclane.sdk.examples.rangefinder
 
-import android.annotation.SuppressLint
-import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.annotation.ColorInt
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.widget.doAfterTextChanged
 import androidx.databinding.Observable
-import androidx.lifecycle.ViewModelProvider
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.Rect
@@ -45,6 +45,7 @@ import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.ERouteDisplayMode
 import com.magiclane.sdk.examples.rangefinder.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.rangefinder.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.EEBikeType
 import com.magiclane.sdk.routesandnavigation.ERouteRenderOptions
@@ -56,17 +57,20 @@ import com.magiclane.sdk.routesandnavigation.RouteRenderSettings
 import com.magiclane.sdk.routesandnavigation.RoutingService
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
+import kotlin.getValue
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var viewModel: MainActivityViewModel
+    private val viewModel: MainActivityViewModel by viewModels()
 
     private val propertiesObserver = object : Observable.OnPropertyChangedCallback() {
         override fun onPropertyChanged(sender: Observable?, propertyId: Int) {
             updateOptions()
         }
     }
+
+    private fun CharSequence?.toIntOrZero(): Int = this?.toString()?.toIntOrNull() ?: 0
 
     /**
      * [routingService] is a service that specialises in computing routes
@@ -104,10 +108,10 @@ class MainActivity : AppCompatActivity() {
                         viewModel.listOfRangeProfiles.removeAt(
                             viewModel.listOfRangeProfiles.size - 1,
                         )
-                        showErrorDialog(
+                        showDialog(
                             resources.getString(
                                 R.string.service_error,
-                                GemError.getMessage(errorCode),
+                                GemError.getMessage(errorCode, this),
                             ),
                         )
                     }
@@ -122,142 +126,139 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            adjustAddRangeFinderContainerSize(landscape = true)
+        }
+
         EspressoIdlingResource.increment()
-        viewModel = ViewModelProvider(
-            this,
-            ViewModelProvider.NewInstanceFactory(),
-        )[MainActivityViewModel::class.java]
-        val onReady = {
-            viewModel.load()
-            addPropertyCallback()
 
-            // Defines an action that should be done when the world map is ready (Updated/ loaded).
-            binding.apply {
-                progressBar.isVisible = false
-                optionsButton.setOnClickListener {
-                    scroll.isVisible = !scroll.isVisible
-                    optionsButton.icon = ResourcesCompat.getDrawable(
-                        resources,
-                        if (scroll.isVisible) {
-                            R.drawable.ic_arrow_drop_up_24
-                        } else {
-                            R.drawable.ic_arrow_drop_down_24
-                        },
-                        theme,
-                    )
-                }
-
-                addButton.setOnClickListener {
-                    EspressoIdlingResource.increment()
-                    // check to see if more ranges can be generated on map
-                    if (viewModel.listOfRangeProfiles.size >= MAX_ITEMS) {
-                        showErrorDialog(
-                            resources.getString(
-                                R.string.maximum_items_warning,
-                                MAX_ITEMS,
-                            ),
-                        )
-                        return@setOnClickListener
-                    }
-
-                    if (scroll.isVisible) {
-                        optionsButton.callOnClick()
-                    }
-
-                    if (binding.rangeValueEditText.text!!.isNotEmpty()) {
-                        // get a copy of the current range settings profile
-                        val newRange = viewModel.currentRangeSettingsProfile.copy()
-                        if (checkIfNewRangeAlreadyExists(newRange) == null) {
-                            // if the same range does not already exist
-                            // set a new color for it and update it's visibility status
-                            SdkCall.execute { newRange.color = viewModel.getNewColor() }
-                            newRange.isDisplayed = true
-                            // add that copy to the view model's list of range profiles
-                            viewModel.listOfRangeProfiles.add(newRange)
-                            // command the service to begin generating a new route with
-                            // your new range value
-                            SdkCall.execute { calculateRanges() }
-                            binding.rangeValueEditText.setText("")
-                            hideKeyboard()
-                        } else {
-                            showErrorDialog(
-                                resources.getString(R.string.same_range_detected_warning),
-                            )
-                        }
-                    } else {
-                        showErrorDialog(resources.getString(R.string.empty_range_value_warning))
-                    }
-                }
-
-                // set on click listeners on each selector in order to show a dialog with options
-                transportModeSelector.setOnClickListener {
-                    showOptionsDialog(it)
-                }
-                bikeTypeSelector.setOnClickListener {
-                    showOptionsDialog(it)
-                }
-                rangeTypeSelector.setOnClickListener {
-                    showOptionsDialog(it)
-                }
-
-                // set text listeners in order to update the current range settings profile
-                bikeWeightEditText.doAfterTextChanged { txt ->
-                    viewModel.currentRangeSettingsProfile.bikeWeight =
-                        txt.toString().toIntOrNull() ?: 0
-                }
-                bikerWeightEditText.doAfterTextChanged { txt ->
-                    viewModel.currentRangeSettingsProfile.bikerWeight =
-                        txt.toString().toIntOrNull() ?: 0
-                }
-                rangeValueEditText.doAfterTextChanged { txt ->
-                    viewModel.currentRangeSettingsProfile.rangeValue =
-                        txt.toString().toIntOrNull() ?: 0
-                }
-                updateOptions()
-            }
-            EspressoIdlingResource.decrement()
-        }
-        if (SdkSettings.isMapDataReady) {
-            onReady()
-        } else {
-            SdkSettings.onMapDataReady = { isReady ->
-                if (isReady) {
-                    onReady()
-                }
-            }
-        }
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showErrorDialog(resources.getString(R.string.token_rejected))
-        }
+        registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
-            showErrorDialog(resources.getString(R.string.internet_connection_warning))
+            showDialog(resources.getString(R.string.internet_required))
         }
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
+    }
+
+    private fun registerSdkListeners() {
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnUiThread {
+                showDialog(errorMessage) { finish() }
+            }
         }
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+
+                viewModel.load()
+                addPropertyCallback()
+
+                // Defines an action that should be done when the world map is ready (Updated/ loaded).
+                binding.apply {
+                    progressBar.isVisible = false
+                    addRangeContainer.isVisible = true
+                    optionsButton.setOnClickListener {
+                        settingsContainer.isVisible = !settingsContainer.isVisible
+                        optionsButton.icon = ResourcesCompat.getDrawable(
+                            resources,
+                            if (settingsContainer.isVisible) {
+                                R.drawable.ic_arrow_drop_up_24
+                            } else {
+                                R.drawable.ic_arrow_drop_down_24
+                            },
+                            theme,
+                        )
+                    }
+
+                    addButton.setOnClickListener {
+                        EspressoIdlingResource.increment()
+                        // check to see if more ranges can be generated on map
+                        if (viewModel.listOfRangeProfiles.size >= MAX_ITEMS) {
+                            showDialog(
+                                resources.getString(
+                                    R.string.maximum_items_warning,
+                                    MAX_ITEMS,
+                                ),
+                            )
+                            return@setOnClickListener
+                        }
+
+                        if (settingsContainer.isVisible) {
+                            optionsButton.callOnClick()
+                        }
+
+                        if (binding.rangeValueEditText.text!!.isNotEmpty()) {
+                            // get a copy of the current range settings profile
+                            val newRange = viewModel.currentRangeSettingsProfile.copy()
+                            if (findExistingRangeProfile(newRange) == null) {
+                                // if the same range does not already exist
+                                // set a new color for it and update its visibility status
+                                SdkCall.execute { newRange.color = viewModel.getNewColor() }
+                                newRange.isDisplayed = true
+                                // add that copy to the view model's list of range profiles
+                                viewModel.listOfRangeProfiles.add(newRange)
+                                // command the service to begin generating a new route with
+                                // your new range value
+                                SdkCall.execute { calculateRanges() }
+                                binding.rangeValueEditText.setText("")
+                                hideKeyboard()
+                            } else {
+                                showDialog(
+                                    resources.getString(R.string.same_range_detected_warning),
+                                )
+                            }
+                        } else {
+                            showDialog(resources.getString(R.string.empty_range_value_warning))
+                        }
+                    }
+
+                    // set on click listeners on each selector in order to show a dialog with options
+                    transportModeSelector.setOnClickListener {
+                        showOptionsDialog(it)
+                    }
+                    bikeTypeSelector.setOnClickListener {
+                        showOptionsDialog(it)
+                    }
+                    rangeTypeSelector.setOnClickListener {
+                        showOptionsDialog(it)
+                    }
+
+                    // set text listeners in order to update the current range settings profile
+                    bikeWeightEditText.doAfterTextChanged { txt ->
+                        viewModel.currentRangeSettingsProfile.bikeWeight = txt.toIntOrZero()
+                    }
+                    bikerWeightEditText.doAfterTextChanged { txt ->
+                        viewModel.currentRangeSettingsProfile.bikerWeight = txt.toIntOrZero()
+                    }
+                    rangeValueEditText.doAfterTextChanged { txt ->
+                        viewModel.currentRangeSettingsProfile.rangeValue = txt.toIntOrZero()
+                    }
+                    updateOptions()
+                }
+                EspressoIdlingResource.decrement()
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnUiThread {
+                showDialog(getString(R.string.token_rejected_message))
+            }
+        }
+    }
+
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
 
-        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            changeConstraintsForLandscape()
-        }
-
-        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            changeConstraintsForPortrait()
-        }
-
-        if (binding.scroll.isVisible) {
-            binding.optionsButton.callOnClick()
-        }
+        adjustAddRangeFinderContainerSize(
+            landscape = newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE,
+        )
     }
 
     override fun onPause() {
@@ -270,9 +271,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        clearSdkListeners()
 
         // Deinitialize the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
     /**
@@ -280,7 +283,7 @@ class MainActivity : AppCompatActivity() {
      * profiles from [viewModel]
      * @param newRange the new [RangeSettingsProfile] to be added
      */
-    private fun checkIfNewRangeAlreadyExists(newRange: RangeSettingsProfile) = viewModel.listOfRangeProfiles.find {
+    private fun findExistingRangeProfile(newRange: RangeSettingsProfile) = viewModel.listOfRangeProfiles.find {
         val itemMatcher = it.transportMode == newRange.transportMode &&
             it.rangeType == newRange.rangeType &&
             it.rangeValue == newRange.rangeValue
@@ -347,33 +350,29 @@ class MainActivity : AppCompatActivity() {
         else -> ""
     }
 
-    /**
-     * Shows a [BottomSheetDialog] with a short message
-     */
-    @SuppressLint("InflateParams")
-    private fun showErrorDialog(text: String) {
-        while (!EspressoIdlingResource.espressoIdlingResource.isIdleNow)
-            EspressoIdlingResource.decrement()
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
 
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.title).setTextColor(
-                ContextCompat.getColor(this@MainActivity, R.color.text_color),
-            )
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<TextView>(R.id.message).setTextColor(
-                ContextCompat.getColor(this@MainActivity, R.color.text_color),
-            )
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
+    }
+
+    private fun isActivityAlive(): Boolean {
+        return !isFinishing && !isDestroyed
     }
 
     /**
@@ -382,15 +381,29 @@ class MainActivity : AppCompatActivity() {
      */
     private fun showOptionsDialog(view: View) {
         val list = getOptionsArrayList(view).map { it.name }
+        val checkedItemPosition = getCheckedItemPosition(view)
 
-        val dialogBuilder = MaterialAlertDialogBuilder(this)
-
-        dialogBuilder.setTitle(getDialogTitle(view))
-            .setItems(list.toTypedArray()) { dialog, pos ->
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getDialogTitle(view))
+            .setSingleChoiceItems(list.toTypedArray(), checkedItemPosition) { dialog, pos ->
                 onItemClicked(view, pos)
-                dialog.cancel()
+                dialog.dismiss()
             }
             .show()
+    }
+
+    private fun getCheckedItemPosition(view: View) = with(viewModel.currentRangeSettingsProfile) {
+        when (view.id) {
+            R.id.transport_mode_selector -> viewModel.listOfTransportTypes.indexOf(transportMode)
+            R.id.range_type_selector ->
+                if (isBicycleTransportType()) {
+                    viewModel.listOfBicycleRangeTypes.indexOf(rangeType)
+                } else {
+                    viewModel.listOfRangeTypes.indexOf(rangeType)
+                }
+            R.id.bike_type_selector -> viewModel.listOfBikeTypes.indexOf(bikeType)
+            else -> -1
+        }
     }
 
     /**
@@ -424,10 +437,10 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Returns the matching options list to be shown in the dialog view
-     * based on the on the picked selector view
+     * based on the picked selector view
      * @param view the selector that was clicked on
      */
-    private fun getOptionsArrayList(view: View) = when (view.id) {
+    private fun getOptionsArrayList(view: View): List<Enum<*>> = when (view.id) {
         R.id.transport_mode_selector ->
             viewModel.listOfTransportTypes
 
@@ -440,7 +453,7 @@ class MainActivity : AppCompatActivity() {
 
         R.id.bike_type_selector -> viewModel.listOfBikeTypes
 
-        else -> ArrayList()
+        else -> emptyList()
     }
 
     /**
@@ -451,7 +464,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Returns the matching title to be shown in the dialog view
-     * based on the on the picked selector view
+     * based on the picked selector view
      * @param view the selector that was clicked on
      */
     private fun getDialogTitle(view: View) = ContextCompat.getString(
@@ -503,7 +516,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hideKeyboard() {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
     }
 
@@ -515,7 +528,7 @@ class MainActivity : AppCompatActivity() {
         viewModel.listOfRangeProfiles.let { currentSelectedRanges ->
             binding.apply {
                 currentRangesButtonsContainer.removeAllViews()
-                if (currentSelectedRanges.size <= 0) return
+                if (currentSelectedRanges.isEmpty()) return
 
                 for (i in 0 until currentSelectedRanges.size) {
                     val rangeContainer = layoutInflater.inflate(
@@ -545,7 +558,13 @@ class MainActivity : AppCompatActivity() {
 
                     // center on the route on long click
                     textView.setOnLongClickListener {
-                        SdkCall.execute { centerRoutes(route = viewModel.listOfRoutes[i]) }
+                        SdkCall.execute {
+                            if (viewModel.listOfRangeProfiles[i].isDisplayed) {
+                                centerRoutes(
+                                    route = viewModel.listOfRoutes[i],
+                                )
+                            }
+                        }
                         true
                     }
 
@@ -595,7 +614,7 @@ class MainActivity : AppCompatActivity() {
                     currentRangesButtonsContainer.addView(rangeContainer)
                 }
 
-                scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+                settingsContainer.post { settingsContainer.fullScroll(View.FOCUS_DOWN) }
                 currentRangesScrollContainer.post {
                     currentRangesScrollContainer.fullScroll(
                         View.FOCUS_RIGHT,
@@ -606,7 +625,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * An utility function that enables and disables views that may cause thread interruptions
+     * A utility function that enables and disables views
      * while routes calculations are being made
      */
     private fun enableButtons(enable: Boolean) {
@@ -669,199 +688,92 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun changeConstraintsForLandscape() {
+    private fun adjustAddRangeFinderContainerSize(landscape: Boolean) {
         binding.apply {
-            ConstraintSet().apply {
-                // move main content to left side and shorten it's width
-                connect(
-                    R.id.main_content,
-                    ConstraintSet.TOP,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.TOP,
-                )
-                connect(
-                    R.id.main_content,
-                    ConstraintSet.BOTTOM,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.BOTTOM,
-                )
-                connect(
-                    R.id.main_content,
-                    ConstraintSet.START,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.START,
-                )
-                connect(
-                    R.id.main_content,
-                    ConstraintSet.END,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.END,
-                )
-                setHorizontalBias(R.id.main_content, 0f)
-                setVerticalBias(R.id.main_content, 0f)
-
-                // move gem surface to right side and shorten it's width
-                connect(
-                    R.id.gem_surface_view,
-                    ConstraintSet.TOP,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.TOP,
-                )
-                connect(
-                    R.id.gem_surface_view,
-                    ConstraintSet.BOTTOM,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.BOTTOM,
-                )
-                connect(
-                    R.id.gem_surface_view,
-                    ConstraintSet.START,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.START,
-                )
-                connect(
-                    R.id.gem_surface_view,
-                    ConstraintSet.END,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.END,
-                )
-
-                // move scroll to right side and shorten it's width
-                connect(
-                    R.id.scroll,
-                    ConstraintSet.TOP,
-                    R.id.main_content,
-                    ConstraintSet.BOTTOM,
-                )
-                connect(
-                    R.id.scroll,
-                    ConstraintSet.BOTTOM,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.BOTTOM,
-                )
-                connect(
-                    R.id.scroll,
-                    ConstraintSet.START,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.START,
-                )
-                connect(
-                    R.id.scroll,
-                    ConstraintSet.END,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.END,
-                )
-                setHorizontalBias(R.id.scroll, 0f)
-
-                applyTo(rootView)
+            addRangeContainer.updateLayoutParams {
+                width = if (landscape) {
+                    resources.displayMetrics.widthPixels / 2
+                } else {
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                }
+                height = ViewGroup.LayoutParams.WRAP_CONTENT
             }
 
-            mainContent.updateLayoutParams {
-                width = resources.displayMetrics.widthPixels / 2
-                height = ConstraintSet.WRAP_CONTENT
+            if (!landscape) {
+                settingsContainer.updateLayoutParams {
+                    height = ViewGroup.LayoutParams.WRAP_CONTENT
+                }
             }
+        }
 
-            gemSurfaceView.updateLayoutParams {
-                width = ConstraintSet.MATCH_CONSTRAINT
-                height = ConstraintSet.MATCH_CONSTRAINT
-            }
+        if (landscape) {
+            updateLandscapeSettingsMaxHeight()
+        }
+    }
 
-            scroll.updateLayoutParams {
-                width = resources.displayMetrics.widthPixels / 2
-                height = ConstraintSet.MATCH_CONSTRAINT
+    private fun updateLandscapeSettingsMaxHeight() {
+        // Wait for measured heights to compute the free vertical space accurately.
+        binding.root.post {
+            val screenHeight = binding.root.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
+            val settingsMaxHeight = (screenHeight - binding.addRangeContainer.height).coerceAtLeast(0)
+            binding.settingsContainer.updateLayoutParams {
+                height = settingsMaxHeight
             }
         }
     }
 
-    private fun changeConstraintsForPortrait() {
-        binding.apply {
-            ConstraintSet().apply {
-                // move main content to top side and match it's width to it's parent
-                connect(
-                    R.id.main_content,
-                    ConstraintSet.TOP,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.TOP,
-                )
-                connect(
-                    R.id.main_content,
-                    ConstraintSet.BOTTOM,
-                    R.id.gem_surface_view,
-                    ConstraintSet.TOP,
-                )
-                connect(
-                    R.id.main_content,
-                    ConstraintSet.START,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.START,
-                )
-                connect(
-                    R.id.main_content,
-                    ConstraintSet.END,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.END,
-                )
+    private fun getFreeSpaceRect(): Rect {
+        val systemBarsInsets = ViewCompat.getRootWindowInsets(binding.root)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars())
 
-                // move gem surface to bottom of main content and match it's layout params to the remaining space
-                connect(
-                    R.id.gem_surface_view,
-                    ConstraintSet.TOP,
-                    R.id.main_content,
-                    ConstraintSet.BOTTOM,
-                )
-                connect(
-                    R.id.gem_surface_view,
-                    ConstraintSet.BOTTOM,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.BOTTOM,
-                )
-                connect(
-                    R.id.gem_surface_view,
-                    ConstraintSet.START,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.START,
-                )
-                connect(
-                    R.id.gem_surface_view,
-                    ConstraintSet.END,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.END,
-                )
+        val leftInset = systemBarsInsets?.left ?: 0
+        val topInset = systemBarsInsets?.top ?: 0
+        val rightInset = systemBarsInsets?.right ?: 0
+        val bottomInset = systemBarsInsets?.bottom ?: 0
 
-                // move scroll to bottom of main content and match it's layout params to the remaining space
-                connect(R.id.scroll, ConstraintSet.TOP, R.id.main_content, ConstraintSet.BOTTOM)
-                connect(
-                    R.id.scroll,
-                    ConstraintSet.BOTTOM,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.BOTTOM,
-                )
-                connect(
-                    R.id.scroll,
-                    ConstraintSet.START,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.START,
-                )
-                connect(R.id.scroll, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END)
+        val gemSurfaceTop = binding.gemSurfaceView.top
+        val surfaceWidth = binding.gemSurfaceView.width
+            .takeIf { it > 0 }
+            ?: binding.root.width.takeIf { it > 0 }
+            ?: resources.displayMetrics.widthPixels
+        val surfaceHeight = binding.gemSurfaceView.height
+            .takeIf { it > 0 }
+            ?: binding.root.height
+                .takeIf { it > 0 }
+                ?.minus(gemSurfaceTop)
+            ?: (resources.displayMetrics.heightPixels - gemSurfaceTop)
 
-                applyTo(rootView)
-            }
-
-            mainContent.updateLayoutParams {
-                width = ConstraintSet.MATCH_CONSTRAINT
-                height = ConstraintSet.WRAP_CONTENT
-            }
-
-            gemSurfaceView.updateLayoutParams {
-                width = ConstraintSet.MATCH_CONSTRAINT
-                height = ConstraintSet.MATCH_CONSTRAINT
-            }
-
-            scroll.updateLayoutParams {
-                width = ConstraintSet.MATCH_CONSTRAINT
-                height = ConstraintSet.MATCH_CONSTRAINT
-            }
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val left = if (isLandscape) {
+            binding.addRangeContainer.width
+                .takeIf { it > 0 }
+                ?: (resources.displayMetrics.widthPixels / 2)
+        } else {
+            leftInset
         }
+        val top = if (isLandscape) {
+            topInset
+        } else {
+            val overlayBottom = if (binding.settingsContainer.isVisible) {
+                binding.settingsContainer.bottom.takeIf { it > 0 } ?: binding.addRangeContainer.bottom
+            } else {
+                binding.addRangeContainer.bottom
+            }
+
+            (overlayBottom - gemSurfaceTop).coerceAtLeast(0)
+        }
+        val right = (surfaceWidth - rightInset).coerceAtLeast(left)
+        val bottom = (surfaceHeight - bottomInset).coerceAtLeast(top)
+        val padding = resources.getDimensionPixelSize(R.dimen.padding_40)
+        val centeringLeft = (left + padding).coerceAtMost(right)
+        val centeringTop = (top + padding).coerceAtMost(bottom)
+
+        return Rect(
+            left = centeringLeft,
+            top = centeringTop,
+            right = (right - padding).coerceAtLeast(centeringLeft),
+            bottom = (bottom - padding).coerceAtLeast(centeringTop),
+        )
     }
 
     /**
@@ -870,17 +782,7 @@ class MainActivity : AppCompatActivity() {
      * Needs [SdkCall]
      */
     private fun centerRoutes(route: Route? = null) {
-        val centeringPadding = resources.getDimensionPixelSize(R.dimen.big_padding)
-        val centeringRectangle = Rect(
-            left = if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                binding.gemSurfaceView.measuredWidth - resources.displayMetrics.widthPixels / 2 - centeringPadding
-            } else {
-                centeringPadding
-            },
-            top = centeringPadding,
-            right = binding.gemSurfaceView.measuredWidth - centeringPadding,
-            bottom = binding.gemSurfaceView.measuredHeight - centeringPadding,
-        )
+        val centeringRectangle = getFreeSpaceRect()
         route?.let {
             binding.gemSurfaceView.mapView?.centerOnRoute(
                 route,
@@ -895,7 +797,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    public object EspressoIdlingResource {
+    object EspressoIdlingResource {
         val espressoIdlingResource =
             CountingIdlingResource("ApplyMapStyleInstrumentedTestsIdlingResource")
         fun increment() = espressoIdlingResource.increment()

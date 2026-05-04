@@ -130,61 +130,72 @@ class MainActivity : AppCompatActivity() {
                     it.image = ImageDatabase().getImageById(SdkImages.Core.Waypoint_Finish.value)
                 }
 
-                val highlightSettings = HighlightRenderSettings(EHighlightOptions.ShowLandmark).also { it.imageSize = 4.0 }
+                val highlightSettings = HighlightRenderSettings(
+                    EHighlightOptions.ShowLandmark,
+                ).also { it.imageSize = 4.0 }
                 mapView.activateHighlightLandmarks(arrayListOf(departureLmk, destinationLmk), highlightSettings)
             }
 
             val pathCollection = mapView.preferences?.paths
-            pathCollection?.add(path,
-                                colorBorder = Rgba.black(),
-                                colorInner = Rgba.orange(),
-                                szBorder = 0.5,
-                                szInner = 1.0)
+            pathCollection?.add(
+                path,
+                colorBorder = Rgba.black(),
+                colorInner = Rgba.orange(),
+                szBorder = 0.5,
+                szInner = 1.0,
+            )
 
             path.area?.let { area ->
                 mapView.centerOnRectArea(
                     area = area,
                     viewRc = Rect(padding, padding, thumbnailWidth - padding, thumbnailHeight - padding),
-                    animation = Animation(EAnimation.Linear,
-                                         10,
-                                          onCompleted = onCompleted@{ errorCode, _ ->
-                                                if (errorCode != GemError.NoError) return@onCompleted
+                    animation = Animation(
+                        EAnimation.Linear,
+                        10,
+                        onCompleted = onCompleted@{ errorCode, _ ->
+                            if (errorCode != GemError.NoError) return@onCompleted
 
-                                                SdkCall.execute {
-                                                    OverlayService().apply {
-                                                        disableOverlay(ECommonOverlayId.SocialReports.value)
-                                                        disableOverlay(ECommonOverlayId.Safety.value)
-                                                    }
+                            SdkCall.execute {
+                                OverlayService().apply {
+                                    disableOverlay(ECommonOverlayId.SocialReports.value)
+                                    disableOverlay(ECommonOverlayId.Safety.value)
+                                }
 
-                                                    gemOffscreenSurfaceView.screen?.needsRender()
+                                gemOffscreenSurfaceView.screen?.needsRender()
 
-                                                    mapView.onViewRendered = onViewRendered@{ tivStatus, camStatus ->
-                                                        if (screenshotTaken) return@onViewRendered
+                                mapView.onViewRendered = onViewRendered@{ tivStatus, camStatus ->
+                                    if (screenshotTaken) return@onViewRendered
 
-                                                        if ((tivStatus == EViewDataTransitionStatus.Complete) &&
-                                                            (camStatus == EViewCameraTransitionStatus.Stationary)) {
-                                                            Util.postOnMain {
-                                                                binding.statusText.text = getString(R.string.taking_screenshot)
-                                                            }
+                                    if ((tivStatus == EViewDataTransitionStatus.Complete) &&
+                                        (camStatus == EViewCameraTransitionStatus.Stationary)
+                                    ) {
+                                        Util.postOnMain {
+                                            binding.statusText.text = getString(
+                                                R.string.taking_screenshot,
+                                            )
+                                        }
 
-                                                            gemOffscreenSurfaceView.takeScreenshot { bitmap ->
-                                                                Util.postOnMain {
-                                                                    binding.apply {
-                                                                        mapThumbnailImage.setImageBitmap(bitmap)
-                                                                        progressBar.isVisible = false
-                                                                        statusText.text = getString(R.string.screenshot_taken)
-                                                                    }
-                                                                }
-
-                                                                screenshotTaken = true
-                                                                gemOffscreenSurfaceView.destroy()
-                                                            }
-
-                                                            mapView.onViewRendered = null
-                                                        }
-                                                    }
+                                        gemOffscreenSurfaceView.takeScreenshot { bitmap ->
+                                            Util.postOnMain {
+                                                binding.apply {
+                                                    mapThumbnailImage.setImageBitmap(bitmap)
+                                                    progressBar.isVisible = false
+                                                    statusText.text = getString(
+                                                        R.string.screenshot_taken,
+                                                    )
                                                 }
-                                          })
+                                            }
+
+                                            screenshotTaken = true
+                                            gemOffscreenSurfaceView.destroy()
+                                        }
+
+                                        mapView.onViewRendered = null
+                                    }
+                                }
+                            }
+                        },
+                    ),
                 )
             }
         }

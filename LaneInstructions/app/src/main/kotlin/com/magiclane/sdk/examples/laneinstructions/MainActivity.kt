@@ -13,10 +13,12 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
@@ -35,6 +37,7 @@ import com.magiclane.sdk.routesandnavigation.NavigationListener
 import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.util.GemUtil
+import com.magiclane.sdk.util.GemUtilImages
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.magiclane.sound.SoundUtils
@@ -45,6 +48,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private data class InstructionUiState(
         val instructionText: String,
         val instructionIcon: Bitmap?,
+        val sameInstructinIcon: Boolean,
         val instructionDistance: String,
         val lanesBitmap: Bitmap?,
         val etaText: String,
@@ -54,14 +58,13 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private companion object {
         private const val INSTRUCTION_ICON_SIZE_PX = 100
-        private const val API_TOKEN_DIALOG_DELAY_MS = 500L
     }
 
     private lateinit var binding: ActivityMainBinding
 
+    private var lastTurnImageId: Long = Long.MAX_VALUE
     private var lanePanelHeight = 0
     private var availableWidth = 0
-    private var emptyApiToken = false
     private var activeDialog: BottomSheetDialog? = null
 
     // Define a navigation service from which we will start the simulation.
@@ -94,7 +97,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             runOnUiThread {
                 binding.topPanel.isVisible = true
                 binding.bottomPanel.isVisible = true
-                binding.statusText.isVisible = false
             }
         },
         onNavigationInstructionUpdated = { instr ->
@@ -117,22 +119,19 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             SdkCall.execute {
                 binding.gemSurfaceView.mapView?.hideRoutes()
             }
-
-            showStatusMessage(getString(R.string.destination_reached))
         },
         onNavigationSound = { sound ->
             SdkCall.execute {
                 SoundPlayingService.play(sound, playingListener, soundPreference)
             }
         },
-        canPlayNavigationSound = true
+        canPlayNavigationSound = true,
     )
 
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
         onStarted = {
             binding.progressBar.isVisible = true
-            showStatusMessage(getString(R.string.routing_process_started))
         },
         onCompleted = { errorCode, _ ->
             binding.progressBar.isVisible = false
@@ -145,7 +144,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 )
             }
         },
-        postOnMain = true
+        postOnMain = true,
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -153,9 +152,19 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         setupTts()
         setupLaneMetrics()
-        setupGemSurfaceCallbacks()
+        registerSdkListeners()
+
+        if (!Util.isInternetConnected(this)) {
+            showDialog(getString(R.string.internet_required))
+        }
+
+        if (!Util.isInternetConnected(this)) {
+            showDialog(getString(R.string.internet_required))
+        }
     }
 
     override fun onStop() {
@@ -163,7 +172,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         // Release the SDK.
         if (isFinishing) {
             dismissActiveDialog()
-            clearGemSurfaceCallbacks()
+            clearSdkListeners()
             SoundUtils.removeTTSPlayerInitializationListener(this)
             GemSdk.release()
             exitProcess(0)
@@ -181,27 +190,31 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             2 * resources.getDimension(R.dimen.medium_padding).toInt()
     }
 
-    private fun setupGemSurfaceCallbacks() {
-        binding.gemSurfaceView.onSdkInitSucceeded = {
-            emptyApiToken = SdkSettings.appAuthorization.isNullOrEmpty()
+    private fun registerSdkListeners() {
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnUiThread {
+                showDialog(errorMessage) { finish() }
+            }
         }
 
-        binding.gemSurfaceView.onDefaultMapViewCreated = {
-            if (emptyApiToken) {
-                Util.postOnMainDelayed({
-                    showDialog(getString(R.string.missing_app_authorization)) {
-                        finish()
-                    }
-                }, API_TOKEN_DIALOG_DELAY_MS)
-            } else {
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
                 startSimulation()
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnUiThread {
+                showDialog(getString(R.string.token_rejected_message))
             }
         }
     }
 
-    private fun clearGemSurfaceCallbacks() {
-        binding.gemSurfaceView.onSdkInitSucceeded = null
-        binding.gemSurfaceView.onDefaultMapViewCreated = null
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
     }
 
     private fun enableGPSButton() {
@@ -210,10 +223,15 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             gemSurfaceView.mapView?.apply {
                 onExitFollowingPosition = {
                     followGpsButton.isVisible = true
+                    topPanel.isVisible = false
+                    bottomPanel.isVisible = false
+                    laneContainer.isVisible = false
                 }
 
                 onEnterFollowingPosition = {
                     followGpsButton.isVisible = false
+                    topPanel.isVisible = true
+                    bottomPanel.isVisible = true
                 }
 
                 // Set on click action for the GPS button.
@@ -236,7 +254,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private fun startSimulation() {
         val waypoints = arrayListOf(
             Landmark("Calea Bucuresti", 45.64924625, 25.6180490625),
-            Landmark("Harmanului", 45.6549909375, 25.6161609375)
+            Landmark("Harmanului", 45.6549909375, 25.6161609375),
         )
         val error = navigationService.startSimulation(
 
@@ -293,10 +311,16 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             activeColor = Rgba.white(),
         )
 
+        var sameInstructionIcon = false
+        val instrIcon = getNextTurnImage(this, INSTRUCTION_ICON_SIZE_PX, INSTRUCTION_ICON_SIZE_PX) { isSame ->
+            sameInstructionIcon = isSame
+        }
+
         val currentRoute = navRoute
         return InstructionUiState(
             instructionText = nextStreetName ?: (nextTurnInstruction ?: ""),
-            instructionIcon = nextTurnImage?.asBitmap(INSTRUCTION_ICON_SIZE_PX, INSTRUCTION_ICON_SIZE_PX),
+            instructionIcon = instrIcon,
+            sameInstructionIcon,
             instructionDistance = getDistanceInMeters(),
             lanesBitmap = lanesBitmap,
             etaText = currentRoute?.getEta().orEmpty(),
@@ -308,25 +332,23 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private fun renderInstructionUi(uiState: InstructionUiState) {
         binding.apply {
             navInstruction.text = uiState.instructionText
-            navInstructionIcon.setImageBitmap(uiState.instructionIcon)
+            if (!uiState.sameInstructinIcon) {
+                navInstructionIcon.setImageBitmap(uiState.instructionIcon)
+            }
+
             navInstructionDistance.text = uiState.instructionDistance
 
             eta.text = uiState.etaText
             rtt.text = uiState.rttText
             rtd.text = uiState.rtdText
 
-            laneContainer.isVisible = uiState.lanesBitmap != null
+            laneContainer.isVisible = (uiState.lanesBitmap != null) && binding.topPanel.isVisible
             uiState.lanesBitmap?.let { bitmap ->
                 laneImage.setImageBitmap(bitmap)
                 laneImage.layoutParams.width = bitmap.width
                 laneImage.layoutParams.height = bitmap.height
             }
         }
-    }
-
-    private fun showStatusMessage(text: String) {
-        binding.statusText.isVisible = true
-        binding.statusText.text = text
     }
 
     private fun NavigationInstruction.getDistanceInMeters(): String {
@@ -358,6 +380,40 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         ).toDisplayString()
     }
 
+    private fun getNextTurnImage(
+        navInstr: NavigationInstruction,
+        width: Int,
+        height: Int,
+        onSameImage: (Boolean) -> Unit = {},
+    ): Bitmap? {
+        if (!navInstr.hasNextTurnInfo()) return null
+
+        if ((navInstr.nextTurnDetails?.abstractGeometryImage?.uid ?: 0) == lastTurnImageId) {
+            onSameImage(true)
+            return null
+        }
+
+        val image = navInstr.nextTurnDetails?.abstractGeometryImage
+        if (image != null) {
+            lastTurnImageId = image.uid
+        }
+
+        val aInner = Rgba(255, 255, 255, 255)
+        val aOuter = Rgba(0, 0, 0, 255)
+        val iInner = Rgba(128, 128, 128, 255)
+        val iOuter = Rgba(128, 128, 128, 255)
+
+        return GemUtilImages.asBitmap(
+            image,
+            width,
+            height,
+            aInner,
+            aOuter,
+            iInner,
+            iOuter,
+        )
+    }
+
     private fun Pair<String, String>.toDisplayString(): String {
         return "$first $second"
     }
@@ -372,4 +428,3 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         SoundPlayingService.setDefaultHumanVoice()
     }
 }
-

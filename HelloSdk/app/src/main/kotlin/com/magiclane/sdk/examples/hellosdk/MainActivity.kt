@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
                         it.minor,
                         it.year,
                         it.week,
-                        it.revision
+                        it.revision,
                     )
                     runOnUiThread {
                         binding.sdkStatusText.text = getString(R.string.sdk_initialized_message, version)
@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
                 } ?: runOnUiThread {
                     binding.sdkStatusText.text = getString(
                         R.string.sdk_initialized_message,
-                        getString(R.string.sdk_version_unavailable)
+                        getString(R.string.sdk_version_unavailable),
                     )
                 }
             }

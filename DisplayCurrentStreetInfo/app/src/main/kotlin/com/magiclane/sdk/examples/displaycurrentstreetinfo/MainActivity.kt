@@ -83,8 +83,7 @@ class MainActivity : AppCompatActivity() {
                     Util.postOnMain {
                         handleCurrentStreetNameInfo(streetName, cityName, speedLimit)
                     }
-                }
-                else {
+                } else {
                     Util.postOnMain {
                         handleCurrentStreetNameInfo("", "", "")
                     }
@@ -155,8 +154,7 @@ class MainActivity : AppCompatActivity() {
             shouldCheckLocationPermissionOnResume = false
             if (isLocationEnabled()) {
                 requestPermissions(this)
-            }
-            else {
+            } else {
                 showErrorDialog(getString(R.string.location_services_required)) {
                     finish()
                 }
@@ -176,7 +174,7 @@ class MainActivity : AppCompatActivity() {
         Util.postOnMain {
             showDialog(
                 getString(R.string.info),
-                getString(R.string.startup_info_message)
+                getString(R.string.startup_info_message),
             )
         }
     }
@@ -255,7 +253,7 @@ class MainActivity : AppCompatActivity() {
         return PermissionsHelper.requestPermissions(
             REQUEST_PERMISSIONS,
             activity,
-            permissions
+            permissions,
         )
     }
 
@@ -268,7 +266,7 @@ class MainActivity : AppCompatActivity() {
         if (!isLocationEnabled()) {
             showLocationDialog(
                 message = getString(R.string.location_disabled),
-                settingsIntent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                settingsIntent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS),
             )
             return false
         }
@@ -297,8 +295,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getSizeInPixels(dpi: Int): Int
-    {
+    private fun getSizeInPixels(dpi: Int): Int {
         val metrics = resources.displayMetrics
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpi.toFloat(), metrics).toInt()
     }
@@ -309,8 +306,9 @@ class MainActivity : AppCompatActivity() {
                 if (streetName != currentStreetText.text) {
                     currentStreetText.text = streetName
                     val maxTextSize = resources.getDimension(R.dimen.max_current_street_text_size)
-                    currentStreetText.setTextSize(TypedValue.COMPLEX_UNIT_PX,
-                        min(currentStreetText.textSize, maxTextSize)
+                    currentStreetText.setTextSize(
+                        TypedValue.COMPLEX_UNIT_PX,
+                        min(currentStreetText.textSize, maxTextSize),
                     )
                 }
 
@@ -319,19 +317,21 @@ class MainActivity : AppCompatActivity() {
                     if (cityName != currentCityText.text) {
                         currentCityText.text = cityName
                         val maxTextSize = resources.getDimension(R.dimen.max_current_street_text_size)
-                        currentCityText.setTextSize(TypedValue.COMPLEX_UNIT_PX, min(currentCityText.textSize, maxTextSize))
+                        currentCityText.setTextSize(
+                            TypedValue.COMPLEX_UNIT_PX,
+                            min(currentCityText.textSize, maxTextSize),
+                        )
                     }
                     (currentStreetText.layoutParams as ConstraintLayout.LayoutParams).bottomMargin = getSizeInPixels(1)
-                }
-                else
-                {
+                } else {
                     currentCityText.visibility = View.GONE
-                    (currentStreetText.layoutParams as ConstraintLayout.LayoutParams).bottomMargin = resources.getDimension(R.dimen.text_padding).toInt()
+                    (currentStreetText.layoutParams as ConstraintLayout.LayoutParams).bottomMargin = resources.getDimension(
+                        R.dimen.text_padding,
+                    ).toInt()
                 }
 
                 currentStreetTextContainer.visibility = View.VISIBLE
-            }
-            else {
+            } else {
                 currentStreetTextContainer.visibility = View.GONE
             }
 

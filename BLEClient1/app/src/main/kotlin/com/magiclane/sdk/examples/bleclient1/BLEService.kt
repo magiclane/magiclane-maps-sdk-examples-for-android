@@ -119,7 +119,7 @@ class BLEService : Service() {
         override fun onCharacteristicRead(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
-            status: Int
+            status: Int,
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(characteristic, characteristic.value)
@@ -138,7 +138,7 @@ class BLEService : Service() {
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
             value: ByteArray,
-            status: Int
+            status: Int,
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(characteristic, value)
@@ -159,7 +159,11 @@ class BLEService : Service() {
             broadcastUpdate(characteristic, characteristic.value)
         }
 
-        override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, value: ByteArray) {
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray,
+        ) {
             broadcastUpdate(characteristic, value)
         }
 

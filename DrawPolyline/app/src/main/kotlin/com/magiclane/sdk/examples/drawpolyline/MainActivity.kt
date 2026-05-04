@@ -65,7 +65,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.gemSurface.onSdkInitFailed = { error ->
-            val errorMessage = String.format(getString(R.string.sdk_initialization_failed), GemError.getMessage(error, this))
+            val errorMessage = String.format(
+                getString(R.string.sdk_initialization_failed),
+                GemError.getMessage(error, this),
+            )
             Util.postOnMain {
                 showDialog(errorMessage) {
                     finish()

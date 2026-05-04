@@ -48,4 +48,3 @@ dependencies {
     androidTestImplementation(shared.androidx.test.rules)
     androidTestImplementation(shared.androidx.test.uiautomator)
 }
-

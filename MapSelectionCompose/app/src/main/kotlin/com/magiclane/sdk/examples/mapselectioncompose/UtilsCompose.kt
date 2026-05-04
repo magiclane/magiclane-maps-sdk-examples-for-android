@@ -45,7 +45,14 @@ fun TitleDescriptionColumn(modifier: Modifier = Modifier, title: String? = null,
         modifier = modifier,
         verticalArrangement = Arrangement.SpaceEvenly,
     ) {
-        title?.let { Text(it, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 3) }
+        title?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 3,
+            )
+        }
         if (description?.isNotEmpty() == true) {
             Text(description, style = MaterialTheme.typography.bodyMedium, color = Color(128, 128, 128, 255))
         }
@@ -100,24 +107,28 @@ fun TopAppBar(
                 .fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            iconOnClick?.let { onBack ->
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier.size(60.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.arrow_back_24dp),
-                        contentDescription = "Back arrow, navigate back",
-                        tint = titleColor,
-                    )
-                }
-            }
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = titleColor,
                 maxLines = 1,
+                modifier = Modifier
+                    .padding(start = 16.dp).weight(1f),
             )
+            iconOnClick?.let { onClose ->
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier
+                        .size(50.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.cancel_24px),
+                        contentDescription = "Cancel, close",
+                        tint = titleColor,
+                        modifier = Modifier.size(40.dp),
+                    )
+                }
+            }
         }
     }
 }

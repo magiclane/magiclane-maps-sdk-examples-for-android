@@ -11,7 +11,6 @@ import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -153,7 +152,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 SoundPlayingService.play(sound, playingListener, soundPreference)
             }
         },
-        canPlayNavigationSound = true
+        canPlayNavigationSound = true,
     )
 
     // Define a listener that will let us know the progress of the routing process.
@@ -169,22 +168,26 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
             when (errorCode) {
                 GemError.NoError ->
-                {
-                    val route = routes[0]
-                    SdkCall.execute {
-                        val error = navigationService.startSimulationWithRoute(route, navigationListener, routingProgressListener)
-                        if (error != GemError.NoError) {
-                            Util.postOnMain {
-                                showDialog(getString(R.string.route_simulation_error, GemError.getMessage(error)))
+                    {
+                        val route = routes[0]
+                        SdkCall.execute {
+                            val error = navigationService.startSimulationWithRoute(
+                                route,
+                                navigationListener,
+                                routingProgressListener,
+                            )
+                            if (error != GemError.NoError) {
+                                Util.postOnMain {
+                                    showDialog(getString(R.string.route_simulation_error, GemError.getMessage(error)))
+                                }
                             }
                         }
                     }
-                }
                 else ->
-                {
-                    // There was a problem at computing the routing operation.
-                    showDialog(getString(R.string.routing_error, GemError.getMessage(errorCode, this)))
-                }
+                    {
+                        // There was a problem at computing the routing operation.
+                        showDialog(getString(R.string.routing_error, GemError.getMessage(errorCode, this)))
+                    }
             }
         },
     )
@@ -304,7 +307,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         navInstr: NavigationInstruction,
         width: Int,
         height: Int,
-        sameImage: TSameImage
+        sameImage: TSameImage,
     ): Bitmap? {
         if (!navInstr.hasNextTurnInfo()) return null
         if ((navInstr.nextTurnDetails?.abstractGeometryImage?.uid ?: 0) == lastTurnImageId) {

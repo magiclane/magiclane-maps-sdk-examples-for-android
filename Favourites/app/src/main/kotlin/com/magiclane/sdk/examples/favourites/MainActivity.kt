@@ -81,7 +81,10 @@ class MainActivity : AppCompatActivity() {
                     if (results.isNotEmpty()) {
                         landmark = results[0]
 
-                        showLocationDetailsPanel(GemUtil.formatName(landmark), GemUtil.getLandmarkDescription(landmark, true)) {
+                        showLocationDetailsPanel(
+                            GemUtil.formatName(landmark),
+                            GemUtil.getLandmarkDescription(landmark, true),
+                        ) {
                             highlightLandmarkOnMap(landmark, getFreeScreenRect(), isFavourite(landmark))
                         }
 
@@ -91,11 +94,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 else -> {
-                    showStatusMessage(getString(R.string.search_completed_with_error, GemError.getMessage(errorCode, this)))
+                    showStatusMessage(
+                        getString(R.string.search_completed_with_error, GemError.getMessage(errorCode, this)),
+                    )
                 }
             }
             EspressoIdlingResource.decrement()
-        }
+        },
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -262,7 +267,12 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun highlightLandmarkOnMap(landmark: Landmark, rect: Rect, isFavorite: Boolean, flyToLandmark: Boolean = true) = SdkCall.execute {
+    private fun highlightLandmarkOnMap(
+        landmark: Landmark,
+        rect: Rect,
+        isFavorite: Boolean,
+        flyToLandmark: Boolean = true,
+    ) = SdkCall.execute {
         binding.gemSurfaceView.mapView?.let { mapView ->
             mapView.deactivateAllHighlights()
 
@@ -278,7 +288,7 @@ class MainActivity : AppCompatActivity() {
                         contour,
                         zoomLevel = -1,
                         viewRc = rect,
-                        Animation(EAnimation.Linear, 900)
+                        Animation(EAnimation.Linear, 900),
                     )
                 }
 
@@ -299,7 +309,7 @@ class MainActivity : AppCompatActivity() {
 
                 mapView.activateHighlightLandmarks(
                     landmark,
-                    highlightSettings
+                    highlightSettings,
                 )
             } else {
                 if (flyToLandmark) {
@@ -324,18 +334,14 @@ class MainActivity : AppCompatActivity() {
 
                     mapView.activateHighlightLandmarks(
                         landmark,
-                        highlightSettings
+                        highlightSettings,
                     )
                 }
             }
         }
     }
 
-    private fun showLocationDetailsPanel(
-        title: String,
-        message: String,
-        onViewCreated: (() -> Unit)? = null
-    ) {
+    private fun showLocationDetailsPanel(title: String, message: String, onViewCreated: (() -> Unit)? = null) {
         binding.locationDetailsPanel.apply {
             this.title.text = title
             this.message.text = message

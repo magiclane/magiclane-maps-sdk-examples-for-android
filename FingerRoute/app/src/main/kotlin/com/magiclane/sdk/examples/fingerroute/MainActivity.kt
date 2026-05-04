@@ -118,7 +118,9 @@ class MainActivity : AppCompatActivity() {
                     fingerLineMarker.delPart(0)
 
                     if (fingerLineMarkerIndex > 0) {
-                        mapSurface.mapView?.preferences?.markers?.sketches(EMarkerType.Polyline)?.del(fingerLineMarkerIndex)
+                        mapSurface.mapView?.preferences?.markers?.sketches(
+                            EMarkerType.Polyline,
+                        )?.del(fingerLineMarkerIndex)
                         fingerLineMarkerIndex = -1
                     }
                 }
@@ -158,10 +160,15 @@ class MainActivity : AppCompatActivity() {
                         if (routes.isNotEmpty()) {
                             mapSurface.mapView?.presentRoute(
                                 routes[0],
-                                edgeAreaInsets = Rect(leftInset, getAppBarHeight() + mapButtonSize + mapButtonMargin + inflate, rightInset, bottomInset),
+                                edgeAreaInsets = Rect(
+                                    leftInset,
+                                    getAppBarHeight() + mapButtonSize + mapButtonMargin + inflate,
+                                    rightInset,
+                                    bottomInset,
+                                ),
                                 displayBubble = true,
                                 displayRouteName = true,
-                                displayTrafficIcon = false
+                                displayTrafficIcon = false,
                             )
                         }
                     }
@@ -184,10 +191,10 @@ class MainActivity : AppCompatActivity() {
             }
         },
         onStatusChanged = { status ->
-           if (status == ERouteStatus.WaitingInternetConnection.value) {
+            if (status == ERouteStatus.WaitingInternetConnection.value) {
                 showDialog(getString(R.string.internet_required))
-           }
-        }
+            }
+        },
     )
 
     private class ShareGPXTask(
@@ -211,7 +218,7 @@ class MainActivity : AppCompatActivity() {
                         activity,
                         activity.packageName + ".provider",
                         gpxFile,
-                    )
+                    ),
                 )
             } catch (e: Exception) {
                 GEMLog.error(this, "ShareGPXTask.doInBackground(): error = ${e.message}")
@@ -307,7 +314,9 @@ class MainActivity : AppCompatActivity() {
                                         fingerLineMarker.delPart(0)
 
                                         if (fingerLineMarkerIndex < 0) {
-                                            fingerLineMarkerIndex = mapView.preferences?.markers?.sketches(EMarkerType.Polyline)?.add(fingerLineMarker, fingerLineRenderSettings) ?: -1
+                                            fingerLineMarkerIndex = mapView.preferences?.markers?.sketches(
+                                                EMarkerType.Polyline,
+                                            )?.add(fingerLineMarker, fingerLineRenderSettings) ?: -1
                                         }
 
                                         fingerLineMarker.add(coordinates)
@@ -359,7 +368,7 @@ class MainActivity : AppCompatActivity() {
                         TopLeftButtonState.ROUTING_ON
                     } else {
                         TopLeftButtonState.ROUTING_OFF
-                    }
+                    },
                 )
             }
         }
@@ -493,7 +502,7 @@ class MainActivity : AppCompatActivity() {
                 TopLeftButtonState.ROUTING_ON, TopLeftButtonState.ROUTING_OFF -> R.drawable.touch
                 TopLeftButtonState.CANCEL_ROUTING -> R.drawable.ic_close_24
             },
-            theme
+            theme,
         )
 
         binding.topLeftButton.iconTint = ContextCompat.getColorStateList(
@@ -501,7 +510,7 @@ class MainActivity : AppCompatActivity() {
             when (state) {
                 TopLeftButtonState.ROUTING_ON, TopLeftButtonState.ROUTING_OFF -> R.color.white
                 TopLeftButtonState.CANCEL_ROUTING -> R.color.red
-            }
+            },
         )
 
         binding.topLeftButton.setBackgroundColor(
@@ -511,8 +520,8 @@ class MainActivity : AppCompatActivity() {
                     TopLeftButtonState.ROUTING_ON -> R.color.green
                     TopLeftButtonState.ROUTING_OFF -> R.color.gray
                     TopLeftButtonState.CANCEL_ROUTING -> R.color.white
-                }
-            )
+                },
+            ),
         )
     }
 
@@ -541,7 +550,7 @@ class MainActivity : AppCompatActivity() {
         // Fallback: measure the app bar layout
         binding.appBar.measure(
             View.MeasureSpec.makeMeasureSpec(binding.appBar.width, View.MeasureSpec.EXACTLY),
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
         )
         return binding.appBar.measuredHeight
     }

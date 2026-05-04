@@ -6,6 +6,7 @@
     <dimen name="button_size">50dp</dimen>
     <dimen name="big_text_size">18sp</dimen>
     <dimen name="icon_padding">20dp</dimen>
-
     <dimen name="line">2dp</dimen>
+    <dimen name="no_extra_inset">0dp</dimen>
+    <dimen name="padding_40">40dp</dimen>
 </resources>

@@ -39,17 +39,18 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/follow_cursor_button"
+            android:id="@+id/follow_gps_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/big_padding"
             android:src="@drawable/ic_baseline_gps_fixed_24"
             android:visibility="gone"
             app:backgroundTint="@color/primary"
-            app:layout_constraintBottom_toTopOf="@id/alarm_panel"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:tint="@color/on_primary"
             app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             tools:ignore="ContentDescription" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -66,7 +67,7 @@
             app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             tools:visibility="visible">
 
-            <ImageView android:id="@+id/alarm_image"
+            <com.google.android.material.imageview.ShapeableImageView android:id="@+id/alarm_image"
                 android:layout_width="@dimen/alarm_image_size"
                 android:layout_height="@dimen/alarm_image_size"
                 android:layout_gravity="center"

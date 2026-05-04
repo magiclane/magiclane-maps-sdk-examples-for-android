@@ -132,7 +132,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 SoundPlayingService.play(sound, playingListener, soundPreference)
             }
         },
-        canPlayNavigationSound = true
+        canPlayNavigationSound = true,
     )
 
     // Define a listener that will let us know the progress of the routing process.
@@ -152,7 +152,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 )
             }
         },
-        postOnMain = true
+        postOnMain = true,
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -164,8 +164,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         EspressoIdlingResource.init(this)
 
         binding.gemSurfaceView.onSdkInitSucceeded = {
-           if (SdkSettings.appAuthorization.isNullOrEmpty()) {
-               emptyApiToken = true
+            if (SdkSettings.appAuthorization.isNullOrEmpty()) {
+                emptyApiToken = true
             }
         }
 
@@ -181,13 +181,12 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         binding.gemSurfaceView.onDefaultMapViewCreated = {
             if (emptyApiToken) {
-                Util.postOnMainDelayed( {
+                Util.postOnMainDelayed({
                     showDialog(getString(R.string.missing_app_authorization)) {
                         finish()
                     }
                 }, 500)
-            }
-            else {
+            } else {
                 startSimulation()
             }
         }

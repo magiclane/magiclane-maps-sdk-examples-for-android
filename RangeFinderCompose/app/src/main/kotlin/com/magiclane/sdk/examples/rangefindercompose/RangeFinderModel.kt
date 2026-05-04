@@ -9,6 +9,7 @@ package com.magiclane.sdk.examples.rangefindercompose
 
 import android.annotation.SuppressLint
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -107,8 +108,6 @@ class RangeFinderModel : ViewModel() {
     @SuppressLint("StaticFieldLeak")
     var surfaceView: GemSurfaceView? = null
 
-    private var routesList = ArrayList<Route>()
-
     @SuppressLint("StaticFieldLeak")
     var context: Context? = null
 
@@ -124,39 +123,39 @@ class RangeFinderModel : ViewModel() {
 
     val rangeSlider = SliderInfo(
         value = mutableFloatStateOf(10f),
-        valueText = mutableStateOf("10 min"),
+        valueText = mutableStateOf(""),
         leftSide = mutableFloatStateOf(1f),
-        leftSideText = mutableStateOf("1 min"),
+        leftSideText = mutableStateOf(""),
         rightSide = mutableFloatStateOf(180f),
-        rightSideText = mutableStateOf("3 hr"),
+        rightSideText = mutableStateOf(""),
         steps = mutableIntStateOf(178),
     )
 
     val hillsFactorSlider = SliderInfo(
         value = mutableFloatStateOf(5f),
-        valueText = mutableStateOf("5"),
+        valueText = mutableStateOf(""),
         leftSide = mutableFloatStateOf(0f),
-        leftSideText = mutableStateOf("0 (avoid)"),
+        leftSideText = mutableStateOf(""),
         rightSide = mutableFloatStateOf(10f),
-        rightSideText = mutableStateOf("10 (allow))"),
+        rightSideText = mutableStateOf(""),
         steps = mutableIntStateOf(9),
     )
 
-    val transportModes = listOf("Car", "Truck", "Pedestrian", "Bicycle")
+    var transportModes: List<String> by mutableStateOf(emptyList())
 
     var selectedTransportMode: MutableState<Int> = mutableIntStateOf(0)
 
-    var selectedTransportModeText: MutableState<String> = mutableStateOf("Car")
+    var selectedTransportModeText: MutableState<String> = mutableStateOf("")
 
-    var rangeTypes: MutableList<String> = mutableListOf("Fastest", "Shortest")
+    var rangeTypes: List<String> by mutableStateOf(emptyList())
 
-    var selectedRangeTypeText: MutableState<String> = mutableStateOf("Fastest")
+    var selectedRangeTypeText: MutableState<String> = mutableStateOf("")
 
-    val bikeTypes = listOf("Road", "Cross", "City", "Mountain")
+    var bikeTypes: List<String> by mutableStateOf(emptyList())
 
     private var selectedBikeType: MutableState<Int> = mutableIntStateOf(0)
 
-    var selectedBikeTypeText: MutableState<String> = mutableStateOf("Road")
+    var selectedBikeTypeText: MutableState<String> = mutableStateOf("")
 
     val carSettings =
         VehicleSettings(
@@ -178,28 +177,52 @@ class RangeFinderModel : ViewModel() {
 
     val ranges = mutableStateListOf<Range>()
 
-    fun onMapDataReady(context: Context) {
-        this.context = context
+    fun initializeStrings(context: Context) {
+        val appContext = context.applicationContext
+        val needsInitialization = this.context !== appContext ||
+            transportModes.isEmpty() ||
+            rangeTypes.isEmpty() ||
+            bikeTypes.isEmpty() ||
+            selectedTransportModeText.value.isEmpty() ||
+            selectedRangeTypeText.value.isEmpty() ||
+            selectedBikeTypeText.value.isEmpty()
 
-        SdkCall.execute {
-            animation = Animation(EAnimation.Linear)
-            animation.duration = 900
+        this.context = appContext
 
-            colors = SdkCall.execute {
-                mutableListOf(
-                    ColorInfo(Rgba(52, 119, 235, 63), false),
-                    ColorInfo(Rgba(159, 122, 255, 63), false),
-                    ColorInfo(Rgba(195, 98, 217, 63), false),
-                    ColorInfo(Rgba(84, 73, 179, 63), false),
-                    ColorInfo(Rgba(212, 59, 156, 63), false),
-                    ColorInfo(Rgba(72, 153, 70, 63), false),
-                    ColorInfo(Rgba(237, 45, 45, 63), false),
-                    ColorInfo(Rgba(240, 160, 41, 63), false),
-                    ColorInfo(Rgba(245, 106, 47, 63), false),
-                    ColorInfo(Rgba(153, 89, 67, 63), false),
-                )
-            } ?: MutableList(maxItems) { ColorInfo() }
+        if (!needsInitialization) {
+            return
         }
+
+        transportModes = transportModeLabels()
+        bikeTypes = bikeTypeLabels()
+        rangeTypes = rangeTypeLabels(selectedTransportMode.value)
+        selectedTransportModeText.value = transportModeLabel(selectedTransportMode.value)
+        selectedRangeTypeText.value = routeTypeLabel(selectedVehicleSettings.rangeType.value)
+        selectedBikeTypeText.value = bikeTypeLabel(selectedBikeType.value)
+        updateRangeSliderForSelectedRouteType()
+        updateHillsFactorSliderTexts()
+    }
+
+    fun onSdkInitSucceeded(context: Context) {
+        initializeStrings(context)
+
+        animation = Animation(EAnimation.Linear)
+        animation.duration = 900
+
+        colors = SdkCall.execute {
+            mutableListOf(
+                ColorInfo(Rgba(52, 119, 235, 63), false),
+                ColorInfo(Rgba(159, 122, 255, 63), false),
+                ColorInfo(Rgba(195, 98, 217, 63), false),
+                ColorInfo(Rgba(84, 73, 179, 63), false),
+                ColorInfo(Rgba(212, 59, 156, 63), false),
+                ColorInfo(Rgba(72, 153, 70, 63), false),
+                ColorInfo(Rgba(237, 45, 45, 63), false),
+                ColorInfo(Rgba(240, 160, 41, 63), false),
+                ColorInfo(Rgba(245, 106, 47, 63), false),
+                ColorInfo(Rgba(153, 89, 67, 63), false),
+            )
+        } ?: MutableList(maxItems) { ColorInfo() }
     }
 
     private fun addRouteToMap(route: Route, routeRenderSettings: RouteRenderSettings) {
@@ -246,7 +269,7 @@ class RangeFinderModel : ViewModel() {
     fun didTapAddRangeButton() {
         // check to see if more ranges can be generated on map
         if (ranges.size >= maxItems) {
-            errorMessage = String.format("Only a maximum of %d ranges can be generated!", maxItems)
+            errorMessage = getString(R.string.max_ranges_generated, maxItems)
         } else {
             val transportMode: ERouteTransportMode = EnumHelp.fromInt(selectedTransportMode.value)
             val routeType: ERouteType = EnumHelp.fromInt(selectedVehicleSettings.rangeType.value)
@@ -287,12 +310,9 @@ class RangeFinderModel : ViewModel() {
 
     fun didSelectNewTransportMode(transportMode: Int) {
         selectedTransportMode.value = transportMode
+        selectedTransportModeText.value = transportModeLabel(transportMode)
 
-        rangeTypes = if (selectedTransportMode.value == ERouteTransportMode.Bicycle.value) {
-            mutableListOf("Fastest", "Economic")
-        } else {
-            mutableListOf("Fastest", "Shortest")
-        }
+        rangeTypes = rangeTypeLabels(selectedTransportMode.value)
 
         val oldRangeTypeValue = selectedVehicleSettings.rangeType.value
 
@@ -315,12 +335,7 @@ class RangeFinderModel : ViewModel() {
                 }
         }
 
-        selectedRangeTypeText.value = when (selectedVehicleSettings.rangeType.value) {
-            ERouteType.Fastest.value -> "Fastest"
-            ERouteType.Shortest.value -> "Shortest"
-            ERouteType.Economic.value -> "Economic"
-            else -> ""
-        }
+        selectedRangeTypeText.value = routeTypeLabel(selectedVehicleSettings.rangeType.value)
 
         if (oldRangeTypeValue != selectedVehicleSettings.rangeType.value) {
             didSelectNewRangeType(selectedVehicleSettings.rangeType.value)
@@ -338,42 +353,13 @@ class RangeFinderModel : ViewModel() {
             rangeType
         }
 
-        when (selectedVehicleSettings.rangeType.value) {
-            ERouteType.Fastest.value ->
-                {
-                    rangeSlider.value.value = 10f
-                    rangeSlider.valueText.value = "10 min"
-                    rangeSlider.leftSide.value = 1f
-                    rangeSlider.leftSideText.value = "1 min"
-                    rangeSlider.rightSide.value = 180f
-                    rangeSlider.rightSideText.value = "3 hr"
-                    rangeSlider.steps.value = 178
-                }
-            ERouteType.Shortest.value ->
-                {
-                    rangeSlider.value.value = 1000f
-                    rangeSlider.valueText.value = "1.0 km"
-                    rangeSlider.leftSide.value = 100f
-                    rangeSlider.leftSideText.value = "100 m"
-                    rangeSlider.rightSide.value = 200000f
-                    rangeSlider.rightSideText.value = "200.0 km"
-                    rangeSlider.steps.value = 1998
-                }
-            ERouteType.Economic.value ->
-                {
-                    rangeSlider.value.value = 100f
-                    rangeSlider.valueText.value = "100 wh"
-                    rangeSlider.leftSide.value = 10f
-                    rangeSlider.leftSideText.value = "10 wh"
-                    rangeSlider.rightSide.value = 2000f
-                    rangeSlider.rightSideText.value = "2000 wh"
-                    rangeSlider.steps.value = 198
-                }
-        }
+        selectedRangeTypeText.value = routeTypeLabel(selectedVehicleSettings.rangeType.value)
+        updateRangeSliderForSelectedRouteType()
     }
 
     fun didSelectNewBikeType(bikeType: Int) {
         selectedBikeType.value = bikeType
+        selectedBikeTypeText.value = bikeTypeLabel(bikeType)
     }
 
     fun didChangeRangeSliderPosition(position: Float) {
@@ -383,15 +369,15 @@ class RangeFinderModel : ViewModel() {
                 {
                     val minutes = (position + 0.5f).toInt()
                     rangeSlider.valueText.value = if (minutes < 60) {
-                        String.format("%d %s", minutes, "min")
+                        getString(R.string.duration_minutes, minutes)
                     } else {
                         val hours = minutes / 60
                         val min = minutes % 60
 
                         if (min > 0) {
-                            String.format("%d:%02d %s", hours, min, "hr")
+                            getString(R.string.duration_hours_minutes, hours, min)
                         } else {
-                            String.format("%d %s", hours, "hr")
+                            getString(R.string.duration_hours, hours)
                         }
                     }
                 }
@@ -401,10 +387,9 @@ class RangeFinderModel : ViewModel() {
                 }
             ERouteType.Economic.value ->
                 {
-                    rangeSlider.valueText.value = String.format(
-                        "%d %s",
+                    rangeSlider.valueText.value = getString(
+                        R.string.energy_watt_hours,
                         (position + 0.5f).toInt(),
-                        "wh",
                     )
                 }
         }
@@ -417,10 +402,10 @@ class RangeFinderModel : ViewModel() {
 
     private fun getDistanceText(meters: Int): String {
         return if (meters < 1000) {
-            String.format("%d %s", meters, "m")
+            getString(R.string.distance_meters, meters)
         } else {
             val kilometers = meters.toDouble() / 1000
-            String.format("%.1f %s", kilometers, "km")
+            getString(R.string.distance_kilometers, kilometers)
         }
     }
 
@@ -533,6 +518,97 @@ class RangeFinderModel : ViewModel() {
             )
         } else {
             errorMessage = GemError.getMessage(errorCode)
+        }
+    }
+
+    private fun updateRangeSliderForSelectedRouteType() {
+        when (selectedVehicleSettings.rangeType.value) {
+            ERouteType.Fastest.value -> {
+                rangeSlider.value.value = 10f
+                rangeSlider.valueText.value = getString(R.string.duration_minutes, 10)
+                rangeSlider.leftSide.value = 1f
+                rangeSlider.leftSideText.value = getString(R.string.duration_minutes, 1)
+                rangeSlider.rightSide.value = 180f
+                rangeSlider.rightSideText.value = getString(R.string.duration_hours, 3)
+                rangeSlider.steps.value = 178
+            }
+
+            ERouteType.Shortest.value -> {
+                rangeSlider.value.value = 1000f
+                rangeSlider.valueText.value = getString(R.string.distance_kilometers, 1.0)
+                rangeSlider.leftSide.value = 100f
+                rangeSlider.leftSideText.value = getString(R.string.distance_meters, 100)
+                rangeSlider.rightSide.value = 200000f
+                rangeSlider.rightSideText.value = getString(R.string.distance_kilometers, 200.0)
+                rangeSlider.steps.value = 1998
+            }
+
+            ERouteType.Economic.value -> {
+                rangeSlider.value.value = 100f
+                rangeSlider.valueText.value = getString(R.string.energy_watt_hours, 100)
+                rangeSlider.leftSide.value = 10f
+                rangeSlider.leftSideText.value = getString(R.string.energy_watt_hours, 10)
+                rangeSlider.rightSide.value = 2000f
+                rangeSlider.rightSideText.value = getString(R.string.energy_watt_hours, 2000)
+                rangeSlider.steps.value = 198
+            }
+        }
+    }
+
+    private fun updateHillsFactorSliderTexts() {
+        hillsFactorSlider.valueText.value = hillsFactorSlider.value.value.toInt().toString()
+        hillsFactorSlider.leftSideText.value = getString(R.string.hills_factor_avoid)
+        hillsFactorSlider.rightSideText.value = getString(R.string.hills_factor_allow)
+    }
+
+    private fun transportModeLabels() = listOf(
+        getString(R.string.transport_mode_car),
+        getString(R.string.transport_mode_truck),
+        getString(R.string.transport_mode_pedestrian),
+        getString(R.string.transport_mode_bicycle),
+    )
+
+    private fun rangeTypeLabels(transportMode: Int) = if (transportMode == ERouteTransportMode.Bicycle.value) {
+        listOf(
+            getString(R.string.route_type_fastest),
+            getString(R.string.route_type_economic),
+        )
+    } else {
+        listOf(
+            getString(R.string.route_type_fastest),
+            getString(R.string.route_type_shortest),
+        )
+    }
+
+    private fun bikeTypeLabels() = listOf(
+        getString(R.string.bike_type_road),
+        getString(R.string.bike_type_cross),
+        getString(R.string.bike_type_city),
+        getString(R.string.bike_type_mountain),
+    )
+
+    private fun transportModeLabel(transportMode: Int) = when (transportMode) {
+        ERouteTransportMode.Lorry.value -> getString(R.string.transport_mode_truck)
+        ERouteTransportMode.Pedestrian.value -> getString(R.string.transport_mode_pedestrian)
+        ERouteTransportMode.Bicycle.value -> getString(R.string.transport_mode_bicycle)
+        else -> getString(R.string.transport_mode_car)
+    }
+
+    private fun routeTypeLabel(rangeType: Int) = when (rangeType) {
+        ERouteType.Fastest.value -> getString(R.string.route_type_fastest)
+        ERouteType.Shortest.value -> getString(R.string.route_type_shortest)
+        ERouteType.Economic.value -> getString(R.string.route_type_economic)
+        else -> ""
+    }
+
+    private fun bikeTypeLabel(bikeType: Int) = bikeTypes.getOrElse(bikeType) { "" }
+
+    private fun getString(@StringRes resId: Int, vararg formatArgs: Any): String {
+        val appContext = context ?: return ""
+        return if (formatArgs.isEmpty()) {
+            appContext.getString(resId)
+        } else {
+            appContext.getString(resId, *formatArgs)
         }
     }
 }

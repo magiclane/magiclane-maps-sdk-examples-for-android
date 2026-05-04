@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity() {
 
             mapView.activateHighlightLandmarks(
                 landmark,
-                highlightSettings
+                highlightSettings,
             )
         }
     }

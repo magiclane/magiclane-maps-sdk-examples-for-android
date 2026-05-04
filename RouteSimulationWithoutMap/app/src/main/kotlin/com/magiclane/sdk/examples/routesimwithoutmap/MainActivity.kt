@@ -28,9 +28,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
-import androidx.core.view.isVisible
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -139,7 +139,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                         if (root.isVisible) {
                             navSpeedLimitSign.root.isVisible = currentSpeedLimit.isNotEmpty()
                             if (currentSpeedLimit.isNotEmpty()) {
-                                val defaultTextSize = resources.getDimensionPixelSize(R.dimen.nav_speed_panel_text_size).toFloat()
+                                val defaultTextSize = resources.getDimensionPixelSize(
+                                    R.dimen.nav_speed_panel_text_size,
+                                ).toFloat()
                                 val textSize = if (currentSpeedLimit.length >= 3) defaultTextSize * 0.8f else defaultTextSize
                                 navSpeedLimitSign.navCurrentSpeedLimit.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize)
                                 navSpeedLimitSign.navCurrentSpeedLimit.text = currentSpeedLimit
@@ -285,7 +287,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             binding.navigationTopPanel.turnDistanceUnit.text = instrDistanceUnit
 
             val turnDistSize = getTextWidth(binding.navigationTopPanel.turnDistance) +
-                               getTextWidth(binding.navigationTopPanel.turnDistanceUnit)
+                getTextWidth(binding.navigationTopPanel.turnDistanceUnit)
             val turnWidth = max(max(turnDistSize, turnImageSize), turnMinWidth)
 
             // sign post info
@@ -670,9 +672,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }
 
         SdkSettings.onApiTokenRejected = {
-            showDialog("The provided token is invalid. " +
-                             "If you don't have another token, " +
-                             "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.")
+            showDialog(
+                "The provided token is invalid. " +
+                    "If you don't have another token, " +
+                    "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.",
+            )
         }
 
         // This step of initialization is mandatory if you want to use the SDK without a map.
@@ -974,8 +978,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             .toInt()
     }
 
-    fun getTextWidth(textView: TextView, maxWidth: Int = Short.MAX_VALUE.toInt()): Int
-    {
+    fun getTextWidth(textView: TextView, maxWidth: Int = Short.MAX_VALUE.toInt()): Int {
         val widthMeasureSpec: Int =
             View.MeasureSpec.makeMeasureSpec(maxWidth, View.MeasureSpec.AT_MOST)
         val heightMeasureSpec: Int =

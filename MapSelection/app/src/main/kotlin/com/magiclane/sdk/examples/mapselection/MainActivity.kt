@@ -24,9 +24,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
-import androidx.core.view.isVisible
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -137,8 +137,7 @@ class MainActivity : AppCompatActivity() {
             val position = PositionService.position
             if (position?.isValid() == true) {
                 Util.postOnMain { enableGPSButton() }
-            }
-            else {
+            } else {
                 positionListener = PositionListener {
                     if (!it.isValid()) return@PositionListener
 
@@ -158,7 +157,10 @@ class MainActivity : AppCompatActivity() {
 
                 // Set GPS button if location permission is granted, otherwise request permission
                 SdkCall.execute {
-                    val hasLocationPermission = PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    val hasLocationPermission = PermissionsHelper.hasPermission(
+                        this,
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                    )
                     if (!hasLocationPermission) {
                         requestPermissions(this)
                     }
@@ -184,20 +186,29 @@ class MainActivity : AppCompatActivity() {
                             }
 
                             val myPosition = mapView.cursorSelectionSceneObject
-                            if ((myPosition != null) && isSameMapScene(myPosition, MapSceneObject.getDefPositionTracker().first!!)) {
+                            if ((myPosition != null) && isSameMapScene(
+                                    myPosition,
+                                    MapSceneObject.getDefPositionTracker().first!!,
+                                )
+                            ) {
                                 myPosition.coordinates?.let {
                                     val description = getLandmarkDescription(mapView, it, true)
 
                                     val landmark = Landmark("", it)
-                                    showLocationDetails(ContextCompat.getDrawable(this, R.drawable.ic_current_location_arrow)?.toBitmap(imageSize, imageSize),
-                                                        getString(R.string.my_position),
-                                                         description,
-                                                         onViewCreated = {
-                                                            highlightLandmarkOnMap(landmark)
-                                                         },
-                                                         onViewClosed = {
-                                                            deactivateHighlights()
-                                                         })
+                                    showLocationDetails(
+                                        ContextCompat.getDrawable(
+                                            this,
+                                            R.drawable.ic_current_location_arrow,
+                                        )?.toBitmap(imageSize, imageSize),
+                                        getString(R.string.my_position),
+                                        description,
+                                        onViewCreated = {
+                                            highlightLandmarkOnMap(landmark)
+                                        },
+                                        onViewClosed = {
+                                            deactivateHighlights()
+                                        },
+                                    )
 
                                     return@execute
                                 }
@@ -214,16 +225,14 @@ class MainActivity : AppCompatActivity() {
                             val landmarks = mapView.cursorSelectionLandmarks
                             if (!landmarks.isNullOrEmpty()) {
                                 landmark = landmarks[0]
-                            }
-                            else {
+                            } else {
                                 val overlays = mapView.cursorSelectionOverlayItems
                                 if (!overlays.isNullOrEmpty()) {
                                     val overlay = overlays[0]
 
                                     if (overlay.overlayInfo?.uid == ECommonOverlayId.Safety.value) {
                                         openWebActivity(overlay.getPreviewUrl(Size()).toString())
-                                    }
-                                    else {
+                                    } else {
                                         overlay.coordinates?.let {
                                             val name = when {
                                                 !overlay.name.isNullOrEmpty() -> overlay.name!!
@@ -234,7 +243,7 @@ class MainActivity : AppCompatActivity() {
                                             landmark = Landmark(
                                                 name = name,
                                                 latitude = it.latitude,
-                                                longitude = it.longitude
+                                                longitude = it.longitude,
                                             ).apply {
                                                 image = overlay.image
                                                 description = getLandmarkDescription(mapView, it)
@@ -246,15 +255,17 @@ class MainActivity : AppCompatActivity() {
 
                             landmark?.let { landmark ->
                                 val details = GemUtil.pairFormatLandmarkDetails(landmark, true)
-                                showLocationDetails(landmark.image?.asBitmap(imageSize, imageSize),
-                                                    details.first,
-                                                    details.second,
-                                                    onViewCreated = {
-                                                        highlightLandmarkOnMap(landmark)
-                                                    },
-                                                    onViewClosed = {
-                                                        deactivateHighlights()
-                                                    })
+                                showLocationDetails(
+                                    landmark.image?.asBitmap(imageSize, imageSize),
+                                    details.first,
+                                    details.second,
+                                    onViewCreated = {
+                                        highlightLandmarkOnMap(landmark)
+                                    },
+                                    onViewClosed = {
+                                        deactivateHighlights()
+                                    },
+                                )
                             }
                         }
                     }
@@ -267,7 +278,8 @@ class MainActivity : AppCompatActivity() {
                             val streets = mapView.cursorSelectionStreets
                             if (!streets.isNullOrEmpty()) {
                                 val street = streets[0]
-                                showLocationDetails(street.image?.asBitmap(imageSize, imageSize),
+                                showLocationDetails(
+                                    street.image?.asBitmap(imageSize, imageSize),
                                     GemUtil.formatName(street),
                                     GemUtil.getLandmarkDescription(street, true),
                                     onViewCreated = {
@@ -275,7 +287,8 @@ class MainActivity : AppCompatActivity() {
                                     },
                                     onViewClosed = {
                                         deactivateHighlights()
-                                    })
+                                    },
+                                )
                             }
                         }
                     }
@@ -366,11 +379,13 @@ class MainActivity : AppCompatActivity() {
             first.orientation?.z == second.orientation?.z &&
             first.orientation?.w == second.orientation?.w
 
-    private fun showLocationDetails(image: Bitmap?,
-                                    text: String,
-                                    description: String,
-                                    onViewCreated: (() -> Unit)? = null,
-                                    onViewClosed: (() -> Unit)? = null) = Util.postOnMain {
+    private fun showLocationDetails(
+        image: Bitmap?,
+        text: String,
+        description: String,
+        onViewCreated: (() -> Unit)? = null,
+        onViewClosed: (() -> Unit)? = null,
+    ) = Util.postOnMain {
         binding.apply {
             name.text = text
             if (description.isNotEmpty()) {
@@ -500,37 +515,41 @@ class MainActivity : AppCompatActivity() {
     private fun selectRoute(route: Route, presentRoutes: Boolean = true) {
         gemSurfaceView.mapView?.apply {
             route.apply {
-                showLocationDetails(ContextCompat.getDrawable(this@MainActivity, if (isDarkThemeOn()) R.drawable.ic_baseline_route_24_night else R.drawable.ic_baseline_route_24)?.toBitmap(imageSize, imageSize),
-                                    "From London to Paris",
-                                    "${route.getRtd()}, ${route.getRtt()}",
-                                     onViewCreated = {
-                                         deactivateAllHighlights()
-                                         if (presentRoutes) {
-                                             binding.locationDetailsContainer.post {
-                                                 val mapFreeSpace = getMapFreeSpace()
-                                                 val edgeAreaInsets = getEdgeAreaInsets(mapFreeSpace.rect)
-                                                 SdkCall.execute {
-                                                     gemSurfaceView.mapView?.presentRoutes(
-                                                         routesList,
-                                                         displayBubble = true,
-                                                         animation = Animation(EAnimation.Linear, 900),
-                                                         edgeAreaInsets = edgeAreaInsets,
-                                                     )
-                                                 }
-                                             }
-                                         }
-                                         else {
-                                             centerOnRoutes(
-                                                 routesList,
-                                                 ERouteDisplayMode.Full,
-                                                 getMapFreeSpace().rect,
-                                                 Animation(EAnimation.Linear, 900)
-                                             )
-                                         }
-                                    },
-                                    onViewClosed = {
-                                        deactivateAllHighlights()
-                                    })
+                showLocationDetails(
+                    ContextCompat.getDrawable(
+                        this@MainActivity,
+                        if (isDarkThemeOn()) R.drawable.ic_baseline_route_24_night else R.drawable.ic_baseline_route_24,
+                    )?.toBitmap(imageSize, imageSize),
+                    "From London to Paris",
+                    "${route.getRtd()}, ${route.getRtt()}",
+                    onViewCreated = {
+                        deactivateAllHighlights()
+                        if (presentRoutes) {
+                            binding.locationDetailsContainer.post {
+                                val mapFreeSpace = getMapFreeSpace()
+                                val edgeAreaInsets = getEdgeAreaInsets(mapFreeSpace.rect)
+                                SdkCall.execute {
+                                    gemSurfaceView.mapView?.presentRoutes(
+                                        routesList,
+                                        displayBubble = true,
+                                        animation = Animation(EAnimation.Linear, 900),
+                                        edgeAreaInsets = edgeAreaInsets,
+                                    )
+                                }
+                            }
+                        } else {
+                            centerOnRoutes(
+                                routesList,
+                                ERouteDisplayMode.Full,
+                                getMapFreeSpace().rect,
+                                Animation(EAnimation.Linear, 900),
+                            )
+                        }
+                    },
+                    onViewClosed = {
+                        deactivateAllHighlights()
+                    },
+                )
             }
             preferences?.routes?.mainRoute = route
         }
@@ -553,7 +572,7 @@ class MainActivity : AppCompatActivity() {
                     contour,
                     zoomLevel = -1,
                     viewRc = rect,
-                    Animation(EAnimation.Linear, 900)
+                    Animation(EAnimation.Linear, 900),
                 )
 
                 highlightSettings = HighlightRenderSettings(
@@ -585,7 +604,7 @@ class MainActivity : AppCompatActivity() {
 
             mapView.activateHighlightLandmarks(
                 landmark,
-                highlightSettings
+                highlightSettings,
             )
         }
     }
@@ -670,7 +689,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     @SuppressLint("DefaultLocale")
-    private fun getLandmarkDescription(mapView: MapView, coordinates: Coordinates, isMyPosition: Boolean = false): String {
+    private fun getLandmarkDescription(
+        mapView: MapView,
+        coordinates: Coordinates,
+        isMyPosition: Boolean = false,
+    ): String {
         var description = ""
         var descriptionContainsLatLon = false
 

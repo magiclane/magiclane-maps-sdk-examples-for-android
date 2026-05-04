@@ -363,7 +363,7 @@ class MainActivity : AppCompatActivity() {
         fun clear() {
             mLeDevices.clear()
         }
-        */
+         */
     }
 
     private fun startBLEScan() {

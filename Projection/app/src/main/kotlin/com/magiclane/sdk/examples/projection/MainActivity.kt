@@ -8,31 +8,42 @@
 package com.magiclane.sdk.examples.projection
 
 import android.annotation.SuppressLint
-import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageButton
 import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.core.ImageDatabase
 import com.magiclane.sdk.core.ProgressListener
+import com.magiclane.sdk.core.Rect
+import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
+import com.magiclane.sdk.d3scene.EHighlightOptions
+import com.magiclane.sdk.d3scene.HighlightRenderSettings
+import com.magiclane.sdk.d3scene.MapView
 import com.magiclane.sdk.examples.projection.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.projection.databinding.DialogLayoutBinding
+import com.magiclane.sdk.places.Coordinates
+import com.magiclane.sdk.places.EAddressField
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.projection.EHemisphere
 import com.magiclane.sdk.projection.EProjectionType
@@ -45,22 +56,36 @@ import com.magiclane.sdk.projection.ProjectionService
 import com.magiclane.sdk.projection.ProjectionUTM
 import com.magiclane.sdk.projection.ProjectionW3W
 import com.magiclane.sdk.projection.ProjectionWGS84
+import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
+import com.magiclane.sdk.util.SdkImages
 import com.magiclane.sdk.util.Util
 import java.util.Locale
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-
+    private var freeSpacePaddingPx = 0
     private lateinit var projectionAdapter: ProjectionAdapter
+
+    companion object {
+        private const val ANIMATION_DURATION_MS = 900
+        private const val HIGHLIGHT_ALPHA = 0.75
+        private const val HIGHLIGHT_IMAGE_SIZE = 6.0
+        private const val UNKNOWN_LANDMARK_NAME = "Unknown"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Keep status bar symbols/icons white.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         EspressoIdlingResource.increment()
+
         projectionAdapter = ProjectionAdapter(mutableListOf())
         binding.projectionsList.also {
             it.layoutManager = LinearLayoutManager(this)
@@ -74,90 +99,126 @@ class MainActivity : AppCompatActivity() {
             it.itemAnimator = null
         }
 
-        findViewById<ImageButton>(R.id.close_button).apply {
-            setOnClickListener {
-                binding.projectionContainer.visibility = View.GONE
+        registerSdkListeners()
+
+        if (!Util.isInternetConnected(this)) {
+            showDialog(getString(R.string.internet_required))
+        }
+
+        freeSpacePaddingPx = resources.getDimension(R.dimen.padding_40).toInt()
+
+        onBackPressedDispatcher.addCallback(this) {
+            if (binding.projectionContainer.isVisible) {
+                binding.projectionContainer.isVisible = false
+                deactivateHighlights()
+                return@addCallback
+            }
+
+            finish()
+        }
+    }
+
+    private fun registerSdkListeners() {
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnUiThread {
+                showDialog(errorMessage) { finish() }
             }
         }
 
-        setConstraints(resources.configuration.orientation)
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
 
-        val onReady = {
-            EspressoIdlingResource.decrement()
-            binding.hint.visibility = View.VISIBLE
-            binding.gemSurfaceView.mapView?.onTouch = { xy ->
-                // xy are the coordinates of the touch event
-                EspressoIdlingResource.increment()
-                SdkCall.execute {
-                    // tell the map view where the touch event happened
-                    binding.gemSurfaceView.mapView?.cursorScreenPosition = xy
+                EspressoIdlingResource.decrement()
+                binding.hint.visibility = View.VISIBLE
 
-                    val centerXy = binding.gemSurfaceView.mapView?.viewport?.center
+                binding.gemSurfaceView.mapView?.let { mapView ->
+                    mapView.onTouch = { xy ->
+                        // xy are the coordinates of the touch event
+                        EspressoIdlingResource.increment()
+                        SdkCall.execute {
+                            // tell the map view where the touch event happened
+                            mapView.cursorScreenPosition = xy
 
-                    val landmarks = binding.gemSurfaceView.mapView?.cursorSelectionLandmarks
-                    if (!landmarks.isNullOrEmpty()) {
-                        val landmark = landmarks[0]
-                        landmark.coordinates?.let {
-                            binding.gemSurfaceView.mapView?.centerOnCoordinates(
-                                coords = it,
-                                zoomLevel = -1,
-                                xy = centerXy,
-                                animation = Animation(EAnimation.Linear),
-                                mapAngle = Double.MAX_VALUE,
-                                viewAngle = Double.MAX_VALUE,
-                            )
+                            val landmark = getSelectedLandmark(mapView)
+                            landmark?.let {
+                                Util.postOnMain { binding.hint.visibility = View.GONE }
+                                showProjectionsForLandmark(
+                                    it,
+                                    onViewCreated = {
+                                        highlightLandmarkOnMap(it)
+                                    },
+                                    onViewClosed = {
+                                        deactivateHighlights()
+                                    },
+                                )
+                            }
                         }
-                        Util.postOnMain { binding.hint.visibility = View.GONE }
-                        showProjectionsForLandmark(landmark)
                     }
                 }
             }
         }
-        if (SdkSettings.isMapDataReady) {
-            onReady()
-        } else {
-            SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-                if (!isReady) return@onMapDataReady
-                onReady()
-            }
-        }
 
         SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
+            runOnUiThread {
+                showDialog(getString(R.string.token_rejected_message))
+            }
+        }
+    }
+
+    private fun getSelectedLandmark(mapView: MapView): Landmark? {
+        val selectedLandmark = mapView.cursorSelectionLandmarks?.firstOrNull()
+        if (selectedLandmark != null) {
+            return selectedLandmark
         }
 
-        if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
-        }
+        val selectedOverlay = mapView.cursorSelectionOverlayItems?.firstOrNull() ?: return null
+        val overlayCoordinates = selectedOverlay.coordinates ?: return null
 
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
+        val overlayName =
+            when {
+                !selectedOverlay.name.isNullOrEmpty() -> selectedOverlay.name!!
+                !selectedOverlay.overlayInfo?.name.isNullOrEmpty() -> selectedOverlay.overlayInfo?.name!!
+                else -> UNKNOWN_LANDMARK_NAME
+            }
+
+        return Landmark(
+            name = overlayName,
+            latitude = overlayCoordinates.latitude,
+            longitude = overlayCoordinates.longitude,
+        ).apply {
+            image = selectedOverlay.image
+            description = getLandmarkDescription(mapView, overlayCoordinates)
         }
+    }
+
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
+        clearSdkListeners()
+
         // Deinitialize the SDK.
         GemSdk.release()
+        exitProcess(0)
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-
-        setConstraints(newConfig.orientation)
-    }
-
-    private fun showProjectionsForLandmark(landmark: Landmark) {
+    @SuppressLint("NotifyDataSetChanged")
+    private fun showProjectionsForLandmark(
+        landmark: Landmark,
+        onViewCreated: (() -> Unit)? = null,
+        onViewClosed: (() -> Unit)? = null,
+    ) {
         if (landmark.coordinates == null) {
             return
         }
+
+        val details = GemUtil.pairFormatLandmarkDetails(landmark, true)
 
         val wgs84Projection = ProjectionWGS84(landmark.coordinates!!)
         projectionAdapter.dataSet.apply {
@@ -201,171 +262,188 @@ class MainActivity : AppCompatActivity() {
         }
 
         Util.postOnMain {
-            binding.landmarkName.text = SdkCall.execute { landmark.name }
+            binding.landmarkName.text = details.first
+            if (details.second.isNotEmpty()) {
+                binding.landmarkDescription.text = details.second
+                binding.landmarkDescription.visibility = View.VISIBLE
+            } else {
+                binding.landmarkDescription.visibility = View.GONE
+            }
+
             binding.projectionContainer.visibility = View.VISIBLE
+
+            projectionAdapter.notifyDataSetChanged()
+
+            // Measure height after it's shown
+            binding.root.post {
+                onViewCreated?.invoke()
+            }
+
+            binding.closeButton.apply {
+                setOnClickListener {
+                    binding.projectionContainer.visibility = View.GONE
+                    onViewClosed?.invoke()
+                }
+            }
         }
 
         EspressoIdlingResource.decrement()
     }
 
-    private fun setConstraints(orientation: Int) {
-        val rootView = binding.rootView
-        when (orientation) {
-            Configuration.ORIENTATION_LANDSCAPE ->
-                {
-                    ConstraintSet().apply {
-                        clone(rootView)
+    private fun highlightLandmarkOnMap(landmark: Landmark) = SdkCall.execute {
+        binding.gemSurfaceView.mapView?.let { mapView ->
+            val rect = getFreeSpaceRect()
 
-                        connect(
-                            R.id.projection_container,
-                            ConstraintSet.START,
-                            ConstraintSet.PARENT_ID,
-                            ConstraintSet.START,
-                        )
-                        connect(
-                            R.id.projection_container,
-                            ConstraintSet.END,
-                            R.id.gem_surface_view,
-                            ConstraintSet.START,
-                        )
-                        connect(
-                            R.id.projection_container,
-                            ConstraintSet.TOP,
-                            R.id.toolbar,
-                            ConstraintSet.BOTTOM,
-                        )
-                        connect(
-                            R.id.projection_container,
-                            ConstraintSet.BOTTOM,
-                            ConstraintSet.PARENT_ID,
-                            ConstraintSet.BOTTOM,
-                        )
+            mapView.deactivateAllHighlights()
 
-                        connect(
-                            R.id.gem_surface_view,
-                            ConstraintSet.START,
-                            R.id.projection_container,
-                            ConstraintSet.END,
-                        )
-                        connect(
-                            R.id.gem_surface_view,
-                            ConstraintSet.END,
-                            ConstraintSet.PARENT_ID,
-                            ConstraintSet.END,
-                        )
-                        connect(
-                            R.id.gem_surface_view,
-                            ConstraintSet.TOP,
-                            ConstraintSet.PARENT_ID,
-                            ConstraintSet.TOP,
-                        )
-                        connect(
-                            R.id.gem_surface_view,
-                            ConstraintSet.BOTTOM,
-                            ConstraintSet.PARENT_ID,
-                            ConstraintSet.BOTTOM,
-                        )
+            landmark.image = ImageDatabase().getImageById(SdkImages.Core.Search_Results_Pin.value)
 
-                        applyTo(rootView)
-                    }
+            val contour = landmark.getContourGeographicArea()
+            val highlightSettings: HighlightRenderSettings
 
-                    binding.projectionContainer.layoutParams.apply {
-                        width = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
-                        height = 0
-                    }
+            @Suppress("VerboseNullabilityAndEmptiness")
+            if ((contour != null) && !contour.isEmpty()) {
+                mapView.centerOnRectArea(
+                    contour,
+                    zoomLevel = -1,
+                    viewRc = rect,
+                    Animation(EAnimation.Linear, ANIMATION_DURATION_MS),
+                )
 
-                    binding.gemSurfaceView.layoutParams.apply {
-                        width = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
-                        height = ConstraintLayout.LayoutParams.MATCH_PARENT
-                    }
+                highlightSettings = HighlightRenderSettings(
+                    EHighlightOptions.ShowContour.value or EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
+                    Rgba(255, 98, 0, 255),
+                    Rgba(255, 98, 0, 255),
+                    HIGHLIGHT_ALPHA,
+                ).apply {
+                    imageSize = HIGHLIGHT_IMAGE_SIZE
+                }
+            } else {
+                highlightSettings = HighlightRenderSettings(
+                    EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
+                ).apply {
+                    imageSize = HIGHLIGHT_IMAGE_SIZE
                 }
 
-            Configuration.ORIENTATION_PORTRAIT ->
-                {
-                    ConstraintSet().apply {
-                        clone(rootView)
-
-                        connect(
-                            R.id.projection_container,
-                            ConstraintSet.START,
-                            ConstraintSet.PARENT_ID,
-                            ConstraintSet.START,
-                        )
-                        connect(
-                            R.id.projection_container,
-                            ConstraintSet.END,
-                            ConstraintSet.PARENT_ID,
-                            ConstraintSet.END,
-                        )
-                        connect(
-                            R.id.projection_container,
-                            ConstraintSet.TOP,
-                            R.id.guideline,
-                            ConstraintSet.BOTTOM,
-                        )
-                        connect(
-                            R.id.projection_container,
-                            ConstraintSet.BOTTOM,
-                            ConstraintSet.PARENT_ID,
-                            ConstraintSet.BOTTOM,
-                        )
-
-                        connect(
-                            R.id.gem_surface_view,
-                            ConstraintSet.START,
-                            ConstraintSet.PARENT_ID,
-                            ConstraintSet.START,
-                        )
-                        connect(
-                            R.id.gem_surface_view,
-                            ConstraintSet.END,
-                            ConstraintSet.PARENT_ID,
-                            ConstraintSet.END,
-                        )
-                        connect(
-                            R.id.gem_surface_view,
-                            ConstraintSet.TOP,
-                            ConstraintSet.PARENT_ID,
-                            ConstraintSet.TOP,
-                        )
-                        connect(
-                            R.id.gem_surface_view,
-                            ConstraintSet.BOTTOM,
-                            ConstraintSet.PARENT_ID,
-                            ConstraintSet.BOTTOM,
-                        )
-
-                        applyTo(rootView)
-                    }
-
-                    binding.projectionContainer.layoutParams.apply {
-                        width = ConstraintLayout.LayoutParams.MATCH_PARENT
-                        height = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
-                    }
-
-                    binding.gemSurfaceView.layoutParams.apply {
-                        width = ConstraintLayout.LayoutParams.MATCH_PARENT
-                        height = ConstraintLayout.LayoutParams.MATCH_PARENT
-                    }
+                landmark.coordinates?.let {
+                    mapView.centerOnCoordinates(
+                        it,
+                        -1,
+                        rect.center,
+                        Animation(EAnimation.Linear, ANIMATION_DURATION_MS),
+                        0.0,
+                        0.0,
+                    )
                 }
+            }
+
+            mapView.activateHighlightLandmarks(landmark, highlightSettings)
         }
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun deactivateHighlights() = SdkCall.execute {
+        binding.gemSurfaceView.mapView?.deactivateAllHighlights()
+    }
+
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
+
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
+    }
+
+    private fun isActivityAlive(): Boolean {
+        return !isFinishing && !isDestroyed
+    }
+
+    private fun getFreeSpaceRect(): Rect {
+        val root = binding.rootView
+        val insets =
+            ViewCompat.getRootWindowInsets(root)?.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
+            ) ?: Insets.NONE
+
+        val left = insets.left
+        val top = maxOf(insets.top, binding.toolbar.bottom)
+        val right = maxOf(left, root.width - insets.right)
+
+        val bottomFromInsets = root.height - insets.bottom
+        val bottomFromPanel =
+            if (binding.projectionContainer.isVisible) {
+                binding.projectionContainer.top
+            } else {
+                Int.MAX_VALUE
+            }
+        val bottom = maxOf(top, minOf(bottomFromInsets, bottomFromPanel))
+
+        val paddedLeft = (left + freeSpacePaddingPx).coerceAtMost(right)
+        val paddedTop = (top + freeSpacePaddingPx).coerceAtMost(bottom)
+        val paddedRight = (right - freeSpacePaddingPx).coerceAtLeast(paddedLeft)
+        val paddedBottom = (bottom - freeSpacePaddingPx).coerceAtLeast(paddedTop)
+
+        return Rect(paddedLeft, paddedTop, paddedRight, paddedBottom)
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun getLandmarkDescription(
+        mapView: MapView,
+        coordinates: Coordinates,
+        isMyPosition: Boolean = false,
+    ): String {
+        var description = ""
+        var descriptionContainsLatLon = false
+
+        var address = mapView.getClosestAddress(coordinates, 50, false)
+        if (address != null) {
+            description = GemUtil.formatLandmarkDetails(address, true)
+        }
+
+        if (description.isEmpty()) {
+            address = mapView.getClosestAddress(coordinates, 300, false)
+            if (address != null) {
+                description = address.addressInfo?.getField(EAddressField.City) ?: ""
+            }
+
+            if (description.isEmpty()) {
+                address = mapView.getClosestAddress(coordinates, 2500, true)
+                if (address != null) {
+                    val city = address.addressInfo?.getField(EAddressField.City) ?: ""
+                    if (city.isNotEmpty()) {
+                        description = "Near $city"
+                    }
+                }
+
+                if (description.isEmpty()) {
+                    description = String.format("%.5f, %.5f", coordinates.latitude, coordinates.longitude)
+                    descriptionContainsLatLon = true
+                }
+            }
+        }
+
+        if (isMyPosition) {
+            if (!descriptionContainsLatLon) {
+                description += "\nLatitude: ${String.format("%.5f", coordinates.latitude)}"
+                description += "\nLongitude: ${String.format("%.5f", coordinates.longitude)}"
+            }
+
+            description += "\nAltitude: ${coordinates.altitude.toInt()}m"
+        }
+
+        return description
     }
 
     inner class ProjectionAdapter(val dataSet: MutableList<Projection>) :

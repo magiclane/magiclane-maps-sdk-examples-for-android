@@ -111,7 +111,7 @@ class MainActivity : AppCompatActivity() {
                 getString(
                     R.string.dialog_sdk_initialization_error,
                     GemError.getMessage(errorCode, this),
-                )
+                ),
             ) {
                 finish()
                 exitProcess(0)
@@ -133,8 +133,7 @@ class MainActivity : AppCompatActivity() {
             shouldCheckLocationPermissionOnResume = false
             if (isLocationEnabled()) {
                 requestPermissions()
-            }
-            else {
+            } else {
                 showDialog(getString(R.string.location_services_required)) {
                     finish()
                 }
@@ -186,7 +185,7 @@ class MainActivity : AppCompatActivity() {
         return PermissionsHelper.requestPermissions(
             REQUEST_PERMISSIONS,
             this,
-            permissions.toTypedArray()
+            permissions.toTypedArray(),
         )
     }
 
@@ -199,7 +198,7 @@ class MainActivity : AppCompatActivity() {
         if (!isLocationEnabled()) {
             showLocationDialog(
                 message = getString(R.string.location_disabled),
-                settingsIntent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                settingsIntent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS),
             )
             return false
         }
@@ -392,7 +391,7 @@ class MainActivity : AppCompatActivity() {
 
     private class DriverBehaviorBarDataSet(barEntries: List<BarEntry>, label: String) : BarDataSet(
         barEntries,
-        label
+        label,
     ) {
 
         override fun getColor(index: Int): Int {

@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">RouteRestrictions</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+    <string name="sdk_init_failed">SDK initialization failed: %s</string>
+    <string name="destination_reached">Destination reached.</string>
+    <string name="routing_process_started">Routing process started.</string>
+    <string name="routing_process_failed">Routing process failed: %s</string>
+    <string name="failed_to_start_simulation">Failed to start simulation: %s</string>
+    <string name="tts_language_eng_usa">eng-USA</string>
+    <string name="idling_resource_name">RouteRestrictionsIdlingResource</string>
+    <string name="time_format_hh_mm">%d:%02d</string>
+    <string name="restrictions_label">Restrictions: %s</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+</resources>

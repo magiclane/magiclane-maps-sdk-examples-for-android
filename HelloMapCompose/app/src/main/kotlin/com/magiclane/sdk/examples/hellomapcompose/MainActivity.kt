@@ -107,7 +107,7 @@ private fun GEMMap(modifier: Modifier = Modifier, viewModel: MainViewModel) {
                     context.getString(
                         R.string.sdk_initialization_failed,
                         GemError.getMessage(error, context),
-                    )
+                    ),
                 )
             }
             onDefaultMapViewCreated = {
@@ -139,8 +139,8 @@ fun MapTopAppBar(modifier: Modifier = Modifier) {
                 .windowInsetsPadding(
                     WindowInsets.systemBars.only(
                         WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-                    )
-                )
+                    ),
+                ),
         ) {
             Box(
                 Modifier

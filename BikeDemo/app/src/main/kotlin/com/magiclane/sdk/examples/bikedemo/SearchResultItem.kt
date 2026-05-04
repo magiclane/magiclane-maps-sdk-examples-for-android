@@ -14,5 +14,5 @@ data class SearchResultItem(
     val bmp: Bitmap? = null,
     val text: String? = null,
     val subText: String? = null,
-    val landmark: Landmark
+    val landmark: Landmark,
 )

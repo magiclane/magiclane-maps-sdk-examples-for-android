@@ -71,7 +71,8 @@ class MainActivity : AppCompatActivity() {
                                 if (screenshotTaken) return@onViewRendered
 
                                 if ((tivStatus == EViewDataTransitionStatus.Complete) &&
-                                    (camStatus == EViewCameraTransitionStatus.Stationary)) {
+                                    (camStatus == EViewCameraTransitionStatus.Stationary)
+                                ) {
                                     Util.postOnMain {
                                         binding.statusText.text = getString(R.string.taking_screenshot)
                                     }
@@ -99,7 +100,7 @@ class MainActivity : AppCompatActivity() {
                             mapView.presentRoute(
                                 routes[0],
                                 edgeAreaInsets = Rect(padding, padding, padding, padding),
-                                routeRenderSettings = routeRenderSettings
+                                routeRenderSettings = routeRenderSettings,
                             )
                         }
                     }

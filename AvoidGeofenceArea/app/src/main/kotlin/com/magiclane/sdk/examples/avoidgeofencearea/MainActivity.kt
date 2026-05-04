@@ -159,8 +159,7 @@ class MainActivity : AppCompatActivity() {
             Util.postOnMain {
                 if (!Util.isInternetConnected(this)) {
                     showStatusMessage(getString(R.string.internet_required))
-                }
-                else {
+                } else {
                     showStatusMessage(getString(R.string.waiting_for_map_data))
                 }
             }

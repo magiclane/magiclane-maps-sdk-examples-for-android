@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity() {
         },
         onDestinationReached = {
             onNavigationEnded()
-        }
+        },
     )
 
     // Define a listener that will let us know the progress of the routing process.
@@ -262,13 +262,12 @@ class MainActivity : AppCompatActivity() {
         geofence.startMonitoringAreas(monitoringAreasListener, getGeofenceAreaIds())
     }
 
-    private fun createPolygonRenderSettings() =
-        MarkerCollectionRenderSettings(
-            polylineInnerColor = Rgba.magenta(),
-            polygonFillColor = Rgba(255, 0, 0, 128),
-        ).apply {
-            polylineInnerSize = POLYLINE_INNER_SIZE_MM // mm
-        }
+    private fun createPolygonRenderSettings() = MarkerCollectionRenderSettings(
+        polylineInnerColor = Rgba.magenta(),
+        polygonFillColor = Rgba(255, 0, 0, 128),
+    ).apply {
+        polylineInnerSize = POLYLINE_INNER_SIZE_MM // mm
+    }
 
     private fun createPolygonCollection(): MarkerCollection {
         val polygonCollection = MarkerCollection(EMarkerType.Polygon, POLYGON_COLLECTION_NAME)
@@ -283,32 +282,29 @@ class MainActivity : AppCompatActivity() {
         return polygonCollection
     }
 
-    private fun createGeofenceAreas(): GeofenceAreaList =
-        arrayListOf(
-            GeofenceArea(
-                CircleGeographicArea(Coordinates(45.65189844, 25.60438562), CIRCLE_RADIUS_METERS),
-                getString(R.string.circle_area_1_id),
-            ),
-            GeofenceArea(
-                CircleGeographicArea(
-                    Coordinates(45.65264, 25.60697719),
-                    CIRCLE_RADIUS_METERS,
-                ),
-                getString(R.string.circle_area_2_id),
-            ),
-        )
-
-    private fun createSimulationWaypoints() =
-        arrayListOf(
-            Landmark(getString(R.string.waypoint_brasov), 45.65094531, 25.60403406),
-            Landmark(getString(R.string.waypoint_predeal), 45.5052, 25.5742),
-        )
-
-    private fun getGeofenceAreaIds(): ArrayList<String> =
-        arrayListOf(
+    private fun createGeofenceAreas(): GeofenceAreaList = arrayListOf(
+        GeofenceArea(
+            CircleGeographicArea(Coordinates(45.65189844, 25.60438562), CIRCLE_RADIUS_METERS),
             getString(R.string.circle_area_1_id),
+        ),
+        GeofenceArea(
+            CircleGeographicArea(
+                Coordinates(45.65264, 25.60697719),
+                CIRCLE_RADIUS_METERS,
+            ),
             getString(R.string.circle_area_2_id),
-        )
+        ),
+    )
+
+    private fun createSimulationWaypoints() = arrayListOf(
+        Landmark(getString(R.string.waypoint_brasov), 45.65094531, 25.60403406),
+        Landmark(getString(R.string.waypoint_predeal), 45.5052, 25.5742),
+    )
+
+    private fun getGeofenceAreaIds(): ArrayList<String> = arrayListOf(
+        getString(R.string.circle_area_1_id),
+        getString(R.string.circle_area_2_id),
+    )
 
     private fun postGemErrorDialog(@StringRes messageResId: Int, error: Int) {
         Util.postOnMain {

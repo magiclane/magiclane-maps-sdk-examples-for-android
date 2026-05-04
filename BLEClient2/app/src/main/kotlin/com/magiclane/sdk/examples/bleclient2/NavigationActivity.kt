@@ -78,6 +78,7 @@ class NavigationActivity : AppCompatActivity() {
         ExitRight(24),
         ExitRight1(25),
         ExitRight2(26),
+
         // InfoGeneric(27),
         // DriveOn(28),
         // ExitNo(29),
@@ -89,6 +90,7 @@ class NavigationActivity : AppCompatActivity() {
         StayOn(35),
         BoatFerry(36),
         RailFerry(37),
+
         // InfoLane(38),
         // InfoSign(39),
         LeftRight(40),
@@ -97,7 +99,8 @@ class NavigationActivity : AppCompatActivity() {
         KeepRight(43),
         Start(44),
         Intermediate(45),
-        Stop(46);
+        Stop(46),
+        ;
 
         override fun toString(): String = value.toString()
     }

@@ -12,6 +12,7 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.addCallback
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
@@ -28,17 +29,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.withFrameNanos
@@ -78,8 +81,17 @@ class MainActivity : ComponentActivity() {
     private lateinit var mapSurfaceView: GemSurfaceView
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ),
+            navigationBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ),
+        )
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         configureWindow()
         setContent {
             MapSelectionTheme {
@@ -120,7 +132,6 @@ class MainActivity : ComponentActivity() {
                 finish()
             }
         }
-
     }
 
     private fun checkPermissions() = PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -149,8 +160,7 @@ class MainActivity : ComponentActivity() {
         if (requestCode == REQUEST_PERMISSIONS) {
             for (item in grantResults) {
                 if (item != PackageManager.PERMISSION_GRANTED) {
-                    viewModel.errorMessage = "Location permission is required in order to select " +
-                        "the current position cursor."
+                    viewModel.errorMessage = getString(R.string.location_permission_required)
                     return
                 }
             }
@@ -184,12 +194,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun configureWindow() {
-        val window = this.window
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        WindowCompat.getInsetsController(
-            window,
-            window.decorView,
-        ).isAppearanceLightStatusBars = false
     }
 
     fun setMapSurfaceView(view: GemSurfaceView) {
@@ -206,7 +211,7 @@ fun MapSelectionApp(viewModel: MapSelectionModel = viewModel(), mapSurfaceViewSe
     Box(Modifier.fillMaxSize().background(color = Color.Black)) {
         Column {
             MapSurface(
-                Modifier.windowInsetsPadding(WindowInsets.systemBars),
+                Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars),
                 mapSurfaceViewSetter,
                 viewModel,
             )
@@ -271,13 +276,18 @@ fun MapSelectionApp(viewModel: MapSelectionModel = viewModel(), mapSurfaceViewSe
             }
         }
     }
+
+    if (viewModel.errorMessage.isNotEmpty()) {
+        ErrorDialog(viewModel)
+    }
 }
 
 @Composable
 fun MapSurface(
     modifier: Modifier = Modifier,
     mapSurfaceViewSetter: (GemSurfaceView) -> Unit,
-    viewModel: MapSelectionModel) {
+    viewModel: MapSelectionModel,
+) {
     AndroidView(modifier = modifier, factory = { context ->
         GemSurfaceView(context).also { surfaceView ->
             surfaceView.onDefaultMapViewCreated = {
@@ -285,7 +295,10 @@ fun MapSurface(
             }
 
             surfaceView.onSdkInitFailed = { error ->
-                viewModel.errorMessage = context.getString(R.string.sdk_initialization_failed, GemError.getMessage(error, context))
+                viewModel.errorMessage = context.getString(
+                    R.string.sdk_initialization_failed,
+                    GemError.getMessage(error, context),
+                )
             }
 
             mapSurfaceViewSetter(surfaceView)
@@ -297,7 +310,8 @@ fun MapSurface(
 fun BottomContent(
     modifier: Modifier = Modifier,
     viewModel: MapSelectionModel = viewModel(),
-    iconOnClick: (() -> Unit)? = null) {
+    iconOnClick: (() -> Unit)? = null,
+) {
     // Fire highlight after layout (and map visible area update)
     LaunchedEffect(viewModel.invokeHighlight) {
         if (viewModel.invokeHighlight) {
@@ -359,4 +373,25 @@ fun BottomContent(
             }
         }
     }
+}
+
+@Composable
+fun ErrorDialog(viewModel: MapSelectionModel) {
+    AlertDialog(
+        text = {
+            Text(text = viewModel.errorMessage)
+        },
+        onDismissRequest = {
+            viewModel.errorMessage = ""
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    viewModel.errorMessage = ""
+                },
+            ) {
+                Text(stringResource(R.string.ok))
+            }
+        },
+    )
 }
