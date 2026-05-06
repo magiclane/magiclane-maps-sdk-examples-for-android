@@ -95,6 +95,7 @@ Explore the examples to learn the capabilities of the Magic Lane Maps Android SD
 * [Speed TTS Warning Tracking](SpeedTTSWarningTracking) - Display the current speed and the legal speed limit. Send a TTS warning each time the current speed overcomes the legal speed limit.
 * [Speed Watcher](SpeedWatcher) - Start simulation between 2 given landmarks. Display the current speed and the legal speed limit.
 * [Stay Inside Geofence Area](StayInsideGeofenceArea) - Get notified when leaving a geographic area.
+* [Take Screenshot](TakeScreenshot) - Capture a screenshot of the map view by tapping the "Take Screenshot" button at the bottom of the screen. Preview the captured screenshot in a bottom sheet dialog.
 * [Track Positions](TrackPostions) - Mock navigation from point A to point B using external data source while tracking positions. Display path using tracked positions.
 * [Truck Profile](TruckProfile) - Calculate the truck routes between 2 given landmarks. Change the truck profile and recalculate routes depending on the new settings.
 * [Voice Downloading](VoiceDownloading) - Gather the list of available voices; download first available voice.
