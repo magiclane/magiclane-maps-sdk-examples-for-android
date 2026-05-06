@@ -11,7 +11,9 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.location.LocationManager
 import android.os.Bundle
 import android.provider.Settings
@@ -19,22 +21,30 @@ import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.WindowCompat
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.textview.MaterialTextView
 import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.ErrorCode
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.ProgressListener
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.SoundPlayingListener
 import com.magiclane.sdk.core.SoundPlayingPreferences
 import com.magiclane.sdk.core.SoundPlayingService
 import com.magiclane.sdk.core.Time
+import com.magiclane.sdk.core.XyF
 import com.magiclane.sdk.examples.routenavigation.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.routenavigation.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Landmark
@@ -44,6 +54,7 @@ import com.magiclane.sdk.routesandnavigation.NavigationInstruction
 import com.magiclane.sdk.routesandnavigation.NavigationListener
 import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.routesandnavigation.Route
+import com.magiclane.sdk.routesandnavigation.RouteTrafficEvent
 import com.magiclane.sdk.sensordatasource.PositionListener
 import com.magiclane.sdk.sensordatasource.PositionService
 import com.magiclane.sdk.sensordatasource.enums.EDataType
@@ -53,6 +64,8 @@ import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import com.magiclane.sound.SoundUtils
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationListener {
@@ -65,6 +78,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         val etaText: String = "",
         val rttText: String = "",
         val rtdText: String = "",
+        val signPostBitmap: Bitmap? = null,
+        val roadCodeBitmap: Bitmap? = null,
     )
 
     private lateinit var binding: ActivityMainBinding
@@ -72,13 +87,37 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     // Permission handling
     private var shouldCheckLocationPermissionOnResume = false
 
+    private var turnPadding: Int = 0
     private var turnImageSize: Int = 0
+    private var navigationPanelPadding: Int = 0
+    private var signPostImageSize: Int = 0
+    private var topPanelWidth: Int = 0
+    private var navigationImageSize: Int = 0
 
     private val playingListener = object : SoundPlayingListener() {}
 
     private val soundPreference = SoundPlayingPreferences()
 
     private var lastTurnImageId: Long = Long.MAX_VALUE
+    private var lastTrafficImageId: Long = Long.MAX_VALUE
+
+    private val trafficPanelBackgroundColor = Color.rgb(255, 175, 63)
+    private var sameTrafficImage = false
+    private var trafficBmp: Bitmap? = null
+    private var endOfSectionBmp: Bitmap? = null
+    private var distToTrafficEvent = 0
+    private var remainingDistInsideTrafficEvent = 0
+    private var insideTrafficEvent = false
+    private var trafficEventDescriptionText = ""
+    private var distanceToTrafficPrefixText = ""
+    private var trafficDelayTimeText = ""
+    private var trafficDelayTimeUnitText = ""
+    private var trafficDelayDistanceText = ""
+    private var trafficDelayDistanceUnitText = ""
+    private var distanceToTrafficText = ""
+    private var distanceToTrafficUnitText = ""
+
+    private lateinit var portraitConstraintSet: ConstraintSet
 
     private var navigationStatus = ENavigationStatus.Running
 
@@ -96,10 +135,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             return@registerForActivityResult
         }
 
-        onLocationPermissionsGranted(permissions.size)
+        onLocationPermissionsGranted()
     }
 
-    // Define a navigation service from which we will start the simulation.
+    // Define a navigation service from which we will start the navigation.
     private val navigationService = NavigationService()
 
     private val navRoute: Route?
@@ -108,8 +147,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     /**
      * Define a navigation listener that will receive notifications from the
      * navigation service.
-     * We will use just the onNavigationStarted method, but for more available
-     * methods you should check the documentation.
      */
     private val navigationListener: NavigationListener = NavigationListener.create(
         onNavigationStarted = {
@@ -124,6 +161,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                     mapView.followPosition()
                 }
             }
+            applyCameraFocus()
+            endOfSectionBmp = ContextCompat.getDrawable(this@MainActivity, R.drawable.end_of_traffic_section)
+                ?.toBitmap(navigationImageSize, navigationImageSize)
             binding.apply {
                 setNavigationPanelsVisible(isVisible = true)
             }
@@ -167,14 +207,135 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         SoundUtils.addTTSPlayerInitializationListener(this)
 
+        turnPadding = resources.getDimension(R.dimen.nav_top_panel_turn_margin).toInt()
         turnImageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
+        navigationImageSize = resources.getDimension(R.dimen.navigation_image_size).toInt()
+        navigationPanelPadding = resources.getDimension(R.dimen.nav_top_panel_padding).toInt()
+        signPostImageSize = resources.getDimension(R.dimen.sign_post_image_size).toInt()
 
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+        portraitConstraintSet = ConstraintSet().apply { clone(binding.root as ConstraintLayout) }
+        applyOrientationLayout()
+
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            val panelMargin = resources.getDimensionPixelSize(R.dimen.nav_panel_margin)
+            val setPanelHorizontalMargins = { panel: ConstraintLayout ->
+                val params = panel.layoutParams as ConstraintLayout.LayoutParams
+                params.marginStart = panelMargin
+                params.marginEnd = panelMargin
+                panel.layoutParams = params
+            }
+
+            setPanelHorizontalMargins(binding.topPanel)
+            setPanelHorizontalMargins(binding.bottomPanel)
+            setPanelHorizontalMargins(binding.trafficPanel)
+        }
 
         registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
             showDialog(getString(R.string.internet_required))
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applyOrientationLayout()
+        applyCameraFocus()
+    }
+
+    private fun applyOrientationLayout() {
+        val rootLayout = binding.root as ConstraintLayout
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        // ConstraintSet.applyTo() restores visibility from the time of clone (all panels
+        // were GONE at that point), so we must save and restore the live visibility state.
+        val topVis = binding.topPanel.visibility
+        val bottomVis = binding.bottomPanel.visibility
+        val trafficVis = binding.trafficPanel.visibility
+        val fabVis = binding.followCursorButton.visibility
+        val progressVis = binding.progressBar.visibility
+
+        val panelMargin = resources.getDimensionPixelSize(R.dimen.nav_panel_margin)
+        ConstraintSet().apply {
+            clone(portraitConstraintSet)
+            if (isLandscape) {
+                val panelWidth = (resources.displayMetrics.widthPixels * 0.4f).toInt()
+                topPanelWidth = panelWidth
+
+                for (id in intArrayOf(R.id.top_panel, R.id.traffic_panel, R.id.bottom_panel)) {
+                    constrainWidth(id, panelWidth)
+                    connect(id, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, 0)
+                    clear(id, ConstraintSet.END)
+                }
+            } else {
+                topPanelWidth = resources.displayMetrics.widthPixels - 2 * navigationPanelPadding
+
+                for (id in intArrayOf(R.id.top_panel, R.id.traffic_panel, R.id.bottom_panel)) {
+                    connect(id, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, panelMargin)
+                    connect(id, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, panelMargin)
+                }
+            }
+        }.applyTo(rootLayout)
+
+        binding.topPanel.visibility = topVis
+        binding.bottomPanel.visibility = bottomVis
+        binding.trafficPanel.visibility = trafficVis
+        binding.followCursorButton.visibility = fabVis
+        binding.progressBar.visibility = progressVis
+    }
+
+    // this adjusts GPS arrow position on map
+    private fun applyCameraFocus() {
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        SdkCall.execute {
+            binding.gemSurfaceView.mapView?.preferences?.followPositionPreferences?.cameraFocus =
+                if (isLandscape) XyF(0.7f, 0.75f) else XyF(0.5f, 0.75f)
+        }
+    }
+
+    // this adjusts Magic Lane logo position on map
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            binding.gemSurfaceView.mapView?.preferences?.focusViewport = getFocusViewport()
+        }
+    }
+
+    fun getFocusViewport(): Rect {
+        val root = binding.root
+        val insets = ViewCompat.getRootWindowInsets(root)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+
+        val width = root.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+        val height = root.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
+
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        return if (isLandscape) {
+            val w = max(width, height)
+            val h = min(width, height)
+
+            val left = if (binding.topPanel.isVisible) binding.topPanel.right else insets?.left ?: 0
+            val top = insets?.top ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            Rect(left, top, right, bottom)
+        } else {
+            val w = min(width, height)
+            val h = max(width, height)
+
+            val left = insets?.left ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val top = when {
+                binding.topPanel.isVisible && binding.trafficPanel.isVisible -> binding.trafficPanel.bottom
+                binding.topPanel.isVisible -> binding.topPanel.bottom
+                else -> insets?.top ?: 0
+            }
+            val bottom = if (binding.bottomPanel.isVisible) {
+                binding.bottomPanel.top.coerceAtLeast(top)
+            } else {
+                (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            }
+            Rect(left, top, right, bottom)
         }
     }
 
@@ -208,6 +369,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             runOnUiThread {
                 showDialog(errorMessage) { finish() }
             }
+        }
+
+        binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
         }
 
         SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
@@ -300,21 +465,50 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     }
 
     private fun updateNavigationInstruction(instruction: NavigationInstruction) {
-        val navData = SdkCall.execute { collectNavigationUiData(instruction) } ?: return
+        val distanceToNextTurnWidth = getTextViewWidth(binding.instrDistance, "1000 m")
+        val availableWidth = topPanelWidth - max(turnImageSize, distanceToNextTurnWidth) - 3 * turnPadding
+
+        val navData = SdkCall.execute { collectNavigationUiData(instruction, availableWidth) } ?: return
 
         binding.apply {
             if (!navData.hasSameTurnImage) {
                 navIcon.setImageBitmap(navData.instructionIcon)
             }
-            navInstruction.text = navData.instructionText
             instrDistance.text = navData.instructionDistance
             eta.text = navData.etaText
             rtt.text = navData.rttText
             rtd.text = navData.rtdText
+
+            val hasSignPost = navData.signPostBitmap != null
+            val hasRoadCode = navData.roadCodeBitmap != null
+
+            signPost.isVisible = hasSignPost
+            navData.signPostBitmap?.let { bmp ->
+                signPost.setImageBitmap(bmp)
+                signPost.layoutParams.width = bmp.width
+                signPost.layoutParams.height = bmp.height
+            }
+
+            roadCode.isVisible = hasRoadCode
+            navData.roadCodeBitmap?.let { bmp ->
+                roadCode.setImageBitmap(bmp)
+                if (bmp.height > 0) {
+                    val ratio = bmp.width.toFloat() / bmp.height
+                    roadCode.layoutParams.width = (roadCode.layoutParams.height * ratio).toInt()
+                }
+            }
+
+            navInstruction.isVisible = !hasSignPost
+            if (!hasSignPost) {
+                navInstruction.text = navData.instructionText
+                navInstruction.maxLines = if (hasRoadCode) 1 else 3
+            }
         }
+
+        updateTrafficPanel(instruction)
     }
 
-    private fun collectNavigationUiData(instruction: NavigationInstruction): NavigationUiData {
+    private fun collectNavigationUiData(instruction: NavigationInstruction, availableWidth: Int): NavigationUiData {
         val instructionText =
             instruction.nextStreetName?.takeIf { it.isNotEmpty() } ?: instruction.nextTurnInstruction.orEmpty()
 
@@ -327,6 +521,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             Triple(it.getEta(), it.getRtt(), it.getRtd())
         } ?: Triple("", "", "")
 
+        val signPostBitmap = getSignpostImage(instruction, availableWidth, signPostImageSize)
+        val roadCodeBitmap = if (signPostBitmap == null) {
+            getRoadCodeImage(instruction, availableWidth, navigationImageSize)
+        } else null
+
         return NavigationUiData(
             instructionText = instructionText,
             instructionIcon = instructionIcon,
@@ -335,6 +534,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             etaText = etaText,
             rttText = rttText,
             rtdText = rtdText,
+            signPostBitmap = signPostBitmap,
+            roadCodeBitmap = roadCodeBitmap,
         )
     }
 
@@ -393,7 +594,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         permissionsLauncher.launch(permissions)
     }
 
-    private fun onLocationPermissionsGranted(grantedPermissionsCount: Int) {
+    private fun onLocationPermissionsGranted() {
         SdkCall.execute {
             // Keep SDK permission helper in sync with the runtime permission state.
             PermissionsHelper.onRequestPermissionsResult(
@@ -426,6 +627,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private fun setNavigationPanelsVisible(isVisible: Boolean) {
         binding.topPanel.isVisible = isVisible
         binding.bottomPanel.isVisible = isVisible
+        if (!isVisible) {
+            binding.trafficPanel.isVisible = false
+        }
+        updateFocusViewport()
     }
 
     private fun startNavigation() {
@@ -515,6 +720,185 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             iInner,
             iOuter,
         )
+    }
+
+    private fun getSignpostImage(navInstr: NavigationInstruction, width: Int, height: Int): Bitmap? {
+        if (!navInstr.hasSignpostInfo()) return null
+
+        val distToNextTurn = navInstr.timeDistanceToNextTurn?.totalDistance ?: 0
+        if (distToNextTurn > 1000) {
+            return null
+        }
+
+        return navInstr.signpostDetails?.image?.let { image ->
+            GemUtilImages.asBitmap(image, width, height)
+        }
+    }
+
+    private fun getRoadCodeImage(navInstr: NavigationInstruction, width: Int, height: Int): Bitmap? {
+        val roadsInfo = navInstr.nextRoadInformation ?: return null
+        if (roadsInfo.isEmpty()) return null
+        val resultWidth = if (width == 0) (2.5 * height).toInt() else width
+        val image = navInstr.getRoadInfoImage(roadsInfo)
+        return GemUtilImages.asBitmap(image, resultWidth, height)
+    }
+
+    @Suppress("SameParameterValue")
+    private fun getTextViewWidth(textView: MaterialTextView, text: String): Int {
+        val previous = textView.text
+        textView.text = text
+        textView.measure(
+            View.MeasureSpec.makeMeasureSpec(Short.MAX_VALUE.toInt(), View.MeasureSpec.AT_MOST),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+        )
+        val width = textView.measuredWidth
+        textView.text = previous
+        return width
+    }
+
+    private fun updateTrafficPanel(instruction: NavigationInstruction) {
+        if (!binding.topPanel.isVisible) {
+            binding.trafficPanel.isVisible = false
+            return
+        }
+
+        val route = navRoute ?: run {
+            binding.trafficPanel.isVisible = false
+            return
+        }
+
+        val trafficEvent = getTrafficEvent(instruction, route)
+        if (trafficEvent == null) {
+            binding.trafficPanel.isVisible = false
+            trafficBmp = null
+            return
+        }
+
+        updateTrafficEventInfo(trafficEvent)
+        val bmp = trafficBmp ?: run {
+            binding.trafficPanel.isVisible = false
+            return
+        }
+
+        binding.apply {
+            trafficPanel.isVisible = true
+            trafficPanel.setBackgroundColor(trafficPanelBackgroundColor)
+
+            if (!sameTrafficImage) {
+                trafficImage.setImageBitmap(bmp)
+            }
+
+            endOfSectionImage.isVisible = insideTrafficEvent && endOfSectionBmp != null
+            if (insideTrafficEvent) {
+                endOfSectionBmp?.let { endOfSectionImage.setImageBitmap(it) }
+            }
+
+            trafficEventDescription.text = trafficEventDescriptionText
+
+            var prefix = distanceToTrafficPrefixText
+            if (prefix.isNotEmpty()) prefix = "$prefix "
+            distanceToTrafficPrefix.text = prefix
+
+            distanceToTraffic.text = distanceToTrafficText
+            distanceToTrafficUnit.text = distanceToTrafficUnitText
+
+            trafficDelayTime.text = trafficDelayTimeText
+            trafficDelayTimeUnit.text = trafficDelayTimeUnitText
+
+            trafficDelayDistance.isVisible = trafficDelayDistanceText.isNotEmpty()
+            if (trafficDelayDistanceText.isNotEmpty()) {
+                trafficDelayDistance.text = trafficDelayDistanceText
+            }
+
+            trafficDelayDistanceUnit.isVisible = trafficDelayDistanceUnitText.isNotEmpty()
+            if (trafficDelayDistanceUnitText.isNotEmpty()) {
+                trafficDelayDistanceUnit.text = trafficDelayDistanceUnitText
+            }
+        }
+    }
+
+    private fun getTrafficEvent(navInstr: NavigationInstruction, route: Route): RouteTrafficEvent? = SdkCall.execute {
+        if (navInstr.navigationStatus != ENavigationStatus.Running) return@execute null
+        val trafficEventsList = route.trafficEvents ?: return@execute null
+
+        val remainingTravelDistance = navInstr.remainingTravelTimeDistance?.totalDistance ?: 0
+
+        for (event in trafficEventsList) {
+            if (event.delay != 0) {
+                val distToDest = event.distanceToDestination
+                distToTrafficEvent = remainingTravelDistance - distToDest
+
+                insideTrafficEvent = false
+
+                if (distToTrafficEvent <= 0) {
+                    remainingDistInsideTrafficEvent = event.length - (distToDest - remainingTravelDistance)
+                    if (remainingDistInsideTrafficEvent >= 0) {
+                        insideTrafficEvent = true
+                    }
+                }
+
+                if ((distToTrafficEvent >= 0) || (remainingDistInsideTrafficEvent >= 0)) {
+                    return@execute event
+                }
+            }
+        }
+
+        return@execute null
+    }
+
+    private fun updateTrafficEventInfo(trafficEvent: RouteTrafficEvent) = SdkCall.execute {
+        trafficEventDescriptionText = trafficEvent.description ?: ""
+
+        val distance = if (insideTrafficEvent) remainingDistInsideTrafficEvent else distToTrafficEvent
+        val distancePair = GemUtil.getDistText(distance, EUnitSystem.Metric, true)
+        distanceToTrafficText = distancePair.first
+        distanceToTrafficUnitText = distancePair.second
+
+        val theFormat = getString(if (insideTrafficEvent) R.string.out_in_str else R.string.in_str)
+        distanceToTrafficPrefixText = String.format(theFormat, "").trim()
+
+        trafficDelayDistanceText = ""
+        trafficDelayDistanceUnitText = ""
+        trafficDelayTimeText = ""
+        trafficDelayTimeUnitText = ""
+
+        if (!trafficEvent.isRoadblock) {
+            if (insideTrafficEvent) {
+                if (trafficEvent.length > 0) {
+                    val remainingDelay = (trafficEvent.delay * remainingDistInsideTrafficEvent) / trafficEvent.length
+                    val timePair = GemUtil.getTimeText(remainingDelay)
+                    trafficDelayTimeText = timePair.first
+                    trafficDelayTimeUnitText = timePair.second
+                }
+            } else {
+                val distPair = GemUtil.getDistText(trafficEvent.length, SdkSettings.unitSystem, true)
+                trafficDelayDistanceText = distPair.first
+                trafficDelayDistanceUnitText = distPair.second
+
+                val timePair = GemUtil.getTimeText(trafficEvent.delay)
+                trafficDelayTimeText = String.format("+%s", timePair.first)
+                trafficDelayTimeUnitText = timePair.second
+            }
+        }
+
+        val newBmp = getTrafficImage(trafficEvent, navigationImageSize, navigationImageSize)
+        if (newBmp != null) {
+            trafficBmp = newBmp
+            sameTrafficImage = false
+        } else {
+            sameTrafficImage = true
+        }
+    }
+
+    private fun getTrafficImage(from: RouteTrafficEvent?, width: Int, height: Int): Bitmap? = SdkCall.execute {
+        if ((from?.image?.uid ?: 0) == lastTrafficImageId) return@execute null
+
+        val image = from?.image
+        if (image != null) {
+            lastTrafficImageId = image.uid
+        }
+
+        GemUtilImages.asBitmap(image, width, height)
     }
 
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {

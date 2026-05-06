@@ -2,4 +2,14 @@
     <string name="app_name">RouteSimulation</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+    <string name="sdk_init_failed">SDK initialization failed: %s</string>
+    <string name="internet_required">This app requires Internet connection for searching and routing features. Please connect to the Internet.</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="calculating">Calculating…</string>
+    <string name="waiting_for_internet_connection">Waiting for internet connection…</string>
+    <string name="gps_accuracy_not_good_enough">GPS accuracy is not good enough</string>
+    <string name="getting_position">Getting position…</string>
+    <string name="route_simulation_error">Route simulation error: %s</string>
+    <string name="in_str">in %s</string>
+    <string name="out_in_str">out in %s</string>
 </resources>

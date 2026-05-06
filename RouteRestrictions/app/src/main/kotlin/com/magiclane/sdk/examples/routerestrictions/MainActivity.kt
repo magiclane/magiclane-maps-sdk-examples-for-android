@@ -80,6 +80,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private val navRoute: Route?
         get() = navigationService.getNavigationRoute(navigationListener)
 
+    private var restrictions = 0
+
     private val navigationListener: NavigationListener = NavigationListener.create(
         onNavigationStarted = {
             SdkCall.execute {
@@ -120,22 +122,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 binding.gemSurfaceView.mapView?.hideRoutes()
             }
         },
-        onRestrictionsUpdated = { startDistanceM, endDistanceM ->
-            SdkCall.execute {
-                val sections = navRoute?.restrictionSections ?: return@execute
-                val matchingSection = sections.firstOrNull { section ->
-                    section.startDistanceM == startDistanceM && section.endDistanceM == endDistanceM
-                } ?: sections.firstOrNull { section ->
-                    section.startDistanceM <= startDistanceM && section.endDistanceM >= endDistanceM
-                }
-                val restrictionText = matchingSection?.restrictions?.toRestrictionText().orEmpty()
-                runOnUiThread {
-                    if (restrictionText.isNotEmpty()) {
-                        binding.restrictionPanel.isVisible = true
-                        binding.restrictionText.text = restrictionText
-                    }
-                }
-            }
+        onRestrictionsUpdated = { _, enterRestrictions ->
+            restrictions = enterRestrictions
         },
         onNavigationSound = { sound ->
             SdkCall.execute {
@@ -310,7 +298,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private fun NavigationInstruction.toUiState(): InstructionUiState {
         val currentRoute = navRoute
-        val restrictionsMask = currentRestrictions
+        val restrictionsMask = restrictions
 
         var sameTurnImage = false
         val instrIcon = getNextTurnImage(this, INSTRUCTION_ICON_SIZE_PX, INSTRUCTION_ICON_SIZE_PX) { isSame ->
@@ -325,7 +313,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             etaText = currentRoute?.getEta().orEmpty(),
             rttText = currentRoute?.getRtt().orEmpty(),
             rtdText = currentRoute?.getRtd().orEmpty(),
-            restrictionText = restrictionsMask.toRestrictionText(),
+            restrictionText = if (restrictionsMask != 0) {
+                restrictionsMask.toRestrictionText()
+            } else {
+                getUpcomingRestrictionText(currentRoute, remainingTravelTimeDistance?.totalDistance ?: 0)
+            },
         )
     }
 
@@ -349,14 +341,36 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }
     }
 
-    private fun Int.toRestrictionText(): String {
-        if (this == 0) return ""
-        val labels = ERouteRestrictionType.entries
+    private fun Int.toRestrictionTypeNames(): List<String> {
+        if (this == 0) return emptyList()
+        return ERouteRestrictionType.entries
             .filter { type -> type.value > 0 && (this and type.value) == type.value }
             .map { it.name }
             .distinct()
+    }
+
+    private fun Int.toRestrictionText(): String {
+        val labels = toRestrictionTypeNames()
         if (labels.isEmpty()) return ""
         return getString(R.string.restrictions_label, labels.joinToString(", "))
+    }
+
+    private fun getUpcomingRestrictionText(route: Route?, remainingDist: Int): String {
+        route ?: return ""
+        val sections = route.restrictionSections ?: return ""
+        val totalDist = route.getTimeDistance(false)?.totalDistance ?: return ""
+        val distFromStart = totalDist - remainingDist
+        val nextSection = sections
+            .filter { it.startDistanceM > distFromStart }
+            .minByOrNull { it.startDistanceM }
+            ?: return ""
+        val typeNames = nextSection.restrictions.toRestrictionTypeNames()
+        if (typeNames.isEmpty()) return ""
+        val (distValue, distUnit) = GemUtil.getDistText(
+            nextSection.startDistanceM - distFromStart,
+            EUnitSystem.Metric,
+        )
+        return getString(R.string.upcoming_restrictions_label, distValue, distUnit, typeNames.joinToString(", "))
     }
 
     private fun getNextTurnImage(

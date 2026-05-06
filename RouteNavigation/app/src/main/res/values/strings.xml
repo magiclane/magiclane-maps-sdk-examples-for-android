@@ -17,4 +17,6 @@
     <string name="waiting_for_internet_connection">Waiting for internet connection…</string>
     <string name="gps_accuracy_not_good_enough">GPS accuracy is not good enough</string>
     <string name="getting_position">Getting position…</string>
+    <string name="in_str">in %s</string>
+    <string name="out_in_str">out in %s</string>
 </resources>

@@ -8,29 +8,106 @@
 package com.magiclane.sdk.examples.routesimulation
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.databinding.DataBindingUtil
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.textview.MaterialTextView
+import com.magiclane.sdk.core.EOffboardListenerStatus
+import com.magiclane.sdk.core.EUnitSystem
+import com.magiclane.sdk.core.ErrorCode
+import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.ProgressListener
+import com.magiclane.sdk.core.Rect
+import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.core.SoundPlayingListener
+import com.magiclane.sdk.core.XyF
+import com.magiclane.sdk.core.SoundPlayingPreferences
+import com.magiclane.sdk.core.SoundPlayingService
+import com.magiclane.sdk.core.Time
 import com.magiclane.sdk.examples.routesimulation.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.routesimulation.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Landmark
+import com.magiclane.sdk.routesandnavigation.ENavigationStatus
+import com.magiclane.sdk.routesandnavigation.ERouteStatus
+import com.magiclane.sdk.routesandnavigation.NavigationInstruction
 import com.magiclane.sdk.routesandnavigation.NavigationListener
 import com.magiclane.sdk.routesandnavigation.NavigationService
 import com.magiclane.sdk.routesandnavigation.Route
+import com.magiclane.sdk.routesandnavigation.RouteTrafficEvent
+import com.magiclane.sdk.util.GemUtil
+import com.magiclane.sdk.util.GemUtilImages
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
+import com.magiclane.sound.SoundUtils
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity() {
+@Suppress("SameParameterValue")
+class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationListener {
+
+    private data class NavigationUiData(
+        val instructionText: String = "",
+        val instructionIcon: Bitmap? = null,
+        val hasSameTurnImage: Boolean = false,
+        val instructionDistance: String = "",
+        val etaText: String = "",
+        val rttText: String = "",
+        val rtdText: String = "",
+        val signPostBitmap: Bitmap? = null,
+        val roadCodeBitmap: Bitmap? = null,
+    )
+
     private lateinit var binding: ActivityMainBinding
+
+    private var turnPadding: Int = 0
+    private var turnImageSize: Int = 0
+    private var navigationPanelPadding: Int = 0
+    private var signPostImageSize: Int = 0
+    private var topPanelWidth: Int = 0
+
+    private val playingListener = object : SoundPlayingListener() {}
+
+    private val soundPreference = SoundPlayingPreferences()
+
+    private var lastTurnImageId: Long = Long.MAX_VALUE
+    private var lastTrafficImageId: Long = Long.MAX_VALUE
+
+    private val trafficPanelBackgroundColor = Color.rgb(255, 175, 63)
+    private var sameTrafficImage = false
+    private var trafficBmp: Bitmap? = null
+    private var endOfSectionBmp: Bitmap? = null
+    private var distToTrafficEvent = 0
+    private var remainingDistInsideTrafficEvent = 0
+    private var insideTrafficEvent = false
+    private var trafficEventDescriptionText = ""
+    private var distanceToTrafficPrefixText = ""
+    private var trafficDelayTimeText = ""
+    private var trafficDelayTimeUnitText = ""
+    private var trafficDelayDistanceText = ""
+    private var trafficDelayDistanceUnitText = ""
+    private var distanceToTrafficText = ""
+    private var distanceToTrafficUnitText = ""
+    private var navigationImageSize: Int = 0
+
+    private lateinit var portraitConstraintSet: ConstraintSet
+
+    private var navigationStatus = ENavigationStatus.Running
 
     // Define a navigation service from which we will start the simulation.
     private val navigationService = NavigationService()
@@ -57,14 +134,24 @@ class MainActivity : AppCompatActivity() {
                     mapView.followPosition()
                 }
             }
+            applyCameraFocus()
+            endOfSectionBmp = ContextCompat.getDrawable(this@MainActivity, R.drawable.end_of_traffic_section)
+                ?.toBitmap(navigationImageSize, navigationImageSize)
+            setNavigationPanelsVisible(isVisible = true)
         },
-        onDestinationReached = { _ ->
+        onNavigationInstructionUpdated = { instr -> updateNavigationInstruction(instr) },
+        onDestinationReached = { onNavigationEnded() },
+        onNotifyStatusChange = { status ->
+            navigationStatus = status
+            refreshStatusMessage()
+        },
+        onNavigationError = { error -> onNavigationEnded(error) },
+        onNavigationSound = { sound ->
             SdkCall.execute {
-                binding.gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.routes?.clear()
-                }
+                SoundPlayingService.play(sound, playingListener, soundPreference)
             }
         },
+        canPlayNavigationSound = true
     )
 
     // Define a listener that will let us know the progress of the routing process.
@@ -83,38 +170,182 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
+        SoundUtils.addTTSPlayerInitializationListener(this)
 
-            // Defines an action that should be done when the world map is ready (Updated/ loaded).
-            startSimulation()
+        turnPadding = resources.getDimension(R.dimen.nav_top_panel_turn_margin).toInt()
+        turnImageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
+        navigationImageSize = resources.getDimension(R.dimen.navigation_image_size).toInt()
+        navigationPanelPadding = resources.getDimension(R.dimen.nav_top_panel_padding).toInt()
+        signPostImageSize = resources.getDimension(R.dimen.sign_post_image_size).toInt()
+
+        portraitConstraintSet = ConstraintSet().apply { clone(binding.root as ConstraintLayout) }
+        applyOrientationLayout()
+
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            val panelMargin = resources.getDimensionPixelSize(R.dimen.nav_panel_margin)
+            val setPanelHorizontalMargins = { panel: ConstraintLayout ->
+                val params = panel.layoutParams as ConstraintLayout.LayoutParams
+                params.marginStart = panelMargin
+                params.marginEnd = panelMargin
+                panel.layoutParams = params
+            }
+
+            setPanelHorizontalMargins(binding.topPanel)
+            setPanelHorizontalMargins(binding.bottomPanel)
+            setPanelHorizontalMargins(binding.trafficPanel)
         }
 
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
-        }
+        registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
-        }
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
+            showDialog(getString(R.string.internet_required))
         }
     }
 
-    override fun onStop() {
-        super.onStop()
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applyOrientationLayout()
+        applyCameraFocus()
+    }
+
+    private fun applyOrientationLayout() {
+        val rootLayout = binding.root as ConstraintLayout
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        // ConstraintSet.applyTo() restores visibility from the time of clone (all panels
+        // were GONE at that point), so we must save and restore the live visibility state.
+        val topVis = binding.topPanel.visibility
+        val bottomVis = binding.bottomPanel.visibility
+        val trafficVis = binding.trafficPanel.visibility
+        val fabVis = binding.followCursorButton.visibility
+        val progressVis = binding.progressBar.visibility
+
+        val panelMargin = resources.getDimensionPixelSize(R.dimen.nav_panel_margin)
+        ConstraintSet().apply {
+            clone(portraitConstraintSet)
+            if (isLandscape) {
+                val panelWidth = (resources.displayMetrics.widthPixels * 0.4f).toInt()
+                topPanelWidth = panelWidth
+
+                for (id in intArrayOf(R.id.top_panel, R.id.traffic_panel, R.id.bottom_panel)) {
+                    constrainWidth(id, panelWidth)
+                    connect(id, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, 0)
+                    clear(id, ConstraintSet.END)
+                }
+            } else {
+                topPanelWidth = resources.displayMetrics.widthPixels - 2 * navigationPanelPadding
+
+                for (id in intArrayOf(R.id.top_panel, R.id.traffic_panel, R.id.bottom_panel)) {
+                    connect(id, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, panelMargin)
+                    connect(id, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, panelMargin)
+                }
+            }
+        }.applyTo(rootLayout)
+
+        binding.topPanel.visibility = topVis
+        binding.bottomPanel.visibility = bottomVis
+        binding.trafficPanel.visibility = trafficVis
+        binding.followCursorButton.visibility = fabVis
+        binding.progressBar.visibility = progressVis
+    }
+
+    // this adjusts GPS arrow position on map
+    private fun applyCameraFocus() {
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        SdkCall.execute {
+            binding.gemSurfaceView.mapView?.preferences?.followPositionPreferences?.cameraFocus =
+                if (isLandscape) XyF(0.7f, 0.75f) else XyF(0.5f, 0.75f)
+        }
+    }
+
+    // this adjusts Magic Lane logo position on map
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            binding.gemSurfaceView.mapView?.preferences?.focusViewport = getFocusViewport()
+        }
+    }
+
+    fun getFocusViewport(): Rect {
+        val root = binding.root
+        val insets = ViewCompat.getRootWindowInsets(root)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+
+        val width = root.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+        val height = root.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
+
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        return if (isLandscape) {
+            val w = max(width, height)
+            val h = min(width, height)
+
+            val left = if (binding.topPanel.isVisible) binding.topPanel.right else insets?.left ?: 0
+            val top = insets?.top ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            Rect(left, top, right, bottom)
+        } else {
+            val w = min(width, height)
+            val h = max(width, height)
+
+            val left = insets?.left ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val top = when {
+                binding.topPanel.isVisible && binding.trafficPanel.isVisible -> binding.trafficPanel.bottom
+                binding.topPanel.isVisible -> binding.topPanel.bottom
+                else -> insets?.top ?: 0
+            }
+            val bottom = if (binding.bottomPanel.isVisible) {
+                binding.bottomPanel.top.coerceAtLeast(top)
+            } else {
+                (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            }
+            Rect(left, top, right, bottom)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        clearSdkListeners()
 
         // Release the SDK.
         GemSdk.release()
+        exitProcess(0)
+    }
+
+    private fun registerSdkListeners() {
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_init_failed, GemError.getMessage(error, this))
+            runOnUiThread {
+                showDialog(errorMessage) { finish() }
+            }
+        }
+
+        binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
+        }
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                startSimulation()
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnUiThread {
+                showDialog(getString(R.string.token_rejected_message))
+            }
+        }
+    }
+
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
     }
 
     private fun enableGPSButton() {
@@ -122,14 +353,17 @@ class MainActivity : AppCompatActivity() {
         binding.apply {
             gemSurfaceView.mapView?.apply {
                 onExitFollowingPosition = {
-                    val isSimulationActive = SdkCall.execute { NavigationService().isSimulationActive() } ?: false
-                    if (isSimulationActive) {
-                        followCursorButton.visibility = View.VISIBLE
-                    }
+                    followCursorButton.visibility = View.VISIBLE
+                    setNavigationPanelsVisible(isVisible = false)
                 }
 
                 onEnterFollowingPosition = {
                     followCursorButton.visibility = View.GONE
+
+                    val simulationIsActive = SdkCall.execute { navigationService.isSimulationActive() } ?: false
+                    if (simulationIsActive) {
+                        setNavigationPanelsVisible(isVisible = true)
+                    }
                 }
 
                 // Set on click action for the GPS button.
@@ -140,29 +374,450 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun onNavigationEnded(errorCode: ErrorCode = GemError.NoError) {
+        runOnUiThread {
+            if ((errorCode != GemError.NoError) && (errorCode != GemError.Cancel)) {
+                showDialog(GemError.getMessage(errorCode))
+            }
+            setNavigationPanelsVisible(isVisible = false)
+        }
+
+        SdkCall.execute {
+            binding.gemSurfaceView.mapView?.hideRoutes()
+        }
+    }
+
+    private fun updateNavigationInstruction(instruction: NavigationInstruction) {
+        val distanceToNextTurnWidth = getTextViewWidth(binding.instrDistance, "1000 m")
+        val availableWidth = topPanelWidth - max(turnImageSize, distanceToNextTurnWidth) - 3 * turnPadding
+
+        val navData = SdkCall.execute { collectNavigationUiData(instruction, availableWidth) } ?: return
+
+        binding.apply {
+            if (!navData.hasSameTurnImage) {
+                navIcon.setImageBitmap(navData.instructionIcon)
+            }
+            instrDistance.text = navData.instructionDistance
+            eta.text = navData.etaText
+            rtt.text = navData.rttText
+            rtd.text = navData.rtdText
+
+            val hasSignPost = navData.signPostBitmap != null
+            val hasRoadCode = navData.roadCodeBitmap != null
+
+            signPost.isVisible = hasSignPost
+            navData.signPostBitmap?.let { bmp ->
+                signPost.setImageBitmap(bmp)
+                signPost.layoutParams.width = bmp.width
+                signPost.layoutParams.height = bmp.height
+            }
+
+            roadCode.isVisible = hasRoadCode
+            navData.roadCodeBitmap?.let { bmp ->
+                roadCode.setImageBitmap(bmp)
+                if (bmp.height > 0) {
+                    val ratio = bmp.width.toFloat() / bmp.height
+                    roadCode.layoutParams.width = (roadCode.layoutParams.height * ratio).toInt()
+                }
+            }
+
+            navInstruction.isVisible = !hasSignPost
+            if (!hasSignPost) {
+                navInstruction.text = navData.instructionText
+                navInstruction.maxLines = if (hasRoadCode) 1 else 3
+            }
+        }
+
+        updateTrafficPanel(instruction)
+    }
+
+    private fun collectNavigationUiData(instruction: NavigationInstruction, availableWidth: Int): NavigationUiData {
+        val instructionText = instruction.nextStreetName?.takeIf { it.isNotEmpty() } ?: instruction.nextTurnInstruction.orEmpty()
+
+        var hasSameTurnImage = false
+        val instructionIcon = getNextTurnImage(instruction, turnImageSize, turnImageSize) { isSame ->
+            hasSameTurnImage = isSame
+        }
+
+        val (etaText, rttText, rtdText) = navRoute?.let {
+            Triple(it.getEta(), it.getRtt(), it.getRtd())
+        } ?: Triple("", "", "")
+
+        val signPostBitmap = getSignpostImage(instruction, availableWidth, signPostImageSize)
+        val roadCodeBitmap = if (signPostBitmap == null) {
+            getRoadCodeImage(instruction, availableWidth, navigationImageSize)
+        } else null
+
+        return NavigationUiData(
+            instructionText = instructionText,
+            instructionIcon = instructionIcon,
+            hasSameTurnImage = hasSameTurnImage,
+            instructionDistance = instruction.getDistanceInMeters(),
+            etaText = etaText,
+            rttText = rttText,
+            rtdText = rtdText,
+            signPostBitmap = signPostBitmap,
+            roadCodeBitmap = roadCodeBitmap,
+        )
+    }
+
+    private fun refreshStatusMessage() {
+        val statusMessage = getStatusMessage()
+        binding.turnContainer.isVisible = statusMessage.isEmpty()
+
+        if (statusMessage.isNotEmpty()) {
+            binding.navInstruction.text = statusMessage
+        }
+    }
+
+    private fun getStatusMessage(): String {
+        when (navigationStatus) {
+            ENavigationStatus.WaitingRoute -> {
+                val routeStatus = navRoute?.status
+
+                return when (routeStatus) {
+                    ERouteStatus.WaitingInternetConnection -> {
+                        getString(R.string.waiting_for_internet_connection)
+                    }
+
+                    ERouteStatus.Calculating -> {
+                        getString(R.string.calculating)
+                    }
+
+                    ERouteStatus.Ready -> {
+                        getString(R.string.gps_accuracy_not_good_enough)
+                    }
+
+                    else -> {
+                        getString(R.string.calculating)
+                    }
+                }
+            }
+            ENavigationStatus.WaitingGPS -> {
+                if (navigationService.isSimulationActive()) {
+                    return getString(R.string.calculating)
+                }
+                return getString(R.string.getting_position)
+            }
+            else -> {
+                // Do nothing for other statuses
+            }
+        }
+
+        return ""
+    }
+
+    private fun setNavigationPanelsVisible(isVisible: Boolean) {
+        binding.topPanel.isVisible = isVisible
+        binding.bottomPanel.isVisible = isVisible
+        if (!isVisible) {
+            binding.trafficPanel.isVisible = false
+        }
+        updateFocusViewport()
+    }
+
     private fun startSimulation() = SdkCall.execute {
         val waypoints = arrayListOf(
             Landmark("London", 51.5073204, -0.1276475),
             Landmark("Paris", 48.8566932, 2.3514616),
         )
 
-        navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
+        val error = navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
+        if (error != GemError.NoError) {
+            runOnUiThread {
+                showDialog(getString(R.string.route_simulation_error, GemError.getMessage(error, this)))
+            }
+        }
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
-        val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+    private fun NavigationInstruction.getDistanceInMeters(): String {
+        return GemUtil.getDistText(
+            this.timeDistanceToNextTurn?.totalDistance ?: 0,
+            EUnitSystem.Metric,
+        ).let { pair ->
+            pair.first + " " + pair.second
+        }
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun Route.getEta(): String {
+        val etaNumber = this.getTimeDistance(true)?.totalTime ?: 0
+
+        val time = Time()
+        time.setLocalTime()
+        time.longValue += etaNumber * 1000
+        return String.format("%d:%02d", time.hour, time.minute)
+    }
+
+    private fun Route.getRtt(): String {
+        return GemUtil.getTimeText(
+            this.getTimeDistance(true)?.totalTime ?: 0,
+        ).let { pair ->
+            pair.first + " " + pair.second
+        }
+    }
+
+    private fun Route.getRtd(): String {
+        return GemUtil.getDistText(
+            this.getTimeDistance(true)?.totalDistance ?: 0,
+            EUnitSystem.Metric,
+        ).let { pair ->
+            pair.first + " " + pair.second
+        }
+    }
+
+    private fun getNextTurnImage(
+        navInstr: NavigationInstruction,
+        width: Int,
+        height: Int,
+        onSameImage: (Boolean) -> Unit = {}
+    ): Bitmap? {
+        if (!navInstr.hasNextTurnInfo()) return null
+
+        if ((navInstr.nextTurnDetails?.abstractGeometryImage?.uid ?: 0) == lastTurnImageId) {
+            onSameImage(true)
+            return null
+        }
+
+        val image = navInstr.nextTurnDetails?.abstractGeometryImage
+        if (image != null) {
+            lastTurnImageId = image.uid
+        }
+
+        val aInner = Rgba(255, 255, 255, 255)
+        val aOuter = Rgba(0, 0, 0, 255)
+        val iInner = Rgba(128, 128, 128, 255)
+        val iOuter = Rgba(128, 128, 128, 255)
+
+        return GemUtilImages.asBitmap(
+            image,
+            width,
+            height,
+            aInner,
+            aOuter,
+            iInner,
+            iOuter,
+        )
+    }
+
+    private fun getSignpostImage(navInstr: NavigationInstruction, width: Int, height: Int): Bitmap? {
+        if (!navInstr.hasSignpostInfo()) return null
+
+        val distToNextTurn = navInstr.timeDistanceToNextTurn?.totalDistance ?: 0
+        if (distToNextTurn > 1000) {
+            return null
+        }
+
+        return navInstr.signpostDetails?.image?.let { image ->
+            GemUtilImages.asBitmap(image, width, height)
+        }
+    }
+
+    private fun getRoadCodeImage(navInstr: NavigationInstruction, width: Int, height: Int): Bitmap? {
+        val roadsInfo = navInstr.nextRoadInformation ?: return null
+        if (roadsInfo.isEmpty()) return null
+        val resultWidth = if (width == 0) (2.5 * height).toInt() else width
+        val image = navInstr.getRoadInfoImage(roadsInfo)
+        return GemUtilImages.asBitmap(image, resultWidth, height)
+    }
+
+    private fun getTextViewWidth(textView: MaterialTextView, text: String): Int {
+        val previous = textView.text
+        textView.text = text
+        textView.measure(
+            View.MeasureSpec.makeMeasureSpec(Short.MAX_VALUE.toInt(), View.MeasureSpec.AT_MOST),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+        )
+        val width = textView.measuredWidth
+        textView.text = previous
+        return width
+    }
+
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        showBottomSheetDialog(
+            title = getString(R.string.error),
+            message = text,
+            onButtonClick = { dialog ->
+                onDismiss?.invoke()
                 dialog.dismiss()
+            },
+        )
+    }
+
+    private fun showBottomSheetDialog(
+        title: String,
+        message: String,
+        onButtonClick: (BottomSheetDialog) -> Unit,
+    ) {
+        val dialog = BottomSheetDialog(this)
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            this.title.text = title
+            this.message.text = message
+            button.setOnClickListener {
+                onButtonClick(dialog)
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
+    }
+
+    private fun updateTrafficPanel(instruction: NavigationInstruction) {
+        if (!binding.topPanel.isVisible) {
+            binding.trafficPanel.isVisible = false
+            return
+        }
+
+        val route = navRoute ?: run {
+            binding.trafficPanel.isVisible = false
+            return
+        }
+
+        val trafficEvent = getTrafficEvent(instruction, route)
+        if (trafficEvent == null) {
+            binding.trafficPanel.isVisible = false
+            trafficBmp = null
+            return
+        }
+
+        updateTrafficEventInfo(trafficEvent)
+        val bmp = trafficBmp ?: run {
+            binding.trafficPanel.isVisible = false
+            return
+        }
+
+        binding.apply {
+            trafficPanel.isVisible = true
+            trafficPanel.setBackgroundColor(trafficPanelBackgroundColor)
+
+            if (!sameTrafficImage) {
+                trafficImage.setImageBitmap(bmp)
+            }
+
+            endOfSectionImage.isVisible = insideTrafficEvent && endOfSectionBmp != null
+            if (insideTrafficEvent) {
+                endOfSectionBmp?.let { endOfSectionImage.setImageBitmap(it) }
+            }
+
+            trafficEventDescription.text = trafficEventDescriptionText
+
+            var prefix = distanceToTrafficPrefixText
+            if (prefix.isNotEmpty()) prefix = "$prefix "
+            distanceToTrafficPrefix.text = prefix
+
+            distanceToTraffic.text = distanceToTrafficText
+            distanceToTrafficUnit.text = distanceToTrafficUnitText
+
+            trafficDelayTime.text = trafficDelayTimeText
+            trafficDelayTimeUnit.text = trafficDelayTimeUnitText
+
+            trafficDelayDistance.isVisible = trafficDelayDistanceText.isNotEmpty()
+            if (trafficDelayDistanceText.isNotEmpty()) {
+                trafficDelayDistance.text = trafficDelayDistanceText
+            }
+
+            trafficDelayDistanceUnit.isVisible = trafficDelayDistanceUnitText.isNotEmpty()
+            if (trafficDelayDistanceUnitText.isNotEmpty()) {
+                trafficDelayDistanceUnit.text = trafficDelayDistanceUnitText
+            }
+        }
+    }
+
+    private fun getTrafficEvent(navInstr: NavigationInstruction, route: Route): RouteTrafficEvent? = SdkCall.execute {
+        if (navInstr.navigationStatus != ENavigationStatus.Running) return@execute null
+        val trafficEventsList = route.trafficEvents ?: return@execute null
+
+        val remainingTravelDistance = navInstr.remainingTravelTimeDistance?.totalDistance ?: 0
+
+        for (event in trafficEventsList) {
+            if (event.delay != 0) {
+                val distToDest = event.distanceToDestination
+                distToTrafficEvent = remainingTravelDistance - distToDest
+
+                insideTrafficEvent = false
+
+                if (distToTrafficEvent <= 0) {
+                    remainingDistInsideTrafficEvent = event.length - (distToDest - remainingTravelDistance)
+                    if (remainingDistInsideTrafficEvent >= 0) {
+                        insideTrafficEvent = true
+                    }
+                }
+
+                if ((distToTrafficEvent >= 0) || (remainingDistInsideTrafficEvent >= 0)) {
+                    return@execute event
+                }
+            }
+        }
+
+        return@execute null
+    }
+
+    private fun updateTrafficEventInfo(trafficEvent: RouteTrafficEvent) = SdkCall.execute {
+        trafficEventDescriptionText = trafficEvent.description ?: ""
+
+        val distance = if (insideTrafficEvent) remainingDistInsideTrafficEvent else distToTrafficEvent
+        val distancePair = GemUtil.getDistText(distance, EUnitSystem.Metric, true)
+        distanceToTrafficText = distancePair.first
+        distanceToTrafficUnitText = distancePair.second
+
+        val theFormat = getString(if (insideTrafficEvent) R.string.out_in_str else R.string.in_str)
+        distanceToTrafficPrefixText = String.format(theFormat, "").trim()
+
+        trafficDelayDistanceText = ""
+        trafficDelayDistanceUnitText = ""
+        trafficDelayTimeText = ""
+        trafficDelayTimeUnitText = ""
+
+        if (!trafficEvent.isRoadblock) {
+            if (insideTrafficEvent) {
+                if (trafficEvent.length > 0) {
+                    val remainingDelay = (trafficEvent.delay * remainingDistInsideTrafficEvent) / trafficEvent.length
+                    val timePair = GemUtil.getTimeText(remainingDelay)
+                    trafficDelayTimeText = timePair.first
+                    trafficDelayTimeUnitText = timePair.second
+                }
+            } else {
+                val distPair = GemUtil.getDistText(trafficEvent.length, SdkSettings.unitSystem, true)
+                trafficDelayDistanceText = distPair.first
+                trafficDelayDistanceUnitText = distPair.second
+
+                val timePair = GemUtil.getTimeText(trafficEvent.delay)
+                trafficDelayTimeText = String.format("+%s", timePair.first)
+                trafficDelayTimeUnitText = timePair.second
+            }
+        }
+
+        val newBmp = getTrafficImage(trafficEvent, navigationImageSize, navigationImageSize)
+        if (newBmp != null) {
+            trafficBmp = newBmp
+            sameTrafficImage = false
+        } else {
+            sameTrafficImage = true
+        }
+    }
+
+    private fun getTrafficImage(from: RouteTrafficEvent?, width: Int, height: Int): Bitmap? = SdkCall.execute {
+        if ((from?.image?.uid ?: 0) == lastTrafficImageId) return@execute null
+
+        val image = from?.image
+        if (image != null) {
+            lastTrafficImageId = image.uid
+        }
+
+        GemUtilImages.asBitmap(image, width, height)
+    }
+
+    // ITTSPlayerInitializationListener
+    override fun onTTSPlayerInitialized() {
+        SoundPlayingService.setTTSLanguage("eng-USA")
+    }
+
+    // ITTSPlayerInitializationListener
+    override fun onTTSPlayerInitializationFailed() {
+        SoundPlayingService.setDefaultHumanVoice()
     }
 }

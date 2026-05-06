@@ -27,6 +27,8 @@ dependencies {
     implementation(shared.androidx.activity.ktx)
     implementation(shared.androidx.espresso.idlingresource)
     implementation(shared.androidx.appcompat)
+    implementation(shared.androidx.constraintlayout)
+    implementation(shared.androidx.media)
     implementation(shared.material)
 
     testImplementation(shared.junit)

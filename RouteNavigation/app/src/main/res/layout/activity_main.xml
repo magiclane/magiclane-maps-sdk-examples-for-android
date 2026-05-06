@@ -13,20 +13,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/primary"
-            app:layout_constraintTop_toTopOf="parent"
-            app:title="@string/app_name"
-            app:titleTextColor="@color/on_primary"
-            app:paddingTopWithSystemWindowInsets='@{"8dp"}'
-            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
-            android:paddingBottom="12dp"
-            />
-
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progress_bar"
             android:layout_width="wrap_content"
@@ -40,35 +26,36 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/top_panel"
-            android:layout_width="match_parent"
-            android:layout_height="120dp"
-            android:layout_margin="10dp"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/nav_top_panel_height"
+            android:layout_margin="@dimen/nav_top_panel_padding"
             android:background="@color/black"
-            android:elevation="5dp"
+            android:elevation="@dimen/elevation_height"
             android:gravity="center"
             android:orientation="horizontal"
             android:visibility="gone"
+            app:marginTopWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/toolbar">
+            app:layout_constraintTop_toTopOf="parent">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/turn_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_marginEnd="20dp"
+                android:layout_marginStart="@dimen/nav_top_panel_turn_margin"
+                android:layout_marginEnd="@dimen/nav_top_panel_turn_margin"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/nav_icon"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:layout_marginTop="10dp"
+                    android:layout_width="@dimen/turn_image_size"
+                    android:layout_height="@dimen/turn_image_size"
+                    android:layout_marginTop="@dimen/big_padding"
                     app:layout_constraintBottom_toTopOf="@id/instr_distance"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -79,9 +66,9 @@
                     android:id="@+id/instr_distance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
+                    android:layout_marginBottom="@dimen/big_padding"
                     android:textColor="@android:color/white"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/medium_text_size"
                     android:textStyle="bold"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -89,31 +76,192 @@
                     app:layout_constraintTop_toBottomOf="@id/nav_icon" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/nav_instruction"
+            <FrameLayout
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_marginEnd="20dp"
-                android:maxLines="3"
-                android:ellipsize="end"
-                android:textColor="@color/white"
-                android:textSize="22sp"
-                android:textStyle="bold"
+                android:layout_height="0dp"
+                android:layout_marginStart="@dimen/nav_top_panel_turn_margin"
+                android:layout_marginEnd="@dimen/nav_top_panel_turn_margin"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@id/turn_container"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/road_code"
+                        android:layout_width="@dimen/nav_top_panel_road_img_size"
+                        android:layout_height="@dimen/nav_top_panel_road_img_size"
+                        android:layout_gravity="center"
+                        android:visibility="gone"
+                        tools:ignore="ContentDescription" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/nav_instruction"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:ellipsize="end"
+                        android:gravity="center"
+                        android:maxLines="3"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/nav_top_panel_instruction_text_size"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/sign_post"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:visibility="gone"
+                    tools:ignore="ContentDescription" />
+
+            </FrameLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/traffic_panel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:elevation="@dimen/elevation_height"
+            android:visibility="gone"
+            android:layout_marginStart="@dimen/nav_panel_margin"
+            android:layout_marginEnd="@dimen/nav_panel_margin"
+            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:layout_constraintTop_toBottomOf="@id/top_panel"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/traffic_image"
+                android:layout_width="@dimen/nav_top_panel_traffic_img_size"
+                android:layout_height="@dimen/nav_top_panel_traffic_img_size"
+                android:layout_margin="@dimen/nav_panel_margin"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                tools:ignore="ContentDescription" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/end_of_section_image"
+                android:layout_width="@dimen/nav_top_panel_traffic_img_size"
+                android:layout_height="@dimen/nav_top_panel_traffic_img_size"
+                android:layout_margin="@dimen/nav_panel_margin"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                tools:ignore="ContentDescription" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/traffic_event_description"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
+                android:textStyle="bold"
+                android:textSize="@dimen/nav_top_panel_traffic_big_text_size"
+                android:layout_marginStart="@dimen/nav_panel_margin"
+                android:layout_marginEnd="@dimen/nav_top_panel_padding"
+                app:layout_constraintStart_toEndOf="@id/traffic_image"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/distance_to_traffic_prefix" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/distance_to_traffic_prefix"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
+                android:textStyle="bold"
+                android:textSize="@dimen/nav_top_panel_traffic_small_text_size"
+                android:layout_marginStart="@dimen/nav_panel_margin"
+                android:layout_marginBottom="@dimen/nav_top_panel_traffic_margin_bottom"
+                app:layout_constraintStart_toEndOf="@id/traffic_image"
+                app:layout_constraintTop_toBottomOf="@id/traffic_event_description"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/distance_to_traffic"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
+                android:textStyle="bold"
+                android:textSize="@dimen/nav_top_panel_traffic_big_text_size"
+                app:layout_constraintStart_toEndOf="@id/distance_to_traffic_prefix"
+                app:layout_constraintBaseline_toBaselineOf="@id/distance_to_traffic_prefix" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/distance_to_traffic_unit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
+                android:textStyle="bold"
+                android:textSize="@dimen/nav_top_panel_traffic_small_text_size"
+                app:layout_constraintStart_toEndOf="@id/distance_to_traffic"
+                app:layout_constraintBaseline_toBaselineOf="@id/distance_to_traffic_prefix" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/traffic_delay_distance_unit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
+                android:textStyle="bold"
+                android:textSize="@dimen/nav_top_panel_traffic_small_text_size"
+                android:layout_marginEnd="@dimen/nav_panel_margin"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBaseline_toBaselineOf="@id/distance_to_traffic_prefix" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/traffic_delay_distance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/nav_top_panel_traffic_delay_margin"
+                android:textColor="@android:color/black"
+                android:textStyle="bold"
+                android:textSize="@dimen/nav_top_panel_traffic_big_text_size"
+                app:layout_constraintEnd_toStartOf="@id/traffic_delay_distance_unit"
+                app:layout_constraintBaseline_toBaselineOf="@id/distance_to_traffic_prefix" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/traffic_delay_time_unit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
+                android:textStyle="bold"
+                android:textSize="@dimen/nav_top_panel_traffic_small_text_size"
+                android:layout_marginEnd="@dimen/nav_panel_margin"
+                app:layout_constraintEnd_toStartOf="@id/traffic_delay_distance"
+                app:layout_constraintBaseline_toBaselineOf="@id/distance_to_traffic_prefix" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/traffic_delay_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
+                android:textStyle="bold"
+                android:textSize="@dimen/nav_top_panel_traffic_big_text_size"
+                app:layout_constraintEnd_toStartOf="@id/traffic_delay_time_unit"
+                app:layout_constraintBaseline_toBaselineOf="@id/distance_to_traffic_prefix" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/bottom_panel"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_margin="10dp"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/bottom_panel_height"
+            android:layout_margin="@dimen/big_padding"
             android:background="@color/white"
-            android:elevation="5dp"
+            android:elevation="@dimen/elevation_height"
             android:visibility="gone"
             app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
@@ -126,9 +274,9 @@
                 android:id="@+id/eta"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="10dp"
+                android:layout_margin="@dimen/big_padding"
                 android:textColor="@color/black"
-                android:textSize="18sp"
+                android:textSize="@dimen/medium_text_size"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/rtt"
@@ -140,9 +288,9 @@
                 android:id="@+id/rtt"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="10dp"
+                android:layout_margin="@dimen/big_padding"
                 android:textColor="@color/black"
-                android:textSize="18sp"
+                android:textSize="@dimen/medium_text_size"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/rtd"
@@ -153,9 +301,9 @@
                 android:id="@+id/rtd"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="10dp"
+                android:layout_margin="@dimen/big_padding"
                 android:textColor="@color/black"
-                android:textSize="18sp"
+                android:textSize="@dimen/medium_text_size"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
