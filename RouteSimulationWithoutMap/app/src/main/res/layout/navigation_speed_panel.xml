@@ -20,7 +20,7 @@
 		app:layout_constraintBottom_toBottomOf="parent"
 		android:visibility="gone" />
 
-	<TextView
+	<com.google.android.material.textview.MaterialTextView
 		android:id="@+id/nav_current_speed"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
@@ -38,7 +38,7 @@
 		android:textStyle="bold"
         tools:ignore="SpUsage" />
 
-	<TextView
+	<com.google.android.material.textview.MaterialTextView
 		android:id="@+id/nav_current_speed_unit"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
@@ -48,7 +48,7 @@
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_goneMarginStart="@dimen/nav_speed_panel_lateral_padding"
 		android:paddingEnd="@dimen/route_status_text_lateral_padding"
-		android:translationY="-6dp"
+		android:translationY="@dimen/nav_speed_unit_translation"
 		android:textSize="@dimen/small_text_size" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

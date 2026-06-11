@@ -17,64 +17,100 @@
             app:layout_constraintTop_toTopOf="parent"
             app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
             app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingTopWithSystemWindowInsets='@{"8dp"}'
-            app:title="@string/app_name"
-            app:titleTextColor="@color/on_primary">
+            app:paddingTopWithSystemWindowInsets='@{@dimen/toolbar_top_padding}'>
 
-            <android.widget.SearchView
+            <androidx.appcompat.widget.SearchView
                 android:id="@+id/search_input"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/filter_height"
                 android:layout_marginEnd="@dimen/filter_padding"
-                android:closeIcon="@drawable/ic_close_white_24dp"
-                android:iconifiedByDefault="false"
+                android:background="@drawable/rounded_background_search"
+                android:enabled="false"
                 android:imeOptions="flagNoExtractUi"
                 android:maxHeight="@dimen/filter_height"
                 android:minHeight="@dimen/filter_min_height"
-                android:queryHint="@string/app_name"
-                android:searchIcon="@drawable/ic_search_white_24dp"
-                android:visibility="gone"
+                app:closeIcon="@drawable/ic_close_dark_24dp"
+                app:iconifiedByDefault="false"
+                app:queryHint="@string/app_name"
+                app:searchIcon="@drawable/ic_search_dark_24dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:targetApi="lollipop" />
+                app:layout_constraintTop_toTopOf="parent" />
 
         </com.google.android.material.appbar.MaterialToolbar>
 
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/categories_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/background"
+            android:clipToPadding="false"
+            android:paddingTop="@dimen/category_bar_vertical_padding"
+            android:paddingBottom="@dimen/category_bar_vertical_padding"
+            app:marginLeftWithSystemWindowInsets='@{@dimen/small_padding}'
+            app:marginRightWithSystemWindowInsets='@{@dimen/small_padding}'
+            app:layout_constraintTop_toBottomOf="@id/toolbar" />
+
+        <View
+            android:layout_width="48dp"
+            android:layout_height="0dp"
+            android:background="@drawable/fade_right_overlay"
+            android:importantForAccessibility="no"
+            app:layout_constraintBottom_toBottomOf="@id/categories_view"
+            app:layout_constraintEnd_toEndOf="@id/categories_view"
+            app:layout_constraintTop_toTopOf="@id/categories_view" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/search_progress_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:visibility="invisible"
+            app:indicatorColor="@color/search_progress_green"
+            app:trackThickness="6dp"
+            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
+            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
+            app:layout_constraintTop_toBottomOf="@id/categories_view" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/list_view"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            app:paddingLeftWithSystemWindowInsets='@{0f}'
-            app:paddingRightWithSystemWindowInsets='@{0f}'
-            app:paddingBottomWithSystemWindowInsets='@{0f}'
+            android:background="@color/background"
+            android:paddingStart="@dimen/big_padding"
+            android:paddingEnd="@dimen/big_padding"
+            android:clipToPadding="false"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/toolbar" />
+            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
+            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
+            app:paddingBottomWithSystemWindowInsets='@{@dimen/no_extra_inset}'
+            app:layout_constraintTop_toBottomOf="@id/search_progress_bar" />
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/no_result_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
             android:layout_marginStart="@dimen/big_padding"
             android:text="@string/no_results"
             android:textColor="@color/on_background"
             android:textSize="@dimen/standard_text_size"
             android:visibility="gone"
-            app:layout_constraintTop_toBottomOf="@+id/toolbar" />
+            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
+            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
+            app:layout_constraintTop_toBottomOf="@id/search_progress_bar" />
 
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progress_bar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:indeterminate="true"
-            android:visibility="gone"
+            android:visibility="visible"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/categories_view"
+            app:paddingBottomWithSystemWindowInsets='@{0f}'/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -8,6 +8,7 @@
 package com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.controllers
 
 import androidx.car.app.CarContext
+import com.magiclane.sdk.examples.androidautoroutenavigation.R
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.Service
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.model.GenericListItemModel
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.model.UIActionModel
@@ -20,13 +21,13 @@ typealias GeneralSettingsScreen = ListScreen
 class GeneralSettingsController(context: CarContext) : GeneralSettingsScreen(context) {
 
     override fun updateData() {
-        title = "Settings"
+        title = context.getString(R.string.settings)
         headerAction = UIActionModel.backModel()
 
         listItemModelList = ArrayList()
         listItemModelList.add(
             GenericListItemModel(
-                title = "Travel Mode",
+                title = context.getString(R.string.travel_mode),
                 isBrowsable = true,
                 onClicked = onClicked@{
                     if (Service.topScreen != this) {
@@ -40,7 +41,7 @@ class GeneralSettingsController(context: CarContext) : GeneralSettingsScreen(con
 
         listItemModelList.add(
             GenericListItemModel(
-                title = "Avoid Traffic",
+                title = context.getString(R.string.avoid_traffic),
                 isBrowsable = true,
                 onClicked = onClicked@{
                     if (Service.topScreen != this) {
@@ -54,7 +55,7 @@ class GeneralSettingsController(context: CarContext) : GeneralSettingsScreen(con
 
         listItemModelList.add(
             GenericListItemModel(
-                title = "Avoid Motorways",
+                title = context.getString(R.string.avoid_motorways),
                 isToggleChecked = SdkCall.execute { RoutingInstance.avoidMotorways } ?: false,
                 hasToggle = true,
                 onToggleChanged = {
@@ -67,7 +68,7 @@ class GeneralSettingsController(context: CarContext) : GeneralSettingsScreen(con
 
         listItemModelList.add(
             GenericListItemModel(
-                title = "Avoid Toll Roads",
+                title = context.getString(R.string.avoid_toll_roads),
                 isToggleChecked = SdkCall.execute { RoutingInstance.avoidTollRoads } ?: false,
                 hasToggle = true,
                 onToggleChanged = {
@@ -80,7 +81,7 @@ class GeneralSettingsController(context: CarContext) : GeneralSettingsScreen(con
 
         listItemModelList.add(
             GenericListItemModel(
-                title = "Avoid Ferries",
+                title = context.getString(R.string.avoid_ferries),
                 isToggleChecked = SdkCall.execute { RoutingInstance.avoidFerries } ?: false,
                 hasToggle = true,
                 onToggleChanged = {
@@ -93,7 +94,7 @@ class GeneralSettingsController(context: CarContext) : GeneralSettingsScreen(con
 
         listItemModelList.add(
             GenericListItemModel(
-                title = "Avoid Unpaved Roads",
+                title = context.getString(R.string.avoid_unpaved_roads),
                 isToggleChecked = SdkCall.execute { RoutingInstance.avoidUnpavedRoads }
                     ?: false,
                 hasToggle = true,

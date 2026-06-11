@@ -37,6 +37,7 @@ dependencies {
     implementation(shared.androidx.compose.ui.tooling.preview)
     implementation(shared.androidx.compose.material3)
     implementation(shared.androidx.lifecycle.viewmodel.compose)
+    implementation(shared.androidx.espresso.idlingresource)
 
     testImplementation(shared.junit)
     androidTestImplementation(project(":build-testing"))

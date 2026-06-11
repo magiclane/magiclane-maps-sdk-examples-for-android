@@ -33,11 +33,12 @@ import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
-    private var mapInsetPaddingPx = 0
-
-    // Waypoint constants for the example route
     private companion object {
+        // Window insets that the map area must stay clear of (status/navigation bars and cutout).
+        private val SYSTEM_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+
+        // Waypoints for the example public-transit route.
         private const val SAN_FRANCISCO_NAME = "San Francisco"
         private const val SAN_FRANCISCO_LAT = 37.77903
         private const val SAN_FRANCISCO_LON = -122.41991
@@ -47,20 +48,33 @@ class MainActivity : AppCompatActivity() {
         private const val SAN_JOSE_LON = -121.89058
     }
 
+    private lateinit var binding: ActivityMainBinding
+
+    // Extra margin kept around the presented route so it is not drawn under the toolbar/system bars.
+    private var mapInsetPaddingPx = 0
+
     private val routingService = RoutingService(
         onStarted = { onRoutingStarted() },
-        onCompleted = { routes, errorCode, unused -> onRoutingCompleted(routes, errorCode, unused) },
+        onCompleted = { routes, errorCode, _ -> onRoutingCompleted(routes, errorCode) },
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        initializeUI()
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
+        mapInsetPaddingPx = resources.getDimension(R.dimen.padding_40).toInt()
+
         registerSdkListeners()
-        checkInternetConnection()
+
+        if (!Util.isInternetConnected(this)) {
+            showDialog(getString(R.string.internet_required))
+        }
     }
 
     override fun onDestroy() {
@@ -70,17 +84,45 @@ class MainActivity : AppCompatActivity() {
         exitProcess(0)
     }
 
-    private fun initializeUI() {
-        // Set status bar icons to white
-        WindowCompat.getInsetsController(window, binding.root).isAppearanceLightStatusBars = false
+    // Registers all SDK surface and settings callbacks.
+    private fun registerSdkListeners() {
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            // SDK is not initialized here, so resolve the message directly (no SdkCall needed).
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnAliveUi { showDialog(errorMessage) { finish() } }
+        }
 
-        // Load map inset padding
-        mapInsetPaddingPx = resources.getDimension(R.dimen.padding_40).toInt()
+        binding.gemSurfaceView.onDefaultMapViewCreated = {
+            // Align the Magic Lane logo with system window insets on first map creation.
+            updateFocusViewport()
+        }
+
+        // Re-align the logo whenever the surface is resized (e.g. rotation).
+        binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
+        }
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                // Only calculate once the worldwide road map is ready.
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                calculateRoute()
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnAliveUi { showDialog(getString(R.string.token_rejected_message)) }
+        }
     }
 
-    private fun checkInternetConnection() {
-        if (!Util.isInternetConnected(this)) {
-            showDialog(getString(R.string.internet_required))
+    // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+        binding.gemSurfaceView.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
         }
     }
 
@@ -88,85 +130,53 @@ class MainActivity : AppCompatActivity() {
         binding.progressBar.visibility = View.VISIBLE
     }
 
-    private fun onRoutingCompleted(
-        routes: ArrayList<Route>,
-        errorCode: Int,
-        @Suppress("UNUSED_PARAMETER") unused: Any?,
-    ) {
+    private fun onRoutingCompleted(routes: ArrayList<Route>, errorCode: Int) {
         binding.progressBar.visibility = View.GONE
 
         when (errorCode) {
             GemError.NoError -> displayRoutesOnMap(routes)
-            GemError.Cancel -> showDialog("The routing action was cancelled.")
-            else -> showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
+            GemError.Cancel -> showDialog(getString(R.string.routing_cancelled))
+            else -> {
+                val message = SdkCall.runSynced { GemError.getMessage(errorCode, this) }
+                showDialog(getString(R.string.routing_error, message))
+            }
         }
     }
 
     private fun calculateRoute() = SdkCall.execute {
-        val waypoints = listOf(
+        val waypoints = arrayListOf(
             Landmark(SAN_FRANCISCO_NAME, SAN_FRANCISCO_LAT, SAN_FRANCISCO_LON),
             Landmark(SAN_JOSE_NAME, SAN_JOSE_LAT, SAN_JOSE_LON),
         )
 
         routingService.preferences.transportMode = ERouteTransportMode.Public
-        routingService.calculateRoute(ArrayList(waypoints))
+        routingService.calculateRoute(waypoints)
     }
 
     private fun displayRoutesOnMap(routes: ArrayList<Route>) = SdkCall.execute {
         binding.gemSurfaceView.mapView?.presentRoutes(routes, edgeAreaInsets = getFreeSpaceInsetsRect())
     }
 
-    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
-        if (!isActivityAlive()) return
+    // Positions the Magic Lane logo (and other map decorations) inside the visible map area,
+    // clear of the toolbar and system window insets.
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            val mapView = binding.gemSurfaceView.mapView ?: return@runSynced
+            val viewport = mapView.viewport ?: return@runSynced
+            val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(SYSTEM_INSET_TYPES)
 
-        val dialog = BottomSheetDialog(this)
-        DialogLayoutBinding.inflate(layoutInflater).apply {
-            title.text = getString(R.string.error)
-            message.text = text
-            button.setOnClickListener {
-                onDismiss?.invoke()
-                dialog.dismiss()
-            }
-            dialog.apply {
-                behavior.state = BottomSheetBehavior.STATE_EXPANDED
-                behavior.isDraggable = false
-                setCancelable(false)
-                setContentView(root)
-                show()
-            }
+            val left = insets?.left ?: 0
+            val top = insets?.top ?: 0
+            val right = (viewport.width - (insets?.right ?: 0)).coerceAtLeast(left)
+            val bottom = (viewport.height - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            mapView.preferences?.focusViewport = Rect(left, top, right, bottom)
         }
     }
 
-    private fun registerSdkListeners() {
-        binding.gemSurfaceView.onSdkInitFailed = { error ->
-            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
-            runOnUiThread {
-                showDialog(errorMessage) { finish() }
-            }
-        }
-
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
-            if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
-                calculateRoute()
-            }
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            runOnUiThread {
-                showDialog(getString(R.string.token_rejected_message))
-            }
-        }
-    }
-
-    private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
-        SdkSettings.onApiTokenRejected = {}
-    }
-
+    // Edge insets (margins from each screen edge) used to keep the presented route within the
+    // visible map area: below the toolbar and clear of the system bars/cutout, plus a small padding.
     private fun getFreeSpaceInsetsRect(): Rect {
-        val insets = ViewCompat.getRootWindowInsets(binding.root)
-            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+        val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(SYSTEM_INSET_TYPES)
 
         val left = (insets?.left ?: 0) + mapInsetPaddingPx
         val right = (insets?.right ?: 0) + mapInsetPaddingPx
@@ -174,6 +184,33 @@ class MainActivity : AppCompatActivity() {
         val top = (binding.toolbar.bottom.takeIf { it > 0 } ?: (insets?.top ?: 0)) + mapInsetPaddingPx
 
         return Rect(left, top, right, bottom)
+    }
+
+    /** Shows a non-dismissable bottom-sheet error dialog. */
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
+
+        val dialog = BottomSheetDialog(this)
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
+            setCancelable(false)
+            setContentView(dialogBinding.root)
+            show()
+        }
+    }
+
+    // Runs the block on the main thread only if the activity is still alive.
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
     }
 
     private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed

@@ -43,18 +43,17 @@
             android:id="@+id/wikipedia_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@color/surface"
             android:fillViewport="true"
             android:scrollbars="vertical"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@id/toolbar"
-            app:layout_constraintVertical_bias="1"
-            app:paddingBottomWithSystemWindowInsets='@{0f}'>
+            app:layout_constraintVertical_bias="1">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/surface">
+                android:layout_height="wrap_content">
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/location_name"

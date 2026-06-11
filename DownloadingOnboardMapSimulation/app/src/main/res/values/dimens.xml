@@ -17,4 +17,5 @@
     <dimen name="icon_gone_margin">80dp</dimen>
     <dimen name="no_extra_inset">0dp</dimen>
     <dimen name="turn_image_size">50dp</dimen>
+    <dimen name="nav_panel_margin">10dp</dimen>
 </resources>

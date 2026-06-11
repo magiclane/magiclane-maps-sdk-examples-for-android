@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2022-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -44,6 +44,7 @@ import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.ERouteDisplayMode
+import com.magiclane.sdk.d3scene.EWatermarkPosition
 import com.magiclane.sdk.examples.rangefinder.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.rangefinder.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Landmark
@@ -61,6 +62,17 @@ import kotlin.getValue
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        // System areas to keep clear of (status/navigation bars + any display cutout)
+        // when computing the free map area and positioning the Magic Lane logo.
+        private val SYSTEM_INSET_TYPES = WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+
+        // Magic Lane watermark logo size (in millimeters) and opacity (0f..1f).
+        private const val LOGO_SIZE_MM = 20.0f
+        private const val LOGO_ALPHA = 1.0f
+    }
+
     private lateinit var binding: ActivityMainBinding
     private val viewModel: MainActivityViewModel by viewModels()
 
@@ -111,7 +123,7 @@ class MainActivity : AppCompatActivity() {
                         showDialog(
                             resources.getString(
                                 R.string.service_error,
-                                GemError.getMessage(errorCode, this),
+                                SdkCall.runSynced { GemError.getMessage(errorCode, this@MainActivity) } ?: "",
                             ),
                         )
                     }
@@ -142,10 +154,25 @@ class MainActivity : AppCompatActivity() {
 
     private fun registerSdkListeners() {
         binding.gemSurfaceView.onSdkInitFailed = { error ->
+            // The SDK is not initialized yet here, so resolve the message directly
+            // (without an enclosing SdkCall block).
             val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
             runOnUiThread {
                 showDialog(errorMessage) { finish() }
             }
+        }
+
+        binding.gemSurfaceView.onDefaultMapViewCreated = { mapView ->
+            // Pin the Magic Lane watermark logo to the bottom-right corner of the map.
+            mapView.setWatermarkLogoProperties(EWatermarkPosition.EWPBottomRight, LOGO_SIZE_MM, LOGO_ALPHA)
+
+            // Once the map view exists, keep the camera viewport clear of the system bars/panel.
+            updateFocusViewport()
+        }
+
+        // Re-position the logo whenever the surface is resized (e.g. on rotation).
+        binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
         }
 
         SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
@@ -251,6 +278,11 @@ class MainActivity : AppCompatActivity() {
     private fun clearSdkListeners() {
         SdkSettings.onWorldwideRoadMapSupportStatus = {}
         SdkSettings.onApiTokenRejected = {}
+        binding.gemSurfaceView.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -722,14 +754,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getFreeSpaceRect(): Rect {
-        val systemBarsInsets = ViewCompat.getRootWindowInsets(binding.root)
-            ?.getInsets(WindowInsetsCompat.Type.systemBars())
+    /**
+     * Computes the portion of the map surface that is not covered by the system bars,
+     * the display cutout or the range options panel (in surface-local coordinates).
+     *
+     * @param padding amount (in pixels) to deflate the rectangle by on every side. Use a
+     * positive value to leave breathing room when centering routes, and `0` to obtain the
+     * full visible area (e.g. when positioning the Magic Lane logo on the viewport edge).
+     */
+    private fun getFreeSpaceRect(padding: Int = resources.getDimensionPixelSize(R.dimen.padding_40)): Rect {
+        val systemInsets = ViewCompat.getRootWindowInsets(binding.root)
+            ?.getInsets(SYSTEM_INSET_TYPES)
 
-        val leftInset = systemBarsInsets?.left ?: 0
-        val topInset = systemBarsInsets?.top ?: 0
-        val rightInset = systemBarsInsets?.right ?: 0
-        val bottomInset = systemBarsInsets?.bottom ?: 0
+        val leftInset = systemInsets?.left ?: 0
+        val topInset = systemInsets?.top ?: 0
+        val rightInset = systemInsets?.right ?: 0
+        val bottomInset = systemInsets?.bottom ?: 0
 
         val gemSurfaceTop = binding.gemSurfaceView.top
         val surfaceWidth = binding.gemSurfaceView.width
@@ -764,16 +804,26 @@ class MainActivity : AppCompatActivity() {
         }
         val right = (surfaceWidth - rightInset).coerceAtLeast(left)
         val bottom = (surfaceHeight - bottomInset).coerceAtLeast(top)
-        val padding = resources.getDimensionPixelSize(R.dimen.padding_40)
-        val centeringLeft = (left + padding).coerceAtMost(right)
-        val centeringTop = (top + padding).coerceAtMost(bottom)
+        val paddedLeft = (left + padding).coerceAtMost(right)
+        val paddedTop = (top + padding).coerceAtMost(bottom)
 
         return Rect(
-            left = centeringLeft,
-            top = centeringTop,
-            right = (right - padding).coerceAtLeast(centeringLeft),
-            bottom = (bottom - padding).coerceAtLeast(centeringTop),
+            left = paddedLeft,
+            top = paddedTop,
+            right = (right - padding).coerceAtLeast(paddedLeft),
+            bottom = (bottom - padding).coerceAtLeast(paddedTop),
         )
+    }
+
+    /**
+     * Positions the Magic Lane logo within the free map area so it stays clear of the
+     * system bars, the display cutout and the range options panel.
+     * Needs [SdkCall].
+     */
+    private fun updateFocusViewport() = SdkCall.runSynced {
+        val mapView = binding.gemSurfaceView.mapView ?: return@runSynced
+        // No padding here: the logo should sit right at the edge of the visible area.
+        mapView.preferences?.focusViewport = getFreeSpaceRect(padding = 0)
     }
 
     /**
@@ -799,7 +849,7 @@ class MainActivity : AppCompatActivity() {
 
     object EspressoIdlingResource {
         val espressoIdlingResource =
-            CountingIdlingResource("ApplyMapStyleInstrumentedTestsIdlingResource")
+            CountingIdlingResource("RangeFinderInstrumentedTestsIdlingResource")
         fun increment() = espressoIdlingResource.increment()
         fun decrement() = if (!espressoIdlingResource.isIdleNow) espressoIdlingResource.decrement() else Unit
     }

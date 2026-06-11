@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -13,6 +13,9 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.CircleGeographicArea
@@ -25,6 +28,7 @@ import com.magiclane.sdk.core.GeofenceAreaList
 import com.magiclane.sdk.core.GeofenceListener
 import com.magiclane.sdk.core.Login
 import com.magiclane.sdk.core.ProgressListener
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.d3scene.EMarkerType
@@ -37,7 +41,6 @@ import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.NavigationListener
 import com.magiclane.sdk.routesandnavigation.NavigationService
-import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.sensordatasource.PositionPublishingPreferences
 import com.magiclane.sdk.sensordatasource.PositionService
 import com.magiclane.sdk.sensordatasource.enums.EDataType
@@ -51,14 +54,15 @@ class MainActivity : AppCompatActivity() {
         private const val POSITION_PUBLISH_INTERVAL_SECONDS = 1
         private const val POLYLINE_INNER_SIZE_MM = 1.0
         private const val POLYGON_COLLECTION_NAME = "Polygon"
+
+        // Window insets that the Magic Lane logo must stay clear of.
+        private val SYSTEM_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
     }
 
     private lateinit var binding: ActivityMainBinding
 
     private val navigationService = NavigationService()
-
-    private val navRoute: Route?
-        get() = navigationService.getNavigationRoute(navigationListener)
 
     private val geofence = Geofence()
 
@@ -103,41 +107,65 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        initView()
-        configureSdkInitFailureHandler()
-        configureRoadMapStatusHandler()
-        configureApiTokenRejectedHandler()
+
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
+        registerSdkListeners()
         validateInternetConnection()
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
-        // Release the SDK.
+        // Detach listeners before releasing the SDK so no callback reaches a destroyed activity.
+        clearSdkListeners()
         GemSdk.release()
         exitProcess(0)
     }
 
-    private fun initView() {
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-    }
-
-    private fun configureSdkInitFailureHandler() {
+    // Registers all SDK surface and settings callbacks.
+    private fun registerSdkListeners() {
+        // SDK failed to initialize: the SDK is not running yet, so resolve the message directly.
         binding.gemSurfaceView.onSdkInitFailed = { error ->
             val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
-            runOnUiThread {
-                showDialog(errorMessage) { finish() }
-            }
+            runOnAliveUi { showDialog(errorMessage) { finish() } }
         }
-    }
 
-    private fun configureRoadMapStatusHandler() {
+        // Align the Magic Lane logo with the system insets once the map view exists.
+        binding.gemSurfaceView.onDefaultMapViewCreated = { _ ->
+            updateFocusViewport()
+        }
+
+        // Re-align the logo whenever the surface is resized (e.g. on rotation).
+        binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
+        }
+
+        // Once worldwide road map data is up to date, log in to enable geofencing.
         SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
             if (status == EOffboardListenerStatus.UpToDate) {
                 SdkSettings.onWorldwideRoadMapSupportStatus = {}
                 registerExternalLogin()
             }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnAliveUi { showDialog(getString(R.string.token_rejected_message)) }
+        }
+    }
+
+    // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+        binding.gemSurfaceView.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
         }
     }
 
@@ -147,21 +175,30 @@ class MainActivity : AppCompatActivity() {
             loginProgressListener,
         )
         if (error != GemError.NoError) {
-            postGemErrorDialog(R.string.register_external_login_error, error)
-        }
-    }
-
-    private fun configureApiTokenRejectedHandler() {
-        SdkSettings.onApiTokenRejected = {
-            runOnUiThread {
-                showDialog(getString(R.string.token_rejected_message))
-            }
+            showGemErrorDialog(R.string.register_external_login_error, error)
         }
     }
 
     private fun validateInternetConnection() {
         if (!Util.isInternetConnected(this)) {
             showDialog(getString(R.string.internet_required))
+        }
+    }
+
+    // Adjusts the Magic Lane logo position to respect system window insets.
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            val mapView = binding.gemSurfaceView.mapView ?: return@runSynced
+            val viewport = mapView.viewport ?: return@runSynced
+            val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(SYSTEM_INSET_TYPES)
+
+            val w = viewport.width
+            val h = viewport.height
+            val left = insets?.left ?: 0
+            val top = insets?.top ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            mapView.preferences?.focusViewport = Rect(left, top, right, bottom)
         }
     }
 
@@ -194,7 +231,7 @@ class MainActivity : AppCompatActivity() {
             geofenceAreas = createGeofenceAreas()
             val addAreasError = geofence.addAreas(geofenceAreas, addAreasProgressListener)
             if (addAreasError != GemError.NoError) {
-                postGemErrorDialog(R.string.add_areas_error, addAreasError)
+                showGemErrorDialog(R.string.add_areas_error, addAreasError)
             }
         }
     }
@@ -202,10 +239,6 @@ class MainActivity : AppCompatActivity() {
     private fun onNavigationStarted() {
         SdkCall.execute {
             binding.gemSurfaceView.mapView?.let { mapView ->
-                navRoute?.let { route ->
-                    mapView.presentRoute(route)
-                }
-
                 setFollowCursorButton()
                 mapView.followPosition()
             }
@@ -248,7 +281,7 @@ class MainActivity : AppCompatActivity() {
             routingProgressListener,
         )
         if (error != GemError.NoError) {
-            postGemErrorDialog(R.string.start_simulation_error, error)
+            showGemErrorDialog(R.string.start_simulation_error, error)
         }
     }
 
@@ -306,14 +339,16 @@ class MainActivity : AppCompatActivity() {
         getString(R.string.circle_area_2_id),
     )
 
-    private fun postGemErrorDialog(@StringRes messageResId: Int, error: Int) {
-        Util.postOnMain {
-            showGemErrorDialog(messageResId, error)
+    // Resolves a GemError code on the SDK thread, then shows it in an error dialog on the UI thread.
+    private fun showGemErrorDialog(@StringRes messageResId: Int, error: Int) {
+        runOnAliveUi {
+            val errorMessage = SdkCall.runSynced { GemError.getMessage(error, this) }
+            showDialog(getString(messageResId, errorMessage))
         }
     }
 
-    private fun showGemErrorDialog(@StringRes messageResId: Int, error: Int) {
-        showDialog(getString(messageResId, GemError.getMessage(error)))
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
     }
 
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {

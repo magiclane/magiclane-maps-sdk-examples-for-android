@@ -8,90 +8,82 @@
 package com.magiclane.sdk.examples.search
 
 import android.Manifest
-import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ImageView
-import android.widget.SearchView
 import android.widget.TextView
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
+import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
-import androidx.databinding.adapters.ViewBindingAdapter.setPadding
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.magiclane.sdk.core.EUnitSystem
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.examples.search.databinding.ActivityMainBinding
-import com.magiclane.sdk.places.Coordinates
-import com.magiclane.sdk.places.Landmark
-import com.magiclane.sdk.places.SearchService
-import com.magiclane.sdk.sensordatasource.PositionService
-import com.magiclane.sdk.util.GEMLog
-import com.magiclane.sdk.util.GemUtil
+import com.magiclane.sdk.examples.search.databinding.DialogLayoutBinding
 import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
+// Thin UI layer: binds views, reacts to SDK lifecycle events, and delegates
+// search logic to SearchViewModel.
 class MainActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityMainBinding
+    private val viewModel: SearchViewModel by viewModels()
+    private lateinit var searchAdapter: SearchAdapter
+    private lateinit var categoryAdapter: CategoryAdapter
+    private var isProgrammaticQuery = false
 
     private companion object {
-        val diffCallback = object : DiffUtil.ItemCallback<SearchItem>() {
-            override fun areItemsTheSame(oldItem: SearchItem, newItem: SearchItem): Boolean = false
+        private const val REQUEST_PERMISSIONS = 110
 
-            override fun areContentsTheSame(oldItem: SearchItem, newItem: SearchItem): Boolean = false
+        val searchDiffCallback = object : DiffUtil.ItemCallback<SearchViewModel.SearchItem>() {
+            override fun areItemsTheSame(
+                oldItem: SearchViewModel.SearchItem,
+                newItem: SearchViewModel.SearchItem,
+            ): Boolean = false
+
+            override fun areContentsTheSame(
+                oldItem: SearchViewModel.SearchItem,
+                newItem: SearchViewModel.SearchItem,
+            ): Boolean = false
         }
 
-        private const val REQUEST_PERMISSIONS = 110
+        val categoryDiffCallback = object : DiffUtil.ItemCallback<SearchViewModel.CategoryItem>() {
+            override fun areItemsTheSame(
+                oldItem: SearchViewModel.CategoryItem,
+                newItem: SearchViewModel.CategoryItem,
+            ): Boolean = oldItem.categoryId == newItem.categoryId
+
+            override fun areContentsTheSame(
+                oldItem: SearchViewModel.CategoryItem,
+                newItem: SearchViewModel.CategoryItem,
+            ): Boolean = oldItem == newItem
+        }
     }
 
-    private var imageSize: Int = 0
-    private var reference: Coordinates? = null
-
-    private val _results = MutableLiveData<List<SearchItem>>()
-    private val results: LiveData<List<SearchItem>> get() = _results
-
-    private lateinit var customAdapter: CustomAdapter
-
-    private var searchService = SearchService(
-        onCompleted = { results, errorCode, _ ->
-            if (errorCode != GemError.Cancel) {
-                refreshList(results)
-                binding.noResultText.isVisible = results.isEmpty()
-                binding.progressBar.visibility = View.GONE
-
-                when (errorCode) {
-                    GemError.Busy -> {
-                        GEMLog.error(
-                            this,
-                            "Internal limit reached. Set an API token in the AndroidManifest.xml file and retry.",
-                        )
-                    }
-                    else -> {
-                        GEMLog.error(this, "Search service error: ${GemError.getMessage(errorCode)}")
-                    }
-                }
-            }
-
-            EspressoIdlingResource.decrement()
+    // Handles the async result of SDK token verification.
+    private val checkAuthorizationListener = ProgressListener.create(
+        onCompleted = { errorCode, _ ->
+            if (errorCode != GemError.NoError) showInvalidTokenDialog()
         },
     )
 
@@ -102,228 +94,197 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        imageSize = resources.getDimension(R.dimen.list_image_size).toInt()
-        SdkSettings.onMapDataReady = { isReady ->
-            if (isReady) {
-                binding.searchInput.isVisible = true
-                EspressoIdlingResource.decrement()
-            }
-        }
-        // for testing only
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
+        val imageSize = resources.getDimensionPixelSize(R.dimen.list_image_size)
+        val iconSize = resources.getDimensionPixelSize(R.dimen.category_icon_size)
+        viewModel.initialize(imageSize, iconSize)
+
+        // Keep the idling resource busy until the SDK map data is ready.
         EspressoIdlingResource.increment()
 
         binding.listView.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
-            addItemDecoration(
-                DividerItemDecoration(
-                    applicationContext,
-                    (layoutManager as LinearLayoutManager).orientation,
-                ),
-            )
-            setBackgroundResource(R.color.background)
+            addItemDecoration(DividerItemDecoration(applicationContext, LinearLayoutManager.VERTICAL))
+            searchAdapter = SearchAdapter()
+            adapter = searchAdapter
+            itemAnimator = null
+        }
 
-            val lateralPadding = resources.getDimension(R.dimen.big_padding).toInt()
-            setPadding(lateralPadding, 0, lateralPadding, 0)
-            customAdapter = CustomAdapter()
-            adapter = customAdapter
+        binding.categoriesView.apply {
+            layoutManager = LinearLayoutManager(this@MainActivity, LinearLayoutManager.HORIZONTAL, false)
+            categoryAdapter = CategoryAdapter()
+            adapter = categoryAdapter
             itemAnimator = null
         }
 
         setSupportActionBar(binding.toolbar)
 
         binding.searchInput.apply {
-            setOnQueryTextListener(
-                object : SearchView.OnQueryTextListener {
-                    override fun onQueryTextSubmit(query: String?): Boolean {
-                        clearFocus()
-                        return true
-                    }
+            // Remove the default SearchView background so the field's own rounded drawable shows.
+            findViewById<View>(androidx.appcompat.R.id.search_plate)?.background = null
+            // Apply dark text/hint colours to match the light grey field design.
+            findViewById<TextView>(androidx.appcompat.R.id.search_src_text)?.apply {
+                setTextColor(ContextCompat.getColor(context, R.color.search_dark_gray))
+                setHintTextColor(ContextCompat.getColor(context, R.color.search_dark_gray))
+            }
 
-                    override fun onQueryTextChange(newText: String?): Boolean {
-                        val filter = (newText ?: "").trim()
-                        if (filter.isNotEmpty()) {
-                            binding.progressBar.visibility = View.VISIBLE
-                        }
-                        // Search the requested filter.
-                        search(filter)
-                        return true
-                    }
-                },
-            )
+            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    clearFocus()
+                    return true
+                }
 
-            requestFocus()
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    if (!isProgrammaticQuery) viewModel.search((newText ?: "").trim())
+                    return true
+                }
+            })
         }
 
-        // observe the list and update UI
-        results.observe(this) {
-            customAdapter.submitList(it.toList())
+        viewModel.results.observe(this) { items ->
+            searchAdapter.submitList(items)
             binding.listView.smoothScrollToPosition(0)
+            val query = binding.searchInput.query.toString().trim()
+            binding.noResultText.isVisible = items.isEmpty() && (query.isNotBlank() || viewModel.selectedCategory.value != SearchViewModel.NO_CATEGORY)
         }
 
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showErrorDialog(
-                "Your API token was rejected. Please set a valid API token in the AndroidManifest.xml file, otherwise the search will not provide results if you type fast. ",
-            )
+        viewModel.isSearching.observe(this) { searching ->
+            binding.searchProgressBar.isInvisible = !searching
         }
 
-        if (GemSdk.initSdkWithDefaults(this) != GemError.NoError) {
-            // The SDK initialization was not completed.
-            finish()
+        viewModel.categories.observe(this) { items ->
+            categoryAdapter.submitList(items)
         }
 
-        if (SdkSettings.appAuthorization.isNullOrEmpty()) {
-            showInfoDialog(
-                "Please set your API token in the AndroidManifest.xml file, otherwise the search will not provide results if you type fast.",
-            )
+        viewModel.selectedCategory.observe(this) { selectedIndex ->
+            categoryAdapter.setSelectedIndex(selectedIndex)
+            if (selectedIndex != SearchViewModel.NO_CATEGORY) {
+                isProgrammaticQuery = true
+                val name = viewModel.categories.value?.getOrNull(selectedIndex)?.name ?: ""
+                binding.searchInput.setQuery(name, false)
+                isProgrammaticQuery = false
+            }
         }
 
-        /**
-         * The SDK initialization completed with success, but for the search action to be executed
-         * the app needs some permissions.
-         * Not requesting this permissions or not granting them will make the search to not work.
-         */
-        requestPermissions(this)
+        val initResult = GemSdk.initSdkWithDefaults(this)
+        if (initResult != GemError.NoError) {
+            showDialog(
+                message = getString(
+                    R.string.sdk_initialization_failed,
+                    SdkCall.runSynced {
+                        GemError.getMessage(initResult, this)
+                    },
+                ),
+            ) { finish() }
+            return
+        }
+
+        requestPermissions()
 
         if (!Util.isInternetConnected(this)) {
-            showErrorDialog("You must be connected to the internet!")
+            runOnAliveUi { showDialog(message = getString(R.string.internet_required)) }
         }
 
-        onBackPressedDispatcher.addCallback(
-            this, /* lifecycle owner */
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    finish()
+        registerSdkListeners()
+    }
+
+    override fun onDestroy() {
+        clearSdkListeners()
+        GemSdk.release()
+        super.onDestroy()
+        exitProcess(0)
+    }
+
+    private fun registerSdkListeners() {
+        // Self-clearing listener: fires once when the SDK map data is ready, then removes itself.
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                runOnAliveUi {
+                    binding.progressBar.visibility = View.GONE
+                    binding.searchInput.isEnabled = true
+                    binding.searchInput.requestFocus()
+                    viewModel.loadCategories()
+                    EspressoIdlingResource.decrement()
                 }
-            },
-        )
-    }
+            }
+        }
 
-    override fun onStop() {
-        super.onStop()
-        if (isFinishing) {
-            GemSdk.release() // Release the SDK.
+        SdkSettings.onApiTokenRejected = { showInvalidTokenDialog() }
+
+        // Verify the app token on the first successful internet connection.
+        // Self-clearing so it fires only once per session.
+        SdkSettings.onConnectionStatusUpdated = { isConnected ->
+            if (isConnected) {
+                SdkSettings.appAuthorization?.let {
+                    SdkCall.execute { SdkSettings.verifyAppAuthorization(it, checkAuthorizationListener) }
+                } ?: showInvalidTokenDialog()
+                SdkSettings.onConnectionStatusUpdated = {}
+            }
         }
     }
 
-    private fun refreshList(results: ArrayList<Landmark>) = SdkCall.execute {
-        val list = results.map { landmark ->
-            val meters = reference?.let { landmark.coordinates?.getDistance(it)?.toInt() ?: 0 } ?: 0
-            val dist = GemUtil.getDistText(meters, EUnitSystem.Metric, true)
-            SearchItem(
-                landmark.imageAsBitmap(imageSize),
-                landmark.name.toString(),
-                GemUtil.getLandmarkDescription(landmark, true),
-                dist.first,
-                dist.second,
-            )
-        }
-        _results.postValue(list)
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+        SdkSettings.onConnectionStatusUpdated = {}
     }
-
-    private fun search(filter: String) = SdkCall.postAsync(
-        {
-            // Cancel any search that is in progress now.
-            searchService.cancelSearch()
-            if (filter.isBlank()) {
-                refreshList(arrayListOf())
-                binding.noResultText.isVisible = false
-            }
-
-            // Give a random position if position is not available
-            val position = PositionService.position
-            reference = if (position?.isValid() == true) {
-                position.coordinates
-            } else {
-                Coordinates(51.5072, 0.1276) // center London
-            }
-
-            val res = searchService.searchByFilter(filter, reference)
-
-            if (GemError.isError(res) && res != GemError.Cancel) {
-                showErrorDialog(GemError.getMessage(res))
-            }
-            // this is for testing only
-            EspressoIdlingResource.increment()
-        },
-        200,
-    )
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        PermissionsHelper.onRequestPermissionsResult(this, requestCode, grantResults)
-
-        val result = grantResults[permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)]
-        if (result != PackageManager.PERMISSION_GRANTED) {
-            finish()
-            exitProcess(0)
+        if (grantResults.any { it == PackageManager.PERMISSION_GRANTED }) {
+            PermissionsHelper.instance?.notifyOnPermissionsStatusChanged()
         }
     }
 
-    private fun requestPermissions(activity: Activity): Boolean {
+    private fun requestPermissions(): Boolean {
         val permissions = arrayListOf(
-            Manifest.permission.INTERNET,
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_NETWORK_STATE,
         )
-
-        return PermissionsHelper.requestPermissions(
-            REQUEST_PERMISSIONS,
-            activity,
-            permissions.toTypedArray(),
-        )
+        return PermissionsHelper.requestPermissions(REQUEST_PERMISSIONS, this, permissions.toTypedArray())
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(title: String = getString(R.string.error), message: String) {
+    private fun showDialog(
+        title: String = getString(R.string.error),
+        message: String,
+        onDismiss: (() -> Unit)? = null,
+    ) {
+        if (!isActivityAlive()) return
+
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = title
-            findViewById<TextView>(R.id.message).text = message
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            this.title.text = title
+            this.message.text = message
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
     }
 
-    private fun showErrorDialog(message: String) {
-        showDialog(getString(R.string.error), message)
+    private fun showInvalidTokenDialog() {
+        runOnAliveUi { showDialog(message = getString(R.string.invalid_token)) { finish() } }
     }
 
-    private fun showInfoDialog(message: String) {
-        showDialog(getString(R.string.info), message)
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
     }
 
-    /**
-     * UI search item data class.
-     */
-    data class SearchItem(
-        val image: Bitmap? = null,
-        val name: String = "",
-        val descriptionTxt: String = "",
-        val distance: String = "",
-        val unit: String = "",
-    )
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
 
-    /**
-     * This custom adapter is made to facilitate the displaying of the data from the model
-     * and to decide how it is displayed.
-     */
-    inner class CustomAdapter : ListAdapter<SearchItem, CustomAdapter.CustomViewHolder>(
-        diffCallback,
-    ) {
+    inner class SearchAdapter :
+        ListAdapter<SearchViewModel.SearchItem, SearchAdapter.SearchViewHolder>(searchDiffCallback) {
 
-        inner class CustomViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        inner class SearchViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val textView: TextView = view.findViewById(R.id.text)
             val descriptionView: TextView = view.findViewById(R.id.description)
             val imageView: ImageView = view.findViewById(R.id.image)
@@ -331,39 +292,63 @@ class MainActivity : AppCompatActivity() {
             val unitTextView: TextView = view.findViewById(R.id.status_description)
         }
 
-        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): CustomViewHolder {
-            val view = LayoutInflater.from(viewGroup.context)
-                .inflate(R.layout.list_item, viewGroup, false)
-
-            return CustomViewHolder(view)
+        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): SearchViewHolder {
+            val view = LayoutInflater.from(viewGroup.context).inflate(R.layout.list_item, viewGroup, false)
+            return SearchViewHolder(view)
         }
 
-        override fun onBindViewHolder(viewHolder: CustomViewHolder, position: Int) {
-            viewHolder.apply {
-                with(getItem(position)) {
-                    SdkCall.execute {
-                        textView.text = name
-                        descriptionView.text = descriptionTxt
-                        imageView.setImageBitmap(image)
-                        distanceTextView.text = distance
-                        unitTextView.text = unit
-                    }
+        override fun onBindViewHolder(viewHolder: SearchViewHolder, position: Int) {
+            val item = getItem(position)
+            with(viewHolder) {
+                SdkCall.execute {
+                    textView.text = item.name
+                    descriptionView.text = item.description
+                    imageView.setImageBitmap(item.image)
+                    distanceTextView.text = item.distance
+                    unitTextView.text = item.unit
                 }
             }
         }
     }
-}
 
-object EspressoIdlingResource {
-    private const val RESOURCE_NAME = "SearchIdlingResource"
-    private var count = 0
-    val espressoIdlingResource = CountingIdlingResource(RESOURCE_NAME)
+    inner class CategoryAdapter :
+        ListAdapter<SearchViewModel.CategoryItem, CategoryAdapter.CategoryViewHolder>(categoryDiffCallback) {
 
-    // fun increment() = if (count == 0) espressoIdlingResource.increment().also { count++ } else{}
-    fun increment() = espressoIdlingResource.increment().also { ++count }
+        private var selectedIndex: Int = SearchViewModel.NO_CATEGORY
 
-    fun decrement() = if (!espressoIdlingResource.isIdleNow) {
-        espressoIdlingResource.decrement().also { --count }
-    } else {
+        fun setSelectedIndex(index: Int) {
+            val previous = selectedIndex
+            selectedIndex = index
+            if (previous != SearchViewModel.NO_CATEGORY) notifyItemChanged(previous)
+            if (index != SearchViewModel.NO_CATEGORY) notifyItemChanged(index)
+        }
+
+        inner class CategoryViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val container: View = view.findViewById(R.id.category_container)
+            val icon: ImageView = view.findViewById(R.id.category_icon)
+        }
+
+        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): CategoryViewHolder {
+            val view = LayoutInflater.from(viewGroup.context)
+                .inflate(R.layout.list_item_category, viewGroup, false)
+            return CategoryViewHolder(view)
+        }
+
+        override fun onBindViewHolder(viewHolder: CategoryViewHolder, position: Int) {
+            val item = getItem(position)
+            val isSelected = position == selectedIndex
+
+            viewHolder.icon.setImageBitmap(item.icon)
+
+            if (isSelected) {
+                viewHolder.container.setBackgroundResource(R.drawable.rounded_background_primary)
+            } else {
+                viewHolder.container.background = null
+            }
+
+            viewHolder.container.setOnClickListener {
+                viewModel.selectCategory(viewHolder.bindingAdapterPosition)
+            }
+        }
     }
 }

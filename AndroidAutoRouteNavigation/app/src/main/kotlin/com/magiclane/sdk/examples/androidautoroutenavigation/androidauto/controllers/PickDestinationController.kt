@@ -15,6 +15,7 @@ import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.d3scene.BasicShapeDrawer
 import com.magiclane.sdk.d3scene.Canvas
 import com.magiclane.sdk.d3scene.EMapViewPerspective
+import com.magiclane.sdk.examples.androidautoroutenavigation.R
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.Service
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.model.UIActionModel
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.screens.FreeNavigationScreen
@@ -46,7 +47,7 @@ class PickDestinationController(context: CarContext) : FreeNavigationScreen(cont
         horizontalActions.add(UIActionModel.backModel())
         horizontalActions.add(
             UIActionModel(
-                text = "Start",
+                text = context.getString(R.string.start),
                 onClicked = onClicked@{
                     if (Service.topScreen != this) {
                         return@onClicked
@@ -120,7 +121,7 @@ class PickDestinationController(context: CarContext) : FreeNavigationScreen(cont
         SdkCall.execute {
             val coordinates = mapView?.cursorWgsPosition ?: return@execute
 
-            val landmark = Landmark("Destination", coordinates)
+            val landmark = Landmark(context.getString(R.string.destination), coordinates)
             GemUtil.fillLandmarkAddressInfo(mapView, landmark, true)
 
             postOnMain {

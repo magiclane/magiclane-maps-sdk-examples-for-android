@@ -18,14 +18,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/primary"
+            android:paddingBottom="12dp"
             app:layout_constraintTop_toTopOf="parent"
             app:title="@string/app_name"
             app:titleTextColor="@color/on_primary"
             app:paddingTopWithSystemWindowInsets='@{"8dp"}'
             app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
-            android:paddingBottom="12dp"
-            />
+            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}' />
 
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progress_bar"
@@ -38,13 +37,17 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <!--
+            width="0dp" (MATCH_CONSTRAINT) is required so that ConstraintSet can dynamically
+            resize this panel to 40% for landscape or span full width for portrait.
+        -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/top_panel"
-            android:layout_width="match_parent"
-            android:layout_height="120dp"
-            android:layout_margin="10dp"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/nav_top_panel_height"
+            android:layout_margin="@dimen/nav_panel_margin"
             android:background="@android:color/black"
-            android:elevation="5dp"
+            android:elevation="@dimen/elevation_height"
             android:gravity="center"
             android:orientation="horizontal"
             android:visibility="gone"
@@ -58,17 +61,17 @@
                 android:id="@+id/turn_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_marginEnd="20dp"
+                android:layout_marginStart="@dimen/nav_top_panel_turn_margin"
+                android:layout_marginEnd="@dimen/nav_top_panel_turn_margin"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/nav_icon"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:layout_marginTop="10dp"
+                    android:layout_width="@dimen/turn_image_size"
+                    android:layout_height="@dimen/turn_image_size"
+                    android:layout_marginTop="@dimen/big_padding"
                     app:layout_constraintBottom_toTopOf="@id/instruction_distance"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -79,23 +82,25 @@
                     android:id="@+id/instruction_distance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
+                    android:layout_marginBottom="@dimen/big_padding"
                     android:textColor="@android:color/white"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/medium_text_size"
                     android:textStyle="bold"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/nav_icon" />
+
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/nav_instruction"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_marginEnd="20dp"
+                android:layout_marginStart="@dimen/nav_top_panel_turn_margin"
+                android:layout_marginEnd="@dimen/nav_top_panel_turn_margin"
                 android:ellipsize="end"
+                android:maxLines="3"
                 android:textColor="@android:color/white"
                 android:textSize="22sp"
                 android:textStyle="bold"
@@ -108,27 +113,26 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/bottom_panel"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_margin="10dp"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/bottom_panel_height"
+            android:layout_margin="@dimen/nav_panel_margin"
             android:background="@color/surface"
-            android:elevation="5dp"
+            android:elevation="@dimen/elevation_height"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            >
+            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}">
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/eta"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="10dp"
+                android:layout_margin="@dimen/big_padding"
                 android:textColor="@color/on_surface"
-                android:textSize="18sp"
+                android:textSize="@dimen/medium_text_size"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/rtt"
@@ -140,9 +144,9 @@
                 android:id="@+id/rtt"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="10dp"
+                android:layout_margin="@dimen/big_padding"
                 android:textColor="@color/on_surface"
-                android:textSize="18sp"
+                android:textSize="@dimen/medium_text_size"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/rtd"
@@ -153,9 +157,9 @@
                 android:id="@+id/rtd"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="10dp"
+                android:layout_margin="@dimen/big_padding"
                 android:textColor="@color/on_surface"
-                android:textSize="18sp"
+                android:textSize="@dimen/medium_text_size"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -168,32 +172,17 @@
             android:id="@+id/follow_gps_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"
+            android:layout_margin="@dimen/nav_panel_margin"
             android:visibility="gone"
+            android:src="@drawable/ic_baseline_gps_fixed_24"
             app:backgroundTint="@color/primary"
             app:tint="@color/on_primary"
-            android:src="@drawable/ic_baseline_gps_fixed_24"
-            app:layout_constraintBottom_toTopOf="@id/bottom_panel"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             tools:ignore="ContentDescription" />
 
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/status_text"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:background="@color/surface"
-            android:padding="10dp"
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:textColor="@color/on_surface"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"/>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

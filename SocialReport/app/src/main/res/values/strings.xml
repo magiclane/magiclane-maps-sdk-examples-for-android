@@ -3,4 +3,13 @@
     <string name="error">Error</string>
     <string name="ok">OK</string>
     <string name="gps_accuracy_not_good">GPS accuracy is not good enough. Make sure you are outdoors.</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+    <string name="location_permission_required">This app requires location permission. Please grant it in app settings view and retry.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="report_event">Report event</string>
+    <string name="report_sent">Report sent!</string>
+    <string name="report_delete_failed">Could not delete the report: %1$s</string>
+    <string name="info">Info</string>
+    <string name="report_sent_message">Report sent! To delete it, tap on the added report on the map, and then tap on the red \'x\' button inside the social event panel displayed on top screen side.</string>
 </resources>

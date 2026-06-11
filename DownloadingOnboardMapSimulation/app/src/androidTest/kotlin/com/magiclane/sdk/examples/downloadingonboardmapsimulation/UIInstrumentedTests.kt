@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2024-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -99,7 +99,7 @@ class UIInstrumentedTests {
     fun t3_testFollowCursorButton(): Unit = runBlocking {
         onView(withId(R.id.gem_surface_view)).perform(slowSwipeLeft())
         delay(500)
-        onView(withId(R.id.follow_cursor_button)).check(matches(isDisplayed()))
-        onView(withId(R.id.follow_cursor_button)).perform(click())
+        onView(withId(R.id.follow_gps_button)).check(matches(isDisplayed()))
+        onView(withId(R.id.follow_gps_button)).perform(click())
     }
 }

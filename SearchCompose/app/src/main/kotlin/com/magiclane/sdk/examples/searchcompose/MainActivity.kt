@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2025-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -10,151 +10,137 @@ package com.magiclane.sdk.examples.searchcompose
 import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.OnBackPressedCallback
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.SdkSettings
-import com.magiclane.sdk.examples.searchcompose.ui.components.SearchScreen
-import com.magiclane.sdk.examples.searchcompose.ui.theme.SearchTheme
+import com.magiclane.sdk.examples.searchcompose.ui.SearchScreen
+import com.magiclane.sdk.examples.searchcompose.ui.theme.SearchComposeTheme
 import com.magiclane.sdk.util.PermissionsHelper
+import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
+import kotlin.system.exitProcess
 
-/**
- * Clean MainActivity following MVVM architecture principles.
- * Responsibilities:
- * - SDK initialization and lifecycle management
- * - Permission handling
- * - UI composition
- * - Delegating business logic to ViewModel
- */
+// Thin UI layer: sets up SDK lifecycle, delegates all UI to SearchScreen composable.
 class MainActivity : ComponentActivity() {
 
-    companion object {
-        private const val REQUEST_PERMISSIONS = 110
+    private val viewModel: SearchViewModel by viewModels()
+
+    private val permissionsLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { permissions ->
+        val granted = permissions.filter { it.value }.keys.toList()
+        val rejected = permissions.filter { !it.value }.keys.toList()
+        PermissionsHelper.onRequestPermissionsResult(granted, rejected)
     }
 
-    private lateinit var viewModel: SearchViewModel
+    // Handles the async result of SDK token verification.
+    private val checkAuthorizationListener = ProgressListener.create(
+        onCompleted = { errorCode, _ ->
+            if (errorCode != GemError.NoError) showInvalidTokenDialog()
+        },
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+        // Light status-bar icons on the purple toolbar background.
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
 
-        initializeSdk()
-        setupContent()
-        setupSdkCallbacks()
-        requestPermissions()
-        setupBackPressHandler()
-    }
+        val imageSize = resources.getDimensionPixelSize(R.dimen.list_image_size)
+        val iconSize = resources.getDimensionPixelSize(R.dimen.category_icon_size)
+        viewModel.initialize(imageSize, iconSize)
 
-    private fun initializeSdk() {
-        if (GemSdk.initSdkWithDefaults(this) != GemError.NoError) {
-            finish()
+        // Keep the idling resource busy until the SDK map data is ready.
+        EspressoIdlingResource.increment()
+
+        val initResult = GemSdk.initSdkWithDefaults(this)
+        if (initResult != GemError.NoError) {
+            viewModel.showFatalError(
+                getString(
+                    R.string.sdk_initialization_failed,
+                    SdkCall.runSynced {
+                        GemError.getMessage(initResult, this)
+                    },
+                ),
+            )
+        } else {
+            requestPermissions()
+
+            if (!Util.isInternetConnected(this)) {
+                viewModel.showInfoError(getString(R.string.internet_required))
+            }
+
+            registerSdkListeners()
         }
-    }
 
-    private fun setupContent() {
         setContent {
-            SearchTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = if (isSystemInDarkTheme()) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
-                ) {
-                    viewModel = viewModel()
-                    initializeViewModel()
-
-                    SearchScreen(
-                        viewModel = viewModel,
-                        onTextChanged = { text: String ->
-                            // Delegate to ViewModel's business logic
-                            viewModel.applyFilter(text, this@MainActivity)
-                        },
-                    )
-                }
+            SearchComposeTheme {
+                SearchScreen(viewModel = viewModel, onFatalDismiss = ::finish)
             }
         }
     }
 
-    private fun initializeViewModel() {
-        viewModel.size = resources.getDimension(R.dimen.image_size).toInt()
-
-        if (!Util.isInternetConnected(this@MainActivity)) {
-            viewModel.statusMessage = "Please connect to the internet!"
-        }
+    override fun onDestroy() {
+        clearSdkListeners()
+        GemSdk.release()
+        super.onDestroy()
+        exitProcess(0)
     }
 
-    private fun setupSdkCallbacks() {
-        SdkSettings.onApiTokenRejected = {
-            viewModel.errorMessage = "Token rejected!"
-        }
-
-        SdkSettings.onConnectionStatusUpdated = { connected ->
-            viewModel.connected = connected
-
-            if (viewModel.filter.isBlank()) {
-                viewModel.statusMessage = if (connected) {
-                    ""
-                } else {
-                    "Please connect to the internet!"
+    private fun registerSdkListeners() {
+        // Self-clearing listener: fires once when the SDK map data is ready, then removes itself.
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                runOnAliveUi {
+                    viewModel.onSdkReady()
+                    EspressoIdlingResource.decrement()
                 }
             }
         }
+
+        SdkSettings.onApiTokenRejected = { showInvalidTokenDialog() }
+
+        // Verify the app token on the first successful internet connection.
+        // Self-clearing so it fires only once per session.
+        SdkSettings.onConnectionStatusUpdated = { isConnected ->
+            if (isConnected) {
+                SdkSettings.appAuthorization?.let {
+                    SdkCall.execute { SdkSettings.verifyAppAuthorization(it, checkAuthorizationListener) }
+                } ?: showInvalidTokenDialog()
+                SdkSettings.onConnectionStatusUpdated = {}
+            }
+        }
+    }
+
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+        SdkSettings.onConnectionStatusUpdated = {}
     }
 
     private fun requestPermissions() {
-        val permissions = arrayOf(
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_NETWORK_STATE,
-        )
-
-        PermissionsHelper.requestPermissions(
-            REQUEST_PERMISSIONS,
-            this,
-            permissions,
+        permissionsLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+            ),
         )
     }
 
-    private fun setupBackPressHandler() {
-        onBackPressedDispatcher.addCallback(
-            this,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    finish()
-                }
-            },
-        )
+    private fun showInvalidTokenDialog() {
+        runOnAliveUi { viewModel.showFatalError(getString(R.string.invalid_token)) }
     }
 
-    override fun onPause() {
-        super.onPause()
-        if (isFinishing) {
-            GemSdk.release()
-        }
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier,
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SearchTheme {
-        Greeting("Android")
-    }
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
 }

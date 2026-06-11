@@ -2,4 +2,14 @@
     <string name="app_name">WhatsNearby</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+    <string name="no_results">No results found</string>
+    <string name="search_error">Search error: %s</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="internet_required">This app requires an Internet connection. Please connect and try again.</string>
+    <string name="invalid_token">This example requires a valid token. If you don\'t have a token, check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="location_services_required">This app requires location service to be enabled for searching and routing features. Please enable location service in device settings and restart the app.</string>
+    <string name="location_permission_required">This app requires location permission. Please grant it in the app settings and restart the app.</string>
+    <string name="location_status">Location Status</string>
+    <string name="location_disabled">Location service is turned off on your device. The app cannot determine your GPS position. Please go to Settings → Location and turn on Location services.</string>
+    <string name="open_settings">Open Settings</string>
 </resources>

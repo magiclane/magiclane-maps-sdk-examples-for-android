@@ -32,10 +32,24 @@ import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
+/**
+ * Hosts a vertically scrolling list of independent map surfaces.
+ *
+ * Each [GemSurfaceView] owns its own GL surface and renders an independent
+ * [MapView]; the user can add or remove surfaces at runtime (up to
+ * [MAX_SURFACES_COUNT]). Every surface is released individually so its native
+ * resources are freed as soon as it leaves the screen.
+ */
 class SecondFragment : Fragment() {
 
+    companion object {
+        /** Upper bound on how many map surfaces may be displayed at once. */
+        private const val MAX_SURFACES_COUNT = 9
+    }
+
+    // Maps the native screen address of each surface to its MapView, so the
+    // correct map can be released when its surface is removed.
     private val maps = mutableMapOf<Long, MapView?>()
-    private val maxSurfacesCount = 9
 
     private var _binding: FragmentSecondBinding? = null
     private val binding get() = _binding!!
@@ -51,6 +65,7 @@ class SecondFragment : Fragment() {
         val primaryTint = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.primary))
         val onPrimaryTint = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.on_primary))
 
+        // The "−" button removes the last surface, the "+" button adds a new one.
         setupFab(binding.addSurfaceButton, R.drawable.ic_minus_symbol, primaryTint, onPrimaryTint) {
             deleteLastSurface()
         }
@@ -62,11 +77,17 @@ class SecondFragment : Fragment() {
             findNavController().popBackStack()
         }
 
+        // Global SDK listeners are shared by every surface, so register them once.
+        registerSdkListeners()
+
+        // Start with a single surface on screen.
         addSurface()
     }
 
     override fun onStop() {
         super.onStop()
+        // Release every surface while leaving the screen; they are recreated in
+        // onViewCreated when the fragment becomes visible again.
         while (binding.scrolledLinearLayout.isNotEmpty()) {
             deleteLastSurface()
         }
@@ -74,9 +95,23 @@ class SecondFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        clearSdkListeners()
         _binding = null
     }
 
+    // Registers SDK-level listeners that are not tied to a specific surface.
+    private fun registerSdkListeners() {
+        SdkSettings.onApiTokenRejected = {
+            runOnAliveUi { showDialog(getString(R.string.token_rejected_message)) }
+        }
+    }
+
+    // Clears SDK-level listeners so callbacks never reach a destroyed view.
+    private fun clearSdkListeners() {
+        SdkSettings.onApiTokenRejected = {}
+    }
+
+    // Applies the shared visual style and click behaviour to a bottom-bar FAB.
     private fun setupFab(
         fab: FloatingActionButton,
         iconRes: Int,
@@ -91,9 +126,10 @@ class SecondFragment : Fragment() {
         fab.setOnClickListener { onClick() }
     }
 
+    // Creates a new map surface and appends it to the scrolling list.
     private fun addSurface() {
         val linearLayout = binding.scrolledLinearLayout
-        if (linearLayout.childCount >= maxSurfacesCount) return
+        if (linearLayout.childCount >= MAX_SURFACES_COUNT) return
 
         val surfaceContainerHeight = resources.getDimensionPixelSize(R.dimen.surface_container_height)
         val surfaceContainerMargin = resources.getDimensionPixelSize(R.dimen.surface_container_margin)
@@ -104,30 +140,30 @@ class SecondFragment : Fragment() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
             )
 
+            // SDK failed to initialize for this surface: this is fatal, so report
+            // it and close the app. The SDK is not running here, so the error
+            // message is resolved directly (no SdkCall wrapping).
             onSdkInitFailed = { error ->
-                activity?.let { activity ->
-                    val message = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, activity))
-                    Util.postOnMain {
-                        showDialog(message) {
-                            activity.finish()
-                            exitProcess(0)
-                        }
+                val message =
+                    getString(R.string.sdk_initialization_failed, GemError.getMessage(error, requireContext()))
+                runOnAliveUi {
+                    showDialog(message) {
+                        activity?.finish()
+                        exitProcess(0)
                     }
                 }
             }
 
+            // The default MapView for this surface is ready: remember it by its
+            // native screen address so it can be released individually later.
             onDefaultMapViewCreated = onDefaultMapViewCreated@{ mapView ->
                 val screenAddress = gemScreen?.address ?: return@onDefaultMapViewCreated
                 maps[screenAddress] = mapView
             }
         }
 
-        SdkSettings.onApiTokenRejected = {
-            Util.postOnMain {
-                showDialog(getString(R.string.token_rejected_message))
-            }
-        }
-
+        // Wrap each surface in a fixed-height, margined frame so the surfaces
+        // stack cleanly inside the vertical scroll container.
         val frame = FrameLayout(requireContext()).apply {
             layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, surfaceContainerHeight).also {
                 it.setMargins(surfaceContainerMargin, surfaceContainerMargin, surfaceContainerMargin, 0)
@@ -138,6 +174,7 @@ class SecondFragment : Fragment() {
         linearLayout.addView(frame)
     }
 
+    // Releases and removes the most recently added surface.
     private fun deleteLastSurface() {
         val linearLayout = binding.scrolledLinearLayout
         if (linearLayout.isEmpty()) return
@@ -145,6 +182,7 @@ class SecondFragment : Fragment() {
         val frame = linearLayout.getChildAt(linearLayout.childCount - 1) as FrameLayout
         val lastSurface = frame.getChildAt(0) as GemSurfaceView
 
+        // Release the native MapView associated with this surface on the SDK thread.
         SdkCall.execute {
             val screenAddress = lastSurface.gemScreen?.address
             maps[screenAddress]?.release()
@@ -154,6 +192,8 @@ class SecondFragment : Fragment() {
         linearLayout.removeView(frame)
     }
 
+    // Shows a non-dismissable bottom-sheet error dialog, optionally running
+    // [onDismiss] when the user acknowledges it.
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val activity = activity?.takeUnless { it.isFinishing || it.isDestroyed } ?: return
 
@@ -172,6 +212,16 @@ class SecondFragment : Fragment() {
             setCancelable(false)
             setContentView(dialogBinding.root)
             show()
+        }
+    }
+
+    // Posts [block] to the main thread, skipping it if the fragment is no longer
+    // attached to a live activity (guards against late SDK callbacks).
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain {
+            if (isAdded && activity?.takeUnless { it.isFinishing || it.isDestroyed } != null) {
+                block()
+            }
         }
     }
 }

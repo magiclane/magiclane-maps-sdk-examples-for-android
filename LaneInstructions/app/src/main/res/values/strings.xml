@@ -13,4 +13,9 @@
     <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
     <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
     <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+    <!-- Transient navigation status messages shown in the top panel while the route/GPS is not ready. -->
+    <string name="calculating">Calculating…</string>
+    <string name="waiting_for_internet_connection">Waiting for internet connection…</string>
+    <string name="gps_accuracy_not_good_enough">GPS accuracy is not good enough</string>
+    <string name="getting_position">Getting position…</string>
 </resources>

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2023-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -37,7 +37,6 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4ClassRunner::class)
 class WhatsNearbyInstrumentedTests {
-
     companion object {
         private val appContext: Context = ApplicationProvider.getApplicationContext()
 
@@ -51,18 +50,19 @@ class WhatsNearbyInstrumentedTests {
     val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(
         Manifest.permission.ACCESS_FINE_LOCATION,
         Manifest.permission.ACCESS_COARSE_LOCATION,
-        Manifest.permission.FOREGROUND_SERVICE,
         Manifest.permission.INTERNET,
         Manifest.permission.ACCESS_NETWORK_STATE,
+        Manifest.permission.FOREGROUND_SERVICE,
     )
 
     @Test
     fun searchAroundPositionShouldReturnListOfNearbyGasStations() = runBlocking {
-        val channel = Channel<Unit>()
+        val channel = Channel<Unit>() // acts like a lock
         var onCompletedPassed = false
         var res = LandmarkList()
         var error: ErrorCode
         val searchService = SearchService(
+            onStarted = {},
             onCompleted = { results, errorCode, _ ->
                 onCompletedPassed = true
                 res = results
@@ -87,14 +87,14 @@ class WhatsNearbyInstrumentedTests {
 
         error = async {
             SdkCall.execute {
+                // Search around position using the provided search preferences and/ or filter.
                 val centerLondon = Coordinates(51.5072, 0.1276)
-                searchService.searchAroundPosition(
-                    EGenericCategoriesIDs.GasStation,
-                    coords = centerLondon,
-                )
+                searchService.searchAroundPosition(EGenericCategoriesIDs.GasStation, centerLondon)
             }
         }.await() as ErrorCode
-        assert(error == GemError.NoError)
+        assert(error == GemError.NoError) {
+            "An error occurred on GEM SDK thread: ${GemError.getMessage(error)}"
+        }
         withTimeout(300000) {
             // waits till a matching channel.send() is invoked
             channel.receive()

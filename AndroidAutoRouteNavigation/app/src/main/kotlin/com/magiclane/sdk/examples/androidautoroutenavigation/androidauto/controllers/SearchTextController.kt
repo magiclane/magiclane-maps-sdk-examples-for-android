@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -12,6 +12,7 @@ package com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.contro
 import androidx.car.app.CarContext
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemError
+import com.magiclane.sdk.examples.androidautoroutenavigation.R
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.Service
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.model.GenericListItemModel
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.model.UIActionModel
@@ -51,7 +52,7 @@ class SearchTextController(context: CarContext) : SearchScreen(context) {
                     isLoading = false
 
                     if (results.isEmpty()) {
-                        noDataText = "No results found"
+                        noDataText = context.getString(R.string.no_results_found)
                     }
 
                     this.results.clear()
@@ -110,18 +111,13 @@ class SearchTextController(context: CarContext) : SearchScreen(context) {
             for (searchResult in searchResultList) {
                 val model = asSearchModel(searchResult, reference) ?: continue
                 model.onClicked = onClicked@{
-                    if (Service.topScreen != this) {
-                        return@onClicked
-                    }
-
+                    if (Service.topScreen != this) return@onClicked
                     Service.pushScreen(RoutesPreviewController(context, searchResult), true)
                 }
-
                 result.add(model)
             }
-
-            return@execute result
-        }!!
+            result
+        } ?: arrayListOf()
     }
 
     companion object {

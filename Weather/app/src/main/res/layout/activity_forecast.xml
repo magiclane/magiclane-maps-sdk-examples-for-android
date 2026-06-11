@@ -89,12 +89,10 @@
                     android:ellipsize="end"
                     android:maxLines="2"
                     android:textSize="@dimen/big_text_size"
-                    app:layout_constraintBottom_toTopOf="@id/updated_at"
                     app:layout_constraintEnd_toStartOf="@id/current_forecast_image"
                     app:layout_constraintHorizontal_bias="0"
                     app:layout_constraintStart_toStartOf="@id/location_name"
                     app:layout_constraintTop_toBottomOf="@id/feels_like"
-                    app:layout_constraintVertical_bias="1"
                     tools:text="Local time: 12:58" />
 
                 <com.google.android.material.textview.MaterialTextView
@@ -102,24 +100,28 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:ellipsize="end"
+                    android:layout_marginBottom="@dimen/double_margin"
                     android:maxLines="2"
                     android:textSize="@dimen/big_text_size"
-                    app:layout_constraintBottom_toBottomOf="@id/current_forecast_image"
+                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toStartOf="@id/current_forecast_image"
                     app:layout_constraintHorizontal_bias="0"
                     app:layout_constraintStart_toStartOf="@id/location_name"
-                    app:layout_constraintTop_toBottomOf="@id/current_temperature"
-                    app:layout_constraintVertical_bias="1"
+                    app:layout_constraintTop_toBottomOf="@id/local_time"
                     tools:text="Updated at: 13:10" />
+
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/middle_guideline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:layout_constraintGuide_percent="0.5" />
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/current_forecast_image"
                     android:layout_width="@dimen/current_forecast_image_size"
                     android:layout_height="@dimen/current_forecast_image_size"
-                    android:layout_marginTop="24dp"
                     android:layout_marginEnd="@dimen/double_margin"
-                    android:layout_marginBottom="@dimen/double_margin"
-                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/location_name" />
 

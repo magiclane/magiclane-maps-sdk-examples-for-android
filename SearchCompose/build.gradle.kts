@@ -5,7 +5,6 @@ plugins {
     alias(shared.plugins.kotlin.android) apply false
     alias(shared.plugins.detekt) apply false
     alias(shared.plugins.ktlint) apply false
-    alias(shared.plugins.compose) apply false
 }
 
 rootProject.layout.buildDirectory = file("build")

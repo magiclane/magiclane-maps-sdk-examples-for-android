@@ -25,6 +25,7 @@ import androidx.car.app.model.ListTemplate
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.car.app.navigation.model.MapWithContentTemplate
+import com.magiclane.sdk.examples.androidautoroutenavigation.R
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.model.UIActionModel
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.model.UIRouteModel
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.util.Util
@@ -142,7 +143,7 @@ abstract class PreviewRoutesScreen(context: CarContext) : GemScreen(context) {
             builder.addText(description)
 
             if (selectedItem) {
-                val startText = SpannableStringBuilder.valueOf("Start").apply {
+                val startText = SpannableStringBuilder.valueOf(context.getString(R.string.start)).apply {
                     setSpan(
                         ForegroundCarColorSpan.create(CarColor.BLUE),
                         0,

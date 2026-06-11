@@ -25,6 +25,7 @@ dependencies {
     implementation(shared.androidx.core.ktx)
     implementation(shared.androidx.appcompat)
     implementation(shared.androidx.activity.ktx)
+    implementation(shared.androidx.constraintlayout)
     implementation(shared.material)
     implementation(shared.androidx.media)
 

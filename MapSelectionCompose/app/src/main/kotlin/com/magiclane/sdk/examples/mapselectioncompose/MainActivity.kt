@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -10,6 +10,7 @@ package com.magiclane.sdk.examples.mapselectioncompose
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -19,18 +20,19 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -49,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -69,6 +72,13 @@ import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
+
+// Fraction of the screen width the info panel occupies when shown as a bottom-left card in landscape.
+private const val LANDSCAPE_PANEL_WIDTH_FRACTION = 0.45f
+
+// Predefined margin kept between the follow-GPS button and the screen edges (added on top of the
+// system bar / display cutout insets).
+private val GPS_BUTTON_MARGIN = 8.dp
 
 class MainActivity : ComponentActivity() {
 
@@ -95,10 +105,33 @@ class MainActivity : ComponentActivity() {
         configureWindow()
         setContent {
             MapSelectionTheme {
-                MapSelectionApp { setMapSurfaceView(it) }
+                MapSelectionApp(viewModel) { setMapSurfaceView(it) }
             }
         }
 
+        registerSdkListeners()
+
+        onBackPressedDispatcher.addCallback(this) {
+            // Back press first dismisses the details panel (if shown), otherwise closes the app.
+            if (viewModel.isBottomViewVisible()) {
+                viewModel.hideBottomView(getGemSurfaceView()?.mapView)
+            } else {
+                finish()
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        clearSdkListeners()
+        GemSdk.release() // Release the SDK.
+        exitProcess(0)
+    }
+
+    // Registers all SDK-level listeners. The map surface listeners are wired in the MapSurface
+    // composable factory and reset in clearSdkListeners().
+    private fun registerSdkListeners() {
         SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
             if (status == EOffboardListenerStatus.UpToDate) {
                 SdkSettings.onWorldwideRoadMapSupportStatus = {}
@@ -107,7 +140,8 @@ class MainActivity : ComponentActivity() {
                 viewModel.overlayImageSize = resources.getDimension(R.dimen.overlay_image_size).toInt()
                 viewModel.padding = resources.getDimension(R.dimen.big_padding).toInt()
 
-                // Set GPS button if location permission is granted, otherwise request permission
+                // Enable the follow-GPS button if the location permission is already granted,
+                // otherwise request it.
                 if (checkPermissions()) {
                     viewModel.followGpsButtonIsVisible = true
                 } else {
@@ -120,17 +154,16 @@ class MainActivity : ComponentActivity() {
         SdkSettings.onApiTokenRejected = {
             viewModel.errorMessage = getString(R.string.token_rejected_message)
         }
+    }
 
-        onBackPressedDispatcher.addCallback(this) {
-            if (viewModel.isBottomViewVisible()) {
-                if (::mapSurfaceView.isInitialized) {
-                    mapSurfaceView.mapView?.let { viewModel.hideBottomView(it) }
-                } else {
-                    finish()
-                }
-            } else {
-                finish()
-            }
+    // Clears SDK-level and map surface listeners so callbacks never reach a destroyed activity.
+    private fun clearSdkListeners() {
+        SdkSettings.onApiTokenRejected = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        if (::mapSurfaceView.isInitialized) {
+            mapSurfaceView.onSdkInitFailed = {}
+            mapSurfaceView.onDefaultMapViewCreated = {}
+            mapSurfaceView.onSurfaceChanged = null
         }
     }
 
@@ -166,7 +199,7 @@ class MainActivity : ComponentActivity() {
             }
 
             SdkCall.execute {
-                // Notify permission status had changed
+                // Notify the SDK that the permission status has changed.
                 PermissionsHelper.instance?.notifyOnPermissionsStatusChanged()
 
                 lateinit var positionListener: PositionListener
@@ -186,13 +219,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-
-        GemSdk.release() // Release the SDK.
-        exitProcess(0)
-    }
-
     private fun configureWindow() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
     }
@@ -207,73 +233,70 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MapSelectionApp(viewModel: MapSelectionModel = viewModel(), mapSurfaceViewSetter: (GemSurfaceView) -> Unit) {
     val activity = LocalActivity.current as? MainActivity
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    // Keep the model's orientation in sync and recompute the free map area on rotation so the
+    // Magic Lane logo and the camera centering stay clear of the info panel.
+    LaunchedEffect(isLandscape) {
+        viewModel.isLandscape = isLandscape
+        viewModel.updateMapAreas()
+    }
 
     Box(Modifier.fillMaxSize().background(color = Color.Black)) {
-        Column {
-            MapSurface(
-                Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars),
-                mapSurfaceViewSetter,
-                viewModel,
+        // Full-screen map. The Magic Lane logo is kept inside the visible area via the focus
+        // viewport (see MapSelectionModel.updateMapAreas), so it never hides behind the panel.
+        MapSurface(Modifier.fillMaxSize(), mapSurfaceViewSetter, viewModel)
+
+        if (isLandscape) {
+            // Landscape: the info panel is a card pinned to the bottom-left corner and the
+            // follow-GPS button sits in the opposite (bottom-right) corner.
+            InfoPanel(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth(LANDSCAPE_PANEL_WIDTH_FRACTION),
+                viewModel = viewModel,
+                activity = activity,
+                isLandscape = true,
             )
-        }
-
-        Column(
-            modifier = Modifier.fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .align(Alignment.BottomCenter),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.End,
-        ) {
-            if (viewModel.followGpsButtonIsVisible) {
-                FloatingActionButton(
-                    modifier = Modifier.padding(
-                        start = 8.dp,
-                        bottom = 8.dp,
-                    ),
-                    onClick = {
-                        activity?.let {
-                            viewModel.startFollowingPosition(it.getGemSurfaceView())
-                        }
-                    },
-                ) {
-                    Icon(
-                        painterResource(R.drawable.baseline_my_location_24),
-                        contentDescription = "Follow GPS position",
-                    )
-                }
-            }
-
-            BottomContent(
-                Modifier.fillMaxWidth()
-                    .onGloballyPositioned {
-                        if (viewModel.bottomPartHeight != it.size.height /*+ navBarHeight*/) {
-                            viewModel.bottomPartHeight = it.size.height /*+ navBarHeight*/
-                            activity?.getGemSurfaceView()?.let {
-                                viewModel.setVisibleArea(it)
-                            }
-                        }
-                    },
-                iconOnClick = {
-                    viewModel.hideBottomView(activity?.getGemSurfaceView()?.mapView)
-                },
+            FollowGpsButton(
+                modifier = Modifier.align(Alignment.BottomEnd),
+                viewModel = viewModel,
+                activity = activity,
+                applyBottomInset = true,
             )
-        }
-
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            if (viewModel.progressBarIsVisible) {
-                CircularProgressIndicator(
-                    modifier = Modifier.wrapContentSize().defaultMinSize(
-                        minWidth = 50.dp,
-                        minHeight = 50.dp,
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        } else {
+            // Portrait: the follow-GPS button is stacked directly above a full-width bottom panel.
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.End,
+            ) {
+                FollowGpsButton(
+                    viewModel = viewModel,
+                    activity = activity,
+                    // When the panel is visible it carries the bottom inset; the button only needs
+                    // it when it sits alone at the bottom of the screen.
+                    applyBottomInset = !viewModel.isBottomViewVisible(),
+                )
+                InfoPanel(
+                    modifier = Modifier.fillMaxWidth(),
+                    viewModel = viewModel,
+                    activity = activity,
+                    isLandscape = false,
                 )
             }
+        }
+
+        // Centered loading indicator shown while a route is being computed.
+        if (viewModel.progressBarIsVisible) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .requiredHeightIn(min = 50.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            )
         }
     }
 
@@ -292,9 +315,17 @@ fun MapSurface(
         GemSurfaceView(context).also { surfaceView ->
             surfaceView.onDefaultMapViewCreated = {
                 viewModel.initialize(surfaceView)
+                // Position the Magic Lane logo as soon as the map view exists.
+                viewModel.updateMapAreas(surfaceView)
+            }
+
+            // Re-align the Magic Lane logo whenever the surface is resized (e.g. on rotation).
+            surfaceView.onSurfaceChanged = { _, _ ->
+                viewModel.updateMapAreas(surfaceView)
             }
 
             surfaceView.onSdkInitFailed = { error ->
+                // The SDK is not initialized here, so resolve the message directly (no SdkCall).
                 viewModel.errorMessage = context.getString(
                     R.string.sdk_initialization_failed,
                     GemError.getMessage(error, context),
@@ -306,70 +337,130 @@ fun MapSurface(
     })
 }
 
+// Follow-GPS floating button. Styled with the primary color and always kept clear of the right-side
+// system bar / display cutout; it additionally clears the bottom inset when anchored to the edge.
 @Composable
-fun BottomContent(
+fun FollowGpsButton(
     modifier: Modifier = Modifier,
-    viewModel: MapSelectionModel = viewModel(),
-    iconOnClick: (() -> Unit)? = null,
+    viewModel: MapSelectionModel,
+    activity: MainActivity?,
+    applyBottomInset: Boolean,
 ) {
-    // Fire highlight after layout (and map visible area update)
+    if (!viewModel.followGpsButtonIsVisible) return
+
+    val insetSides = if (applyBottomInset) {
+        WindowInsetsSides.End + WindowInsetsSides.Bottom
+    } else {
+        WindowInsetsSides.End
+    }
+
+    FloatingActionButton(
+        modifier = modifier
+            .windowInsetsPadding(
+                WindowInsets.systemBars.union(WindowInsets.displayCutout).only(insetSides),
+            )
+            .padding(GPS_BUTTON_MARGIN),
+        onClick = {
+            activity?.let { viewModel.startFollowingPosition(it.getGemSurfaceView()) }
+        },
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_baseline_gps_fixed_24),
+            contentDescription = stringResource(R.string.follow_gps),
+        )
+    }
+}
+
+// Info panel describing the tapped map element (route, landmark, traffic event, safety camera or
+// social report). Spans the bottom edge in portrait and becomes a bottom-left card in landscape.
+@Composable
+fun InfoPanel(
+    modifier: Modifier = Modifier,
+    viewModel: MapSelectionModel,
+    activity: MainActivity?,
+    isLandscape: Boolean,
+) {
+    // Fire the pending highlight after layout (one frame after the map's visible area is updated).
     LaunchedEffect(viewModel.invokeHighlight) {
         if (viewModel.invokeHighlight) {
-            // wait one frame to ensure map consumed visibleArea
             withFrameNanos { }
             viewModel.invokeHighlightEffect()
         }
     }
 
-    if ((viewModel.locationDetailsInfo != null) ||
-        (viewModel.safetyCameraInfo != null) ||
-        (viewModel.trafficEventInfo != null) ||
-        (viewModel.socialReportInfo != null) ||
-        (viewModel.routeInfo != null)
-    ) {
-        val title = when {
-            viewModel.routeInfo != null -> R.string.route_info
-            viewModel.trafficEventInfo != null -> R.string.traffic_event
-            viewModel.locationDetailsInfo != null -> R.string.location_details
-            viewModel.safetyCameraInfo != null -> R.string.safety_camera
-            viewModel.socialReportInfo != null -> R.string.social_report
-            else -> R.string.app_name
-        }
+    // Title reflects the kind of element currently selected; bail out when nothing is selected.
+    val title = when {
+        viewModel.routeInfo != null -> R.string.route_info
+        viewModel.trafficEventInfo != null -> R.string.traffic_event
+        viewModel.locationDetailsInfo != null -> R.string.location_details
+        viewModel.safetyCameraInfo != null -> R.string.safety_camera
+        viewModel.socialReportInfo != null -> R.string.social_report
+        else -> return
+    }
 
-        Box(modifier) {
-            Surface(
-                modifier = modifier.align(
-                    Alignment.BottomCenter,
-                ).requiredHeightIn(80.dp, 350.dp).verticalScroll(rememberScrollState()),
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-            ) {
-                Column {
-                    TopAppBar(
-                        modifier = Modifier.fillMaxWidth(),
-                        title = stringResource(title), // set title based on what is clicked
-                        toolbarColor = Color.Transparent,
-                        iconOnClick = iconOnClick,
-                    )
+    // Content must clear the system bars: the bottom always, both sides in portrait, but only the
+    // left in landscape (the panel hugs the left edge, so the right inset does not apply).
+    val insetSides = if (isLandscape) {
+        WindowInsetsSides.Start + WindowInsetsSides.Bottom
+    } else {
+        WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
+    }
 
-                    viewModel.routeInfo?.let {
-                        LocationDetailsScreen(
-                            Modifier.fillMaxWidth(),
-                            LocationDetailsInfo(null, it.routeType, it.routeDescription),
-                        )
-                    }
-                    viewModel.locationDetailsInfo?.let {
-                        LocationDetailsScreen(Modifier.fillMaxWidth(), it)
-                    }
-                    viewModel.socialReportInfo?.let {
-                        SocialReportScreen(Modifier.fillMaxWidth(), it)
-                    }
-                    viewModel.trafficEventInfo?.let {
-                        TrafficEventScreen(Modifier.fillMaxWidth(), it)
-                    }
-                    viewModel.safetyCameraInfo?.let {
-                        SafetyCameraScreen(Modifier.fillMaxWidth(), it)
-                    }
+    Surface(
+        modifier = modifier
+            .requiredHeightIn(80.dp, 350.dp)
+            .onGloballyPositioned { coordinates ->
+                // Report the panel extent so the model keeps the logo / centering clear of it.
+                val width = coordinates.size.width
+                val height = coordinates.size.height
+                val changed = if (isLandscape) {
+                    viewModel.panelWidthPx != width
+                } else {
+                    viewModel.panelHeightPx != height
                 }
+                if (changed) {
+                    viewModel.panelWidthPx = width
+                    viewModel.panelHeightPx = height
+                    viewModel.updateMapAreas(activity?.getGemSurfaceView())
+                }
+            },
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .windowInsetsPadding(
+                    WindowInsets.systemBars.union(WindowInsets.displayCutout).only(insetSides),
+                ),
+        ) {
+            TopAppBar(
+                modifier = Modifier.fillMaxWidth(),
+                title = stringResource(title),
+                toolbarColor = Color.Transparent,
+                iconOnClick = {
+                    viewModel.hideBottomView(activity?.getGemSurfaceView()?.mapView)
+                },
+            )
+
+            viewModel.routeInfo?.let {
+                LocationDetailsScreen(
+                    Modifier.fillMaxWidth(),
+                    LocationDetailsInfo(null, it.routeType, it.routeDescription),
+                )
+            }
+            viewModel.locationDetailsInfo?.let {
+                LocationDetailsScreen(Modifier.fillMaxWidth(), it)
+            }
+            viewModel.socialReportInfo?.let {
+                SocialReportScreen(Modifier.fillMaxWidth(), it)
+            }
+            viewModel.trafficEventInfo?.let {
+                TrafficEventScreen(Modifier.fillMaxWidth(), it)
+            }
+            viewModel.safetyCameraInfo?.let {
+                SafetyCameraScreen(Modifier.fillMaxWidth(), it)
             }
         }
     }

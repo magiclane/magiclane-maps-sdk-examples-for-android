@@ -10,6 +10,7 @@ package com.magiclane.sdk.examples.hellofragment
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.examples.hellofragment.databinding.ActivityMainBinding
 import kotlin.system.exitProcess
@@ -23,6 +24,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
     }
 
     override fun onDestroy() {

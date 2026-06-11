@@ -23,7 +23,9 @@ dependencies {
     implementation(shared.magiclane.maps.kotlin)
 
     implementation(shared.androidx.core.ktx)
+    implementation(shared.androidx.activity.ktx)
     implementation(shared.androidx.appcompat)
+    implementation(shared.androidx.constraintlayout)
     implementation(shared.androidx.junit)
     implementation(shared.androidx.espresso.core)
     implementation(shared.material)

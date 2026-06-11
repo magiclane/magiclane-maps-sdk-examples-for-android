@@ -21,7 +21,7 @@ class FirstFragment : Fragment() {
     private var binding: FragmentFirstBinding? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        binding = DataBindingUtil.inflate<FragmentFirstBinding>(inflater, R.layout.fragment_first, container, false)
+        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_first, container, false)
         return binding?.root
     }
 

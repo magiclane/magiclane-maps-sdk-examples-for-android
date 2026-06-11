@@ -12,5 +12,6 @@
     <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
     <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
     <string name="location_permission_required">Location permission is required in order to select the current location arrow.</string>
+    <string name="follow_gps">Follow GPS position</string>
     <string name="ok">Ok</string>
 </resources>

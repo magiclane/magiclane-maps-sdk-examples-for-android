@@ -10,12 +10,14 @@ package com.magiclane.sdk.examples.hellofragmentcustomstyle
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.examples.hellofragmentcustomstyle.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.hellofragmentcustomstyle.databinding.DialogLayoutBinding
+import com.magiclane.sdk.util.SdkCall
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
@@ -28,9 +30,13 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         val error = GemSdk.initSdkWithDefaults(this)
         if (error != GemError.NoError) {
-            showDialog(GemError.getMessage(error, this)) {
+            val message = SdkCall.runSynced { GemError.getMessage(error, this) } ?: ""
+            showDialog(message) {
                 finish()
                 exitProcess(0)
             }

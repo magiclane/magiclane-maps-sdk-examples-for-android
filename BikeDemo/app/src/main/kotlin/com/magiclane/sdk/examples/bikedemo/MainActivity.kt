@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -11,6 +11,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.location.LocationManager
 import android.os.Bundle
@@ -22,6 +23,8 @@ import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -47,6 +50,7 @@ import com.magiclane.sdk.core.SoundPlayingListener
 import com.magiclane.sdk.core.SoundPlayingPreferences
 import com.magiclane.sdk.core.SoundPlayingService
 import com.magiclane.sdk.core.Time
+import com.magiclane.sdk.core.XyF
 import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.EHighlightOptions
@@ -77,6 +81,7 @@ import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.SdkImages
 import com.magiclane.sdk.util.Util
 import com.magiclane.sound.SoundUtils
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.exitProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -88,7 +93,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private lateinit var binding: ActivityMainBinding
 
-    // UI Dimensions
+    // Snapshot of portrait constraints — cloned once at inflation so landscape tweaks always
+    // start from a clean baseline regardless of the current orientation.
+    private lateinit var portraitConstraintSet: ConstraintSet
+
+    // UI dimensions derived from resources / insets
     private var searchIconSize = 0
     private var turnImageSize: Int = 0
     private var topInset = 0
@@ -96,24 +105,18 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private var rightInset = 0
     private var inflate = 0
     private var appBarHeight = 0
-    private var bottomDialogHeight = 0
+    private var bottomDialogHeight = 0 // height of the currently-visible bottom panel, px
 
-    // Search state
     private var searchFilter = ""
-
-    // Route and Navigation state
     private var routesList = ArrayList<Route>()
     private var navigationStatus = ENavigationStatus.Running
     private var lastTurnImageId: Long = Long.MAX_VALUE
-
-    // Permission handling
     private var shouldCheckLocationPermissionOnResume = false
+    val isSearching = AtomicBoolean(false)
 
     private val checkAuthorizationListener = ProgressListener.create(
         onCompleted = { errorCode, _ ->
-            if (errorCode != GemError.NoError) {
-                showInvalidTokenDialog()
-            }
+            if (errorCode != GemError.NoError) showInvalidTokenDialog()
         },
     )
 
@@ -123,7 +126,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         onStatusChanged = { status -> handleRoutingStatusChanged(status) },
     )
 
-    // Services and listeners
     private val viewModel: MainActivityViewModel by viewModels()
     private val searchAdapter = SearchAdapter()
     private val navigationService = NavigationService()
@@ -143,11 +145,20 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         private const val ANIMATION_DURATION_MS = 900
         private const val HIGHLIGHT_ALPHA = 0.75
         private const val HIGHLIGHT_IMAGE_SIZE = 6.0
+
+        // Fraction of total screen width occupied by left-side panels in landscape.
+        private const val ROUTE_PANEL_LANDSCAPE_RATIO = 0.45f
+        private const val NAV_PANEL_LANDSCAPE_RATIO = 0.40f
+
+        // Camera-focus x: 0.5 centres the GPS arrow on screen; 0.7 shifts it right so it sits
+        // in the free map area when navigation panels occupy the left side in landscape.
+        private const val CAMERA_FOCUS_X_CENTER = 0.5f
+        private const val CAMERA_FOCUS_X_SHIFTED = 0.7f
+        private const val CAMERA_FOCUS_Y = 0.75f
     }
 
-    /**
-     * Navigation listener that receives notifications from the navigation service.
-     */
+    //region Navigation
+
     private val navigationListener: NavigationListener = NavigationListener.create(
         onNavigationStarted = { handleNavigationStarted() },
         onNavigationInstructionUpdated = { instr -> updateNavigationInstruction(instr) },
@@ -168,6 +179,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private val navigationProgressListener = ProgressListener.create(
         onStatusChanged = { refreshStatusMessage() },
     )
+
+    //endregion
+
+    //region Routing
 
     private fun refreshStatusMessage() {
         val statusMessage = getStatusMessage()
@@ -191,7 +206,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         when (errorCode) {
             GemError.NoError -> processSuccessfulRoute(routes)
             GemError.Cancel -> { /* Routing action was cancelled */ }
-            else -> showDialog(getString(R.string.routing_error, GemError.getMessage(errorCode)))
+            else -> showDialog(
+                getString(R.string.routing_error, SdkCall.runSynced { GemError.getMessage(errorCode, this) }),
+            )
         }
     }
 
@@ -231,7 +248,12 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
             if (error != GemError.NoError) {
                 Util.postOnMain {
-                    showDialog(getString(R.string.route_navigation_error, GemError.getMessage(error)))
+                    showDialog(
+                        getString(
+                            R.string.route_navigation_error,
+                            SdkCall.runSynced { GemError.getMessage(error, this) },
+                        ),
+                    )
                 }
             }
 
@@ -249,7 +271,12 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
             if (error != GemError.NoError) {
                 Util.postOnMain {
-                    showDialog(getString(R.string.route_simulation_error, GemError.getMessage(error)))
+                    showDialog(
+                        getString(
+                            R.string.route_simulation_error,
+                            SdkCall.runSynced { GemError.getMessage(error, this) },
+                        ),
+                    )
                 }
             }
 
@@ -257,20 +284,27 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }
     }
 
-    private fun presentRoutesOnMap() = SdkCall.execute {
-        binding.gemSurfaceView.mapView?.presentRoutes(
-            routesList,
-            displayBubble = true,
-            displayTollIcon = false,
-            displayFerryIcon = false,
-            displayTrafficIcon = false,
-            edgeAreaInsets = Rect(
-                leftInset,
-                getTopInset(),
-                rightInset,
-                bottomDialogHeight + inflate,
-            ),
-        )
+    private fun presentRoutesOnMap() {
+        binding.mapSearchBar.isVisible = false
+
+        // Compute UI-dependent values on the main thread before the SDK call.
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val panelWidth = if (isLandscape) (resources.displayMetrics.widthPixels * 0.45f).toInt() else 0
+        val leftEdge = if (isLandscape) panelWidth else leftInset
+        val bottomEdge = if (!isLandscape) bottomDialogHeight + inflate else inflate
+        val topEdge = getTopInset()
+        val rightEdge = rightInset
+
+        SdkCall.execute {
+            binding.gemSurfaceView.mapView?.presentRoutes(
+                routesList,
+                displayBubble = true,
+                displayTollIcon = false,
+                displayFerryIcon = false,
+                displayTrafficIcon = false,
+                edgeAreaInsets = Rect(leftEdge, topEdge, rightEdge, bottomEdge),
+            )
+        }
     }
 
     private fun clearRoutesAndHideDialog() {
@@ -286,7 +320,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         routesList.clear()
     }
 
-    // Helper methods for navigation listener callbacks
+    //endregion
+
+    //region Navigation callbacks
+
     private fun handleNavigationStarted() {
         SdkCall.execute {
             binding.gemSurfaceView.mapView?.let { mapView ->
@@ -298,10 +335,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }
         binding.apply {
             mapSearchBar.isVisible = false
-            bikeSettingsButton.isVisible = false
             topPanel.isVisible = true
             bottomPanel.isVisible = true
         }
+        applyCameraFocus()
+        binding.mapRoot.post { updateFocusViewport() }
     }
 
     private fun updateNavigationInstruction(instr: NavigationInstruction) {
@@ -345,14 +383,20 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }
     }
 
+    //endregion
+
+    //region Search
+
     private fun performSearch(filter: String) {
         searchJob = CoroutineScope(Dispatchers.IO).launch {
             delay(SEARCH_DEBOUNCE_MS)
 
-            SdkCall.runSynced {
+            SdkCall.postAsync {
+                isSearching.set(true)
                 searchService.searchByFilter(
                     textFilter = filter,
                     onCompleted = { results, errorCode, _ ->
+                        isSearching.set(false)
                         when (errorCode) {
                             GemError.Cancel -> return@searchByFilter
                             GemError.NoError -> {
@@ -376,6 +420,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }
     }
 
+    //endregion
+
+    //region Lifecycle
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -384,27 +432,24 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         turnImageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
 
-        SdkSettings.onConnectionStatusUpdated = { isConnected ->
-            if (isConnected) {
-                SdkSettings.appAuthorization?.let {
-                    SdkCall.execute {
-                        SdkSettings.verifyAppAuthorization(it, checkAuthorizationListener)
-                    }
-                } ?: run {
-                    showInvalidTokenDialog()
-                }
-
-                SdkSettings.onConnectionStatusUpdated = {}
-            }
-        }
-
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         EspressoIdlingResource.increment()
 
+        portraitConstraintSet = ConstraintSet().also { it.clone(binding.mapRoot) }
+
+        searchIconSize = resources.getDimension(R.dimen.icon_size).toInt()
+        inflate = resources.getDimension(R.dimen.padding_40).toInt()
+
         // Measure app bar height after layout
         binding.appBarLayout.post {
             appBarHeight = binding.appBarLayout.height
+        }
+
+        // Apply initial orientation layout and manage GPS button margins after first layout pass
+        binding.mapRoot.post {
+            applyOrientationLayout()
+            updateFollowGpsButtonMargins(isAnyPanelVisible())
         }
 
         // Set up window insets listener
@@ -413,15 +458,570 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             topInset = systemBars.top + inflate
             leftInset = systemBars.left + inflate
             rightInset = systemBars.right + inflate
+            updateFollowGpsButtonMargins(isAnyPanelVisible())
             insets
         }
 
-        searchIconSize = resources.getDimension(R.dimen.icon_size).toInt()
-        inflate = resources.getDimension(R.dimen.padding_40).toInt()
+        registerSdkListeners()
+
+        // Defines an action that should be done when the world map is ready (Updated/ loaded).
+        searchAdapter.setOnViewHolderClickListener { item ->
+            val itemHasValidCoordinates = SdkCall.execute { item.landmark.coordinates != null } ?: false
+            if (!itemHasValidCoordinates) {
+                return@setOnViewHolderClickListener
+            }
+
+            binding.mapSearchView.hide()
+            viewModel.destination = item.landmark
+
+            SdkCall.execute {
+                showCalculateRouteDialog(
+                    item.text ?: "",
+                    item.subText ?: "",
+                    onCalculateRoute = {
+                        SdkCall.execute {
+                            val position = PositionService.position
+                            if ((position != null) && position.isValid()) {
+                                val departure =
+                                    Landmark(getString(R.string.my_position), position.latitude, position.longitude)
+                                val destination = item.landmark
+                                calculateRoute(departure, destination)
+                            } else {
+                                runOnUiThread { showDialog(getString(R.string.current_position_not_available)) }
+                            }
+                        }
+                    },
+                    onViewCreated = {
+                        highlightLandmarkOnMap(viewModel.destination!!)
+                    },
+                    onViewClosed = {
+                        deactivateHighlights()
+                    },
+                )
+            }
+        }
+
+        EspressoIdlingResource.decrement()
+
+        if (checkLocationStatus()) {
+            requestPermissions()
+        }
+
+        if (!Util.isInternetConnected(this)) {
+            showDialog(getString(R.string.internet_required))
+        }
+
+        binding.mapSearchView.setupWithSearchBar(binding.mapSearchBar)
+
+        binding.mapSearchView.editText.addTextChangedListener {
+            val filter = it.toString().trim()
+            if (filter == searchFilter) return@addTextChangedListener
+
+            searchFilter = filter
+
+            if (isSearching.compareAndSet(true, false)) {
+                SdkCall.postAsync { searchService.cancelSearch() }
+            }
+
+            binding.searchProgressBar.isInvisible = searchFilter.isBlank()
+            searchJob?.cancel()
+
+            if (searchFilter.isNotBlank()) {
+                performSearch(searchFilter)
+            } else {
+                viewModel.searchResultListLivedata.postValue(mutableListOf())
+            }
+        }
+
+        viewModel.isElectricBikeProfile.observe(this) {
+            invalidateOptionsMenu()
+        }
+
+        setSupportActionBar(binding.mapSearchBar)
+
+        binding.searchResultsList.apply {
+            adapter = searchAdapter
+            layoutManager = LinearLayoutManager(this@MainActivity)
+        }
+
+        viewModel.searchResultListLivedata.observe(this) {
+            searchAdapter.submitList(it)
+            binding.searchProgressBar.isInvisible = true
+            binding.noResultsTextView.isVisible = it.isEmpty() && searchFilter.isNotBlank()
+        }
+
+        binding.cancelButton.setOnClickListener {
+            SdkCall.execute {
+                routingService.cancelRoute()
+            }
+            binding.progressBar.visibility = View.GONE
+        }
+
+        onBackPressedDispatcher.addCallback(this) {
+            if (binding.fragmentContainer.getFragment<BikeSettingsFragment?>() != null) {
+                supportFragmentManager.beginTransaction().remove(binding.fragmentContainer.getFragment()).commit()
+                return@addCallback
+            }
+
+            if (binding.calculateRoutePanel.root.isVisible) {
+                dismissPanel(binding.calculateRoutePanel.root)
+                deactivateHighlights()
+                return@addCallback
+            }
+
+            if (binding.cancelButton.isVisible) {
+                SdkCall.execute {
+                    routingService.cancelRoute()
+                }
+                binding.cancelButton.visibility = View.GONE
+                binding.progressBar.visibility = View.GONE
+                return@addCallback
+            }
+
+            if (binding.startNavigationPanel.root.isVisible) {
+                dismissPanel(binding.startNavigationPanel.root)
+                binding.followGpsButton.visibility = View.VISIBLE
+                binding.mapSearchBar.isVisible = true
+                SdkCall.execute { binding.gemSurfaceView.mapView?.preferences?.routes?.clear() }
+                return@addCallback
+            }
+
+            var navigationIsActive = false
+            var simulationIsActive = false
+
+            SdkCall.execute {
+                navigationIsActive = navigationService.isNavigationActive()
+                simulationIsActive = navigationService.isSimulationActive()
+            }
+
+            if (navigationIsActive || simulationIsActive) {
+                SdkCall.execute { navigationService.cancelNavigation() }
+                return@addCallback
+            }
+
+            finish()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (shouldCheckLocationPermissionOnResume) {
+            shouldCheckLocationPermissionOnResume = false
+            if (isLocationEnabled()) {
+                requestPermissions()
+            } else {
+                showDialog(getString(R.string.location_services_required)) {
+                    finish()
+                }
+            }
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        binding.mapRoot.post {
+            applyOrientationLayout()
+            updateFollowGpsButtonMargins(isAnyPanelVisible())
+            applyCameraFocus()
+            updateFocusViewport()
+        }
+    }
+
+    //region Orientation & layout
+
+    private fun applyOrientationLayout() {
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        // applyTo() resets every child of mapRoot to its XML-declared visibility and to the
+        // margins that were live at clone time (i.e. before window insets were dispatched — all
+        // zeros). Save visibilities and inset-adjusted margins now and restore them afterwards.
+        val calcVis = binding.calculateRoutePanel.root.visibility
+        val navVis = binding.startNavigationPanel.root.visibility
+        val fabVis = binding.followGpsButton.visibility
+        val topPanelVis = binding.topPanel.visibility
+        val bottomPanelVis = binding.bottomPanel.visibility
+        val cancelVis = binding.cancelButton.visibility
+        val progressVis = binding.progressBar.visibility
+
+        val topLp = binding.topPanel.layoutParams as? ConstraintLayout.LayoutParams
+        val savedTopTopMargin = topLp?.topMargin ?: 0
+        val savedTopLeftMargin = topLp?.leftMargin ?: 0
+        val savedTopRightMargin = topLp?.rightMargin ?: 0
+
+        val bottomLp = binding.bottomPanel.layoutParams as? ConstraintLayout.LayoutParams
+        val savedBottomBottomMargin = bottomLp?.bottomMargin ?: 0
+        val savedBottomLeftMargin = bottomLp?.leftMargin ?: 0
+        val savedBottomRightMargin = bottomLp?.rightMargin ?: 0
+
+        ConstraintSet().apply {
+            clone(portraitConstraintSet)
+            if (isLandscape) {
+                val screenWidth = resources.displayMetrics.widthPixels
+                val routePanelWidth = (screenWidth * ROUTE_PANEL_LANDSCAPE_RATIO).toInt()
+                val navPanelWidth = (screenWidth * NAV_PANEL_LANDSCAPE_RATIO).toInt()
+                val appBar = getAppBarHeight()
+
+                // Route panels: pin to full left-side height below the app bar.
+                // constrainHeight(0) = MATCH_CONSTRAINT, which requires both TOP and BOTTOM edges.
+                for (panelId in listOf(R.id.calculate_route_panel, R.id.start_navigation_panel)) {
+                    constrainWidth(panelId, routePanelWidth)
+                    constrainHeight(panelId, 0)
+                    connect(panelId, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, 0)
+                    connect(panelId, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP, appBar)
+                    connect(panelId, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0)
+                    clear(panelId, ConstraintSet.END)
+                }
+                // Navigation panels: keep their fixed portrait heights, left-aligned at 40% width.
+                for (panelId in listOf(R.id.top_panel, R.id.bottom_panel)) {
+                    constrainWidth(panelId, navPanelWidth)
+                    connect(panelId, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, 0)
+                    clear(panelId, ConstraintSet.END)
+                }
+                // GPS button: portrait layout already anchors END; only BOTTOM needs re-pinning.
+                clear(R.id.follow_gps_button, ConstraintSet.BOTTOM)
+                connect(R.id.follow_gps_button, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0)
+            }
+        }.applyTo(binding.mapRoot)
+
+        binding.calculateRoutePanel.root.visibility = calcVis
+        binding.startNavigationPanel.root.visibility = navVis
+        binding.followGpsButton.visibility = fabVis
+        binding.topPanel.visibility = topPanelVis
+        binding.bottomPanel.visibility = bottomPanelVis
+        binding.cancelButton.visibility = cancelVis
+        binding.progressBar.visibility = progressVis
+
+        // Restore only margins — widths are already correct from applyTo().
+        (binding.topPanel.layoutParams as? ConstraintLayout.LayoutParams)?.let {
+            it.topMargin = savedTopTopMargin
+            it.leftMargin = savedTopLeftMargin
+            it.rightMargin = savedTopRightMargin
+            binding.topPanel.layoutParams = it
+        }
+        (binding.bottomPanel.layoutParams as? ConstraintLayout.LayoutParams)?.let {
+            it.bottomMargin = savedBottomBottomMargin
+            it.leftMargin = savedBottomLeftMargin
+            it.rightMargin = savedBottomRightMargin
+            binding.bottomPanel.layoutParams = it
+        }
+    }
+
+    private fun updateFollowGpsButtonMargins(panelVisible: Boolean) {
+        val params = binding.followGpsButton.layoutParams as? ConstraintLayout.LayoutParams ?: return
+        val padding = resources.getDimensionPixelSize(R.dimen.padding_10)
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val insets = ViewCompat.getRootWindowInsets(binding.root)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+        val bottomInset = insets?.bottom ?: 0
+        val rightInset = insets?.right ?: 0
+        val targetBottomMargin = if (!isLandscape && panelVisible) bottomDialogHeight + padding else bottomInset + padding
+        val targetEndMargin = rightInset + padding
+        if (params.bottomMargin != targetBottomMargin || params.marginEnd != targetEndMargin) {
+            params.bottomMargin = targetBottomMargin
+            params.marginEnd = targetEndMargin
+            binding.followGpsButton.layoutParams = params
+        }
+    }
+
+    //endregion
+
+    //region Map focus & camera
+
+    private fun isAnyPanelVisible(): Boolean =
+        binding.calculateRoutePanel.root.isVisible || binding.startNavigationPanel.root.isVisible
+
+    /**
+     * Hides [panel], resets the stored dialog height, and refreshes the GPS-button margins and
+     * the SDK focus viewport. Call whenever a bottom-sheet panel is dismissed.
+     */
+    private fun dismissPanel(panel: View) {
+        panel.visibility = View.GONE
+        bottomDialogHeight = 0
+        updateFollowGpsButtonMargins(isAnyPanelVisible())
+        updateFocusViewport()
+    }
+
+    private fun applyCameraFocus() {
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val navPanelVisible = binding.topPanel.isVisible
+        SdkCall.execute {
+            binding.gemSurfaceView.mapView?.preferences?.followPositionPreferences?.cameraFocus =
+                if (isLandscape && navPanelVisible) {
+                    XyF(CAMERA_FOCUS_X_SHIFTED, CAMERA_FOCUS_Y)
+                } else {
+                    XyF(CAMERA_FOCUS_X_CENTER, CAMERA_FOCUS_Y)
+                }
+        }
+    }
+
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            binding.gemSurfaceView.mapView?.preferences?.focusViewport = getFocusViewport()
+        }
+    }
+
+    private fun getFocusViewport(): Rect {
+        val root = binding.root
+        val insets = ViewCompat.getRootWindowInsets(root)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+
+        val width = root.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+        val height = root.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
+
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        return if (isLandscape) {
+            // Landscape: panels are left-aligned; the free map area starts at the rightmost
+            // visible panel's right edge.
+            val w = maxOf(width, height)
+            val h = minOf(width, height)
+            val left = maxOf(
+                if (binding.topPanel.isVisible) binding.topPanel.right else 0,
+                if (binding.calculateRoutePanel.root.isVisible) binding.calculateRoutePanel.root.right else 0,
+                if (binding.startNavigationPanel.root.isVisible) binding.startNavigationPanel.root.right else 0,
+                insets?.left ?: 0,
+            )
+            val top = insets?.top ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            Rect(left, top, right, bottom)
+        } else {
+            // Portrait: panels are at the top and bottom; the free map area is the strip
+            // between the lowest top-panel edge and the highest bottom-panel edge.
+            val w = minOf(width, height)
+            val h = maxOf(width, height)
+            val left = insets?.left ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val top = if (binding.topPanel.isVisible) binding.topPanel.bottom else insets?.top ?: 0
+            val bottom = minOf(
+                if (binding.bottomPanel.isVisible) binding.bottomPanel.top else h,
+                if (binding.calculateRoutePanel.root.isVisible) binding.calculateRoutePanel.root.top else h,
+                if (binding.startNavigationPanel.root.isVisible) binding.startNavigationPanel.root.top else h,
+                h - (insets?.bottom ?: 0),
+            ).coerceAtLeast(top)
+            Rect(left, top, right, bottom)
+        }
+    }
+
+    //endregion
+
+    private fun highlightLandmarkOnMap(landmark: Landmark) = SdkCall.execute {
+        binding.gemSurfaceView.mapView?.let { mapView ->
+            val rect = getFreeScreenRect()
+
+            mapView.deactivateAllHighlights()
+
+            landmark.image = ImageDatabase().getImageById(SdkImages.Core.Search_Results_Pin.value)
+
+            val contour = landmark.getContourGeographicArea()
+            val highlightSettings: HighlightRenderSettings
+
+            @Suppress("VerboseNullabilityAndEmptiness")
+            if ((contour != null) && !contour.isEmpty()) {
+                mapView.centerOnRectArea(
+                    contour,
+                    zoomLevel = -1,
+                    viewRc = rect,
+                    Animation(EAnimation.Linear, ANIMATION_DURATION_MS),
+                )
+
+                highlightSettings = HighlightRenderSettings(
+                    EHighlightOptions.ShowContour.value or EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
+                    Rgba(255, 98, 0, 255),
+                    Rgba(255, 98, 0, 255),
+                    HIGHLIGHT_ALPHA,
+                ).apply {
+                    imageSize = HIGHLIGHT_IMAGE_SIZE
+                }
+            } else {
+                highlightSettings = HighlightRenderSettings(
+                    EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
+                ).apply {
+                    imageSize = HIGHLIGHT_IMAGE_SIZE
+                }
+
+                landmark.coordinates?.let {
+                    mapView.centerOnCoordinates(
+                        it,
+                        -1,
+                        rect.center,
+                        Animation(EAnimation.Linear, ANIMATION_DURATION_MS),
+                        0.0,
+                        0.0,
+                    )
+                }
+            }
+
+            mapView.activateHighlightLandmarks(landmark, highlightSettings)
+        }
+    }
+
+    private fun deactivateHighlights() = SdkCall.execute {
+        binding.gemSurfaceView.mapView?.deactivateAllHighlights()
+    }
+
+    private fun getFreeScreenRect(): Rect {
+        val mapWidth = binding.gemSurfaceView.width
+        val mapHeight = binding.gemSurfaceView.height
+
+        if (mapWidth <= 0 || mapHeight <= 0) {
+            val fallbackWidth = binding.gemSurfaceView.measuredWidth
+            val fallbackHeight = binding.gemSurfaceView.measuredHeight
+            return Rect(0, 0, fallbackWidth, fallbackHeight)
+        }
+
+        val insets = ViewCompat.getRootWindowInsets(binding.root)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+        val leftSysInset = insets?.left ?: 0
+        val rightSysInset = insets?.right ?: 0
+        val bottomSysInset = insets?.bottom ?: 0
+
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val padding = resources.getDimensionPixelSize(R.dimen.map_free_space_padding)
+        val topLimit = getAppBarHeight()
+
+        val left: Int
+        val right: Int
+        val bottom: Int
+
+        if (isLandscape) {
+            left = when {
+                binding.calculateRoutePanel.root.isVisible ->
+                    (binding.calculateRoutePanel.root.right - binding.gemSurfaceView.left).coerceAtLeast(leftSysInset)
+                binding.startNavigationPanel.root.isVisible ->
+                    (binding.startNavigationPanel.root.right - binding.gemSurfaceView.left).coerceAtLeast(leftSysInset)
+                else -> leftSysInset
+            }
+            right = (mapWidth - rightSysInset).coerceAtLeast(left + 1)
+            bottom = (mapHeight - bottomSysInset).coerceAtLeast(topLimit + 1)
+        } else {
+            left = leftSysInset.coerceIn(0, (mapWidth - 1).coerceAtLeast(0))
+            right = (mapWidth - rightSysInset).coerceIn(left + 1, mapWidth)
+            val bottomLimitRaw = when {
+                binding.calculateRoutePanel.root.isVisible ->
+                    binding.calculateRoutePanel.root.top - binding.gemSurfaceView.top
+                binding.startNavigationPanel.root.isVisible ->
+                    binding.startNavigationPanel.root.top - binding.gemSurfaceView.top
+                else -> mapHeight
+            }
+            bottom = bottomLimitRaw.coerceIn(topLimit + 1, mapHeight)
+        }
+
+        val paddedLeft = (left + padding).coerceAtMost(right - 1)
+        val paddedRight = (right - padding).coerceAtLeast(paddedLeft + 1)
+        val paddedTop = (topLimit + padding).coerceAtMost(bottom - 1)
+        val paddedBottom = (bottom - padding).coerceAtLeast(paddedTop + 1)
+
+        return Rect(paddedLeft, paddedTop, paddedRight, paddedBottom)
+    }
+
+    //endregion
+
+    //region Options menu
+
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        menu?.run {
+            val electric = findItem(R.id.e_bike_type)
+            electric.isVisible = viewModel.isElectric
+            val notElectric = findItem(R.id.bike_type)
+            notElectric.isVisible = !viewModel.isElectric
+            val icon = if (viewModel.isElectric) electric else notElectric
+            icon.icon = ContextCompat.getDrawable(
+                this@MainActivity,
+                when (viewModel.bikeProfile) {
+                    EBikeProfile.City -> if (viewModel.isElectric) R.drawable.ebikecity else R.drawable.bikecity
+                    EBikeProfile.Cross -> if (viewModel.isElectric) R.drawable.ebikecross else R.drawable.bikecross
+                    EBikeProfile.Mountain -> if (viewModel.isElectric) R.drawable.ebikemountain else R.drawable.bikemountain
+                    EBikeProfile.Road -> if (viewModel.isElectric) R.drawable.ebikeroad else R.drawable.bikeroad
+                },
+            )
+        }
+        binding.mapSearchBar.setOnMenuItemClickListener { menuItem: MenuItem? ->
+            val bikeTypeButton = binding.mapSearchBar.menu.findItem(
+                if (viewModel.isElectric) R.id.e_bike_type else R.id.bike_type,
+            )
+            when (menuItem?.itemId) {
+                R.id.bike_city, R.id.e_bike_city -> {
+                    bikeTypeButton.icon = ContextCompat.getDrawable(
+                        this,
+                        if (viewModel.isElectric) R.drawable.ebikecity else R.drawable.bikecity,
+                    )
+                    viewModel.setBikeProfile(EBikeProfile.City)
+                }
+
+                R.id.bike_cross, R.id.e_bike_cross -> {
+                    bikeTypeButton.icon = ContextCompat.getDrawable(
+                        this,
+                        if (viewModel.isElectric) R.drawable.ebikecross else R.drawable.bikecross,
+                    )
+                    viewModel.setBikeProfile(EBikeProfile.Cross)
+                }
+
+                R.id.bike_mountain, R.id.e_bike_mountain -> {
+                    bikeTypeButton.icon = ContextCompat.getDrawable(
+                        this,
+                        if (viewModel.isElectric) R.drawable.ebikemountain else R.drawable.bikemountain,
+                    )
+                    viewModel.setBikeProfile(EBikeProfile.Mountain)
+                }
+
+                R.id.bike_road, R.id.e_bike_road -> {
+                    bikeTypeButton.icon = ContextCompat.getDrawable(
+                        this,
+                        if (viewModel.isElectric) R.drawable.ebikeroad else R.drawable.bikeroad,
+                    )
+                    viewModel.setBikeProfile(EBikeProfile.Road)
+                }
+
+                R.id.settings -> {
+                    supportFragmentManager.beginTransaction().replace<BikeSettingsFragment>(
+                        R.id.fragment_container,
+                    ).commit()
+                }
+
+                else -> {}
+            }
+            true
+        }
+        return true
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.search_menu, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    //endregion
+
+    override fun onDestroy() {
+        clearSdkListeners()
+        super.onDestroy()
+        SoundUtils.removeTTSPlayerInitializationListener(this)
+        GemSdk.release()
+        exitProcess(0)
+    }
+
+    //endregion
+
+    //region SDK listeners
+
+    private fun registerSdkListeners() {
+        // Clear the callback after the first successful connection so reconnects don't
+        // re-run the authorization check.
+        SdkSettings.onConnectionStatusUpdated = { isConnected ->
+            if (isConnected) {
+                SdkSettings.appAuthorization?.let {
+                    SdkCall.execute { SdkSettings.verifyAppAuthorization(it, checkAuthorizationListener) }
+                } ?: run {
+                    runOnAliveUi { showInvalidTokenDialog() }
+                }
+                SdkSettings.onConnectionStatusUpdated = {}
+            }
+        }
 
         binding.gemSurfaceView.onSdkInitFailed = { error ->
             val errorMessage = getString(R.string.sdk_init_failed, GemError.getMessage(error, this))
-            Util.postOnMain {
+            runOnAliveUi {
                 showDialog(errorMessage) {
                     finish()
                     exitProcess(0)
@@ -537,320 +1137,58 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                         }
                     }
 
-                    bikeSettingsButton.isVisible = true
+                    invalidateOptionsMenu()
+                    updateFocusViewport()
                 }
             }
         }
 
-        // Defines an action that should be done when the world map is ready (Updated/ loaded).
-        searchAdapter.setOnViewHolderClickListener { item ->
-            val itemHasValidCoordinates = SdkCall.execute { item.landmark.coordinates != null } ?: false
-            if (!itemHasValidCoordinates) {
-                return@setOnViewHolderClickListener
-            }
-
-            binding.mapSearchView.hide()
-            viewModel.destination = item.landmark
-
-            SdkCall.execute {
-                showCalculateRouteDialog(
-                    item.text ?: "",
-                    item.subText ?: "",
-                    onCalculateRoute = {
-                        SdkCall.execute {
-                            val position = PositionService.position
-                            if ((position != null) && position.isValid()) {
-                                val departure =
-                                    Landmark(getString(R.string.my_position), position.latitude, position.longitude)
-                                val destination = item.landmark
-                                calculateRoute(departure, destination)
-                            } else {
-                                runOnUiThread { showDialog(getString(R.string.current_position_not_available)) }
-                            }
-                        }
-                    },
-                    onViewCreated = {
-                        highlightLandmarkOnMap(viewModel.destination!!)
-                    },
-                    onViewClosed = {
-                        deactivateHighlights()
-                    },
-                )
-            }
+        binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
+            Util.postOnMain { updateFocusViewport() }
         }
-
-        EspressoIdlingResource.decrement()
 
         SdkSettings.onApiTokenRejected = {
-            showInvalidTokenDialog()
-        }
-
-        if (checkLocationStatus()) {
-            requestPermissions()
-        }
-
-        if (!Util.isInternetConnected(this)) {
-            showDialog(getString(R.string.internet_required))
-        }
-
-        binding.mapSearchView.setupWithSearchBar(binding.mapSearchBar)
-
-        binding.mapSearchView.editText.addTextChangedListener {
-            val filter = it.toString().trim()
-            if (filter == searchFilter) return@addTextChangedListener
-
-            searchFilter = filter
-            SdkCall.execute { searchService.cancelSearch() }
-
-            binding.searchProgressBar.isInvisible = searchFilter.isBlank()
-            searchJob?.cancel()
-
-            if (searchFilter.isNotBlank()) {
-                performSearch(searchFilter)
-            } else {
-                viewModel.searchResultListLivedata.postValue(mutableListOf())
-            }
-        }
-
-        viewModel.isElectricBikeProfile.observe(this) {
-            invalidateOptionsMenu()
-        }
-
-        setSupportActionBar(binding.mapSearchBar)
-
-        binding.searchResultsList.apply {
-            adapter = searchAdapter
-            layoutManager = LinearLayoutManager(this@MainActivity)
-        }
-
-        viewModel.searchResultListLivedata.observe(this) {
-            searchAdapter.submitList(it)
-            binding.searchProgressBar.isInvisible = true
-            binding.noResultsTextView.isVisible = it.isEmpty() && searchFilter.isNotBlank()
-        }
-
-        binding.bikeSettingsButton.setOnClickListener {
-            supportFragmentManager.beginTransaction().replace<BikeSettingsFragment>(
-                R.id.fragment_container,
-            ).commit()
-        }
-
-        binding.cancelButton.setOnClickListener {
-            SdkCall.execute {
-                routingService.cancelRoute()
-            }
-            binding.progressBar.visibility = View.GONE
-        }
-
-        onBackPressedDispatcher.addCallback(this) {
-            if (binding.fragmentContainer.getFragment<BikeSettingsFragment?>() != null) {
-                supportFragmentManager.beginTransaction().remove(binding.fragmentContainer.getFragment()).commit()
-                return@addCallback
-            }
-
-            if (binding.calculateRoutePanel.root.isVisible) {
-                binding.calculateRoutePanel.root.isVisible = false
-                deactivateHighlights()
-                return@addCallback
-            }
-
-            if (binding.cancelButton.isVisible) {
-                SdkCall.execute {
-                    routingService.cancelRoute()
-                }
-                binding.cancelButton.visibility = View.GONE
-                binding.progressBar.visibility = View.GONE
-                return@addCallback
-            }
-
-            if (binding.startNavigationPanel.root.isVisible) {
-                binding.startNavigationPanel.root.isVisible = false
-                binding.mapSearchBar.isVisible = true
-                SdkCall.execute { binding.gemSurfaceView.mapView?.preferences?.routes?.clear() }
-                return@addCallback
-            }
-
-            var navigationIsActive = false
-            var simulationIsActive = false
-
-            SdkCall.execute {
-                navigationIsActive = navigationService.isNavigationActive()
-                simulationIsActive = navigationService.isSimulationActive()
-            }
-
-            if (navigationIsActive || simulationIsActive) {
-                SdkCall.execute { navigationService.cancelNavigation() }
-                return@addCallback
-            }
-
-            finish()
+            runOnAliveUi { showInvalidTokenDialog() }
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (shouldCheckLocationPermissionOnResume) {
-            shouldCheckLocationPermissionOnResume = false
-            if (isLocationEnabled()) {
-                requestPermissions()
-            } else {
-                showDialog(getString(R.string.location_services_required)) {
-                    finish()
-                }
-            }
+    private fun clearSdkListeners() {
+        SdkSettings.onConnectionStatusUpdated = {}
+        SdkSettings.onApiTokenRejected = {}
+        binding.gemSurfaceView.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
         }
     }
 
-    private fun highlightLandmarkOnMap(landmark: Landmark) = SdkCall.execute {
-        binding.gemSurfaceView.mapView?.let { mapView ->
-            val rect = getFreeScreenRect()
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
 
-            mapView.deactivateAllHighlights()
-
-            landmark.image = ImageDatabase().getImageById(SdkImages.Core.Search_Results_Pin.value)
-
-            val contour = landmark.getContourGeographicArea()
-            val highlightSettings: HighlightRenderSettings
-
-            @Suppress("VerboseNullabilityAndEmptiness")
-            if ((contour != null) && !contour.isEmpty()) {
-                mapView.centerOnRectArea(
-                    contour,
-                    zoomLevel = -1,
-                    viewRc = rect,
-                    Animation(EAnimation.Linear, ANIMATION_DURATION_MS),
-                )
-
-                highlightSettings = HighlightRenderSettings(
-                    EHighlightOptions.ShowContour.value or EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
-                    Rgba(255, 98, 0, 255),
-                    Rgba(255, 98, 0, 255),
-                    HIGHLIGHT_ALPHA,
-                ).apply {
-                    imageSize = HIGHLIGHT_IMAGE_SIZE
-                }
-            } else {
-                highlightSettings = HighlightRenderSettings(
-                    EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
-                ).apply {
-                    imageSize = HIGHLIGHT_IMAGE_SIZE
-                }
-
-                landmark.coordinates?.let {
-                    mapView.centerOnCoordinates(
-                        it,
-                        -1,
-                        rect.center,
-                        Animation(EAnimation.Linear, ANIMATION_DURATION_MS),
-                        0.0,
-                        0.0,
-                    )
-                }
-            }
-
-            mapView.activateHighlightLandmarks(landmark, highlightSettings)
-        }
+    /** Posts [block] to the main thread only if the activity hasn't been destroyed. */
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
     }
 
-    private fun deactivateHighlights() = SdkCall.execute {
-        binding.gemSurfaceView.mapView?.deactivateAllHighlights()
-    }
+    //endregion
 
-    private fun getFreeScreenRect(): Rect {
-        return Rect(
-            leftInset,
-            getAppBarHeight() + inflate,
-            binding.root.width - rightInset,
-            binding.root.height - bottomDialogHeight - inflate,
-        )
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
-        menu?.run {
-            val electric = findItem(R.id.e_bike_type)
-            electric.isVisible = viewModel.isElectric
-            val notElectric = findItem(R.id.bike_type)
-            notElectric.isVisible = !viewModel.isElectric
-            val icon = if (viewModel.isElectric) electric else notElectric
-            icon.icon = ContextCompat.getDrawable(
-                this@MainActivity,
-                when (viewModel.bikeProfile) {
-                    EBikeProfile.City -> if (viewModel.isElectric) R.drawable.ebikecity else R.drawable.bikecity
-                    EBikeProfile.Cross -> if (viewModel.isElectric) R.drawable.ebikecross else R.drawable.bikecross
-                    EBikeProfile.Mountain -> if (viewModel.isElectric) R.drawable.ebikemountain else R.drawable.bikemountain
-                    EBikeProfile.Road -> if (viewModel.isElectric) R.drawable.ebikeroad else R.drawable.bikeroad
-                },
-            )
-        }
-        binding.mapSearchBar.setOnMenuItemClickListener { menuItem: MenuItem? ->
-            val bikeTypeButton = binding.mapSearchBar.menu.findItem(
-                if (viewModel.isElectric) R.id.e_bike_type else R.id.bike_type,
-            )
-            when (menuItem?.itemId) {
-                R.id.bike_city, R.id.e_bike_city -> {
-                    bikeTypeButton.icon = ContextCompat.getDrawable(
-                        this,
-                        if (viewModel.isElectric) R.drawable.ebikecity else R.drawable.bikecity,
-                    )
-                    viewModel.setBikeProfile(EBikeProfile.City)
-                }
-
-                R.id.bike_cross, R.id.e_bike_cross -> {
-                    bikeTypeButton.icon = ContextCompat.getDrawable(
-                        this,
-                        if (viewModel.isElectric) R.drawable.ebikecross else R.drawable.bikecross,
-                    )
-                    viewModel.setBikeProfile(EBikeProfile.Cross)
-                }
-
-                R.id.bike_mountain, R.id.e_bike_mountain -> {
-                    bikeTypeButton.icon = ContextCompat.getDrawable(
-                        this,
-                        if (viewModel.isElectric) R.drawable.ebikemountain else R.drawable.bikemountain,
-                    )
-                    viewModel.setBikeProfile(EBikeProfile.Mountain)
-                }
-
-                R.id.bike_road, R.id.e_bike_road -> {
-                    bikeTypeButton.icon = ContextCompat.getDrawable(
-                        this,
-                        if (viewModel.isElectric) R.drawable.ebikeroad else R.drawable.bikeroad,
-                    )
-                    viewModel.setBikeProfile(EBikeProfile.Road)
-                }
-
-                else -> {}
-            }
-            true
-        }
-        return true
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.search_menu, menu)
-        return super.onCreateOptionsMenu(menu)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        SoundUtils.removeTTSPlayerInitializationListener(this)
-
-        // Release the SDK.
-        GemSdk.release()
-        exitProcess(0)
-    }
+    //region GPS button
 
     private fun enableGPSButton() {
-        // Set actions for entering/ exiting following position mode.
         binding.apply {
             gemSurfaceView.mapView?.apply {
+                // User panned away: show the re-center button and hide navigation panels.
+                // They reappear via onEnterFollowingPosition when the user taps the button.
                 onExitFollowingPosition = {
                     followGpsButton.visibility = View.VISIBLE
+                    updateFollowGpsButtonMargins(isAnyPanelVisible())
                     topPanel.visibility = View.GONE
                     bottomPanel.visibility = View.GONE
+                    applyCameraFocus()
+                    updateFocusViewport()
                 }
 
+                // User tapped the GPS button: hide it and restore navigation panels if a
+                // route is active. Also dismiss any open calculate-route panel.
                 onEnterFollowingPosition = {
                     followGpsButton.visibility = View.GONE
                     var navigationIsActive = false
@@ -865,15 +1203,26 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                         topPanel.visibility = View.VISIBLE
                         bottomPanel.visibility = View.VISIBLE
                     }
+
+                    applyCameraFocus()
+
+                    if (calculateRoutePanel.root.isVisible) {
+                        calculateRoutePanel.root.visibility = View.GONE
+                        deactivateHighlights()
+                    }
+                    mapRoot.post { updateFocusViewport() }
                 }
 
-                // Set on click action for the GPS button.
                 followGpsButton.setOnClickListener {
                     SdkCall.execute { followPosition() }
                 }
             }
         }
     }
+
+    //endregion
+
+    //region Permissions
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -906,6 +1255,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             permissions.toTypedArray(),
         )
     }
+
+    //endregion
+
+    //region Map interaction & highlighting
 
     private fun calculateRoute(departure: Landmark, destination: Landmark) = SdkCall.execute {
         val waypoints = arrayListOf(
@@ -942,6 +1295,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         return binding.appBarLayout.measuredHeight
     }
 
+    //region Dialogs
+
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
@@ -974,17 +1329,13 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 this.title.text = title
                 this.message.text = message
 
-                // Set up close button
                 closeButton.setOnClickListener {
-                    root.visibility = View.GONE
-                    bottomDialogHeight = 0
+                    dismissPanel(root)
                     onViewClosed?.invoke()
                 }
 
-                // Set up calculate route button
                 buttonCalculateRoute.setOnClickListener {
-                    root.visibility = View.GONE
-                    bottomDialogHeight = 0
+                    dismissPanel(root)
                     onViewClosed?.invoke()
                     onCalculateRoute()
                 }
@@ -995,6 +1346,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 // Measure height after it's shown
                 root.post {
                     bottomDialogHeight = root.height
+                    updateFollowGpsButtonMargins(isAnyPanelVisible())
+                    updateFocusViewport()
                     onViewCreated?.invoke()
                 }
             }
@@ -1027,34 +1380,33 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 this.title.text = title
                 this.message.text = message
 
-                // Set up close button
                 closeButton.setOnClickListener {
-                    root.visibility = View.GONE
-                    bottomDialogHeight = 0
+                    dismissPanel(root)
+                    this@MainActivity.binding.followGpsButton.visibility = View.VISIBLE
                     onViewClosed?.invoke()
                 }
 
-                // Set up start navigation button
                 buttonStartNavigation.setOnClickListener {
-                    root.visibility = View.GONE
-                    bottomDialogHeight = 0
+                    dismissPanel(root)
                     onStartNavigation()
                 }
 
-                // Set up start navigation button
                 buttonStartSimulation.setOnClickListener {
-                    root.visibility = View.GONE
-                    bottomDialogHeight = 0
+                    dismissPanel(root)
                     onStartSimulation()
                 }
 
-                // Show the panel
+                // Hide the GPS button while the user reviews the route summary; restore it
+                // when the panel is dismissed so the button is never orphaned on screen.
                 root.visibility = View.VISIBLE
+                this@MainActivity.binding.followGpsButton.visibility = View.GONE
 
                 // Measure height after it's shown
                 root.post {
                     val height = root.height
                     bottomDialogHeight = height
+                    updateFollowGpsButtonMargins(isAnyPanelVisible())
+                    updateFocusViewport()
                     onViewCreated?.invoke()
                 }
             }
@@ -1062,12 +1414,12 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     }
 
     private fun showInvalidTokenDialog() {
-        showDialog(
-            getString(R.string.invalid_token),
-        ) {
-            finish()
-        }
+        showDialog(getString(R.string.invalid_token)) { finish() }
     }
+
+    //endregion
+
+    //region Helpers
 
     private fun getTopInset(): Int {
         val appBarHeight = getAppBarHeight()
@@ -1222,15 +1574,16 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private fun onNavigationEnded(errorCode: ErrorCode = GemError.NoError) {
         runOnUiThread {
             if ((errorCode != GemError.NoError) && (errorCode != GemError.Cancel)) {
-                showDialog(GemError.getMessage(errorCode))
+                showDialog(SdkCall.runSynced { GemError.getMessage(errorCode, this) }.orEmpty())
             }
 
             binding.apply {
                 mapSearchBar.isVisible = true
-                bikeSettingsButton.isVisible = true
                 binding.topPanel.isVisible = false
                 binding.bottomPanel.isVisible = false
             }
+            applyCameraFocus()
+            updateFocusViewport()
         }
 
         SdkCall.execute {
@@ -1286,15 +1639,19 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         return description
     }
 
-    // ITTSPlayerInitializationListener
+    //endregion
+
+    //region ITTSPlayerInitializationListener
+
     override fun onTTSPlayerInitialized() {
         SoundPlayingService.setTTSLanguage("eng-USA")
     }
 
-    // ITTSPlayerInitializationListener
     override fun onTTSPlayerInitializationFailed() {
         SoundPlayingService.setDefaultHumanVoice()
     }
+
+    //endregion
 }
 
 //region TESTING

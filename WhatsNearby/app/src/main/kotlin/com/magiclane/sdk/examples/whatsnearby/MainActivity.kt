@@ -8,18 +8,23 @@
 package com.magiclane.sdk.examples.whatsnearby
 
 import android.Manifest
-import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
@@ -30,56 +35,60 @@ import com.magiclane.sdk.examples.whatsnearby.databinding.ListItemBinding
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.places.SearchService
+import com.magiclane.sdk.sensordatasource.PositionListener
 import com.magiclane.sdk.sensordatasource.PositionService
+import com.magiclane.sdk.sensordatasource.enums.EDataType
 import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.GemUtil.getDistText
 import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import com.magiclane.sdk.util.Util.postOnMain
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
+
     private var imageSize: Int = 0
 
+    // Prevents re-triggering the permission check until the user returns from the settings screen.
+    private var shouldCheckLocationPermissionOnResume = false
+
+    // Anchor point for distance calculations; set from GPS once location is available.
     private var reference: Coordinates? = null
+
+    private lateinit var positionListener: PositionListener
+
+    // Handles all search interaction with the SDK; callbacks run on the calling thread.
     private val searchService = SearchService(
         onStarted = {
             binding.progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = onCompleted@{ results, errorCode, _ ->
+        onCompleted = { results, errorCode, _ ->
             binding.progressBar.visibility = View.GONE
 
             when (errorCode) {
-                GemError.NoError ->
-                    {
-                        // No error encountered, we can handle the results.
-                        if (results.isNotEmpty()) {
-                            reference?.let {
-                                binding.listView.adapter = CustomAdapter(
-                                    it,
-                                    results,
-                                    imageSize,
-                                )
-                            }
-                        } else {
-                            // The search completed without errors, but there were no results found.
-                            showDialog("No results!")
+                GemError.NoError -> {
+                    if (results.isNotEmpty()) {
+                        reference?.let {
+                            binding.listView.adapter = CustomAdapter(it, results, imageSize)
+                        }
+                    } else {
+                        runOnAliveUi { showDialog(message = getString(R.string.no_results)) }
+                    }
+                }
+                else -> {
+                    if (errorCode != GemError.Cancel) {
+                        runOnAliveUi {
+                            showDialog(
+                                message = getString(
+                                    R.string.search_error,
+                                    SdkCall.runSynced { GemError.getMessage(errorCode, this) },
+                                ),
+                            )
                         }
                     }
-
-                GemError.Cancel ->
-                    {
-                        // The search action was cancelled.
-                    }
-
-                else ->
-                    {
-                        // There was a problem at computing the search operation.
-                        showDialog("Search service error: ${GemError.getMessage(errorCode)}")
-                    }
+                }
             }
         },
     )
@@ -90,127 +99,195 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         imageSize = resources.getDimension(R.dimen.landmark_image_size).toInt()
         binding.listView.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
-
             addItemDecoration(
-                DividerItemDecoration(
-                    applicationContext,
-                    (layoutManager as LinearLayoutManager).orientation,
-                ),
+                DividerItemDecoration(applicationContext, (layoutManager as LinearLayoutManager).orientation),
             )
-
             setBackgroundResource(R.color.background)
-
-            val lateralPadding = resources.getDimension(R.dimen.big_padding).toInt()
-            setPadding(lateralPadding, 0, lateralPadding, 0)
         }
 
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
-
-            // Defines an action that should be done after the network is connected.
-            search()
+        // Mandatory SDK init step when using the SDK without a map view.
+        val initResult = GemSdk.initSdkWithDefaults(this)
+        if (initResult != GemError.NoError) {
+            showDialog(
+                message = getString(
+                    R.string.sdk_initialization_failed,
+                    SdkCall.runSynced { GemError.getMessage(initResult, this) },
+                ),
+                onDismiss = { finish() },
+            )
+            return
         }
 
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
+        // Location permission is required for the search to return relevant nearby results.
+        if (checkLocationStatus()) {
+            requestPermissions()
         }
-
-        // This step of initialization is mandatory if you want to use the SDK without a map.
-        if (GemSdk.initSdkWithDefaults(this) != GemError.NoError) {
-            // The SDK initialization was not completed.
-            finish()
-        }
-
-        /**
-         * The SDK initialization completed with success, but for the search action to be executed
-         * properly the app needs permission to get your location.
-         * Not requesting this permission or not granting it will make the search fail.
-         */
-        requestPermissions(this)
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
+            runOnAliveUi { showDialog(message = getString(R.string.internet_required)) }
         }
 
-        onBackPressedDispatcher.addCallback(
-            this,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    finish()
-                    exitProcess(0)
-                }
-            },
-        )
+        registerSdkListeners()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Re-check after the user returns from the system location settings screen.
+        if (shouldCheckLocationPermissionOnResume) {
+            shouldCheckLocationPermissionOnResume = false
+            if (isLocationEnabled()) {
+                requestPermissions()
+            } else {
+                showDialog(message = getString(R.string.location_services_required)) { finish() }
+            }
+        }
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-
-        // Release the SDK.
+        clearSdkListeners()
         GemSdk.release()
+        super.onDestroy()
+        exitProcess(0)
     }
 
-    private fun search() = SdkCall.execute {
-        // If one of the location permissions is granted, we can do the search around action.
-        val hasPermissions =
-            PermissionsHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-        if (!hasPermissions) return@execute
+    private fun registerSdkListeners() {
+        // Self-clearing listener: fires once when the SDK map data is ready, then removes itself.
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
 
-        // Cancel any search that is in progress now.
-        searchService.cancelSearch()
-
-        PositionService.getCurrentPosition()?.let {
-            reference = it
-
-            // Search around position using the provided search preferences and/ or filter.
-            searchService.searchAroundPosition(it)
+                SdkCall.execute {
+                    val currentPosition = PositionService.getCurrentPosition()
+                    if (currentPosition?.valid() == true) {
+                        // GPS fix is already available — search immediately.
+                        reference = currentPosition
+                        search()
+                    } else {
+                        // No fix yet; wait for the first valid position update.
+                        positionListener = PositionListener {
+                            if (!it.isValid()) return@PositionListener
+                            PositionService.removeListener(positionListener)
+                            reference = it.coordinates
+                            search()
+                        }
+                        PositionService.addListener(positionListener, EDataType.Position)
+                    }
+                }
+            }
         }
+
+        SdkSettings.onApiTokenRejected = { showInvalidTokenDialog() }
+    }
+
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+    }
+
+    private fun search() {
+        searchService.searchAroundPosition(reference)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        PermissionsHelper.onRequestPermissionsResult(this, requestCode, grantResults)
 
-        postOnMain { search() }
+        if (grantResults.none { it == PackageManager.PERMISSION_GRANTED }) {
+            showDialog(message = getString(R.string.location_permission_required)) { finish() }
+            return
+        }
+
+        PermissionsHelper.onRequestPermissionsResult(this, requestCode, grantResults)
     }
 
-    private fun requestPermissions(activity: Activity): Boolean {
-        val permissions = arrayListOf(
-            Manifest.permission.INTERNET,
+    private fun requestPermissions(): Boolean = PermissionsHelper.requestPermissions(
+        REQUEST_PERMISSIONS,
+        this,
+        arrayOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_NETWORK_STATE,
-        )
+        ),
+    )
 
-        return PermissionsHelper.requestPermissions(
-            REQUEST_PERMISSIONS,
-            activity,
-            permissions.toTypedArray(),
-        )
+    // Shared builder: configures the modal bottom sheet and inflates the dialog binding.
+    // Callers populate the binding fields and call show() on the returned dialog.
+    private fun buildDialog(): Pair<BottomSheetDialog, DialogLayoutBinding> {
+        val dialog = BottomSheetDialog(this)
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater)
+        dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
+            setCancelable(false)
+            setContentView(dialogBinding.root)
+        }
+        return dialog to dialogBinding
     }
 
-    private fun showDialog(text: String) {
-        val dialog = BottomSheetDialog(this)
-        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
-            title.text = getString(R.string.error)
-            message.text = text
+    private fun showDialog(
+        title: String = getString(R.string.error),
+        message: String,
+        onDismiss: (() -> Unit)? = null,
+    ) {
+        if (!isActivityAlive()) return
+        val (dialog, dialogBinding) = buildDialog()
+        dialogBinding.apply {
+            this.title.text = title
+            this.message.text = message
             button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
-        dialog.apply {
-            setCancelable(false)
-            setContentView(dialogBinding.root)
-            show()
+        dialog.show()
+    }
+
+    private fun showInvalidTokenDialog() {
+        runOnAliveUi {
+            showDialog(message = getString(R.string.invalid_token)) { finish() }
         }
+    }
+
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
+    }
+
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
+
+    private fun isLocationEnabled(): Boolean {
+        val locationManager = getSystemService(LOCATION_SERVICE) as? LocationManager
+        return locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true
+    }
+
+    private fun checkLocationStatus(): Boolean {
+        if (!isLocationEnabled()) {
+            showLocationDialog(
+                message = getString(R.string.location_disabled),
+                settingsIntent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS),
+            )
+            return false
+        }
+
+        return true
+    }
+
+    private fun showLocationDialog(message: String, settingsIntent: Intent) {
+        val (dialog, dialogBinding) = buildDialog()
+        dialogBinding.apply {
+            title.text = getString(R.string.location_status)
+            this.message.text = message
+            button.text = getString(R.string.open_settings)
+            button.setOnClickListener {
+                dialog.dismiss()
+                startActivity(settingsIntent)
+                shouldCheckLocationPermissionOnResume = true
+            }
+        }
+        dialog.show()
     }
 
     companion object {
@@ -219,8 +296,8 @@ class MainActivity : AppCompatActivity() {
 }
 
 /**
- * This custom adapter is made to facilitate the displaying of the data from the model
- * and to decide how it is displayed.
+ * RecyclerView adapter that binds a list of [Landmark] results to list item views.
+ * Each item shows the landmark's icon, name, address description, and distance from [reference].
  */
 class CustomAdapter(
     private val reference: Coordinates,
@@ -235,18 +312,21 @@ class CustomAdapter(
         return ViewHolder(binding)
     }
 
-    override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) = SdkCall.execute {
-        val meters = dataSet[position].coordinates?.getDistance(reference)?.toInt() ?: 0
-        val dist = getDistText(meters, EUnitSystem.Metric, true)
+    override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
+        SdkCall.execute {
+            val landmark = dataSet[position]
+            val meters = landmark.coordinates?.getDistance(reference)?.toInt() ?: 0
+            val dist = getDistText(meters, EUnitSystem.Metric, true)
 
-        viewHolder.binding.run {
-            image.setImageBitmap(dataSet[position].imageAsBitmap(imageSize))
-            listItemText.text = dataSet[position].name
-            listItemDescription.text = GemUtil.getLandmarkDescription(dataSet[position], true)
-            statusText.text = dist.first
-            statusDescription.text = dist.second
+            viewHolder.binding.run {
+                image.setImageBitmap(landmark.imageAsBitmap(imageSize))
+                listItemText.text = landmark.name
+                listItemDescription.text = GemUtil.getLandmarkDescription(landmark, true)
+                statusText.text = dist.first
+                statusDescription.text = dist.second
+            }
         }
-    } ?: Unit
+    }
 
     override fun getItemCount() = dataSet.size
 }

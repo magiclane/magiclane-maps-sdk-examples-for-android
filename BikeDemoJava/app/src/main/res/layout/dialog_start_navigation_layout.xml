@@ -10,8 +10,7 @@
         android:elevation="8dp"
         android:padding="@dimen/big_padding"
         paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-        paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-        paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}">
+        paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}">
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/title"

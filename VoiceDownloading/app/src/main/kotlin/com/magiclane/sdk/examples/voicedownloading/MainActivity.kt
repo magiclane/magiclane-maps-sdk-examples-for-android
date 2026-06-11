@@ -7,21 +7,19 @@
 
 package com.magiclane.sdk.examples.voicedownloading
 
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.content.ContentStore
 import com.magiclane.sdk.content.ContentStoreItem
@@ -35,7 +33,6 @@ import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.examples.voicedownloading.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.voicedownloading.databinding.DialogLayoutBinding
 import com.magiclane.sdk.examples.voicedownloading.databinding.ListItemBinding
-import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
@@ -45,70 +42,45 @@ class MainActivity : AppCompatActivity() {
 
     private val contentStore = ContentStore()
 
-    private var voicesCatalogRequested = false
-
-    private val kDefaultToken =
-        "YOUR_TOKEN"
-
+    // Flag bitmap cache keyed by ISO country code — avoids re-fetching on every list bind.
     private val flagBitmapsMap = HashMap<String, Bitmap?>()
 
+    // Fires once after verifyAppAuthorization completes.
+    private val checkAuthorizationListener = ProgressListener.create(
+        onCompleted = { errorCode, _ ->
+            if (errorCode != GemError.NoError) {
+                showInvalidTokenDialog()
+            } else {
+                // Authorization confirmed — safe to load the voices catalog.
+                loadVoicesCatalog()
+            }
+        },
+    )
+
+    // Tracks async retrieval of the voices catalog from the content store.
     private val progressListener = ProgressListener.create(
         onStarted = {
             binding.progressBar.visibility = View.VISIBLE
-            showStatusMessage("Started content store service.")
+            showStatusMessage(getString(R.string.status_downloading_voices_catalog))
         },
-
         onCompleted = { errorCode, _ ->
             binding.progressBar.visibility = View.GONE
-            showStatusMessage("Content store service completed with error code: $errorCode")
 
             when (errorCode) {
-                GemError.NoError -> {
-                    SdkCall.execute {
-                        // No error encountered, we can handle the results.
-                        // Get the list of voices that was retrieved in the content store.
-
-                        val models =
-                            contentStore.getStoreContentList(EContentType.HumanVoice)?.first
-                        if (!models.isNullOrEmpty()) {
-                            // The voice items list is not empty or null.
-                            val voiceItem = models[0]
-                            val itemName = voiceItem.name
-
-                            // Start downloading the first voice item.
-                            SdkCall.execute {
-                                voiceItem.asyncDownload(
-                                    GemSdk.EDataSavePolicy.UseDefault,
-                                    true,
-                                    onStarted = {
-                                        showStatusMessage("Started downloading $itemName.")
-                                    },
-                                    onCompleted = { _, _ ->
-                                        binding.listView.adapter?.notifyItemChanged(0)
-                                        showStatusMessage("$itemName was downloaded.")
-                                    },
-                                    onProgress = {
-                                        binding.listView.adapter?.notifyItemChanged(0)
-                                    },
-                                )
-                            }
-                        }
-
-                        displayList(models)
-                    }
+                GemError.NoError -> SdkCall.execute {
+                    val voicesList = contentStore.getStoreContentList(EContentType.HumanVoice)?.first
+                    // Kick off a download for the first available voice, if any.
+                    voicesList?.firstOrNull()?.let { downloadFirstVoice(it) }
+                    Util.postOnMain { displayList(voicesList) }
                 }
-
-                GemError.Cancel -> {
-                    // The action was cancelled.
-                }
-
-                else -> {
-                    // There was a problem at retrieving the content store items.
-                    showDialog("Content store service error: ${GemError.getMessage(errorCode)}")
-                }
+                else -> showStatusMessage(
+                    getString(
+                        R.string.status_voices_catalog_download_error,
+                        SdkCall.runSynced { GemError.getMessage(errorCode, this) },
+                    ),
+                )
             }
         },
-        postOnMain = true,
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -116,124 +88,176 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         binding.listView.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
-
-            val separator = DividerItemDecoration(
-                applicationContext,
-                (layoutManager as LinearLayoutManager).orientation,
-            )
-            addItemDecoration(separator)
-
+            addItemDecoration(DividerItemDecoration(applicationContext, LinearLayoutManager.VERTICAL))
             val lateralPadding = resources.getDimension(R.dimen.big_padding).toInt()
             setPadding(lateralPadding, 0, lateralPadding, 0)
-
             itemAnimator = null
         }
 
-        SdkSettings.onConnectionStatusUpdated = { connected ->
-            if (connected && !voicesCatalogRequested) {
-                voicesCatalogRequested = true
-
-                val loadVoicesCatalog = {
-                    SdkCall.execute {
-                        // Defines an action that should be done after the network is connected.
-                        // Call to the content store to asynchronously retrieve the list of voices.
-                        contentStore.asyncGetStoreContentList(
-                            EContentType.HumanVoice,
-                            progressListener,
-                        )
-                    }
-                }
-
-                val token = GemSdk.getTokenFromManifest(this)
-
-                if (!token.isNullOrEmpty() && (token != kDefaultToken)) {
-                    loadVoicesCatalog()
-                } else {
-                    binding.progressBar.visibility = View.VISIBLE
-
-                    // If token is not present try to avoid content server
-                    // requests limitation by delaying the voices catalog request
-                    Handler(Looper.getMainLooper()).postDelayed(
-                        {
-                            loadVoicesCatalog()
-                        },
-                        3000,
-                    )
-                }
-            }
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
-        }
-
-        // This step of initialization is mandatory if you want to use the SDK without a map.
-        if (GemSdk.initSdkWithDefaults(this) != GemError.NoError) {
-            // The SDK initialization was not completed.
-            finish()
+        val initResult = GemSdk.initSdkWithDefaults(this)
+        if (initResult != GemError.NoError) {
+            showDialog(
+                message = getString(
+                    R.string.sdk_initialization_failed,
+                    SdkCall.runSynced { GemError.getMessage(initResult, this) },
+                ),
+            ) { finish() }
+            return
         }
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
+            runOnAliveUi { showDialog(message = getString(R.string.internet_required)) }
+        } else {
+            showStatusMessage(getString(R.string.status_connecting_magic_lane_servers))
         }
 
-        onBackPressedDispatcher.addCallback(
-            this,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    finish()
-                    exitProcess(0)
-                }
-            },
-        )
+        registerSdkListeners()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-
-        // Deinitialize the SDK.
+        clearSdkListeners()
         GemSdk.release()
+        exitProcess(0)
     }
 
-    private fun displayList(models: ArrayList<ContentStoreItem>?) {
-        if (models != null) {
-            val adapter = CustomAdapter(models)
-            binding.listView.adapter = adapter
+    private fun registerSdkListeners() {
+        SdkSettings.onApiTokenRejected = { showInvalidTokenDialog() }
+
+        // Verify the app token on the first successful internet connection.
+        // Self-clearing so it fires only once per session.
+        SdkSettings.onConnectionStatusUpdated = { isConnected ->
+            if (isConnected) {
+                SdkSettings.onConnectionStatusUpdated = {}
+                SdkSettings.appAuthorization?.let {
+                    showStatusMessage(getString(R.string.status_checking_token_validity))
+                    SdkCall.execute { SdkSettings.verifyAppAuthorization(it, checkAuthorizationListener) }
+                } ?: showInvalidTokenDialog()
+            }
         }
     }
 
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
+    private fun clearSdkListeners() {
+        SdkSettings.onApiTokenRejected = {}
+        SdkSettings.onConnectionStatusUpdated = {}
+    }
+
+    private fun loadVoicesCatalog() = SdkCall.execute {
+        val error = contentStore.asyncGetStoreContentList(EContentType.HumanVoice, progressListener)
+        if (error != GemError.NoError) {
+            // asyncGetStoreContentList can fail immediately (e.g. no network) before the listener fires.
+            Util.postOnMain {
+                showStatusMessage(
+                    getString(
+                        R.string.status_voices_catalog_download_error,
+                        SdkCall.runSynced { GemError.getMessage(error, this) },
+                    ),
+                )
+            }
+        }
+    }
+
+    // Must be called from within SdkCall.execute. Kicks off an async download for voiceItem
+    // and handles the immediate result: UpToDate (already downloaded) or error-on-start.
+    private fun downloadFirstVoice(voiceItem: ContentStoreItem) {
+        val itemName = voiceItem.name
+
+        // Progress callbacks run on the main thread; no explicit posting needed inside them.
+        val downloadProgressListener = ProgressListener.create(
+            onStarted = {
+                showStatusMessage(getString(R.string.status_downloading_item, itemName))
+            },
+            onProgress = {
+                binding.listView.adapter?.notifyItemChanged(0)
+            },
+            onCompleted = { errorCode, _ ->
+                binding.listView.adapter?.notifyItemChanged(0)
+                if (errorCode == GemError.NoError) {
+                    showStatusMessage(getString(R.string.status_item_downloaded, itemName))
+                } else {
+                    showStatusMessage(
+                        getString(
+                            R.string.status_item_download_error,
+                            itemName,
+                            SdkCall.runSynced { GemError.getMessage(errorCode, this) },
+                        ),
+                    )
+                }
+            },
+        )
+
+        // asyncDownload returns immediately; NoError means the download started and
+        // downloadProgressListener will receive further callbacks.
+        val downloadError = voiceItem.asyncDownload(
+            downloadProgressListener,
+            GemSdk.EDataSavePolicy.UseDefault,
+            true,
+        )
+
+        when (downloadError) {
+            GemError.NoError -> { /* download started — progress handled by downloadProgressListener */ }
+            GemError.UpToDate -> Util.postOnMain {
+                showStatusMessage(getString(R.string.status_item_already_downloaded, itemName))
+            }
+            else -> Util.postOnMain {
+                showStatusMessage(
+                    getString(
+                        R.string.status_download_item_error,
+                        SdkCall.runSynced { GemError.getMessage(downloadError, this) },
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun showDialog(
+        title: String = getString(R.string.error),
+        message: String,
+        onDismiss: (() -> Unit)? = null,
+    ) {
+        if (!isActivityAlive()) return
+
         val dialog = BottomSheetDialog(this)
-        val binding = DialogLayoutBinding.inflate(layoutInflater).apply {
-            title.text = getString(R.string.error)
-            message.text = text
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            this.title.text = title
+            this.message.text = message
             button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(binding.root)
+            setContentView(dialogBinding.root)
             show()
         }
+    }
+
+    private fun showInvalidTokenDialog() {
+        runOnAliveUi { showDialog(message = getString(R.string.invalid_token)) { finish() } }
+    }
+
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
+    }
+
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
+
+    private fun displayList(voicesList: ArrayList<ContentStoreItem>?) {
+        voicesList?.let { binding.listView.adapter = CustomAdapter(it) }
     }
 
     private fun showStatusMessage(text: String) {
         binding.statusText.text = text
     }
 
-    /**
-     * This custom adapter is made to facilitate the displaying of the data from the model
-     * and to decide how it is displayed.
-     */
     inner class CustomAdapter(private val dataSet: ArrayList<ContentStoreItem>) :
         RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
 
@@ -245,36 +269,35 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
+            val item = dataSet[position]
             viewHolder.binding.apply {
                 text.text = SdkCall.execute {
-                    dataSet[position].name + " (" + GemUtil.formatSizeAsText(
-                        dataSet[position].totalSize,
-                    ) + ")"
+                    "${item.name} (${"%.1f MB".format(item.totalSize / 1_048_576.0)})"
                 }
                 description.text = SdkCall.execute {
-                    "${getCountryName(dataSet[position])} - ${
-                        getParameter(
-                            dataSet[position],
-                            "native_language",
-                        )
-                    } - ${getParameter(dataSet[position], "gender")}"
+                    "${getCountryName(item)} - ${getParameter(item, "native_language")}"
                 }
-                icon.setImageBitmap(SdkCall.execute { getFlagBitmap(dataSet[position]) })
+                icon.setImageBitmap(SdkCall.execute { getFlagBitmap(item) })
+                genderIcon.setImageResource(
+                    if (SdkCall.execute { getParameter(item, "gender").lowercase() } == "male") {
+                        R.drawable.male
+                    } else {
+                        R.drawable.female
+                    },
+                )
 
                 statusIcon.visibility = View.GONE
                 itemProgressBar.visibility = View.INVISIBLE
-                when (SdkCall.execute { dataSet[position].status }) {
+                when (SdkCall.execute { item.status }) {
                     EContentStoreItemStatus.Completed -> {
                         statusIcon.visibility = View.VISIBLE
                         itemProgressBar.visibility = View.INVISIBLE
                     }
-
                     EContentStoreItemStatus.DownloadRunning -> {
                         itemProgressBar.visibility = View.VISIBLE
-                        itemProgressBar.progress = SdkCall.execute { dataSet[position].downloadProgress } ?: 0
+                        itemProgressBar.progress = SdkCall.execute { item.downloadProgress } ?: 0
                     }
-
-                    else -> return
+                    else -> return // item not yet tracked; skip update
                 }
             }
         }
@@ -282,35 +305,20 @@ class MainActivity : AppCompatActivity() {
         override fun getItemCount() = dataSet.size
 
         private fun getFlagBitmap(item: ContentStoreItem): Bitmap? {
-            item.countryCodes?.let { codes ->
-                val isoCode = codes[0]
-                if (!flagBitmapsMap.containsKey(isoCode)) {
-                    val size = resources.getDimension(R.dimen.icon_size).toInt()
-                    flagBitmapsMap[isoCode] =
-                        MapDetails().getCountryFlag(codes[0])?.asBitmap(size, size)
-                }
-
-                return flagBitmapsMap[isoCode]
+            val isoCode = item.countryCodes?.firstOrNull() ?: return null
+            if (!flagBitmapsMap.containsKey(isoCode)) {
+                val size = resources.getDimension(R.dimen.icon_size).toInt()
+                flagBitmapsMap[isoCode] = MapDetails().getCountryFlag(isoCode)?.asBitmap(size, size)
             }
-            return null
+            return flagBitmapsMap[isoCode]
         }
 
-        private fun getCountryName(item: ContentStoreItem): String {
-            item.countryCodes?.let { codes ->
-                return MapDetails().getCountryName(codes[0]) ?: ""
-            }
-            return ""
-        }
+        private fun getCountryName(item: ContentStoreItem): String =
+            item.countryCodes?.firstOrNull()?.let { MapDetails().getCountryName(it) } ?: ""
 
-        private fun getParameter(item: ContentStoreItem, parameter: String): String {
-            item.contentParameters?.let { parameters ->
-                for (param in parameters) {
-                    if (param.name?.lowercase()?.compareTo(parameter) == 0) {
-                        return param.valueString
-                    }
-                }
-            }
-            return ""
-        }
+        private fun getParameter(item: ContentStoreItem, parameter: String): String = item.contentParameters
+            ?.firstOrNull { it.name?.equals(parameter, ignoreCase = true) == true }
+            ?.valueString
+            ?: ""
     }
 }

@@ -12,6 +12,7 @@ import android.content.pm.PackageManager
 import android.view.View
 import android.widget.Toast
 import com.magiclane.sdk.core.ProgressListener
+import com.magiclane.sdk.examples.androidautoroutenavigation.R
 import com.magiclane.sdk.examples.androidautoroutenavigation.activities.MainActivity
 import com.magiclane.sdk.examples.androidautoroutenavigation.app.AppProcess
 import com.magiclane.sdk.examples.androidautoroutenavigation.app.REQUEST_PERMISSIONS
@@ -25,40 +26,26 @@ import com.magiclane.sdk.util.Util.postOnMain
 import kotlin.system.exitProcess
 
 class MainActivityController(val context: MainActivity) {
-    /**
-     * Define a navigation listener that will receive notifications from the
-     * navigation service.
-     * We will use just the onNavigationStarted method, but for more available
-     * methods you should check the documentation.
-     */
+    // Keeps the phone map view in sync with the current navigation state.
     private val navigationListener = NavigationListener.create(
-        onNavigationStarted = {
-            updateMapView()
-        },
-        onDestinationReached = {
-            updateMapView()
-        },
-        onNavigationError = {
-            updateMapView()
-        },
+        onNavigationStarted = { updateMapView() },
+        onDestinationReached = { updateMapView() },
+        onNavigationError = { updateMapView() },
     )
 
-    // Define a listener that will let us know the progress of the routing process.
+    // Shows/hides the progress bar while a route is being calculated.
     private val routingProgressListener = ProgressListener.create(
         onStarted = {
             context.binding.progressBar.visibility = View.VISIBLE
         },
-
         onCompleted = { _, _ ->
             context.binding.progressBar.visibility = View.GONE
         },
-
         postOnMain = true,
     )
 
     fun onCreate() {
         AppProcess.init(context)
-
         NavigationInstance.listeners.add(navigationListener)
         RoutingInstance.listeners.add(routingProgressListener)
     }
@@ -69,32 +56,27 @@ class MainActivityController(val context: MainActivity) {
     }
 
     fun onDefaultMapViewCreated() {
-        postOnMain {
-            updateMapView()
-        }
+        postOnMain { updateMapView() }
     }
 
     private fun updateMapView() = SdkCall.execute {
+        val mapView = context.mapView ?: return@execute
+
         if (NavigationInstance.service.isNavigationActive()) {
-            context.mapView?.let { mapView ->
-                mapView.preferences?.enableCursor = false
-
-                NavigationInstance.currentRoute?.let { route ->
-                    mapView.presentRoute(route)
-
-                    Toast.makeText(
-                        context,
-                        "Remaining distance ${NavigationInstance.remainingDistance} m",
-                        Toast.LENGTH_LONG,
-                    ).show()
-                }
-
-                mapView.followPosition()
+            mapView.preferences?.enableCursor = false
+            NavigationInstance.currentRoute?.let { route ->
+                mapView.presentRoute(route)
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.remaining_distance, NavigationInstance.remainingDistance),
+                    Toast.LENGTH_LONG,
+                ).show()
             }
+            mapView.followPosition()
         } else {
-            context.mapView?.hideRoutes()
-            context.mapView?.deactivateAllHighlights()
-            context.mapView?.followPosition()
+            mapView.hideRoutes()
+            mapView.deactivateAllHighlights()
+            mapView.followPosition()
         }
     }
 
@@ -106,15 +88,14 @@ class MainActivityController(val context: MainActivity) {
     fun onRequestPermissionsResult(requestCode: Int, grantResults: IntArray) {
         if (requestCode != REQUEST_PERMISSIONS) return
 
-        for (item in grantResults) {
-            if (item != PackageManager.PERMISSION_GRANTED) {
+        for (result in grantResults) {
+            if (result != PackageManager.PERMISSION_GRANTED) {
                 context.finish()
                 exitProcess(0)
             }
         }
 
         SdkCall.execute {
-            // Notice permission status had changed
             PermissionsHelper.onRequestPermissionsResult(context, REQUEST_PERMISSIONS, grantResults)
         }
     }

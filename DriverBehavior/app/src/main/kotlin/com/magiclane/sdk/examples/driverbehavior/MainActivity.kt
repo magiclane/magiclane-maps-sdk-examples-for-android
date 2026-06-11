@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2022-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -72,6 +72,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Apply chart appearance before any data arrives.
         binding.apply {
             setChartCustomization(instantChart)
             setChartCustomization(ongoingChart)
@@ -81,36 +83,15 @@ class MainActivity : AppCompatActivity() {
 
         chartLabels = resources.getStringArray(R.array.chart_labels).toList()
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
-            if (status == EOffboardListenerStatus.UpToDate) {
-                SdkCall.execute {
-                    dataSource = DataSourceFactory.produceLive()
-                    dataSource?.let { driverBehaviour = DriverBehaviour.produce(it, false) }
-                    driverBehaviour?.startAnalysis()
-                }
-
-                timer = fixedRateTimer("timer", false, 0L, 1000) {
-                    displayDriverBehaviorInfo()
-                }
-
-                binding.progressBar.visibility = View.GONE
-                binding.chartScrollView.visibility = View.VISIBLE
-
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
-            }
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            showDialog(getString(R.string.token_rejected_message))
-        }
+        registerSdkListeners()
 
         val errorCode = GemSdk.initSdkWithDefaults(this)
         if (errorCode != GemError.NoError) {
-            // The SDK initialization failed, we can't continue.
+            // Fatal: SDK could not start. Show error then terminate.
             showDialog(
                 getString(
                     R.string.dialog_sdk_initialization_error,
-                    GemError.getMessage(errorCode, this),
+                    SdkCall.runSynced { GemError.getMessage(errorCode, this) },
                 ),
             ) {
                 finish()
@@ -134,9 +115,7 @@ class MainActivity : AppCompatActivity() {
             if (isLocationEnabled()) {
                 requestPermissions()
             } else {
-                showDialog(getString(R.string.location_services_required)) {
-                    finish()
-                }
+                showDialog(getString(R.string.location_services_required)) { finish() }
             }
         }
     }
@@ -145,6 +124,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
 
         timer?.cancel()
+        clearSdkListeners()
 
         SdkCall.execute {
             driverBehaviour?.stopAnalysis()
@@ -152,9 +132,46 @@ class MainActivity : AppCompatActivity() {
             dataSource?.release()
         }
 
-        // Deinitialize the SDK.
         GemSdk.release()
         exitProcess(0)
+    }
+
+    // Registers all SDK callbacks. Always paired with clearSdkListeners() in onDestroy.
+    private fun registerSdkListeners() {
+        // Wait for map data to be ready before starting driver behaviour analysis.
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkCall.execute {
+                    dataSource = DataSourceFactory.produceLive()
+                    dataSource?.let { driverBehaviour = DriverBehaviour.produce(it, false) }
+                    driverBehaviour?.startAnalysis()
+                }
+
+                // Refresh chart data every second from a background timer thread.
+                timer = fixedRateTimer("timer", false, 0L, 1000) {
+                    displayDriverBehaviorInfo()
+                }
+
+                // Show the charts and hide the loading spinner on the main thread.
+                runOnAliveUi {
+                    binding.progressBar.visibility = View.GONE
+                    binding.chartScrollView.visibility = View.VISIBLE
+                }
+
+                // One-shot listener — clear after the first UpToDate signal.
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnAliveUi { showDialog(getString(R.string.token_rejected_message)) }
+        }
+    }
+
+    // Clears SDK callbacks to prevent them reaching a destroyed activity.
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
@@ -163,15 +180,13 @@ class MainActivity : AppCompatActivity() {
 
         for (item in grantResults) {
             if (item != PackageManager.PERMISSION_GRANTED) {
-                showDialog(getString(R.string.location_permission_required)) {
-                    finish()
-                }
+                showDialog(getString(R.string.location_permission_required)) { finish() }
                 return
             }
         }
 
         SdkCall.execute {
-            // Notice permission status had changed
+            // Notify the SDK that permission status has changed.
             PermissionsHelper.onRequestPermissionsResult(this, requestCode, grantResults)
         }
     }
@@ -181,12 +196,7 @@ class MainActivity : AppCompatActivity() {
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
         )
-
-        return PermissionsHelper.requestPermissions(
-            REQUEST_PERMISSIONS,
-            this,
-            permissions.toTypedArray(),
-        )
+        return PermissionsHelper.requestPermissions(REQUEST_PERMISSIONS, this, permissions.toTypedArray())
     }
 
     private fun isLocationEnabled(): Boolean {
@@ -202,11 +212,11 @@ class MainActivity : AppCompatActivity() {
             )
             return false
         }
-
         return true
     }
 
     private fun showLocationDialog(message: String, settingsIntent: Intent) {
+        if (!isActivityAlive()) return
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
             title.text = getString(R.string.location_status)
@@ -227,7 +237,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Shows a non-dismissable bottom-sheet error dialog. */
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
             title.text = getString(R.string.error)
@@ -246,6 +258,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Posts a block to the main thread only if the activity is still alive.
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
+    }
+
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
+
+    // Reads the latest driving scores from the SDK and updates all four charts.
+    // Called from the background timer thread every second.
     private fun displayDriverBehaviorInfo() {
         var instantDrivingScores: DrivingScores? = null
         var ongoingDrivingScores: DrivingScores? = null
@@ -258,43 +279,33 @@ class MainActivity : AppCompatActivity() {
             lastDrivingScores = driverBehaviour?.lastAnalysis?.drivingScores
             combinedDrivingScore = driverBehaviour?.getCombinedAnalysis(
                 Time().apply { longValue = 1640988000000 },
-                Time().apply {
-                    longValue = System.currentTimeMillis()
-                },
+                Time().apply { longValue = System.currentTimeMillis() },
             )?.drivingScores
         }
 
-        val instantBarDataSet = instantDrivingScores?.let {
-            DriverBehaviorBarDataSet(createBarEntriesList(it), "")
-        }
-        val ongoingBarDataSet = ongoingDrivingScores?.let {
-            DriverBehaviorBarDataSet(createBarEntriesList(it), "")
-        }
-        val lastBarDataSet = lastDrivingScores?.let {
-            DriverBehaviorBarDataSet(createBarEntriesList(it), "")
-        }
-        val combinedBarDataSet = combinedDrivingScore?.let {
-            DriverBehaviorBarDataSet(createBarEntriesList(it), "")
-        }
+        val instantBarDataSet = instantDrivingScores?.let { DriverBehaviorBarDataSet(createBarEntriesList(it), "") }
+        val ongoingBarDataSet = ongoingDrivingScores?.let { DriverBehaviorBarDataSet(createBarEntriesList(it), "") }
+        val lastBarDataSet = lastDrivingScores?.let { DriverBehaviorBarDataSet(createBarEntriesList(it), "") }
+        val combinedBarDataSet = combinedDrivingScore?.let { DriverBehaviorBarDataSet(createBarEntriesList(it), "") }
 
-        instantBarDataSet?.let {
-            setBarDataSetCustomization(it)
-            setDataToChart(binding.instantChart, getBarData(it))
-        }
-
-        ongoingBarDataSet?.let {
-            setBarDataSetCustomization(it)
-            setDataToChart(binding.ongoingChart, getBarData(it))
-        }
-
-        lastBarDataSet?.let {
-            setBarDataSetCustomization(it)
-            setDataToChart(binding.lastChart, getBarData(it))
-        }
-
-        combinedBarDataSet?.let {
-            setBarDataSetCustomization(it)
-            setDataToChart(binding.combinedChart, getBarData(it))
+        // Chart mutations must happen on the main thread.
+        runOnAliveUi {
+            instantBarDataSet?.let {
+                setBarDataSetCustomization(it)
+                setDataToChart(binding.instantChart, getBarData(it))
+            }
+            ongoingBarDataSet?.let {
+                setBarDataSetCustomization(it)
+                setDataToChart(binding.ongoingChart, getBarData(it))
+            }
+            lastBarDataSet?.let {
+                setBarDataSetCustomization(it)
+                setDataToChart(binding.lastChart, getBarData(it))
+            }
+            combinedBarDataSet?.let {
+                setBarDataSetCustomization(it)
+                setDataToChart(binding.combinedChart, getBarData(it))
+            }
         }
     }
 
@@ -327,14 +338,11 @@ class MainActivity : AppCompatActivity() {
     private fun setDataToChart(chart: BarChart, barData: BarData) {
         chart.apply {
             data = barData
-
             xAxis.apply {
                 valueFormatter = XAxisFormatter()
                 labelCount = chartLabels.size
             }
-
             axisLeft.textColor = if (isDarkThemeOn()) Color.WHITE else Color.BLACK
-
             notifyDataSetChanged()
             invalidate()
         }
@@ -389,19 +397,15 @@ class MainActivity : AppCompatActivity() {
         return resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES
     }
 
-    private class DriverBehaviorBarDataSet(barEntries: List<BarEntry>, label: String) : BarDataSet(
-        barEntries,
-        label,
-    ) {
+    // Color-codes each bar from red (0) to green (100) based on the score percentage.
+    private class DriverBehaviorBarDataSet(barEntries: List<BarEntry>, label: String) : BarDataSet(barEntries, label) {
 
         override fun getColor(index: Int): Int {
             val percent = entries[index].y * 0.01f
             return ArgbEvaluator().evaluate(percent, Color.RED, Color.GREEN) as Int
         }
 
-        override fun getEntryIndex(e: BarEntry?): Int {
-            return super.getEntryIndex(e)
-        }
+        override fun getEntryIndex(e: BarEntry?): Int = super.getEntryIndex(e)
     }
 
     private class ValuesFormatter : IValueFormatter {
@@ -410,9 +414,7 @@ class MainActivity : AppCompatActivity() {
             entry: Entry?,
             dataSetIndex: Int,
             viewPortHandler: ViewPortHandler?,
-        ): String {
-            return value.toInt().toString()
-        }
+        ): String = value.toInt().toString()
     }
 
     private inner class XAxisFormatter : IndexAxisValueFormatter() {

@@ -10,6 +10,7 @@ package com.magiclane.sdk.examples.hellosdk
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemError
@@ -29,6 +30,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         binding.sdkStatusText.text = getString(R.string.sdk_initializing_message)
 
         registerSdkCallbacks()
@@ -38,7 +43,9 @@ class MainActivity : AppCompatActivity() {
     private fun initializeSdk() {
         val error = GemSdk.initSdkWithDefaults(this)
         if (error != GemError.NoError) {
-            showDialog(getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))) {
+            showDialog(
+                getString(R.string.sdk_initialization_failed, SdkCall.runSynced { GemError.getMessage(error, this) }),
+            ) {
                 // The SDK initialization failed, so we exit the app.
                 finish()
             }
@@ -69,7 +76,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        SdkSettings.onApiTokenRejected = {}
+        clearSdkCallbacks()
 
         // Release the SDK.
         GemSdk.release()
@@ -99,5 +106,9 @@ class MainActivity : AppCompatActivity() {
         SdkSettings.onApiTokenRejected = {
             showDialog(getString(R.string.token_rejected_message))
         }
+    }
+
+    private fun clearSdkCallbacks() {
+        SdkSettings.onApiTokenRejected = {}
     }
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2022-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -28,6 +28,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Build
@@ -38,9 +39,15 @@ import android.view.View
 import android.view.WindowManager
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.get
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -50,10 +57,12 @@ import com.magiclane.sdk.core.ErrorCode
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.ProgressListener
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.TAG
 import com.magiclane.sdk.core.Time
+import com.magiclane.sdk.core.XyF
 import com.magiclane.sdk.examples.bleserver1.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.bleserver1.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Landmark
@@ -67,6 +76,8 @@ import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import java.nio.ByteBuffer
 import java.util.UUID
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
@@ -77,6 +88,10 @@ class MainActivity : AppCompatActivity() {
     private var turnImageSize: Int = 64
     private var turnImage: Bitmap? = null
     private var padding: Int = 0
+
+    // Captured once at portrait orientation; all subsequent constraint updates are applied on top
+    // of this baseline so portrait layout is never recomputed from scratch.
+    private lateinit var portraitConstraintSet: ConstraintSet
 
     private val permissionsRequestCode = 1
 
@@ -103,9 +118,8 @@ class MainActivity : AppCompatActivity() {
                     mapView.followPosition()
                 }
             }
-
-            binding.topPanel.visibility = View.VISIBLE
-            binding.bottomPanel.visibility = View.VISIBLE
+            applyCameraFocus()
+            setNavigationPanelsVisible(isVisible = true)
         },
         onNavigationInstructionUpdated = { instr ->
             var instrText = ""
@@ -504,20 +518,18 @@ class MainActivity : AppCompatActivity() {
     private fun onNavigationEnded(errorCode: ErrorCode = GemError.NoError) {
         runOnUiThread {
             if (errorCode != GemError.NoError) {
-                showDialog(GemError.getMessage(errorCode))
+                val message = SdkCall.runSynced { GemError.getMessage(errorCode, this) }.orEmpty()
+                if (message.isNotEmpty()) {
+                    showDialog(message)
+                }
             }
-
-            binding.topPanel.visibility = View.GONE
-            binding.bottomPanel.visibility = View.GONE
-            binding.followGpsButton.visibility = View.GONE
+            setNavigationPanelsVisible(isVisible = false)
+            disableGPSButton()
 
             notifyRegisteredDevices(byteArrayOf(0), TURN_IMAGE)
         }
 
-        SdkCall.execute {
-            binding.gemSurface.mapView?.hideRoutes()
-            disableGPSButton()
-        }
+        SdkCall.execute { binding.gemSurface.mapView?.hideRoutes() }
     }
 
     private fun getNextTurnImage(
@@ -564,7 +576,12 @@ class MainActivity : AppCompatActivity() {
         onCompleted = { errorCode, _ ->
             binding.progressBar.visibility = View.GONE
             if (errorCode != GemError.NoError) {
-                showDialog(GemError.getMessage(errorCode))
+                showDialog(
+                    getString(
+                        R.string.start_simulation_error,
+                        SdkCall.runSynced { GemError.getMessage(errorCode, this@MainActivity) },
+                    ),
+                )
             }
         },
 
@@ -850,7 +867,7 @@ class MainActivity : AppCompatActivity() {
                     startServer()
                 }
             } else {
-                showDialog("Missing Bluetooth support!")
+                showDialog(getString(R.string.missing_bluetooth_support))
             }
         }
     }
@@ -1031,6 +1048,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
@@ -1039,33 +1058,20 @@ class MainActivity : AppCompatActivity() {
         // Devices with a display should not go to sleep
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        binding.gemSurface.onSdkInitFailed = { error ->
-            val errorMessage = "SDK initialization failed: ${GemError.getMessage(error, this)}"
-            Util.postOnMain {
-                showDialog(errorMessage) {
-                    finish()
-                    exitProcess(0)
-                }
-            }
+        // Snapshot portrait constraints so landscape adjustments always start from a clean baseline.
+        portraitConstraintSet = ConstraintSet().apply { clone(binding.root as ConstraintLayout) }
+        applyOrientationLayout()
+
+        // Re-apply orientation layout when window insets first arrive.
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            applyOrientationLayout()
+            insets
         }
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
-            if (status == EOffboardListenerStatus.UpToDate) {
-                startSimulation()
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
-            }
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            showDialog(
-                "The token you provided in the AndroidManifest.xml file was rejected. " +
-                    "If you don't have a token, check the magiclane.com website, " +
-                    "sign up / in and generate one. Then input it in the AndroidManifest.xml file.",
-            )
-        }
+        registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
+            showDialog(getString(R.string.internet_required))
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -1084,17 +1090,24 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        val bluetoothAdapter = bluetoothManager.adapter
-        if (bluetoothAdapter.isEnabled) {
-            stopServer()
-            stopAdvertising()
+        clearSdkListeners()
+
+        if (::bluetoothManager.isInitialized) {
+            if (bluetoothManager.adapter.isEnabled) {
+                stopServer()
+                stopAdvertising()
+            }
+            unregisterReceiver(bluetoothReceiver)
         }
 
-        unregisterReceiver(bluetoothReceiver)
-
-        // Deinitialize the SDK.
         GemSdk.release()
         exitProcess(0)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applyOrientationLayout()
+        applyCameraFocus()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -1110,18 +1123,181 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ---- SDK listener registration -------------------------------------------
+
+    private fun registerSdkListeners() {
+        binding.gemSurface.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_init_failed, GemError.getMessage(error, this))
+            runOnUiThread {
+                showDialog(errorMessage) { finish() }
+            }
+        }
+
+        binding.gemSurface.onDefaultMapViewCreated = { updateFocusViewport() }
+        binding.gemSurface.onSurfaceChanged = { _, _ -> updateFocusViewport() }
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                startSimulation()
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnUiThread {
+                showDialog(getString(R.string.token_rejected_message))
+            }
+        }
+    }
+
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+        binding.gemSurface.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
+        }
+    }
+
+    // ---- Camera / viewport ---------------------------------------------------
+
+    private fun applyCameraFocus() {
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        SdkCall.execute {
+            // In landscape the navigation panel occupies the left 40 % of the screen, so shift
+            // the camera focus point right (0.7) to keep the arrow in the visible map area.
+            binding.gemSurface.mapView?.preferences?.followPositionPreferences?.cameraFocus =
+                if (isLandscape) XyF(0.7f, 0.75f) else XyF(0.5f, 0.75f)
+        }
+    }
+
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            binding.gemSurface.mapView?.preferences?.focusViewport = getFocusViewport()
+        }
+    }
+
+    private fun getFocusViewport(): Rect {
+        val root = binding.root
+        val insets = ViewCompat.getRootWindowInsets(root)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+
+        val width = root.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+        val height = root.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
+
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        return if (isLandscape) {
+            val w = max(width, height)
+            val h = min(width, height)
+
+            val left = if (binding.topPanel.isVisible) binding.topPanel.right else insets?.left ?: 0
+            val top = insets?.top ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            Rect(left, top, right, bottom)
+        } else {
+            val w = min(width, height)
+            val h = max(width, height)
+
+            val left = insets?.left ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val top = if (binding.topPanel.isVisible) binding.topPanel.bottom else binding.toolbar.bottom
+            val bottom = if (binding.bottomPanel.isVisible) {
+                binding.bottomPanel.top.coerceAtLeast(top)
+            } else {
+                (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            }
+            Rect(left, top, right, bottom)
+        }
+    }
+
+    // ---- Layout orientation --------------------------------------------------
+
+    private fun applyOrientationLayout() {
+        val rootLayout = binding.root as ConstraintLayout
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        val topVis = binding.topPanel.visibility
+        val bottomVis = binding.bottomPanel.visibility
+        val fabVis = binding.followGpsButton.visibility
+        val progressVis = binding.progressBar.visibility
+
+        val panelMargin = resources.getDimensionPixelSize(R.dimen.nav_panel_margin)
+
+        val insets = ViewCompat.getRootWindowInsets(binding.root)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+        val sysLeft = insets?.left ?: 0
+        val sysBottom = insets?.bottom ?: 0
+
+        ConstraintSet().apply {
+            clone(portraitConstraintSet)
+            if (isLandscape) {
+                val panelWidth = (resources.displayMetrics.widthPixels * 0.4f).toInt()
+                for (id in intArrayOf(R.id.top_panel, R.id.bottom_panel)) {
+                    constrainWidth(id, panelWidth)
+                    connect(
+                        id,
+                        ConstraintSet.START,
+                        ConstraintSet.PARENT_ID,
+                        ConstraintSet.START,
+                        sysLeft + panelMargin,
+                    )
+                    clear(id, ConstraintSet.END)
+                }
+                connect(
+                    R.id.follow_gps_button,
+                    ConstraintSet.BOTTOM,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.BOTTOM,
+                    padding,
+                )
+            } else {
+                for (id in intArrayOf(R.id.top_panel, R.id.bottom_panel)) {
+                    constrainWidth(id, ConstraintSet.MATCH_CONSTRAINT)
+                    connect(id, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, panelMargin)
+                    connect(id, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, panelMargin)
+                }
+                connect(
+                    R.id.follow_gps_button,
+                    ConstraintSet.BOTTOM,
+                    R.id.bottom_panel,
+                    ConstraintSet.TOP,
+                    padding,
+                )
+            }
+            connect(
+                R.id.bottom_panel,
+                ConstraintSet.BOTTOM,
+                ConstraintSet.PARENT_ID,
+                ConstraintSet.BOTTOM,
+                panelMargin + sysBottom,
+            )
+        }.applyTo(rootLayout)
+
+        binding.topPanel.visibility = topVis
+        binding.bottomPanel.visibility = bottomVis
+        binding.followGpsButton.visibility = fabVis
+        binding.progressBar.visibility = progressVis
+    }
+
+    // ---- Navigation panel visibility -----------------------------------------
+
+    private fun setNavigationPanelsVisible(isVisible: Boolean) {
+        binding.topPanel.isVisible = isVisible
+        binding.bottomPanel.isVisible = isVisible
+        if (!isVisible) {
+            updateFocusViewport()
+        } else {
+            binding.root.post { updateFocusViewport() }
+        }
+    }
+
     private fun enableGPSButton() {
-        // Set actions for entering / exiting following position mode.
         binding.gemSurface.mapView?.apply {
-            onExitFollowingPosition = {
-                Util.postOnMain { binding.followGpsButton.visibility = View.VISIBLE }
-            }
-
-            onEnterFollowingPosition = {
-                Util.postOnMain { binding.followGpsButton.visibility = View.GONE }
-            }
-
-            // Set on click action for the GPS button.
+            onExitFollowingPosition = { binding.followGpsButton.visibility = View.VISIBLE }
+            onEnterFollowingPosition = { binding.followGpsButton.visibility = View.GONE }
             binding.followGpsButton.setOnClickListener {
                 SdkCall.execute { followPosition() }
             }
@@ -1134,8 +1310,8 @@ class MainActivity : AppCompatActivity() {
         binding.gemSurface.mapView?.apply {
             onExitFollowingPosition = null
             onEnterFollowingPosition = null
-
             binding.followGpsButton.setOnClickListener(null)
+            binding.followGpsButton.isVisible = false
         }
     }
 
@@ -1192,7 +1368,12 @@ class MainActivity : AppCompatActivity() {
         )
         if (errorCode != GemError.NoError) {
             runOnUiThread {
-                showDialog(GemError.getMessage(errorCode))
+                showDialog(
+                    getString(
+                        R.string.start_simulation_error,
+                        SdkCall.runSynced { GemError.getMessage(errorCode, this) },
+                    ),
+                )
             }
         }
     }

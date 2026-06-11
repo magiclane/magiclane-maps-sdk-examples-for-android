@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -56,9 +56,12 @@ class RouteSimulationWithoutMapInstrumentedTests {
                 onCompleted = { errorCode, _ ->
                     assert(errorCode == GemError.NoError) {
                         "Progress Completed with error: ${
-                            GemError.getMessage(
-                                errorCode,
-                            )
+                            SdkCall.runSynced {
+                                GemError.getMessage(
+                                    errorCode,
+                                    appContext,
+                                )
+                            }
                         }"
                     }
                     onProgressCompletedPassed = true

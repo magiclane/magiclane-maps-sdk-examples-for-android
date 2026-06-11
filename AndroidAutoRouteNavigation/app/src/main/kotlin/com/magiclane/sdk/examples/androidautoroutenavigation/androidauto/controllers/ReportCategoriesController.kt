@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -15,6 +15,7 @@ import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.SocialOverlay
 import com.magiclane.sdk.core.SocialReportsOverlayCategory
 import com.magiclane.sdk.d3scene.OverlayCategory
+import com.magiclane.sdk.examples.androidautoroutenavigation.R
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.Service
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.model.GenericListItemModel
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.model.UIActionModel
@@ -31,7 +32,7 @@ typealias ReportCategoriesScreen = QuickLeftListScreen
 class ReportCategoriesController(context: CarContext) : ReportCategoriesScreen(context) {
 
     override fun updateData() {
-        title = "Report event"
+        title = context.getString(R.string.report_event)
         headerAction = UIActionModel.backModel()
 
         listItemModelList = getItems()
@@ -110,7 +111,7 @@ class ReportSubCategoriesController(
     private val socialReportListener = ProgressListener.create()
 
     override fun updateData() {
-        title = "Report event"
+        title = context.getString(R.string.report_event)
         headerAction = UIActionModel.backModel()
 
         listItemModelList = getItems()

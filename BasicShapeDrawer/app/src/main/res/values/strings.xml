@@ -3,4 +3,6 @@
     <string name="error">Error</string>
     <string name="ok">OK</string>
     <string name="status_text">Browse the map to see countries speed limits</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="token_rejected_message">This example requires a valid token. If you don\'t have a token, check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.</string>
 </resources>

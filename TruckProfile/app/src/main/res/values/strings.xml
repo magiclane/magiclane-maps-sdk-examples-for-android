@@ -9,4 +9,9 @@
     <string name="width">Width</string>
     <string name="axle_weight">Axle Weight</string>
     <string name="max_speed">Max Speed</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="routing_service_error">Routing service error: %1$s</string>
+    <string name="routing_calculation_error">Routing calculation error: %1$s</string>
 </resources>

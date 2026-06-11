@@ -7,18 +7,6 @@
         android:layout_height="match_parent"
         tools:context=".MainActivity">
 
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="@string/route_name"
-            android:textSize="@dimen/big_text_size"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
@@ -27,11 +15,32 @@
             app:layout_constraintTop_toTopOf="parent"
             app:title="@string/app_name"
             app:titleTextColor="@color/on_primary"
-            app:paddingTopWithSystemWindowInsets='@{"8dp"}'
+            app:paddingTopWithSystemWindowInsets='@{@dimen/toolbar_padding_top}'
             app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
             app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
-            android:paddingBottom="12dp"
+            android:paddingBottom="@dimen/toolbar_padding_bottom"
             />
+
+        <ScrollView
+            android:id="@+id/scrollView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:fillViewport="true"
+            app:layout_constraintTop_toBottomOf="@id/toolbar"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'>
+
+            <LinearLayout
+                android:id="@+id/routeInfoContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/content_margin"
+                android:paddingEnd="@dimen/big_padding" />
+
+        </ScrollView>
 
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progressBar"

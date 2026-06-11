@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="no_extra_inset">0dp</dimen>
+    <dimen name="small_padding">4dp</dimen>
+    <dimen name="default_padding">10dp</dimen>
+    <dimen name="big_padding">20dp</dimen>
+    <dimen name="standard_text_size">16sp</dimen>
+    <dimen name="big_text_size">20sp</dimen>
+    <dimen name="label_text_size">14sp</dimen>
+    <dimen name="tab_text_size">18dp</dimen>
+    <dimen name="card_elevation">5dp</dimen>
+    <dimen name="toolbar_padding_bottom">12dp</dimen>
+    <dimen name="margin_top">8dp</dimen>
+    <dimen name="seconds_view_width">40dp</dimen>
+<dimen name="big_margin">30dp</dimen>
+</resources>

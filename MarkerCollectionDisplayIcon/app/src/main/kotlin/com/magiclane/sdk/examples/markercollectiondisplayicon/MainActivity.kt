@@ -7,6 +7,7 @@
 
 package com.magiclane.sdk.examples.markercollectiondisplayicon
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Bundle
@@ -15,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -29,6 +31,7 @@ import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.EMarkerLabelingMode
 import com.magiclane.sdk.d3scene.EMarkerType
+import com.magiclane.sdk.d3scene.MapView
 import com.magiclane.sdk.d3scene.Marker
 import com.magiclane.sdk.d3scene.MarkerCollection
 import com.magiclane.sdk.d3scene.MarkerCollectionRenderSettings
@@ -36,6 +39,8 @@ import com.magiclane.sdk.examples.markercollectiondisplayicon.databinding.Activi
 import com.magiclane.sdk.examples.markercollectiondisplayicon.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.routesandnavigation.EImageFileFormat
+import com.magiclane.sdk.util.SdkCall
+import com.magiclane.sdk.util.Util
 import java.io.ByteArrayOutputStream
 import kotlin.system.exitProcess
 
@@ -49,52 +54,81 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setupSdkErrorHandlers()
-        setupMapContent()
+
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
+        registerSdkListeners()
     }
 
-    private fun setupSdkErrorHandlers() {
+    override fun onDestroy() {
+        super.onDestroy()
+        clearSdkListeners()
+        GemSdk.release()
+        exitProcess(0)
+    }
+
+    // Registers all SDK surface and settings callbacks.
+    private fun registerSdkListeners() {
         binding.gemSurface.onSdkInitFailed = { error ->
+            // The SDK is not initialized here, so resolve the message directly (no SdkCall needed).
             val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
-            runOnUiThread {
-                showDialog(errorMessage) { finish() }
-            }
+            runOnAliveUi { showDialog(errorMessage) { finish() } }
+        }
+
+        binding.gemSurface.onDefaultMapViewCreated = { mapView ->
+            // Align the Magic Lane logo with the visible map area on first map creation.
+            updateFocusViewport()
+            populateMap(mapView)
+        }
+
+        // Re-align the logo whenever the surface is resized (e.g. rotation).
+        binding.gemSurface.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
         }
 
         SdkSettings.onApiTokenRejected = {
-            runOnUiThread {
-                showDialog(getString(R.string.token_rejected_message))
-            }
+            runOnAliveUi { showDialog(getString(R.string.token_rejected_message)) }
         }
     }
 
-    private fun setupMapContent() {
-        binding.gemSurface.onDefaultMapViewCreated = { mapView ->
-            val predefinedPlaces = listOf(
-                Place("Subway", Coordinates(45.75242654325917, 4.828547972110576)),
-                Place("McDonald's", Coordinates(45.75291679094701, 4.828855627148713)),
-                Place("Two Amigos", Coordinates(45.75295718457783, 4.828377481057234)),
-                Place("Le Jardin de Chine", Coordinates(45.75272771410631, 4.828376649181688)),
-            )
-
-            val focusPlace = predefinedPlaces.last()
-
-            val (pointCollection, pointSettings) = createPointMarkers(predefinedPlaces)
-            mapView.preferences?.markers?.add(pointCollection, pointSettings)
-
-            val (polylineCollection, polylineSettings) = createPolyline(predefinedPlaces)
-            mapView.preferences?.markers?.add(polylineCollection, polylineSettings)
-
-            val (polygonCollection, polygonSettings) = createPolygon(focusPlace.coordinates)
-            mapView.preferences?.markers?.add(polygonCollection, polygonSettings)
-
-            mapView.centerOnCoordinates(
-                focusPlace.coordinates,
-                initialZoomLevel,
-                xy = getFreeScreenRect().center,
-                animation = Animation(EAnimation.Linear, animationDurationMs),
-            )
+    // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
+    private fun clearSdkListeners() {
+        SdkSettings.onApiTokenRejected = {}
+        binding.gemSurface.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
         }
+    }
+
+    // Adds the point, polyline and polygon marker collections and frames them on screen.
+    private fun populateMap(mapView: MapView) {
+        val predefinedPlaces = listOf(
+            Place("Subway", Coordinates(45.75242654325917, 4.828547972110576)),
+            Place("McDonald's", Coordinates(45.75291679094701, 4.828855627148713)),
+            Place("Two Amigos", Coordinates(45.75295718457783, 4.828377481057234)),
+            Place("Le Jardin de Chine", Coordinates(45.75272771410631, 4.828376649181688)),
+        )
+
+        val focusPlace = predefinedPlaces.last()
+        val markers = mapView.preferences?.markers
+
+        val (pointCollection, pointSettings) = createPointMarkers(predefinedPlaces)
+        markers?.add(pointCollection, pointSettings)
+
+        val (polylineCollection, polylineSettings) = createPolyline(predefinedPlaces)
+        markers?.add(polylineCollection, polylineSettings)
+
+        val (polygonCollection, polygonSettings) = createPolygon(focusPlace.coordinates)
+        markers?.add(polygonCollection, polygonSettings)
+
+        mapView.centerOnCoordinates(
+            focusPlace.coordinates,
+            initialZoomLevel,
+            xy = getFreeScreenRect().center,
+            animation = Animation(EAnimation.Linear, animationDurationMs),
+        )
     }
 
     private fun createPointMarkers(places: List<Place>): Pair<MarkerCollection, MarkerCollectionRenderSettings> {
@@ -113,7 +147,7 @@ class MainActivity : AppCompatActivity() {
 
         val settings = MarkerCollectionRenderSettings(image).apply {
             labelTextSize = pointLabelTextSizeMm
-            labelingMode = EMarkerLabelingMode.Item
+            labelingMode = EMarkerLabelingMode.Item.value
             imageSize = pointImageSizeMm
         }
 
@@ -168,6 +202,14 @@ class MainActivity : AppCompatActivity() {
         return bitmap
     }
 
+    // Positions the Magic Lane logo within the visible map area, clear of the toolbar and system bars.
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            val mapView = binding.gemSurface.mapView ?: return@runSynced
+            mapView.preferences?.focusViewport = getFreeScreenRect()
+        }
+    }
+
     /**
      * Calculates the free space rectangle on screen.
      * This represents the full screen minus the toolbar on top and system bar insets.
@@ -176,9 +218,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun getFreeScreenRect(): Rect {
         val root = binding.root
-        val insets = ViewCompat.getRootWindowInsets(
-            root,
-        )?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+        val insets = ViewCompat.getRootWindowInsets(root)?.getInsets(SYSTEM_INSET_TYPES)
 
         val width = root.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
         val height = root.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
@@ -194,8 +234,17 @@ class MainActivity : AppCompatActivity() {
         return Rect(left, top, right, bottom)
     }
 
+    /** Posts [block] to the main thread, running it only while the activity is still alive. */
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
+    }
+
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
+
+    /** Shows a non-dismissable bottom-sheet error dialog. */
+    @SuppressLint("InflateParams")
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
-        if (isFinishing || isDestroyed) return
+        if (!isActivityAlive()) return
 
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
@@ -215,17 +264,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-
-        // Release the SDK.
-        GemSdk.release()
-        exitProcess(0)
-    }
-
     private data class Place(val name: String, val coordinates: Coordinates)
 
     companion object {
+        private val SYSTEM_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+
         private const val pointLabelTextSizeMm = 2.0
         private const val pointImageSizeMm = 8.0
         private const val polylineSizeMm = 1.5

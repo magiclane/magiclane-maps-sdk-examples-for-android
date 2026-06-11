@@ -30,6 +30,7 @@ import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.XyF
 import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation.None
+import com.magiclane.sdk.examples.androidautoroutenavigation.R
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.base.SessionBase
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.controllers.MainMenuController
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.controllers.NavigationController
@@ -51,10 +52,13 @@ class Service : CarAppService() {
         private set
 
     private var navigationData = CarNavigationData()
+
+    // Listens to navigation events and keeps the car screen in sync with the navigation state.
     private val navigationListener = NavigationListener.create(
         onNavigationStarted = onNavigationStarted@{
             val session = session ?: return@onNavigationStarted
 
+            // If NavigationController is already on top, notify it; otherwise push a new one.
             val navController = session.screenManager.top as? NavigationController
             if (navController == null) {
                 session.screenManager.push(NavigationController(session.context, null))
@@ -75,11 +79,13 @@ class Service : CarAppService() {
         onNavigationInstructionUpdated = onNavigationInstructionUpdated@{
             val context = context ?: return@onNavigationInstructionUpdated
 
+            // Rebuild navigation data from the latest instruction.
             navigationData = CarNavigationData()
             SdkCall.execute {
                 CarNavigationDataFiller.fillNavData(navigationData)
             }
 
+            // Update the NavigationManager trip so the OS keeps its navigation state current.
             navigationData.getTrip(context)?.let {
                 try {
                     session?.navigationManager?.updateTrip(it)
@@ -88,6 +94,7 @@ class Service : CarAppService() {
                 }
             }
 
+            // When the car screen is paused (e.g. app in background), post a notification instead.
             if (session?.isPaused == true) {
                 CarAppNotifications.onNavigationDataUpdated(context, navigationData)
             }
@@ -109,113 +116,11 @@ class Service : CarAppService() {
         instance = null
     }
 
-    override fun onCreateSession(): Session {
-        return object : SessionBase() {
-            init {
-                NavigationInstance.listeners.add(navigationListener)
-            }
-
-            override fun onCreate(owner: LifecycleOwner) {
-                super.onCreate(owner)
-
-                AppProcess.androidAutoService = AndroidAutoBridgeImpl()
-                val errorCode = AppProcess.init(context)
-                if (errorCode == GemError.NoError) {
-                    AppProcess.onAndroidAutoConnected()
-
-                    surfaceAdapter = GemGlSurfaceAdapter(context)
-                    surfaceAdapter?.onDefaultMapViewCreated = { mapView ->
-                        mapView.onEnterFollowingPosition = {
-                            (topScreen as? GemScreen)?.onMapFollowChanged(true)
-                        }
-                        mapView.onExitFollowingPosition = {
-                            (topScreen as? GemScreen)?.onMapFollowChanged(false)
-                        }
-
-                        SdkCall.postAsync {
-                            mapView.followPosition(true, Animation(None))
-                            surfaceAdapter?.visibleArea?.let {
-                                onVisibleAreaChanged(it)
-                            }
-                        }
-                    }
-
-                    surfaceAdapter?.onVisibleAreaChanged = {
-                        onVisibleAreaChanged(it)
-                    }
-                } else {
-                    CarToast.makeText(
-                        context,
-                        "SDK initialization failed: ${GemError.getMessage(errorCode, context)}",
-                        CarToast.LENGTH_LONG,
-                    ).show()
-                    AppProcess.androidAutoService.finish()
-                }
-            }
-
-            override fun onDestroy(owner: LifecycleOwner) {
-                super.onDestroy(owner)
-
-                AppProcess.onAndroidAutoDisconnected()
-                AppProcess.androidAutoService = AndroidAutoService.empty
-
-                surfaceAdapter?.release()
-                surfaceAdapter = null
-            }
-
-            override fun createSurfaceCallback(context: CarContext): SurfaceCallback {
-                return object : SurfaceCallback {
-                    override fun onSurfaceAvailable(surfaceContainer: SurfaceContainer) {
-                        surfaceAdapter?.onSurfaceAvailable(object : GemSurfaceContainerAdapter() {
-                            override fun getHeight(): Int = surfaceContainer.height
-                            override fun getWidth(): Int = surfaceContainer.width
-                            override fun getDpi(): Int = surfaceContainer.dpi
-                            override fun getSurface(): Surface? = surfaceContainer.surface
-                        })
-                    }
-
-                    override fun onSurfaceDestroyed(surfaceContainer: SurfaceContainer) {
-                        surfaceAdapter?.onSurfaceDestroyed()
-                    }
-
-                    override fun onStableAreaChanged(stableArea: android.graphics.Rect) {
-                        surfaceAdapter?.onStableAreaChanged(stableArea)
-                    }
-
-                    override fun onVisibleAreaChanged(visibleArea: android.graphics.Rect) {
-                        surfaceAdapter?.onVisibleAreaChanged(visibleArea)
-                    }
-
-                    override fun onFling(velocityX: Float, velocityY: Float) {
-                        surfaceAdapter?.onFling(velocityX, velocityY)
-                    }
-
-                    override fun onScale(focusX: Float, focusY: Float, scaleFactor: Float) {
-                        surfaceAdapter?.onScale(focusX, focusY, scaleFactor)
-                    }
-
-                    override fun onScroll(distanceX: Float, distanceY: Float) {
-                        surfaceAdapter?.onScroll(distanceX, distanceY)
-                    }
-                }
-            }
-
-            override fun createMainScreen(intent: Intent): Screen = MainMenuController(context)
-
-            override fun onStopNavigation() {
-                NavigationInstance.stopNavigation()
-            }
-
-            override fun onNavigationRequested(uriString: String) {
-                if (Util.isGeoIntent(uriString)) {
-                    AppProcess.handleGeoUri(uriString)
-                }
-            }
-        }
-    }
+    override fun onCreateSession(): Session = MainSession()
 
     override fun createHostValidator(): HostValidator = HostValidator.ALLOW_ALL_HOSTS_VALIDATOR
 
+    // Adjusts the map camera focus point whenever the visible area changes (e.g. panel shown/hidden).
     private fun onVisibleAreaChanged(visibleArea: Rect) {
         SdkCall.execute {
             if (visibleArea.width == 0 || visibleArea.height == 0) {
@@ -223,10 +128,10 @@ class Service : CarAppService() {
             }
 
             val mapView = surfaceAdapter?.mapView
-
             val viewport = mapView?.viewport ?: return@execute
             val center = visibleArea.center ?: return@execute
 
+            // Shift the follow-position camera focus towards the bottom of the visible area.
             val x = center.x / viewport.width.toFloat()
             val y = (visibleArea.bottom * 0.75f) / viewport.height.toFloat()
 
@@ -234,6 +139,113 @@ class Service : CarAppService() {
         }
 
         (topScreen as? RoutesPreviewController)?.updateMapView()
+    }
+
+    // Named inner class for the Android Auto session, replacing the anonymous object for clarity.
+    private inner class MainSession : SessionBase() {
+        init {
+            NavigationInstance.listeners.add(navigationListener)
+        }
+
+        override fun onCreate(owner: LifecycleOwner) {
+            super.onCreate(owner)
+
+            AppProcess.androidAutoService = AndroidAutoBridgeImpl()
+            val errorCode = AppProcess.init(context)
+            if (errorCode == GemError.NoError) {
+                AppProcess.onAndroidAutoConnected()
+
+                surfaceAdapter = GemGlSurfaceAdapter(context)
+                surfaceAdapter?.onDefaultMapViewCreated = { mapView ->
+                    mapView.onEnterFollowingPosition = {
+                        (topScreen as? GemScreen)?.onMapFollowChanged(true)
+                    }
+                    mapView.onExitFollowingPosition = {
+                        (topScreen as? GemScreen)?.onMapFollowChanged(false)
+                    }
+
+                    SdkCall.postAsync {
+                        mapView.followPosition(true, Animation(None))
+                        surfaceAdapter?.visibleArea?.let { onVisibleAreaChanged(it) }
+                    }
+                }
+
+                surfaceAdapter?.onVisibleAreaChanged = { onVisibleAreaChanged(it) }
+            } else {
+                CarToast.makeText(
+                    context,
+                    context.getString(
+                        R.string.sdk_initialization_failed,
+                        SdkCall.runSynced { GemError.getMessage(errorCode, context) },
+                    ),
+                    CarToast.LENGTH_LONG,
+                ).show()
+                AppProcess.androidAutoService.finish()
+            }
+        }
+
+        override fun onDestroy(owner: LifecycleOwner) {
+            super.onDestroy(owner)
+
+            AppProcess.onAndroidAutoDisconnected()
+            AppProcess.androidAutoService = AndroidAutoService.empty
+
+            surfaceAdapter?.release()
+            surfaceAdapter = null
+        }
+
+        override fun createSurfaceCallback(context: CarContext): SurfaceCallback = MapSurfaceCallback()
+
+        override fun createMainScreen(intent: Intent): Screen = MainMenuController(context)
+
+        // Called when the user taps the "×" button on the bottom navigation panel.
+        // Must mirror onBackPressed() in NavigationController: stop navigation and return to root.
+        override fun onStopNavigation() {
+            NavigationInstance.stopNavigation()
+            screenManager.popToRoot()
+        }
+
+        override fun onNavigationRequested(uriString: String) {
+            if (Util.isGeoIntent(uriString)) {
+                AppProcess.handleGeoUri(uriString)
+            }
+        }
+    }
+
+    // Delegates all surface lifecycle events to the GemGlSurfaceAdapter.
+    private inner class MapSurfaceCallback : SurfaceCallback {
+        override fun onSurfaceAvailable(surfaceContainer: SurfaceContainer) {
+            surfaceAdapter?.onSurfaceAvailable(object : GemSurfaceContainerAdapter() {
+                override fun getHeight(): Int = surfaceContainer.height
+                override fun getWidth(): Int = surfaceContainer.width
+                override fun getDpi(): Int = surfaceContainer.dpi
+                override fun getSurface(): Surface? = surfaceContainer.surface
+            })
+        }
+
+        override fun onSurfaceDestroyed(surfaceContainer: SurfaceContainer) {
+            surfaceAdapter?.onSurfaceDestroyed()
+        }
+
+        override fun onStableAreaChanged(stableArea: android.graphics.Rect) {
+            surfaceAdapter?.onStableAreaChanged(stableArea)
+        }
+
+        override fun onVisibleAreaChanged(visibleArea: android.graphics.Rect) {
+            surfaceAdapter?.onVisibleAreaChanged(visibleArea)
+        }
+
+        override fun onFling(velocityX: Float, velocityY: Float) {
+            surfaceAdapter?.onFling(velocityX, velocityY)
+        }
+
+        override fun onScale(focusX: Float, focusY: Float, scaleFactor: Float) {
+            surfaceAdapter?.onScale(focusX, focusY, scaleFactor)
+        }
+
+        override fun onScroll(distanceX: Float, distanceY: Float) {
+            surfaceAdapter?.onScroll(distanceX, distanceY)
+        }
     }
 
     companion object {
@@ -278,15 +290,13 @@ class Service : CarAppService() {
         }
 
         fun popToMap() {
-            while (!((topScreen) as GemScreen).isMapVisible) {
+            while (!(topScreen as GemScreen).isMapVisible) {
                 pop(false)
             }
         }
 
         fun showToast(text: String) {
-            context?.let { context ->
-                CarToast.makeText(context, text, CarToast.LENGTH_SHORT).show()
-            }
+            context?.let { CarToast.makeText(it, text, CarToast.LENGTH_SHORT).show() }
         }
     }
 }

@@ -2,6 +2,12 @@
     <string name="app_name">RouteTerrainProfile</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+    <string name="terrain_profile_not_available">Route terrain profile is not available!</string>
+    <string name="routing_cancelled">The routing action was cancelled.</string>
+    <string name="routing_error">Routing service error: %s</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %s</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="internet_required">You must be connected to the internet!</string>
 
     <!-- Route profile strings -->
     <string name="rating">Rating</string>
@@ -9,6 +15,7 @@
     <string name="start_end_elevation">Start/End Elevation</string>
     <string name="length">Length</string>
     <string name="avg_grade">Avg grade</string>
+    <string name="route_profile">Route profile</string>
     <string name="elevation">Elevation</string>
     <string name="climb_details">Climb Details</string>
     <string name="ways">Ways</string>

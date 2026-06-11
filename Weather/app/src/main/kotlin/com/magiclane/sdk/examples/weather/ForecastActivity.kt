@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2024-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -7,13 +7,15 @@
 
 package com.magiclane.sdk.examples.weather
 
+import android.content.res.Configuration
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
-import android.view.WindowInsets
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.magiclane.sdk.examples.weather.databinding.ActivityForecastBinding
@@ -32,26 +34,24 @@ class ForecastActivity : AppCompatActivity() {
     private lateinit var coordinatesReference: Coordinates
     private var forecastType = EForecastType.NOT_ASSIGNED
     private lateinit var binding: ActivityForecastBinding
+    private lateinit var portraitConstraintSet: ConstraintSet
     private val viewModel: ForecastActivityViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // setup binding's layout as the content of th screen
+        // Setup binding's layout as the content of the screen.
         binding = ActivityForecastBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        // set window insets
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            binding.forecastBackground.setOnApplyWindowInsetsListener { view, insets ->
-                val systemBarsInsets = insets.getInsets(WindowInsets.Type.systemBars())
-                view.setPadding(
-                    systemBarsInsets.left,
-                    systemBarsInsets.top,
-                    systemBarsInsets.right,
-                    systemBarsInsets.bottom,
-                )
-                insets
-            }
+        // set window insets (including display cutouts)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.forecastBackground) { view, insets ->
+            val safeInsets = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
+            )
+            view.setPadding(safeInsets.left, safeInsets.top, safeInsets.right, safeInsets.bottom)
+            insets
         }
+        portraitConstraintSet = ConstraintSet().also { it.clone(binding.currentForecastContainer) }
+        applyOrientationLayout()
         // get arguments
         val latitude = intent.getDoubleExtra(LATITUDE_ARG_ID, 0.0)
         val longitude = intent.getDoubleExtra(LONGITUDE_ARG_ID, 0.0)
@@ -83,7 +83,6 @@ class ForecastActivity : AppCompatActivity() {
                     }
                     currentTemperature.text = viewModel.currentTemperature
                     description.text = viewModel.description
-                    currentTemperature.text = viewModel.currentTemperature
                     feelsLike.text = viewModel.feelsLike
                     updatedAt.text = viewModel.updatedAt
                     localTime.text = viewModel.currentTime
@@ -93,7 +92,6 @@ class ForecastActivity : AppCompatActivity() {
                     )
                     currentTemperature.setTextColor(textColor)
                     description.setTextColor(textColor)
-                    currentTemperature.setTextColor(textColor)
                     feelsLike.setTextColor(textColor)
                     updatedAt.setTextColor(textColor)
                     localTime.setTextColor(textColor)
@@ -110,12 +108,34 @@ class ForecastActivity : AppCompatActivity() {
                     currentForecastCard.isVisible = true
                 }
             }
-            // send the new list to pe processed and displayed by the adapter
+            // Send the new list to be processed and displayed by the adapter.
             forecastAdapter?.submitList(newList)
         }
 
         viewModel.errorMessage.observe(this) {
             Utils.showDialog(it, this)
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        binding.root.post { applyOrientationLayout() }
+    }
+
+    private fun applyOrientationLayout() {
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val margin = resources.getDimensionPixelSize(R.dimen.double_margin)
+
+        ConstraintSet().apply {
+            clone(portraitConstraintSet)
+            if (isLandscape) {
+                connect(R.id.description, ConstraintSet.END, R.id.middle_guideline, ConstraintSet.START, margin)
+                connect(R.id.current_temperature, ConstraintSet.END, R.id.middle_guideline, ConstraintSet.START, margin)
+                connect(R.id.feels_like, ConstraintSet.START, R.id.middle_guideline, ConstraintSet.END, margin)
+                connect(R.id.feels_like, ConstraintSet.TOP, R.id.location_name, ConstraintSet.BOTTOM, 0)
+                connect(R.id.local_time, ConstraintSet.START, R.id.middle_guideline, ConstraintSet.END, margin)
+                connect(R.id.updated_at, ConstraintSet.START, R.id.middle_guideline, ConstraintSet.END, margin)
+            }
+        }.applyTo(binding.currentForecastContainer)
     }
 }

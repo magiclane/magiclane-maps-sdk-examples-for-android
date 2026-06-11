@@ -2,4 +2,16 @@
     <string name="app_name">VoiceDownloading</string>
     <string name="ok">OK</string>
     <string name="error">Error</string>
+    <string name="invalid_token">This example requires a valid token. If you don\'t have a token, check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="internet_required">This app requires an Internet connection. Please connect and try again.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="status_downloading_voices_catalog">Downloading voices catalog ...</string>
+    <string name="status_downloading_item">Downloading %1$s ...</string>
+    <string name="status_item_downloaded">%1$s was downloaded.</string>
+    <string name="status_item_download_error">%1$s download encountered an error: %2$s</string>
+    <string name="status_item_already_downloaded">%1$s is already downloaded.</string>
+    <string name="status_download_item_error">Download item error: %1$s</string>
+    <string name="status_voices_catalog_download_error">Voices catalog download encountered the following error: %1$s</string>
+    <string name="status_checking_token_validity">Checking token validity ...</string>
+    <string name="status_connecting_magic_lane_servers">Connecting to Magic Lane servers ...</string>
 </resources>

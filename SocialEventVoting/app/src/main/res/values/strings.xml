@@ -2,5 +2,11 @@
     <string name="app_name">SocialEventVoting</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
-    <string name="please_select">Please select any social event in order to display the event panel.</string>
+<string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="confirm_report_failed">Confirm report failed with error: %1$s</string>
+    <string name="deny_report_failed">Deny report failed with error: %1$s</string>
+    <string name="route_simulation_error">Route simulation failed: %1$s</string>
+    <string name="tts_caution_alarm">Caution. %1$s ahead!</string>
 </resources>

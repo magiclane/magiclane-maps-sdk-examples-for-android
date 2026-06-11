@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2022-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -7,31 +7,37 @@
 
 package com.magiclane.sdk.examples.truckprofile
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.slider.Slider
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.d3scene.Animation
+import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.examples.truckprofile.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.truckprofile.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Landmark
-import com.magiclane.sdk.routesandnavigation.ERouteAlternativesSchema
 import com.magiclane.sdk.routesandnavigation.ERouteTransportMode
 import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.routesandnavigation.RoutingService
@@ -42,29 +48,43 @@ import java.util.Locale
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityMainBinding
 
-    enum class ETruckProfileSettings {
-        Weight,
-        Height,
-        Length,
-        Width,
-        AxleWeight,
-        MaxSpeed,
+    companion object {
+        private val SYSTEM_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+        private const val FREE_SPACE_INFLATE_DP = 30
+        private const val ROUTE_ANIMATION_MS = 900
     }
+
+    private lateinit var binding: ActivityMainBinding
 
     enum class ESeekBarValuesType {
         DoubleType,
         IntType,
     }
 
+    /** Multiplier to convert from the display unit to the SDK native unit (e.g. tonnes → kg = 1000). */
     enum class ETruckProfileUnitConverters(val unit: Float) {
-        Weight(1000f),
-        Height(100f),
-        Length(100f),
-        Width(100f),
-        AxleWeight(1000f),
-        MaxSpeed(0.27778f),
+        Weight(1000f), // tonnes → kilograms
+        Height(100f), // metres  → centimetres
+        Length(100f), // metres  → centimetres
+        Width(100f), // metres  → centimetres
+        AxleWeight(1000f), // tonnes → kilograms
+        MaxSpeed(0.27778f), // km/h   → m/s
+    }
+
+    enum class ETruckProfileSettings(
+        /** Multiplier used to convert between display units and SDK native units. */
+        val converter: ETruckProfileUnitConverters,
+        /** Reads the corresponding raw value from a TruckProfile (in SDK native units). */
+        val getValue: (TruckProfile) -> Number,
+    ) {
+        Weight(ETruckProfileUnitConverters.Weight, { it.mass }),
+        Height(ETruckProfileUnitConverters.Height, { it.height }),
+        Length(ETruckProfileUnitConverters.Length, { it.length }),
+        Width(ETruckProfileUnitConverters.Width, { it.width }),
+        AxleWeight(ETruckProfileUnitConverters.AxleWeight, { it.axleLoad }),
+        MaxSpeed(ETruckProfileUnitConverters.MaxSpeed, { it.maxSpeed }),
     }
 
     data class TruckProfileSettingsModel(
@@ -86,7 +106,8 @@ class MainActivity : AppCompatActivity() {
 
     private var routesList = ArrayList<Route>()
 
-    private val adapter = TruckProfileSettingsAdapter(getInitialDataSet())
+    // Lazy so getString() is safe — adapter is first accessed after the Activity context is attached.
+    private val adapter by lazy { TruckProfileSettingsAdapter(getInitialDataSet()) }
 
     private var waypoints = arrayListOf<Landmark>()
 
@@ -105,6 +126,8 @@ class MainActivity : AppCompatActivity() {
                         binding.gemSurfaceView.mapView?.presentRoutes(
                             routes = routes,
                             displayBubble = true,
+                            animation = Animation(EAnimation.Linear, ROUTE_ANIMATION_MS),
+                            edgeAreaInsets = getEdgeAreaInsets(),
                         )
                     }
 
@@ -112,16 +135,16 @@ class MainActivity : AppCompatActivity() {
                     EspressoIdlingResource.decrement()
                 }
 
-                GemError.Cancel -> {
-                    // The routing action was cancelled.
-                    showDialog("The routing action was cancelled.")
-                    EspressoIdlingResource.decrement()
-                }
-
                 else -> {
-                    // There was a problem at computing the routing operation.
-                    showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
-                    EspressoIdlingResource.decrement()
+                    if (errorCode != GemError.Cancel) {
+                        showDialog(
+                            getString(
+                                R.string.routing_service_error,
+                                SdkCall.runSynced { GemError.getMessage(errorCode, this) },
+                            ),
+                        )
+                        EspressoIdlingResource.decrement()
+                    }
                 }
             }
         },
@@ -131,63 +154,19 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         EspressoIdlingResource.increment()
         binding.settingsButton.setOnClickListener {
             onSettingsButtonClicked()
         }
 
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
-
-            // Defines an action that should be done when the world map is ready (Updated/ loaded).
-            SdkCall.execute {
-                waypoints = arrayListOf(
-                    Landmark("London", 51.5073204, -0.1276475),
-                    Landmark("Paris", 48.8566932, 2.3514616),
-                )
-
-                routingService.calculateRoute(waypoints)
-                preferencesTruckProfile = TruckProfile(
-                    (3 * ETruckProfileUnitConverters.Weight.unit).toInt(),
-                    (1.8 * ETruckProfileUnitConverters.Height.unit).toInt(),
-                    (5 * ETruckProfileUnitConverters.Length.unit).toInt(),
-                    (2 * ETruckProfileUnitConverters.Width.unit).toInt(),
-                    (1.5 * ETruckProfileUnitConverters.AxleWeight.unit).toInt(),
-                    (60 * ETruckProfileUnitConverters.MaxSpeed.unit).toDouble(),
-                )
-            }
-
-            binding.gemSurfaceView.mapView?.onTouch = { xy ->
-                SdkCall.execute {
-                    // tell the map view where the touch event happened
-                    binding.gemSurfaceView.mapView?.cursorScreenPosition = xy
-
-                    // get the visible routes at the touch event point
-                    val routes = binding.gemSurfaceView.mapView?.cursorSelectionRoutes
-                    // check if there is any route
-                    if (!routes.isNullOrEmpty()) {
-                        // set the touched route as the main route and center on it
-                        val route = routes[0]
-                        binding.gemSurfaceView.mapView?.apply {
-                            preferences?.routes?.mainRoute = route
-                            centerOnRoutes(routesList)
-                        }
-                    }
-                }
-            }
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
-        }
+        registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
+            showDialog(getString(R.string.internet_required))
         }
 
         onBackPressedDispatcher.addCallback(
@@ -195,7 +174,6 @@ class MainActivity : AppCompatActivity() {
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
                     finish()
-                    exitProcess(0)
                 }
             },
         )
@@ -203,73 +181,210 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-
-        // Deinitialize the SDK.
+        clearSdkListeners()
         GemSdk.release()
+        exitProcess(0)
     }
 
-    private fun onSettingsButtonClicked() {
-        val builder = AlertDialog.Builder(this)
-
-        val convertView = layoutInflater.inflate(R.layout.truck_profile_settings_view, null)
-        val listView =
-            convertView.findViewById<RecyclerView>(R.id.truck_profile_settings_list).apply {
-                layoutManager = LinearLayoutManager(this@MainActivity)
-                addItemDecoration(
-                    DividerItemDecoration(
-                        applicationContext,
-                        (layoutManager as LinearLayoutManager).orientation,
-                    ),
-                )
-            }
-
-        listView.adapter = adapter
-        adapter.notifyItemRangeChanged(0, ETruckProfileSettings.entries.size)
-
-        builder.setTitle(getString(R.string.app_name))
-        builder.setView(convertView)
-        builder.setNeutralButton(getString(R.string.save)) { dialog, _ ->
-            onSaveButtonClicked()
-            dialog.dismiss()
+    private fun registerSdkListeners() {
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnAliveUi { showDialog(errorMessage) { finish() } }
         }
 
-        val dialog = builder.create()
-        dialog.show()
+        binding.gemSurfaceView.onDefaultMapViewCreated = {
+            updateFocusViewport()
+            binding.gemSurfaceView.mapView?.onTouch = { xy ->
+                SdkCall.execute {
+                    binding.gemSurfaceView.mapView?.cursorScreenPosition = xy
+                    val routes = binding.gemSurfaceView.mapView?.cursorSelectionRoutes
+                    if (!routes.isNullOrEmpty()) {
+                        val route = routes[0]
+                        binding.gemSurfaceView.mapView?.apply {
+                            preferences?.routes?.mainRoute = route
+                            centerOnRoutes(
+                                routesList,
+                                animation = Animation(EAnimation.Linear, ROUTE_ANIMATION_MS),
+                                viewRc = getRouteViewRect(),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
+        }
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkCall.execute {
+                    waypoints = arrayListOf(
+                        Landmark("London", 51.5073204, -0.1276475),
+                        Landmark("Paris", 48.8566932, 2.3514616),
+                    )
+
+                    // Initialize with a default truck profile; user can change it via the settings dialog.
+                    preferencesTruckProfile = TruckProfile(
+                        massKg = (3 * ETruckProfileUnitConverters.Weight.unit).toInt(),
+                        heightCm = (1.8 * ETruckProfileUnitConverters.Height.unit).toInt(),
+                        lengthCm = (5 * ETruckProfileUnitConverters.Length.unit).toInt(),
+                        widthCm = (2 * ETruckProfileUnitConverters.Width.unit).toInt(),
+                        axleLoadKg = (1.5 * ETruckProfileUnitConverters.AxleWeight.unit).toInt(),
+                        maxSpeedMs = 60 * ETruckProfileUnitConverters.MaxSpeed.unit.toDouble(),
+                    )
+
+                    routingService.preferences.transportMode = ERouteTransportMode.Lorry
+                    routingService.preferences.truckProfile = preferencesTruckProfile
+
+                    val errorCode = routingService.calculateRoute(waypoints)
+                    if (errorCode != GemError.NoError) {
+                        val errorMessage =
+                            getString(R.string.routing_calculation_error, GemError.getMessage(errorCode, this))
+                        runOnAliveUi { showDialog(errorMessage) { finish() } }
+                    }
+                }
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnAliveUi { showDialog(getString(R.string.token_rejected_message)) }
+        }
+    }
+
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+        binding.gemSurfaceView.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
+        }
+    }
+
+    // Adjusts the Magic Lane logo position to respect system window insets.
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            val mapView = binding.gemSurfaceView.mapView ?: return@runSynced
+            val viewport = mapView.viewport ?: return@runSynced
+            val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(SYSTEM_INSET_TYPES)
+
+            val w = viewport.width
+            val h = viewport.height
+            val left = insets?.left ?: 0
+            val top = insets?.top ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            mapView.preferences?.focusViewport = Rect(left, top, right, bottom)
+        }
+    }
+
+    // Returns edge insets (px) for presentRoutes: top uses the toolbar bottom, all other sides
+    // use system bar / cutout insets, with FREE_SPACE_INFLATE_DP added to every edge.
+    private fun getEdgeAreaInsets(): Rect {
+        val (left, top, right, bottom) = resolveMapPadding()
+        return Rect(left, top, right, bottom)
+    }
+
+    // Returns the free-screen rectangle (absolute px coordinates) for centerOnRoutes.
+    private fun getRouteViewRect(): Rect {
+        val mapWidth = binding.gemSurfaceView.width.takeIf { it > 0 } ?: binding.gemSurfaceView.measuredWidth
+        val mapHeight = binding.gemSurfaceView.height.takeIf { it > 0 } ?: binding.gemSurfaceView.measuredHeight
+        val (left, top, right, bottom) = resolveMapPadding()
+        return Rect(
+            left,
+            top,
+            (mapWidth - right).coerceAtLeast(left),
+            (mapHeight - bottom).coerceAtLeast(top),
+        )
+    }
+
+    // Shared padding values (px) used by getEdgeAreaInsets and getRouteViewRect.
+    // Top is toolbar.bottom (which already absorbs the status-bar height); the other three sides
+    // are the raw system-bar / cutout insets. FREE_SPACE_INFLATE_DP is added to every edge.
+    private fun resolveMapPadding(): Array<Int> {
+        val sysInsets = ViewCompat.getRootWindowInsets(binding.root)
+            ?.getInsets(SYSTEM_INSET_TYPES)
+        val inflate = (FREE_SPACE_INFLATE_DP * resources.displayMetrics.density).toInt()
+        val toolbarBottom = binding.toolbar.bottom.takeIf { it > 0 } ?: 0
+        return arrayOf(
+            (sysInsets?.left ?: 0) + inflate,
+            toolbarBottom + inflate,
+            (sysInsets?.right ?: 0) + inflate,
+            (sysInsets?.bottom ?: 0) + inflate,
+        )
+    }
+
+    /** Shows a non-dismissable bottom-sheet error dialog. */
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
+        val dialog = BottomSheetDialog(this)
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
+                dialog.dismiss()
+            }
+        }
+        dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
+            setCancelable(false)
+            setContentView(dialogBinding.root)
+            show()
+        }
+    }
+
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
+    }
+
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
+
+    private fun onSettingsButtonClicked() {
+        val convertView = layoutInflater.inflate(R.layout.truck_profile_settings_view, null)
+        convertView.findViewById<RecyclerView>(R.id.truck_profile_settings_list).apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            addItemDecoration(
+                DividerItemDecoration(
+                    applicationContext,
+                    (layoutManager as LinearLayoutManager).orientation,
+                ),
+            )
+            adapter = this@MainActivity.adapter
+        }
+
+        adapter.notifyItemRangeChanged(0, ETruckProfileSettings.entries.size)
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.app_name))
+            .setView(convertView)
+            .setNeutralButton(getString(R.string.save)) { dialog, _ ->
+                onSaveButtonClicked()
+                dialog.dismiss()
+            }
+            .create()
+            .show()
     }
 
     private fun onSaveButtonClicked() {
         EspressoIdlingResource.increment()
         val dataSet = adapter.dataSet
 
-        // convert m to cm
-        val width = (
-            dataSet[ETruckProfileSettings.Width.ordinal].currentDoubleValue *
-                ETruckProfileUnitConverters.Width.unit
-            ).toInt()
-        val height = (
-            dataSet[ETruckProfileSettings.Height.ordinal].currentDoubleValue *
-                ETruckProfileUnitConverters.Height.unit
-            ).toInt()
-        val length = (
-            dataSet[ETruckProfileSettings.Length.ordinal].currentDoubleValue *
-                ETruckProfileUnitConverters.Length.unit
-            ).toInt()
-        // convert t to kg
-        val weight = (
-            dataSet[ETruckProfileSettings.Weight.ordinal].currentDoubleValue *
-                ETruckProfileUnitConverters.Weight.unit
-            ).toInt()
-        val axleWeight = (
-            dataSet[ETruckProfileSettings.AxleWeight.ordinal].currentDoubleValue *
-                ETruckProfileUnitConverters.AxleWeight.unit
-            ).toInt()
-        // convert km/h to m/s
-        val maxSpeed = dataSet[ETruckProfileSettings.MaxSpeed.ordinal].currentIntValue *
-            ETruckProfileUnitConverters.MaxSpeed.unit.toDouble()
+        // Read display values and convert to SDK native units using each setting's converter.
+        val weight = (dataSet[ETruckProfileSettings.Weight.ordinal].currentDoubleValue * ETruckProfileSettings.Weight.converter.unit).toInt()
+        val height = (dataSet[ETruckProfileSettings.Height.ordinal].currentDoubleValue * ETruckProfileSettings.Height.converter.unit).toInt()
+        val length = (dataSet[ETruckProfileSettings.Length.ordinal].currentDoubleValue * ETruckProfileSettings.Length.converter.unit).toInt()
+        val width = (dataSet[ETruckProfileSettings.Width.ordinal].currentDoubleValue * ETruckProfileSettings.Width.converter.unit).toInt()
+        val axleWeight = (dataSet[ETruckProfileSettings.AxleWeight.ordinal].currentDoubleValue * ETruckProfileSettings.AxleWeight.converter.unit).toInt()
+        // MaxSpeed uses an int slider (km/h), convert to m/s.
+        val maxSpeed = dataSet[ETruckProfileSettings.MaxSpeed.ordinal].currentIntValue * ETruckProfileSettings.MaxSpeed.converter.unit.toDouble()
 
         SdkCall.execute {
             routingService.apply {
-                preferences.alternativesSchema = ERouteAlternativesSchema.Never
                 preferences.transportMode = ERouteTransportMode.Lorry
                 preferencesTruckProfile = TruckProfile(
                     massKg = weight,
@@ -280,131 +395,72 @@ class MainActivity : AppCompatActivity() {
                     maxSpeedMs = maxSpeed,
                 )
                 preferences.truckProfile = preferencesTruckProfile
-                calculateRoute(waypoints)
+                binding.gemSurfaceView.mapView?.preferences?.routes?.clear()
+
+                val errorCode = calculateRoute(waypoints)
+                if (errorCode != GemError.NoError) {
+                    val errorMessage =
+                        getString(R.string.routing_calculation_error, GemError.getMessage(errorCode, this@MainActivity))
+                    runOnAliveUi { showDialog(errorMessage) { finish() } }
+                }
             }
         }
     }
 
-    private fun getInitialDataSet(): List<TruckProfileSettingsModel> {
-        return mutableListOf<TruckProfileSettingsModel>().also {
-            it.add(
-                TruckProfileSettingsModel(
-                    "Weight",
-                    ESeekBarValuesType.DoubleType,
-                    "3 t",
-                    "3.0 t",
-                    "50 t",
-                    0,
-                    0,
-                    0,
-                    3.0f,
-                    3.0f,
-                    50.0f,
-                    "t",
-                ),
-            )
-            it.add(
-                TruckProfileSettingsModel(
-                    "Height",
-                    ESeekBarValuesType.DoubleType,
-                    "1.8 m",
-                    "1.8 m",
-                    "5 m",
-                    0,
-                    0,
-                    0,
-                    1.8f,
-                    1.8f,
-                    5.0f,
-                    "m",
-                ),
-            )
-            it.add(
-                TruckProfileSettingsModel(
-                    "Length",
-                    ESeekBarValuesType.DoubleType,
-                    "5 m",
-                    "5.0 m",
-                    "20 m",
-                    0,
-                    0,
-                    0,
-                    5.0f,
-                    5.0f,
-                    20.0f,
-                    "m",
-                ),
-            )
-            it.add(
-                TruckProfileSettingsModel(
-                    "Width",
-                    ESeekBarValuesType.DoubleType,
-                    "2 m",
-                    "2.0 m",
-                    "4 m",
-                    0,
-                    0,
-                    0,
-                    2f,
-                    2f,
-                    4f,
-                    "m",
-                ),
-            )
-            it.add(
-                TruckProfileSettingsModel(
-                    "Axle Weight",
-                    ESeekBarValuesType.DoubleType,
-                    "1.5 t",
-                    "1.5 t",
-                    "10 t",
-                    0,
-                    0,
-                    0,
-                    1.5f,
-                    1.5f,
-                    10.0f,
-                    "t",
-                ),
-            )
-            it.add(
-                TruckProfileSettingsModel(
-                    "Max Speed",
-                    ESeekBarValuesType.IntType,
-                    "60 km/h",
-                    "130 km/h",
-                    "250 km/h",
-                    60,
-                    130,
-                    250,
-                    0.0f,
-                    0.0f,
-                    0.0f,
-                    "km/h",
-                ),
-            )
-        }
-    }
-
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
-        val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
-                dialog.dismiss()
-            }
-        }
-        dialog.apply {
-            setCancelable(false)
-            setContentView(view)
-            show()
-        }
+    private fun getInitialDataSet(): List<TruckProfileSettingsModel> = buildList {
+        add(
+            TruckProfileSettingsModel(
+                title = getString(R.string.weight), type = ESeekBarValuesType.DoubleType,
+                minValueText = "3 t", currentValueText = "3.0 t", maxValueText = "50 t",
+                minDoubleValue = 3.0f, currentDoubleValue = 3.0f, maxDoubleValue = 50.0f,
+                unit = "t",
+            ),
+        )
+        add(
+            TruckProfileSettingsModel(
+                title = getString(R.string.height), type = ESeekBarValuesType.DoubleType,
+                minValueText = "1.8 m", currentValueText = "1.8 m", maxValueText = "5 m",
+                minDoubleValue = 1.8f, currentDoubleValue = 1.8f, maxDoubleValue = 5.0f,
+                unit = "m",
+            ),
+        )
+        add(
+            TruckProfileSettingsModel(
+                title = getString(R.string.length), type = ESeekBarValuesType.DoubleType,
+                minValueText = "5 m", currentValueText = "5.0 m", maxValueText = "20 m",
+                minDoubleValue = 5.0f, currentDoubleValue = 5.0f, maxDoubleValue = 20.0f,
+                unit = "m",
+            ),
+        )
+        add(
+            TruckProfileSettingsModel(
+                title = getString(R.string.width), type = ESeekBarValuesType.DoubleType,
+                minValueText = "2 m", currentValueText = "2.0 m", maxValueText = "4 m",
+                minDoubleValue = 2f, currentDoubleValue = 2f, maxDoubleValue = 4f,
+                unit = "m",
+            ),
+        )
+        add(
+            TruckProfileSettingsModel(
+                title = getString(R.string.axle_weight), type = ESeekBarValuesType.DoubleType,
+                minValueText = "1.5 t", currentValueText = "1.5 t", maxValueText = "10 t",
+                minDoubleValue = 1.5f, currentDoubleValue = 1.5f, maxDoubleValue = 10.0f,
+                unit = "t",
+            ),
+        )
+        add(
+            TruckProfileSettingsModel(
+                title = getString(R.string.max_speed), type = ESeekBarValuesType.IntType,
+                minValueText = "60 km/h", currentValueText = "130 km/h", maxValueText = "250 km/h",
+                minIntValue = 60, currentIntValue = 130, maxIntValue = 250,
+                unit = "km/h",
+            ),
+        )
     }
 
     inner class TruckProfileSettingsAdapter(val dataSet: List<TruckProfileSettingsModel>) :
         RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
             TruckProfileSettingsItemViewHolder(
                 LayoutInflater.from(parent.context)
@@ -428,42 +484,33 @@ class MainActivity : AppCompatActivity() {
             private val seekBar: Slider = view.findViewById(R.id.seek_bar)
 
             fun bind(position: Int) {
-                val isDoubleItem =
-                    getItemViewType(position) == ESeekBarValuesType.DoubleType.ordinal
                 val item = dataSet[position]
-                text.text = item.title
-                if (isDoubleItem) {
-                    minValueText.text = item.minValueText
-                    maxValueText.text = item.maxValueText
+                val isDoubleItem = item.type == ESeekBarValuesType.DoubleType
 
+                text.text = item.title
+                // Min/max labels are common to both item types.
+                minValueText.text = item.minValueText
+                maxValueText.text = item.maxValueText
+
+                // Clear any previous listener before re-binding to avoid accumulation on ViewHolder reuse.
+                seekBar.clearOnChangeListeners()
+
+                if (isDoubleItem) {
                     seekBar.apply {
                         valueTo = item.maxDoubleValue
                         valueFrom = item.minDoubleValue
                         addOnChangeListener { _, value, _ ->
-                            // if (!fromUser) return@addOnChangeListener
-
                             item.currentDoubleValue = value
-                            item.currentValueText = String.format(
-                                Locale.getDefault(),
-                                "%.1f %s",
-                                value,
-                                item.unit,
-                            )
-
+                            item.currentValueText = String.format(Locale.getDefault(), "%.1f %s", value, item.unit)
                             currentValueText.text = item.currentValueText
                         }
                     }
                 } else {
-                    minValueText.text = item.minValueText
-                    maxValueText.text = item.maxValueText
-
                     seekBar.apply {
                         valueTo = item.maxIntValue.toFloat()
                         valueFrom = item.minIntValue.toFloat()
                         stepSize = 1f
                         addOnChangeListener { _, value, _ ->
-                            /**
-                             */
                             item.currentIntValue = value.toInt()
                             item.currentValueText = String.format(
                                 Locale.getDefault(),
@@ -475,43 +522,28 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+
                 val setting = ETruckProfileSettings.entries[position]
                 SdkCall.execute {
-                    val actualVal = when (setting) {
-                        ETruckProfileSettings.Weight ->
-                            preferencesTruckProfile.mass / ETruckProfileUnitConverters.Weight.unit
-
-                        ETruckProfileSettings.Height ->
-                            preferencesTruckProfile.height / ETruckProfileUnitConverters.Height.unit
-
-                        ETruckProfileSettings.Length ->
-                            preferencesTruckProfile.length / ETruckProfileUnitConverters.Length.unit
-
-                        ETruckProfileSettings.Width ->
-                            preferencesTruckProfile.width / ETruckProfileUnitConverters.Width.unit
-
-                        ETruckProfileSettings.AxleWeight ->
-                            preferencesTruckProfile.axleLoad / ETruckProfileUnitConverters.AxleWeight.unit
-
-                        ETruckProfileSettings.MaxSpeed ->
-                            (preferencesTruckProfile.maxSpeed / ETruckProfileUnitConverters.MaxSpeed.unit).toFloat()
-                    }
+                    // Convert from SDK native unit to display unit (e.g. kg → t, cm → m, m/s → km/h).
+                    val actualVal = setting.getValue(preferencesTruckProfile).toFloat() / setting.converter.unit
                     seekBar.value = actualVal
-                    if (isDoubleItem) {
-                        item.currentDoubleValue = actualVal
-                    } else {
-                        item.currentIntValue = actualVal.toInt()
-                    }
 
                     val valueText = if (isDoubleItem) {
                         String.format(Locale.getDefault(), "%.1f %s", actualVal, item.unit)
                     } else {
                         String.format(Locale.getDefault(), "%d %s", actualVal.toInt(), item.unit)
                     }
-
                     item.currentValueText = valueText
                     currentValueText.text = valueText
+
+                    if (isDoubleItem) {
+                        item.currentDoubleValue = actualVal
+                    } else {
+                        item.currentIntValue = actualVal.toInt()
+                    }
                 }
+
                 seekBar.contentDescription = item.title
             }
         }

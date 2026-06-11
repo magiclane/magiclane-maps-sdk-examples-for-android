@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -18,7 +18,6 @@ import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.screens
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.util.CarAppNotifications
 import com.magiclane.sdk.examples.androidautoroutenavigation.app.AppProcess
 import com.magiclane.sdk.examples.androidautoroutenavigation.services.NavigationInstance
-import com.magiclane.sdk.routesandnavigation.NavigationInstruction
 import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.PermissionsListener
@@ -27,32 +26,27 @@ import com.magiclane.sdk.util.SdkCall
 class NavigationController(context: CarContext, private val startNavWithRoute: Route?) :
     NavigationScreen(context) {
 
-    private val instr: NavigationInstruction?
-        get() = NavigationInstance.currentInstruction
-
     private var permissionListener: PermissionsListener? = null
 
     override fun onCreate() {
         super.onCreate()
 
-        SdkCall.execute {
-            NavigationInstance.stopNavigation()
-        }
+        SdkCall.execute { NavigationInstance.stopNavigation() }
 
         val permissions = NavigationInstance.permissionsRequired
 
         val onPermissionsGranted = {
             SdkCall.execute {
                 startNavWithRoute?.let {
-                    NavigationInstance.startNavigation(startNavWithRoute)
-                    // NavigationInstance.startSimulation(startNavWithRoute)
+                    NavigationInstance.startNavigation(it)
+                    // NavigationInstance.startSimulation(it)
                 }
             }
         }
 
         val alreadyHave = PermissionsHelper.hasPermissions(context, permissions, true)
-
         if (!alreadyHave) {
+            // Wait for the user to grant permissions before starting navigation.
             permissionListener = object : PermissionsListener() {
                 override fun onPermissionsStatusChanged() {
                     val have = PermissionsHelper.hasPermissions(context, permissions, true)
@@ -70,31 +64,25 @@ class NavigationController(context: CarContext, private val startNavWithRoute: R
 
     override fun onDestroy() {
         permissionListener?.let { PermissionsHelper.instance?.removeListener(it) }
-
         Service.session?.navigationManager?.navigationEnded()
         CarAppNotifications.eraseNotification()
     }
 
     override fun onResume() {
         super.onResume()
-
         SdkCall.execute {
-            mapView?.let { mapView ->
-                if (!mapView.isFollowingPosition()) {
-                    mapView.followPosition()
-                }
-            }
-            updateActionsMapFollowing()
+            mapView?.let { if (!it.isFollowingPosition()) it.followPosition() }
+            updateActionStrips(isFollowing = true)
         }
     }
 
+    // Mirrors the "×" button in the bottom navigation panel (handled by Service.onStopNavigation).
     override fun onBackPressed() {
         NavigationInstance.stopNavigation()
         Service.pop(true)
     }
 
-    override fun updateData() {
-    }
+    override fun updateData() {}
 
     override fun updateMapView() {
         SdkCall.execute {
@@ -105,7 +93,6 @@ class NavigationController(context: CarContext, private val startNavWithRoute: R
             }
 
             mapView?.hideRoutes()
-
             NavigationInstance.currentRoute?.let { route ->
                 mapView?.preferences?.routes?.add(route, true)
             }
@@ -113,72 +100,46 @@ class NavigationController(context: CarContext, private val startNavWithRoute: R
     }
 
     override fun onMapFollowChanged(following: Boolean) {
-        if (following) {
-            updateActionsMapFollowing()
-        } else {
-            updateActionsMapNotFollowing()
-        }
-
+        updateActionStrips(isFollowing = following)
         invalidate()
     }
 
     fun onNavigationStarted() {
         SdkCall.execute {
-            mapView?.let { mapView ->
-                if (!mapView.isFollowingPosition()) {
-                    mapView.followPosition()
-                }
-            }
+            mapView?.let { if (!it.isFollowingPosition()) it.followPosition() }
         }
-
         Service.session?.navigationManager?.navigationStarted()
     }
 
-    private fun updateActionsMapFollowing() {
+    // Rebuilds both action strips based on whether the map is currently following the user's position.
+    // When following: show the report button. When not following: show the re-centre button.
+    private fun updateActionStrips(isFollowing: Boolean) {
         actionStripModelList.clear()
         mapActionStripModelList.clear()
 
-        // top actions
+        // Top-right strip: back button stops navigation and pops to root.
         actionStripModelList.add(UIActionModel.backModel())
 
-        // side actions
+        // Side strip: pan toggle + context-sensitive action.
         mapActionStripModelList.add(UIActionModel.panModel())
         mapActionStripModelList.add(
-            UIActionModel(
-                iconId = R.drawable.report_24px,
-                onClicked = onClicked@{
-                    if (Service.topScreen != this) {
-                        return@onClicked
-                    }
-
-                    Service.pushScreen(ReportCategoriesController(context))
-                },
-            ),
-        )
-
-        invalidate()
-    }
-
-    private fun updateActionsMapNotFollowing() {
-        actionStripModelList.clear()
-        mapActionStripModelList.clear()
-
-        // top actions
-        actionStripModelList.add(UIActionModel.backModel())
-
-        // side actions
-        mapActionStripModelList.add(UIActionModel.panModel())
-        mapActionStripModelList.add(
-            UIActionModel(
-                iconId = R.drawable.ic_gps_fixed_white_24dp,
-                onClicked = onClicked@{
-                    if (Service.topScreen != this) {
-                        return@onClicked
-                    }
-
-                    SdkCall.execute { mapView?.followPosition() }
-                },
-            ),
+            if (isFollowing) {
+                UIActionModel(
+                    iconId = R.drawable.report_24px,
+                    onClicked = onClicked@{
+                        if (Service.topScreen != this) return@onClicked
+                        Service.pushScreen(ReportCategoriesController(context))
+                    },
+                )
+            } else {
+                UIActionModel(
+                    iconId = R.drawable.ic_gps_fixed_white_24dp,
+                    onClicked = onClicked@{
+                        if (Service.topScreen != this) return@onClicked
+                        SdkCall.execute { mapView?.followPosition() }
+                    },
+                )
+            },
         )
 
         invalidate()

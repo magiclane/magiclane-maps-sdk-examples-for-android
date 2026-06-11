@@ -10,5 +10,6 @@
     <color name="on_surface">#211D2A</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+    <color name="main_background">#E8E3E3</color>
 </resources>
 

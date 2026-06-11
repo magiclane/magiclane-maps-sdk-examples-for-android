@@ -95,9 +95,9 @@
             app:iconSize="@dimen/map_button_icon"
             app:iconTint="@color/black"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:marginBottomWithSystemWindowInsets="@{@dimen/map_buttons_margin}"
-            app:marginLeftWithSystemWindowInsets="@{@dimen/map_buttons_margin}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/map_buttons_margin}"
             tools:ignore="ContentDescription" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

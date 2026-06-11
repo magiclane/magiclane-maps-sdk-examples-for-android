@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".MainActivity">
+
+        <com.magiclane.sdk.core.GemSurfaceView
+            android:id="@+id/gem_surface_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/primary"
+            app:layout_constraintTop_toTopOf="parent"
+            app:title="@string/app_name"
+            app:titleTextColor="@color/on_primary"
+            app:paddingTopWithSystemWindowInsets='@{"8dp"}'
+            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
+            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
+            android:paddingBottom="12dp"
+            />
+
+        <include
+            android:id="@+id/navigation_speed_panel"
+            layout="@layout/navigation_speed_panel"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/nav_speed_panel_height"
+            android:layout_marginTop="@dimen/route_status_text_lateral_padding"
+            app:layout_constraintTop_toBottomOf="@id/toolbar"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:visibility="gone"/>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/follow_gps_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/big_padding"
+            android:src="@drawable/ic_baseline_gps_fixed_24"
+            android:visibility="gone"
+            app:backgroundTint="@color/primary"
+            app:tint="@color/on_primary"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            tools:ignore="ContentDescription" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

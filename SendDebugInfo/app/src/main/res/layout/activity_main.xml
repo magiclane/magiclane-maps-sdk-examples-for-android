@@ -46,10 +46,9 @@
             android:text="@string/button_text"
             android:visibility="gone"
             app:backgroundTint="@color/primary"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:layout_constraintTop_toBottomOf="@id/toolbar"
             app:tint="@color/on_primary"
             tools:ignore="ContentDescription" />
 

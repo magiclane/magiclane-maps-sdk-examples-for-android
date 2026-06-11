@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -8,12 +8,15 @@
 package com.magiclane.sdk.examples.mapselectioncompose
 
 import android.annotation.SuppressLint
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.lifecycle.ViewModel
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.AndroidViewModel
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSurfaceView
@@ -53,7 +56,9 @@ import com.magiclane.sdk.util.GemUtilImages
 import com.magiclane.sdk.util.SdkCall
 import java.util.Locale
 
-class MapSelectionModel : ViewModel() {
+// AndroidViewModel (rather than a plain ViewModel) so that error messages can be resolved with an
+// application Context via GemError.getMessage(errorCode, context).
+class MapSelectionModel(application: Application) : AndroidViewModel(application) {
 
     // data
     var safetyCameraInfo: SafetyCameraInfo? by mutableStateOf(null)
@@ -75,17 +80,37 @@ class MapSelectionModel : ViewModel() {
 
     // utils
     var followGpsButtonIsVisible by mutableStateOf(false)
-    private var visibleArea = Rect(0, 0, 0, 0)
     private var routesList = ArrayList<Route>()
     private lateinit var animation: Animation
-    var bottomPartHeight: Int = 0
     var padding = 0
     var detailsPanelImageSize: Int = 0
     var overlayImageSize: Int = 0
     var invokeHighlight by mutableStateOf(false)
     var highlightEffect: () -> Unit = {}
 
+    // Layout state reported by the UI layer, used to keep the Magic Lane logo and the camera
+    // centering clear of the system bars and the info panel.
+    var isLandscape = false
+
+    // Measured extent of the info panel: its height when it spans the bottom (portrait) and its
+    // width when it is a card pinned to the bottom-left corner (landscape).
+    var panelHeightPx = 0
+    var panelWidthPx = 0
+
+    // Free map area (clear of the system bars / cutout and the info panel), deflated by [padding].
+    // Used as the viewport when centering on routes / landmarks.
+    private var visibleArea = Rect(0, 0, 0, 0)
+
+    // Kept so map areas can be refreshed (e.g. when the panel is hidden) without the UI passing it.
+    private var surfaceView: GemSurfaceView? = null
+
+    // Resolves an SDK error code to a localized message on the SDK thread.
+    private fun errorText(errorCode: Int): String =
+        SdkCall.runSynced { GemError.getMessage(errorCode, getApplication()) } ?: ""
+
     fun initialize(gemSurfaceView: GemSurfaceView) {
+        surfaceView = gemSurfaceView
+
         // create routing service
         routingService = RoutingService(
             onStarted = {
@@ -114,7 +139,7 @@ class MapSelectionModel : ViewModel() {
                     else ->
                         {
                             // There was a problem at computing the routing operation.
-                            errorMessage = GemError.getMessage(errorCode)
+                            errorMessage = errorText(errorCode)
                         }
                 }
             },
@@ -132,7 +157,8 @@ class MapSelectionModel : ViewModel() {
                 hideBottomView(this)
             }
 
-            // set on map touch
+            // Single tap selects, in priority order, a route, traffic event, the current
+            // position, a point of interest or a map overlay under the cursor.
             onTouch = { xy ->
                 SdkCall.execute {
                     cursorScreenPosition = xy
@@ -153,10 +179,14 @@ class MapSelectionModel : ViewModel() {
                         return@execute
                     }
 
-                    if (highlightOverlay(this)) {
-                        return@execute
-                    }
+                    highlightOverlay(this)
+                }
+            }
 
+            // Long press selects the closest street under the cursor.
+            onLongDown = { xy ->
+                SdkCall.execute {
+                    cursorScreenPosition = xy
                     highlightStreet(this)
                 }
             }
@@ -234,7 +264,7 @@ class MapSelectionModel : ViewModel() {
                     }
                 }
             } else if (errorCode != GemError.Cancel) {
-                errorMessage = GemError.getMessage(errorCode)
+                errorMessage = errorText(errorCode)
             }
 
             progressBarIsVisible = false
@@ -253,7 +283,7 @@ class MapSelectionModel : ViewModel() {
             ) ?: GemError.NoError
 
             if (errorCode != GemError.NoError) {
-                errorMessage = GemError.getMessage(errorCode)
+                errorMessage = errorText(errorCode)
             } else {
                 progressBarIsVisible = true
                 trafficEvent?.referencePoint?.let {
@@ -932,20 +962,70 @@ class MapSelectionModel : ViewModel() {
         mapView?.let {
             deactivateHighlights(it)
         }
+        // Forget the panel extent so that re-showing the panel at the same size is still detected
+        // as a change by the panel's onGloballyPositioned guard, forcing a focus-viewport refresh.
+        panelHeightPx = 0
+        panelWidthPx = 0
+        // The panel is gone: give the freed space back to the map (and the Magic Lane logo).
+        updateMapAreas()
     }
 
     fun isBottomViewVisible() =
         socialReportInfo != null || locationDetailsInfo != null || safetyCameraInfo != null || trafficEventInfo != null || routeInfo != null
 
-    fun setVisibleArea(gemSurfaceView: GemSurfaceView) = SdkCall.execute {
-        gemSurfaceView.mapView?.viewport?.let { vp ->
-            visibleArea = Rect(
-                vp.x + padding,
-                vp.y + padding,
-                vp.width - padding,
-                vp.height - bottomPartHeight - padding,
-            )
+    // Recomputes the free map area for the current orientation / panel state and applies it to:
+    //  - the map's focus viewport, which anchors the Magic Lane logo inside the visible area, and
+    //  - [visibleArea], the (padded) rectangle used to center routes and landmarks.
+    // The free area is expressed as Rect(left, top, right, bottom) and excludes the system bars,
+    // the display cutout and the info panel (bottom edge in portrait, left edge in landscape).
+    fun updateMapAreas(gemSurfaceView: GemSurfaceView? = surfaceView) = SdkCall.runSynced {
+        val view = gemSurfaceView ?: return@runSynced
+        val mapView = view.mapView ?: return@runSynced
+        val viewport = mapView.viewport ?: return@runSynced
+
+        val width = viewport.width
+        val height = viewport.height
+        if (width == 0 || height == 0) return@runSynced
+
+        val insets = ViewCompat.getRootWindowInsets(view)?.getInsets(SYSTEM_INSET_TYPES)
+        val insetLeft = insets?.left ?: 0
+        val insetTop = insets?.top ?: 0
+        val insetRight = insets?.right ?: 0
+        val insetBottom = insets?.bottom ?: 0
+        val panelVisible = isBottomViewVisible()
+
+        val left: Int
+        val top = insetTop
+        val right = (width - insetRight).coerceAtLeast(insetLeft + 1)
+        val bottom: Int
+
+        if (isLandscape) {
+            // The panel hugs the bottom-left corner, so it pushes the free area's left edge inward.
+            left = if (panelVisible && panelWidthPx > 0) {
+                panelWidthPx.coerceIn(insetLeft, right - 1)
+            } else {
+                insetLeft
+            }
+            bottom = (height - insetBottom).coerceAtLeast(top + 1)
+        } else {
+            // The panel spans the bottom edge, so it raises the free area's bottom edge.
+            left = insetLeft
+            bottom = if (panelVisible && panelHeightPx > 0) {
+                (height - panelHeightPx).coerceIn(top + 1, height)
+            } else {
+                (height - insetBottom).coerceAtLeast(top + 1)
+            }
         }
+
+        // Logo placement uses the full free area; centering uses a padded version so routes are
+        // not drawn flush against the edges.
+        mapView.preferences?.focusViewport = Rect(left, top, right, bottom)
+        visibleArea = Rect(
+            (left + padding).coerceAtMost(right - 1),
+            (top + padding).coerceAtMost(bottom - 1),
+            (right - padding).coerceAtLeast(left + 1),
+            (bottom - padding).coerceAtLeast(top + 1),
+        )
     }
 
     fun invokeHighlightEffect() = SdkCall.execute {
@@ -1013,5 +1093,11 @@ class MapSelectionModel : ViewModel() {
         }
 
         return description
+    }
+
+    companion object {
+        // Window insets the map's focus viewport (and the info panel) must stay clear of.
+        private val SYSTEM_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
     }
 }

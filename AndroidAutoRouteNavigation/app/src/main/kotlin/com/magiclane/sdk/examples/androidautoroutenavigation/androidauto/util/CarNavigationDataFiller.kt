@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -19,8 +19,7 @@ import com.magiclane.sdk.routesandnavigation.NavigationInstruction
 import com.magiclane.sdk.routesandnavigation.TurnDetails
 import com.magiclane.sdk.util.GemUtil
 
-// / gather nav data.
-
+// Populates a CarNavigationData instance from the current NavigationInstance state.
 @Suppress("MemberVisibilityCanBePrivate")
 object CarNavigationDataFiller {
     fun fillNavData(navigationData: CarNavigationData) {

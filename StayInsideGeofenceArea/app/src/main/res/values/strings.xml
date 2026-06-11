@@ -2,4 +2,12 @@
     <string name="app_name">Stay Inside Geofence Area</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+    <string name="invalid_token">This example requires a valid token. If you don\'t have a token, check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="routing_service_error">Routing service error: %1$s</string>
+    <string name="add_geofence_area_error">Error adding geofence area: %1$s</string>
+    <string name="login_error">Login error: %1$s</string>
+    <string name="register_external_login_error">Error registering external login: %1$s</string>
+    <string name="calculate_route_error">Calculate route error: %1$s</string>
 </resources>

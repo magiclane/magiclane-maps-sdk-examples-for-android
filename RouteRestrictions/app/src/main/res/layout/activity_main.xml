@@ -13,19 +13,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/primary"
-            android:paddingBottom="12dp"
-            app:layout_constraintTop_toTopOf="parent"
-            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingTopWithSystemWindowInsets='@{"8dp"}'
-            app:title="@string/app_name"
-            app:titleTextColor="@color/on_primary" />
-
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progress_bar"
             android:layout_width="wrap_content"
@@ -39,7 +26,7 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/top_panel"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="@dimen/top_panel_height"
             android:layout_margin="@dimen/big_padding"
             android:background="@android:color/black"
@@ -48,7 +35,8 @@
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/toolbar"
+            app:layout_constraintTop_toTopOf="parent"
+            app:marginTopWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             >
@@ -97,7 +85,7 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/restriction_panel"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/big_padding"
             android:layout_marginEnd="@dimen/big_padding"
@@ -140,7 +128,7 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/bottom_panel"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="@dimen/turn_image_size"
             android:layout_margin="@dimen/big_padding"
             android:background="@android:color/white"

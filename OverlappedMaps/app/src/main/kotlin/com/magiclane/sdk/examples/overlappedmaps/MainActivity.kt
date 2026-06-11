@@ -10,21 +10,42 @@ package com.magiclane.sdk.examples.overlappedmaps
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.RectF
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.d3scene.EWatermarkPosition
 import com.magiclane.sdk.d3scene.MapView
 import com.magiclane.sdk.examples.overlappedmaps.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.overlappedmaps.databinding.DialogLayoutBinding
 import com.magiclane.sdk.util.SdkCall
+import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
+/**
+ * Demonstrates how to render two maps at once: a full-screen default map view with a
+ * smaller second map view overlapped on top of it at the bottom of the screen.
+ */
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        // System bars + display cutout: the insets the visible map area must stay clear of.
+        private val SYSTEM_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+
+        // Position and size (as a fraction of the screen) of the overlapped second map view.
+        private val SECOND_VIEW_RECT = RectF(0.0f, 0.0f, 0.5f, 0.5f)
+
+        // Size (in millimeters) and opacity of the Magic Lane watermark logo.
+        private const val LOGO_SIZE_MM = 10.0f
+        private const val LOGO_ALPHA = 1.0f
+    }
 
     private lateinit var binding: ActivityMainBinding
 
@@ -35,61 +56,85 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        configureSystemBars()
 
-        setupSdkCallbacks()
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
+        registerSdkListeners()
     }
 
     override fun onDestroy() {
-        if (::binding.isInitialized) {
-            binding.gemSurfaceView.onSdkInitFailed = {}
-        }
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
-        SdkSettings.onApiTokenRejected = {}
-        secondMapView = null
-
         super.onDestroy()
-
+        clearSdkListeners()
         // Deinitialize the SDK.
         GemSdk.release()
         exitProcess(0)
     }
 
-    private fun setupSdkCallbacks() {
+    // Registers all SDK surface and settings callbacks.
+    private fun registerSdkListeners() {
         binding.gemSurfaceView.onSdkInitFailed = { error ->
+            // The SDK is not initialized yet, so resolve the message directly (no SdkCall).
             val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
-            showErrorDialogOnUiThread(errorMessage) { finish() }
+            runOnAliveUi { showDialog(errorMessage) { finish() } }
         }
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
-            if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        binding.gemSurfaceView.onDefaultMapViewCreated = { mapView ->
+            // Pin the Magic Lane watermark logo to the bottom-right corner of the full-screen
+            // (first) map view, where it stays clear of the overlapped second view.
+            mapView.setWatermarkLogoProperties(EWatermarkPosition.EWPBottomRight, LOGO_SIZE_MM, LOGO_ALPHA)
 
-                SdkCall.execute {
-                    binding.gemSurfaceView.gemScreen?.let { screen ->
-                        val secondViewRect = RectF(0.0f, 0.0f, 0.5f, 0.5f)
-                        secondMapView = MapView.produce(screen, secondViewRect, null, true)
-                    }
-                }
+            // Once the default (full-screen) map exists, overlap a second map view on top of it.
+            binding.gemSurfaceView.gemScreen?.let { screen ->
+                secondMapView = MapView.produce(screen, SECOND_VIEW_RECT, null, true)
             }
+
+            // Keep the watermark logo clear of the system window insets.
+            updateFocusViewport()
+        }
+
+        // Re-align the logo whenever the surface is resized (e.g. rotation).
+        binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
         }
 
         SdkSettings.onApiTokenRejected = {
-            showErrorDialogOnUiThread(getString(R.string.token_rejected_message))
+            runOnAliveUi { showDialog(getString(R.string.token_rejected_message)) }
         }
     }
 
-    private fun configureSystemBars() {
-        // Keep status bar symbols white even with edge-to-edge content.
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+    // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+        binding.gemSurfaceView.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
+        }
+        secondMapView = null
     }
 
-    private fun showErrorDialogOnUiThread(text: String, onDismiss: (() -> Unit)? = null) {
-        runOnUiThread {
-            showDialog(text, onDismiss)
+    /**
+     * Adjusts the focus viewport of the main (full-screen) map view so its bottom-right
+     * Magic Lane watermark logo stays clear of the system insets. The view spans the whole
+     * screen, so it is inset on all four edges by the system bars and display cutout.
+     */
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            val mapView = binding.gemSurfaceView.mapView ?: return@runSynced
+            val viewport = mapView.viewport ?: return@runSynced
+            val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(SYSTEM_INSET_TYPES)
+
+            val left = insets?.left ?: 0
+            val top = insets?.top ?: 0
+            val right = (viewport.width - (insets?.right ?: 0)).coerceAtLeast(left)
+            val bottom = (viewport.height - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            mapView.preferences?.focusViewport = Rect(left, top, right, bottom)
         }
     }
 
+    /** Shows a non-dismissable bottom-sheet error dialog. */
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
         if (!isActivityAlive()) return
 
@@ -111,7 +156,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun isActivityAlive(): Boolean {
-        return !isFinishing && !isDestroyed
+    // Runs the block on the main thread, but only while the activity is still alive.
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
     }
+
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
 }

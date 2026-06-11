@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+  SPDX-FileCopyrightText: 2025-2026 Magic Lane International B.V. <info@magiclane.com>
   SPDX-License-Identifier: Apache-2.0
 
   Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -29,8 +29,8 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:configChanges="orientation|keyboardHidden|screenSize|fontScale"
             android:label="@string/app_name"
-            android:screenOrientation="portrait"
             android:theme="@style/Theme.RangeFinder">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -31,7 +31,7 @@ typealias SubPoisScreen = QuickLeftListScreen
 class PoiCategoriesController(context: CarContext) : PoisScreen(context) {
 
     override fun updateData() {
-        title = "Points of interest"
+        title = context.getString(R.string.points_of_interest)
         headerAction = UIActionModel.backModel()
 
         actionStripModelList = ArrayList()

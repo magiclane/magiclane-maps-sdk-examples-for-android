@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -8,6 +8,7 @@
 package com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.controllers
 
 import androidx.car.app.CarContext
+import com.magiclane.sdk.examples.androidautoroutenavigation.R
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.Service
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.controllers.SearchTextController.Companion.asSearchModel
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.model.GenericListItemModel
@@ -23,7 +24,7 @@ typealias HistoryScreen = ListScreen
 class HistoryController(context: CarContext) : HistoryScreen(context) {
 
     override fun updateData() {
-        title = "History"
+        title = context.getString(R.string.history)
         headerAction = UIActionModel.backModel()
 
         listItemModelList = loadItems()
@@ -35,7 +36,7 @@ class HistoryController(context: CarContext) : HistoryScreen(context) {
         SdkCall.execute {
             val reference = AppProcess.currentPosition
 
-            HistoryInstance.trips.sortByDescending { it -> it.timestamp }
+            HistoryInstance.trips.sortByDescending { it.timestamp }
 
             HistoryInstance.trips.forEach {
                 val model = asSearchModel(it.waypoints.last(), reference) ?: return@forEach

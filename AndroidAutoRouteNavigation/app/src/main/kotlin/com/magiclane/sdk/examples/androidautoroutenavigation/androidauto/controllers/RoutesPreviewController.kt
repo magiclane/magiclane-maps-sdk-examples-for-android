@@ -15,6 +15,7 @@ import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.Time
+import com.magiclane.sdk.examples.androidautoroutenavigation.R
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.Service
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.model.UIActionModel
 import com.magiclane.sdk.examples.androidautoroutenavigation.androidauto.model.UIRouteModel
@@ -80,12 +81,12 @@ class RoutesPreviewController : PreviewRoutesScreen {
     }
 
     override fun updateData() {
-        title = "Routes"
-        noDataText = "No results"
+        title = context.getString(R.string.routes)
+        noDataText = context.getString(R.string.no_results)
         headerAction = UIActionModel.backModel()
 
         navigateAction = UIActionModel()
-        navigateAction.text = "Start"
+        navigateAction.text = context.getString(R.string.start)
         navigateAction.onClicked = onClicked@{
             if (Service.topScreen != this) {
                 return@onClicked
@@ -104,30 +105,31 @@ class RoutesPreviewController : PreviewRoutesScreen {
         super.onBackPressed()
     }
 
-    fun getSizeInPixels(dpi: Int): Int {
+    // Converts a dp value to pixels using the current display metrics.
+    private fun dpToPixels(dp: Int): Int {
         val metrics = context.resources.displayMetrics
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpi.toFloat(), metrics).toInt()
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(), metrics).toInt()
     }
 
     override fun updateMapView() {
-        if (!isLoading) {
-            SdkCall.execute {
-                val viewport = mapView?.viewport ?: return@execute
-                val visibleArea = Service.instance?.surfaceAdapter?.visibleArea ?: return@execute
+        if (isLoading) return
 
-                val inflate = getSizeInPixels(25)
+        SdkCall.execute {
+            val viewport = mapView?.viewport ?: return@execute
+            val visibleArea = Service.instance?.surfaceAdapter?.visibleArea ?: return@execute
 
-                val left = visibleArea.left + inflate
-                val top = visibleArea.top + inflate
-                val right = viewport.right - (visibleArea.right - inflate)
-                val bottom = viewport.bottom - (visibleArea.bottom - inflate)
+            // Inset the camera viewport so the route fits within the visible panel area.
+            val inflate = dpToPixels(25)
+            val left = visibleArea.left + inflate
+            val top = visibleArea.top + inflate
+            val right = viewport.right - (visibleArea.right - inflate)
+            val bottom = viewport.bottom - (visibleArea.bottom - inflate)
 
-                mapView?.presentRoutes(
-                    RoutingInstance.results,
-                    routeResultSelected,
-                    edgeAreaInsets = Rect(left, top, right, bottom),
-                )
-            }
+            mapView?.presentRoutes(
+                RoutingInstance.results,
+                routeResultSelected,
+                edgeAreaInsets = Rect(left, top, right, bottom),
+            )
         }
     }
 
@@ -172,20 +174,20 @@ class RoutesPreviewController : PreviewRoutesScreen {
 
     companion object {
         private fun asModel(item: Route): UIRouteModel {
-            val navInstr = item.instructions[0]
-            val remainingTime = navInstr.remainingTravelTimeDistance?.totalTime ?: 0
+            val remainingTime = item.instructions[0].remainingTravelTimeDistance?.totalTime ?: 0
 
-            val arrivalTime = Time()
-
-            arrivalTime.setLocalTime()
-            arrivalTime.longValue = arrivalTime.longValue + remainingTime * 1000
+            // Compute ETA by adding remaining seconds to the current local time.
+            val arrivalTime = Time().also {
+                it.setLocalTime()
+                it.longValue += remainingTime * 1000L
+            }
 
             val etaText = String.format("%d:%02d", arrivalTime.hour, arrivalTime.minute)
 
             return UIRouteModel(
-                etaText,
-                item.timeDistance?.totalDistance ?: 0,
-                item.timeDistance?.totalTime?.toLong() ?: 0L,
+                title = etaText,
+                totalDistance = item.timeDistance?.totalDistance ?: 0,
+                totalTime = item.timeDistance?.totalTime?.toLong() ?: 0L,
             )
         }
     }

@@ -5,9 +5,9 @@
     <dimen name="small_text_size">14sp</dimen>
     <dimen name="standard_text_size">16sp</dimen>
     <dimen name="medium_text_size">20sp</dimen>
-    <dimen name="button_container_height">52dp</dimen>
+    <dimen name="button_container_height">60dp</dimen>
     <dimen name="elevation_button_size">34dp</dimen>
-    <dimen name="steepness_icon_size">18dp</dimen>
+    <dimen name="steepness_icon_size">24dp</dimen>
     <dimen name="line_marker_width">3dp</dimen>
     <dimen name="small_padding">4dp</dimen>
     <dimen name="pin_text_size">10sp</dimen>
@@ -16,4 +16,6 @@
     <dimen name="bar_chart_height">40dp</dimen>
     <dimen name="elevation_chart_text_size">12sp</dimen>
     <dimen name="no_extra_inset">0dp</dimen>
+    <dimen name="route_profile_padding">5dp</dimen>
+    <dimen name="map_edge_padding">20dp</dimen>
 </resources>

@@ -5,7 +5,7 @@
     android:layout_width="@dimen/button_container_height"
     android:layout_height="@dimen/button_container_height">
 
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/image"
         android:layout_width="@dimen/elevation_button_size"
         android:layout_height="@dimen/elevation_button_size"
@@ -16,7 +16,7 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:ignore="ContentDescription" />
 
-    <TextView
+    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

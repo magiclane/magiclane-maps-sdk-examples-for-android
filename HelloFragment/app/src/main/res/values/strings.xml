@@ -11,4 +11,5 @@
     <string name="error">Error</string>
     <string name="ok">OK</string>
     <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="token_rejected_message">The API token was rejected. Please check your token and try again.</string>
 </resources>

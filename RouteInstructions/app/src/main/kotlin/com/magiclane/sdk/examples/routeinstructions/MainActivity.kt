@@ -52,7 +52,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 else -> {
                     // There was a problem at computing the routing operation.
-                    showDialog(getString(R.string.routing_error, GemError.getMessage(errorCode, this)))
+                    showDialog(
+                        getString(R.string.routing_error, SdkCall.runSynced { GemError.getMessage(errorCode, this) }),
+                    )
                     EspressoIdlingResource.decrement()
                 }
             }
@@ -70,7 +72,8 @@ class MainActivity : AppCompatActivity() {
 
         val error = GemSdk.initSdkWithDefaults(this)
         if (error != GemError.NoError) {
-            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            val errorMessage =
+                getString(R.string.sdk_initialization_failed, SdkCall.runSynced { GemError.getMessage(error, this) })
             runOnUiThread {
                 showDialog(errorMessage) { finish() }
             }

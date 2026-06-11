@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="turn_image_size">50dp</dimen>
+    <dimen name="navigation_image_size">46dp</dimen>
+    <dimen name="sign_post_image_size">100dp</dimen>
+    <dimen name="nav_top_panel_turn_margin">20dp</dimen>
+</resources>

@@ -16,13 +16,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
+        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/status_text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/nav_top_panel_padding"
             android:gravity="center_horizontal"
-            android:textColor="@android:color/white"
+            android:textColor="@color/white"
             android:textSize="@dimen/nav_top_panel_status_text_size"
             android:maxLines="3"
             android:ellipsize="end"
@@ -47,7 +47,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/road_instruction_container">
 
-            <ImageView
+            <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/turn_image"
                 android:layout_width="@dimen/nav_top_panel_big_img_size"
                 android:layout_height="@dimen/nav_top_panel_big_img_size"
@@ -61,19 +61,19 @@
                 android:layoutDirection="locale"
                 android:orientation="horizontal">
 
-                <TextView
+                <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/turn_distance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/white"
+                    android:textColor="@color/white"
                     android:textSize="@dimen/nav_top_panel_turn_big_text_size"
                     android:textStyle="bold" />
 
-                <TextView
+                <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/turn_distance_unit"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/white"
+                    android:textColor="@color/white"
                     android:textSize="@dimen/nav_top_panel_turn_small_text_size"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -98,7 +98,7 @@
                 android:orientation="vertical"
                 tools:ignore="UseCompoundDrawables">
 
-                <ImageView
+                <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/road_code"
                     android:layout_width="@dimen/nav_top_panel_road_img_size"
                     android:layout_height="@dimen/nav_top_panel_road_img_size"
@@ -106,7 +106,7 @@
                     android:visibility="gone"
                     tools:ignore="ContentDescription" />
 
-                <TextView
+                <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/turn_instruction"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -114,11 +114,11 @@
                     android:ellipsize="end"
                     android:gravity="center"
                     android:maxLines="3"
-                    android:textColor="@android:color/white"
+                    android:textColor="@color/white"
                     android:textSize="@dimen/nav_top_panel_turn_medium_text_size" />
             </LinearLayout>
 
-            <ImageView
+            <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/sign_post"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -127,11 +127,10 @@
         </FrameLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/traffic_panel"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:background="@drawable/bottom_rounded_white_button"
         android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/navigation_panel"
@@ -139,10 +138,15 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <FrameLayout
+            android:id="@+id/traffic_icon_container"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent">
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
 
-            <ImageView android:id="@+id/traffic_image"
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/traffic_image"
                 android:layout_width="@dimen/nav_top_panel_traffic_img_size"
                 android:layout_height="@dimen/nav_top_panel_traffic_img_size"
                 android:layout_gravity="center_vertical"
@@ -152,7 +156,8 @@
                 android:layout_marginBottom="@dimen/nav_top_panel_padding"
                 tools:ignore="ContentDescription" />
 
-            <ImageView android:id="@+id/end_of_section_image"
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/end_of_section_image"
                 android:layout_width="@dimen/nav_top_panel_traffic_img_size"
                 android:layout_height="@dimen/nav_top_panel_traffic_img_size"
                 android:layout_gravity="center_vertical"
@@ -164,206 +169,142 @@
                 tools:ignore="ContentDescription" />
         </FrameLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/traffic_text_area"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_gravity="center_vertical"
-            android:layout_marginEnd="@dimen/nav_top_panel_padding">
+            app:layout_constraintStart_toEndOf="@id/traffic_icon_container"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
 
-            <TextView android:id="@+id/traffic_event_description"
-                android:layout_width="wrap_content"
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/traffic_event_description"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textColor="@android:color/black"
+                android:textColor="@color/black"
                 android:textStyle="bold"
-                android:textSize="@dimen/nav_top_panel_traffic_big_text_size" />
+                android:textSize="@dimen/nav_top_panel_traffic_big_text_size"
+                android:layout_marginEnd="@dimen/nav_top_panel_padding"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/traffic_info_row" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/traffic_info_row"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
                 android:layout_marginBottom="@dimen/nav_top_panel_traffic_margin_bottom"
-                android:layoutDirection="locale" >
+                android:layoutDirection="locale"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/traffic_event_description"
+                app:layout_constraintBottom_toBottomOf="parent">
 
-                <TextView android:id="@+id/distance_to_traffic_prefix"
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/distance_to_traffic_prefix"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/black"
+                    android:textColor="@color/black"
                     android:textStyle="bold"
-                    android:textSize="@dimen/nav_top_panel_traffic_small_text_size"/>
+                    android:textSize="@dimen/nav_top_panel_traffic_small_text_size"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/distance_to_traffic"
+                    app:layout_constraintHorizontal_chainStyle="packed"
+                    app:layout_constraintHorizontal_bias="0" />
 
-                <TextView android:id="@+id/distance_to_traffic"
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/distance_to_traffic"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/black"
+                    android:textColor="@color/black"
                     android:textStyle="bold"
-                    android:textSize="@dimen/nav_top_panel_traffic_big_text_size"/>
+                    android:textSize="@dimen/nav_top_panel_traffic_big_text_size"
+                    app:layout_constraintStart_toEndOf="@id/distance_to_traffic_prefix"
+                    app:layout_constraintEnd_toStartOf="@id/distance_to_traffic_unit"
+                    app:layout_constraintBaseline_toBaselineOf="@id/distance_to_traffic_unit" />
 
-                <TextView android:id="@+id/distance_to_traffic_unit"
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/distance_to_traffic_unit"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/black"
+                    android:textColor="@color/black"
                     android:textStyle="bold"
-                    android:textSize="@dimen/nav_top_panel_traffic_small_text_size"/>
+                    android:textSize="@dimen/nav_top_panel_traffic_small_text_size"
+                    app:layout_constraintStart_toEndOf="@id/distance_to_traffic"
+                    app:layout_constraintEnd_toStartOf="@id/distance_to_traffic_suffix"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
 
-                <TextView android:id="@+id/distance_to_traffic_suffix"
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/distance_to_traffic_suffix"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/black"
+                    android:textColor="@color/black"
                     android:textStyle="bold"
-                    android:textSize="@dimen/nav_top_panel_traffic_small_text_size"/>
+                    android:textSize="@dimen/nav_top_panel_traffic_small_text_size"
+                    app:layout_constraintStart_toEndOf="@id/distance_to_traffic_unit"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
 
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1" />
-
-                <TextView android:id="@+id/traffic_delay_time"
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/traffic_delay_time"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/black"
+                    android:textColor="@color/black"
                     android:textStyle="bold"
-                    android:textSize="@dimen/nav_top_panel_traffic_big_text_size"/>
+                    android:textSize="@dimen/nav_top_panel_traffic_big_text_size"
+                    app:layout_constraintEnd_toStartOf="@id/traffic_delay_time_unit"
+                    app:layout_constraintBaseline_toBaselineOf="@id/traffic_delay_time_unit"
+                    app:layout_constraintHorizontal_chainStyle="packed"
+                    app:layout_constraintHorizontal_bias="1"
+                    app:layout_constraintStart_toStartOf="parent" />
 
-                <TextView android:id="@+id/traffic_delay_time_unit"
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/traffic_delay_time_unit"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/black"
+                    android:layout_marginEnd="@dimen/nav_top_panel_traffic_delay_margin"
+                    android:textColor="@color/black"
                     android:textStyle="bold"
-                    android:textSize="@dimen/nav_top_panel_traffic_small_text_size"/>
+                    android:textSize="@dimen/nav_top_panel_traffic_small_text_size"
+                    app:layout_constraintEnd_toStartOf="@id/traffic_delay_distance"
+                    app:layout_constraintStart_toEndOf="@id/traffic_delay_time"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
 
-                <TextView android:id="@+id/traffic_delay_distance"
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/traffic_delay_distance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/nav_top_panel_traffic_delay_margin"
-                    android:textColor="@android:color/black"
+                    android:textColor="@color/black"
                     android:textStyle="bold"
-                    android:textSize="@dimen/nav_top_panel_traffic_big_text_size" />
+                    android:textSize="@dimen/nav_top_panel_traffic_big_text_size"
+                    app:layout_constraintEnd_toStartOf="@id/traffic_delay_distance_unit"
+                    app:layout_constraintStart_toEndOf="@id/traffic_delay_time_unit"
+                    app:layout_constraintBaseline_toBaselineOf="@id/traffic_delay_distance_unit" />
 
-                <TextView android:id="@+id/traffic_delay_distance_unit"
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/traffic_delay_distance_unit"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/black"
+                    android:layout_marginEnd="@dimen/nav_top_panel_padding"
+                    android:textColor="@color/black"
                     android:textStyle="bold"
-                    android:textSize="@dimen/nav_top_panel_traffic_small_text_size"/>
-            </LinearLayout>
-        </LinearLayout>
-    </LinearLayout>
+                    android:textSize="@dimen/nav_top_panel_traffic_small_text_size"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/traffic_delay_distance"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
 
-    <LinearLayout
-        android:id="@+id/alarm_panel"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:background="@drawable/bottom_rounded_white_button"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/traffic_panel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <RelativeLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/alarm_icon_container"
-            android:layout_gravity="center_vertical"
-            android:gravity="center_vertical">
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <ImageView android:id="@+id/alarm_icon"
-                android:layout_width="@dimen/nav_top_panel_alarm_img_size"
-                android:layout_height="@dimen/nav_top_panel_alarm_img_size"
-                android:layout_gravity="center"
-                android:layout_marginLeft="@dimen/nav_top_panel_padding"
-                android:layout_marginRight="@dimen/nav_top_panel_padding"
-                android:layout_marginTop="@dimen/nav_top_panel_padding"
-                android:layout_marginBottom="@dimen/nav_top_panel_padding"
-                tools:ignore="ContentDescription" />
-
-            <TextView
-                android:id="@+id/alarm_score"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_toEndOf="@id/alarm_icon"
-                android:layout_marginStart="-20dp"
-                android:layout_marginTop="-5dp"
-                android:layout_alignParentTop="true"
-                android:gravity="center"
-                android:textColor="@android:color/black"
-                android:textSize="@dimen/nav_top_panel_alarm_small_text_size"
-                android:minWidth="@dimen/nav_top_panel_alarm_min_width"
-                android:visibility="gone"
-                android:background="@drawable/white_badge_circle" />
-
-        </RelativeLayout>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/alarm_distance_container"
-            android:orientation="horizontal"
-            android:layoutDirection="locale"
-            android:layout_gravity="center_vertical">
-
-            <TextView android:id="@+id/distance_to_alarm"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@android:color/black"
-                android:textStyle="bold"
-                android:textSize="@dimen/nov_top_panel_alarm_big_text_size" />
-
-            <TextView android:id="@+id/distance_to_alarm_unit"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@android:color/black"
-                android:textStyle="bold"
-                android:textSize="@dimen/nav_top_panel_alarm_medium_text_size" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/voting_panel"
-            android:orientation="horizontal"
-            android:visibility="gone"
-            android:gravity="end"
-            android:layout_gravity="center_vertical">
-
-            <FrameLayout android:id="@+id/thumb_down_background"
-                android:layout_width="@dimen/nav_top_panel_voting_img_size"
-                android:layout_height="@dimen/nav_top_panel_voting_img_size"
-                android:layout_gravity="center"
-                android:background="@drawable/round_button_background"
-                android:layout_marginLeft="@dimen/nav_top_panel_padding"
-                android:layout_marginRight="@dimen/nav_top_panel_padding"
-                android:layout_marginTop="@dimen/nav_top_panel_padding"
-                android:layout_marginBottom="@dimen/nav_top_panel_padding">
-
-                <ImageView android:id="@+id/thumb_down"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    tools:ignore="ContentDescription" />
-
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/thumb_up_background"
-                android:layout_width="@dimen/nav_top_panel_voting_img_size"
-                android:layout_height="@dimen/nav_top_panel_voting_img_size"
-                android:layout_gravity="center"
-                android:background="@drawable/round_button_background"
-                android:layout_marginLeft="@dimen/nav_top_panel_padding"
-                android:layout_marginRight="@dimen/nav_top_panel_padding"
-                android:layout_marginTop="@dimen/nav_top_panel_padding"
-                android:layout_marginBottom="@dimen/nav_top_panel_padding">
-
-                <ImageView android:id="@+id/thumb_up"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    tools:ignore="ContentDescription" />
-
-            </FrameLayout>
-
-        </LinearLayout>
-
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

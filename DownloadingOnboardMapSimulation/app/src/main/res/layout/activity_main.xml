@@ -44,8 +44,8 @@
             android:layout_width="match_parent"
             android:layout_height="@dimen/top_panel_height"
             android:layout_margin="@dimen/big_padding"
-            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
+            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             android:background="@android:color/black"
             android:gravity="center"
             android:orientation="horizontal"
@@ -164,7 +164,7 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/follow_cursor_button"
+            android:id="@+id/follow_gps_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/big_padding"
@@ -175,6 +175,7 @@
             app:layout_constraintBottom_toTopOf="@id/bottom_panel"
             app:layout_constraintEnd_toEndOf="parent"
             app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             tools:ignore="ContentDescription" />
 
         <androidx.constraintlayout.widget.ConstraintLayout

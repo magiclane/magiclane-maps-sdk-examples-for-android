@@ -35,10 +35,10 @@ import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.SoundPlayingListener
-import com.magiclane.sdk.core.XyF
 import com.magiclane.sdk.core.SoundPlayingPreferences
 import com.magiclane.sdk.core.SoundPlayingService
 import com.magiclane.sdk.core.Time
+import com.magiclane.sdk.core.XyF
 import com.magiclane.sdk.examples.routesimulation.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.routesimulation.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Landmark
@@ -68,6 +68,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         val instructionDistance: String = "",
         val etaText: String = "",
         val rttText: String = "",
+        val rttColor: Int = Color.WHITE,
         val rtdText: String = "",
         val signPostBitmap: Bitmap? = null,
         val roadCodeBitmap: Bitmap? = null,
@@ -85,6 +86,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private val soundPreference = SoundPlayingPreferences()
 
+    // Long.MAX_VALUE ensures the first real image UID never matches, so it is always rendered.
     private var lastTurnImageId: Long = Long.MAX_VALUE
     private var lastTrafficImageId: Long = Long.MAX_VALUE
 
@@ -105,6 +107,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private var distanceToTrafficUnitText = ""
     private var navigationImageSize: Int = 0
 
+    // Captured once at portrait orientation and reused as the base for all subsequent orientation
+    // constraint adjustments, so portrait layout is never recomputed from scratch.
     private lateinit var portraitConstraintSet: ConstraintSet
 
     private var navigationStatus = ENavigationStatus.Running
@@ -151,7 +155,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 SoundPlayingService.play(sound, playingListener, soundPreference)
             }
         },
-        canPlayNavigationSound = true
+        canPlayNavigationSound = true,
     )
 
     // Define a listener that will let us know the progress of the routing process.
@@ -220,7 +224,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         val topVis = binding.topPanel.visibility
         val bottomVis = binding.bottomPanel.visibility
         val trafficVis = binding.trafficPanel.visibility
-        val fabVis = binding.followCursorButton.visibility
+        val fabVis = binding.followGpsButton.visibility
         val progressVis = binding.progressBar.visibility
 
         val panelMargin = resources.getDimensionPixelSize(R.dimen.nav_panel_margin)
@@ -248,7 +252,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         binding.topPanel.visibility = topVis
         binding.bottomPanel.visibility = bottomVis
         binding.trafficPanel.visibility = trafficVis
-        binding.followCursorButton.visibility = fabVis
+        binding.followGpsButton.visibility = fabVis
         binding.progressBar.visibility = progressVis
     }
 
@@ -256,6 +260,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private fun applyCameraFocus() {
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         SdkCall.execute {
+            // In landscape the navigation panel occupies the left 40 % of the screen, so shift the
+            // camera focus point right (0.7) to keep the arrow in the visible map area.
             binding.gemSurfaceView.mapView?.preferences?.followPositionPreferences?.cameraFocus =
                 if (isLandscape) XyF(0.7f, 0.75f) else XyF(0.5f, 0.75f)
         }
@@ -314,6 +320,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         // Release the SDK.
         GemSdk.release()
+        // exitProcess is required because the SDK holds native threads that do not stop on their
+        // own when the Activity is destroyed, which would leave the process alive indefinitely.
         exitProcess(0)
     }
 
@@ -325,10 +333,16 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             }
         }
 
+        binding.gemSurfaceView.onDefaultMapViewCreated = {
+            updateFocusViewport()
+        }
+
         binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
             updateFocusViewport()
         }
 
+        // Delay simulation start until the worldwide road map is fully downloaded and up to date;
+        // the callback is cleared immediately after firing to avoid repeat invocations.
         SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
             if (status == EOffboardListenerStatus.UpToDate) {
                 SdkSettings.onWorldwideRoadMapSupportStatus = {}
@@ -346,6 +360,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private fun clearSdkListeners() {
         SdkSettings.onWorldwideRoadMapSupportStatus = {}
         SdkSettings.onApiTokenRejected = {}
+        binding.gemSurfaceView.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
+        }
     }
 
     private fun enableGPSButton() {
@@ -353,12 +372,12 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         binding.apply {
             gemSurfaceView.mapView?.apply {
                 onExitFollowingPosition = {
-                    followCursorButton.visibility = View.VISIBLE
+                    followGpsButton.visibility = View.VISIBLE
                     setNavigationPanelsVisible(isVisible = false)
                 }
 
                 onEnterFollowingPosition = {
-                    followCursorButton.visibility = View.GONE
+                    followGpsButton.visibility = View.GONE
 
                     val simulationIsActive = SdkCall.execute { navigationService.isSimulationActive() } ?: false
                     if (simulationIsActive) {
@@ -367,19 +386,32 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 }
 
                 // Set on click action for the GPS button.
-                followCursorButton.setOnClickListener {
+                followGpsButton.setOnClickListener {
                     SdkCall.execute { followPosition() }
                 }
             }
         }
     }
 
+    private fun disableGPSButton() {
+        binding.gemSurfaceView.mapView?.apply {
+            onExitFollowingPosition = null
+            onEnterFollowingPosition = null
+            binding.followGpsButton.setOnClickListener(null)
+            binding.followGpsButton.isVisible = false
+        }
+    }
+
     private fun onNavigationEnded(errorCode: ErrorCode = GemError.NoError) {
         runOnUiThread {
             if ((errorCode != GemError.NoError) && (errorCode != GemError.Cancel)) {
-                showDialog(GemError.getMessage(errorCode))
+                val message = SdkCall.runSynced { GemError.getMessage(errorCode, this) } ?: ""
+                if (message.isNotEmpty()) {
+                    showDialog(message)
+                }
             }
             setNavigationPanelsVisible(isVisible = false)
+            disableGPSButton()
         }
 
         SdkCall.execute {
@@ -388,7 +420,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     }
 
     private fun updateNavigationInstruction(instruction: NavigationInstruction) {
-        val distanceToNextTurnWidth = getTextViewWidth(binding.instrDistance, "1000 m")
+        val distanceToNextTurnWidth = getTextViewWidth(binding.instrDistance, "9000 km")
         val availableWidth = topPanelWidth - max(turnImageSize, distanceToNextTurnWidth) - 3 * turnPadding
 
         val navData = SdkCall.execute { collectNavigationUiData(instruction, availableWidth) } ?: return
@@ -400,6 +432,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             instrDistance.text = navData.instructionDistance
             eta.text = navData.etaText
             rtt.text = navData.rttText
+            rtt.setTextColor(navData.rttColor)
             rtd.text = navData.rtdText
 
             val hasSignPost = navData.signPostBitmap != null
@@ -432,13 +465,18 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     }
 
     private fun collectNavigationUiData(instruction: NavigationInstruction, availableWidth: Int): NavigationUiData {
-        val instructionText = instruction.nextStreetName?.takeIf { it.isNotEmpty() } ?: instruction.nextTurnInstruction.orEmpty()
+        val instructionText = instruction.nextStreetName?.takeIf {
+            it.isNotEmpty()
+        } ?: instruction.nextTurnInstruction.orEmpty()
 
         var hasSameTurnImage = false
         val instructionIcon = getNextTurnImage(instruction, turnImageSize, turnImageSize) { isSame ->
             hasSameTurnImage = isSame
         }
 
+        val trafficDelayInMinutes = navRoute?.let {
+            GemUtil.getTrafficEventsDelay(it, true) / 60
+        } ?: 0
         val (etaText, rttText, rtdText) = navRoute?.let {
             Triple(it.getEta(), it.getRtt(), it.getRtd())
         } ?: Triple("", "", "")
@@ -446,7 +484,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         val signPostBitmap = getSignpostImage(instruction, availableWidth, signPostImageSize)
         val roadCodeBitmap = if (signPostBitmap == null) {
             getRoadCodeImage(instruction, availableWidth, navigationImageSize)
-        } else null
+        } else {
+            null
+        }
 
         return NavigationUiData(
             instructionText = instructionText,
@@ -455,6 +495,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             instructionDistance = instruction.getDistanceInMeters(),
             etaText = etaText,
             rttText = rttText,
+            rttColor = getTrafficColor(trafficDelayInMinutes),
             rtdText = rtdText,
             signPostBitmap = signPostBitmap,
             roadCodeBitmap = roadCodeBitmap,
@@ -512,8 +553,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         binding.bottomPanel.isVisible = isVisible
         if (!isVisible) {
             binding.trafficPanel.isVisible = false
+            updateFocusViewport()
+        } else {
+            binding.root.post { updateFocusViewport() }
         }
-        updateFocusViewport()
     }
 
     private fun startSimulation() = SdkCall.execute {
@@ -525,7 +568,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         val error = navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
         if (error != GemError.NoError) {
             runOnUiThread {
-                showDialog(getString(R.string.route_simulation_error, GemError.getMessage(error, this)))
+                showDialog(
+                    getString(R.string.route_simulation_error, SdkCall.runSynced { GemError.getMessage(error, this) }),
+                )
             }
         }
     }
@@ -541,7 +586,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     @SuppressLint("DefaultLocale")
     private fun Route.getEta(): String {
-        val etaNumber = this.getTimeDistance(true)?.totalTime ?: 0
+        val etaNumber = (this.getTimeDistance(true)?.totalTime ?: 0) + GemUtil.getTrafficEventsDelay(this, true)
 
         val time = Time()
         time.setLocalTime()
@@ -551,7 +596,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private fun Route.getRtt(): String {
         return GemUtil.getTimeText(
-            this.getTimeDistance(true)?.totalTime ?: 0,
+            (this.getTimeDistance(true)?.totalTime ?: 0) + GemUtil.getTrafficEventsDelay(this, true),
         ).let { pair ->
             pair.first + " " + pair.second
         }
@@ -566,11 +611,20 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }
     }
 
+    private fun getTrafficColor(trafficDelayInMinutes: Int): Int {
+        val bigTrafficDelayInMinutes = 10
+        return when {
+            trafficDelayInMinutes == 0 -> Color.rgb(0, 0, 0)
+            trafficDelayInMinutes < bigTrafficDelayInMinutes -> Color.rgb(255, 100, 0)
+            else -> Color.rgb(235, 0, 0)
+        }
+    }
+
     private fun getNextTurnImage(
         navInstr: NavigationInstruction,
         width: Int,
         height: Int,
-        onSameImage: (Boolean) -> Unit = {}
+        onSameImage: (Boolean) -> Unit = {},
     ): Bitmap? {
         if (!navInstr.hasNextTurnInfo()) return null
 
@@ -584,6 +638,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             lastTurnImageId = image.uid
         }
 
+        // Active turn icon: white fill with black outline; inactive: grey fill and outline.
         val aInner = Rgba(255, 255, 255, 255)
         val aOuter = Rgba(0, 0, 0, 255)
         val iInner = Rgba(128, 128, 128, 255)
@@ -604,6 +659,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         if (!navInstr.hasSignpostInfo()) return null
 
         val distToNextTurn = navInstr.timeDistanceToNextTurn?.totalDistance ?: 0
+        // Suppress the signpost until the driver is within 1 km of the turn to avoid
+        // visual clutter on long straight segments.
         if (distToNextTurn > 1000) {
             return null
         }
@@ -616,11 +673,15 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private fun getRoadCodeImage(navInstr: NavigationInstruction, width: Int, height: Int): Bitmap? {
         val roadsInfo = navInstr.nextRoadInformation ?: return null
         if (roadsInfo.isEmpty()) return null
+        // Road code shields are typically wider than tall; 2.5× height is a reasonable default
+        // aspect ratio when no explicit width constraint is available.
         val resultWidth = if (width == 0) (2.5 * height).toInt() else width
         val image = navInstr.getRoadInfoImage(roadsInfo)
         return GemUtilImages.asBitmap(image, resultWidth, height)
     }
 
+    // Measures the pixel width the given text would occupy in textView, then restores the original
+    // text. Used to calculate how much space the distance label can take before layout happens.
     private fun getTextViewWidth(textView: MaterialTextView, text: String): Int {
         val previous = textView.text
         textView.text = text
@@ -644,11 +705,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         )
     }
 
-    private fun showBottomSheetDialog(
-        title: String,
-        message: String,
-        onButtonClick: (BottomSheetDialog) -> Unit,
-    ) {
+    private fun showBottomSheetDialog(title: String, message: String, onButtonClick: (BottomSheetDialog) -> Unit) {
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
             this.title.text = title
@@ -736,11 +793,14 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         for (event in trafficEventsList) {
             if (event.delay != 0) {
                 val distToDest = event.distanceToDestination
+                // Positive value means the event is ahead; negative means we have already passed
+                // the start of the event and are potentially inside it.
                 distToTrafficEvent = remainingTravelDistance - distToDest
 
                 insideTrafficEvent = false
 
                 if (distToTrafficEvent <= 0) {
+                    // How many metres of the event still remain in front of us.
                     remainingDistInsideTrafficEvent = event.length - (distToDest - remainingTravelDistance)
                     if (remainingDistInsideTrafficEvent >= 0) {
                         insideTrafficEvent = true
@@ -775,6 +835,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         if (!trafficEvent.isRoadblock) {
             if (insideTrafficEvent) {
                 if (trafficEvent.length > 0) {
+                    // Scale the full event delay proportionally to the distance still to travel
+                    // through it, so the displayed delay shrinks as the driver progresses.
                     val remainingDelay = (trafficEvent.delay * remainingDistInsideTrafficEvent) / trafficEvent.length
                     val timePair = GemUtil.getTimeText(remainingDelay)
                     trafficDelayTimeText = timePair.first

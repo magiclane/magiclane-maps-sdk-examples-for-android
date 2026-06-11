@@ -10,20 +10,29 @@ package com.magiclane.sdk.examples.hellomap
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.examples.hellomap.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.hellomap.databinding.DialogLayoutBinding
+import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        private val SYSTEM_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+    }
+
     private lateinit var binding: ActivityMainBinding
-    private var errorDialog: BottomSheetDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -32,89 +41,96 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setupSdkCallbacks()
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
+        registerSdkListeners()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-
-        // Clean up dialog to prevent memory leaks
-        errorDialog?.dismiss()
-        errorDialog = null
-
+        clearSdkListeners()
+        // Deinitialize the SDK.
         GemSdk.release()
         exitProcess(0)
     }
 
-    /**
-     * Set up SDK initialization and token rejection callbacks.
-     */
-    private fun setupSdkCallbacks() {
+    // Registers all SDK surface and settings callbacks.
+    private fun registerSdkListeners() {
         binding.gemSurface.onSdkInitFailed = { error ->
-            handleSdkInitializationError(error)
+            // The SDK is not initialized yet, so resolve the message directly (no SdkCall).
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnAliveUi { showDialog(errorMessage) { finish() } }
+        }
+
+        binding.gemSurface.onDefaultMapViewCreated = {
+            // Align the Magic Lane logo with system window insets on first map creation.
+            updateFocusViewport()
+        }
+
+        // Re-align the logo whenever the surface is resized (e.g. rotation).
+        binding.gemSurface.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
         }
 
         SdkSettings.onApiTokenRejected = {
-            handleTokenRejection()
+            runOnAliveUi { showDialog(getString(R.string.token_rejected_message)) }
         }
     }
 
-    /**
-     * Handle SDK initialization errors by showing an error dialog and finishing the activity.
-     */
-    private fun handleSdkInitializationError(error: Int) {
-        val errorMessage = getString(
-            R.string.sdk_initialization_failed,
-            GemError.getMessage(error, this),
-        )
-        Util.postOnMain {
-            showErrorDialog(errorMessage, shouldFinish = true)
+    // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
+    private fun clearSdkListeners() {
+        SdkSettings.onApiTokenRejected = {}
+        binding.gemSurface.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
         }
     }
 
-    /**
-     * Handle API token rejection by showing an error dialog.
-     */
-    private fun handleTokenRejection() {
-        showErrorDialog(getString(R.string.token_rejected_message))
+    // Adjusts the Magic Lane logo position to respect system window insets.
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            val mapView = binding.gemSurface.mapView ?: return@runSynced
+            val viewport = mapView.viewport ?: return@runSynced
+            val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(SYSTEM_INSET_TYPES)
+
+            val w = viewport.width
+            val h = viewport.height
+            val left = insets?.left ?: 0
+            val top = insets?.top ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            mapView.preferences?.focusViewport = Rect(left, top, right, bottom)
+        }
     }
 
-    /**
-     * Display an error dialog with the given message.
-     *
-     * @param text The error message to display.
-     * @param shouldFinish Whether to finish the activity when the dialog is dismissed.
-     */
-    private fun showErrorDialog(text: String, shouldFinish: Boolean = false) {
-        // Prevent showing multiple dialogs
-        if (errorDialog?.isShowing == true) {
-            return
-        }
+    /** Shows a non-dismissable bottom-sheet error dialog. */
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
 
-        if (isFinishing || isDestroyed) {
-            return
-        }
-
+        val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
             title.text = getString(R.string.error)
             message.text = text
             button.setOnClickListener {
-                errorDialog?.dismiss()
-                if (shouldFinish) {
-                    finish()
-                }
+                onDismiss?.invoke()
+                dialog.dismiss()
             }
         }
-
-        errorDialog = BottomSheetDialog(this).apply {
+        dialog.apply {
             behavior.state = BottomSheetBehavior.STATE_EXPANDED
             behavior.isDraggable = false
             setCancelable(false)
             setContentView(dialogBinding.root)
-            setOnDismissListener {
-                errorDialog = null
-            }
             show()
         }
     }
+
+    // Runs the block on the main thread, but only while the activity is still alive.
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
+    }
+
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
 }

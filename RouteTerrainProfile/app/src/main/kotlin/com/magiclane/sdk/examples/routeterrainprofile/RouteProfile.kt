@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2022-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -18,11 +18,13 @@ import android.graphics.PointF
 import android.graphics.Typeface
 import android.text.TextUtils
 import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -55,6 +57,7 @@ import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EHighlightOptions
 import com.magiclane.sdk.d3scene.EMapViewPerspective
 import com.magiclane.sdk.d3scene.HighlightRenderSettings
+import com.magiclane.sdk.examples.routeterrainprofile.databinding.ImageAndTextButtonBinding
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.ERoadType
 import com.magiclane.sdk.routesandnavigation.ESurfaceType
@@ -70,6 +73,7 @@ import de.codecrafters.tableview.TableHeaderAdapter
 import java.text.DecimalFormat
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlin.compareTo
 import kotlin.math.abs
 import kotlin.math.round
 
@@ -188,40 +192,39 @@ class RouteProfile(
 
     init
     {
-        parentActivity.apply {
-            SdkCall.execute {
-                routeTerrainProfile = route.terrainProfile!!
-                routeLength = route.timeDistance?.totalDistance ?: 0
-                highlightPathsColor = Rgba(239, 38, 81, 255)
-            }
-
-            scrollView = findViewById(R.id.route_profile_scroll_view)
-            elevationChart = findViewById(R.id.elevation_chart)
-            buttonsContainer = findViewById(R.id.buttons_container)
-            climbDetailsTitle = findViewById(R.id.climb_details_title)
-            tableView = findViewById(R.id.table_view)
-            surfacesTitle = findViewById(R.id.surfaces_title)
-            highlightedSurface = findViewById(R.id.highlighted_surface)
-            surfacesChart = findViewById(R.id.surfaces_chart)
-            roadsTitle = findViewById(R.id.roads_title)
-            highlightedRoad = findViewById(R.id.highlighted_road)
-            roadsChart = findViewById(R.id.roads_chart)
-            steepnessTitle = findViewById(R.id.steepness_title)
-            steepnessImage = findViewById(R.id.steepness_image)
-            highlightedSteepness = findViewById(R.id.highlighted_steepness)
-            steepnessChart = findViewById(R.id.steepness_chart)
-
-            val displayMetrics = Resources.getSystem().displayMetrics
-            tableViewRowHeight = displayMetrics.widthPixels.coerceAtMost(
-                displayMetrics.heightPixels,
-            ) * 3 / 20
-
-            loadData()
-            addElevationViews()
-            addSurfacesViews()
-            addRoadsViews()
-            addSteepnessViews()
+        SdkCall.execute {
+            routeTerrainProfile = route.terrainProfile!!
+            routeLength = route.timeDistance?.totalDistance ?: 0
+            highlightPathsColor = Rgba(239, 38, 81, 255)
         }
+
+        val b = parentActivity.binding
+        scrollView = b.routeProfileScrollView
+        elevationChart = b.elevationChart
+        buttonsContainer = b.buttonsContainer
+        climbDetailsTitle = b.climbDetailsTitle
+        tableView = b.tableView
+        surfacesTitle = b.surfacesTitle
+        highlightedSurface = b.highlightedSurface
+        surfacesChart = b.surfacesChart
+        roadsTitle = b.roadsTitle
+        highlightedRoad = b.highlightedRoad
+        roadsChart = b.roadsChart
+        steepnessTitle = b.steepnessTitle
+        steepnessImage = b.steepnessImage
+        highlightedSteepness = b.highlightedSteepness
+        steepnessChart = b.steepnessChart
+
+        val displayMetrics = Resources.getSystem().displayMetrics
+        tableViewRowHeight = displayMetrics.widthPixels.coerceAtMost(
+            displayMetrics.heightPixels,
+        ) * 3 / 20
+
+        loadData()
+        addElevationViews()
+        addSurfacesViews()
+        addRoadsViews()
+        addSteepnessViews()
     }
 
     override fun onChartGestureStart(me: MotionEvent?, lastPerformedGesture: ChartTouchListener.ChartGesture?) = Unit
@@ -370,7 +373,7 @@ class RouteProfile(
 
     private fun addSurfacesViews() {
         val surfaceTypesCount = surfacesTypes.size
-        val title = getSectionTitle(TRouteProfileSectionType.ESteepnesses.ordinal)
+        val title = getSectionTitle(TRouteProfileSectionType.ESurfaces.ordinal)
 
         if (surfaceTypesCount > 0) {
             setAttributesToSurfacesChart()
@@ -418,7 +421,7 @@ class RouteProfile(
 
     private fun addRoadsViews() {
         val roadTypesCount = roadsTypes.size
-        val title = getSectionTitle(TRouteProfileSectionType.ESteepnesses.ordinal)
+        val title = getSectionTitle(TRouteProfileSectionType.EWays.ordinal)
 
         if (roadTypesCount > 0) {
             setAttributesToRoadsChart()
@@ -558,24 +561,19 @@ class RouteProfile(
         var text = ""
 
         for (i in 0 until buttonsCount) {
-            val buttonContainer = View.inflate(
-                parentActivity,
-                R.layout.image_and_text_button,
-                null,
+            val buttonBinding = ImageAndTextButtonBinding.inflate(
+                LayoutInflater.from(parentActivity),
             ).also {
-                it.id = i + 100
-                buttonIdsArray[i] = it.id
+                it.root.id = i + 100
+                buttonIdsArray[i] = it.root.id
             }
-
-            val imageView = buttonContainer.findViewById<ImageView>(R.id.image)
-            val textView = buttonContainer.findViewById<TextView>(R.id.text)
 
             SdkCall.execute {
                 bmp = getElevationProfileButtonImage(i, elevationIconSize, elevationIconSize)
                 text = getElevationProfileButtonText(i)
             }
 
-            imageView.apply {
+            buttonBinding.image.apply {
                 setImageBitmap(bmp)
                 if (i == 2 || i == 3) {
                     if (parentActivity.isDarkThemeOn()) {
@@ -585,13 +583,13 @@ class RouteProfile(
                     }
                 }
             }
-            textView.text = text
+            buttonBinding.text.text = text
 
-            buttonContainer.setOnClickListener {
+            buttonBinding.root.setOnClickListener {
                 onButtonClick(i)
             }
 
-            buttonsContainer.addView(buttonContainer)
+            buttonsContainer.addView(buttonBinding.root)
         }
 
         val constraintSet = ConstraintSet().also { it.clone(buttonsContainer) }
@@ -683,7 +681,7 @@ class RouteProfile(
         val mapView = parentActivity.gemSurfaceView.mapView
 
         val image = ImageDatabase().getImageById(
-            SdkImages.Engine_Misc.LocationDetails_PlacePushpin.value,
+            SdkImages.Core.Search_Results_Pin.value,
         )
         image?.let {
             landmark.image = image
@@ -916,6 +914,7 @@ class RouteProfile(
             val scaleFactor = (chartMax - chartMin) / (mapMax - mapMin)
 
             elevationChart.zoomToCenter(scaleFactor, 1f)
+            updateElevationChart(mapMin, mapMax)
             updateElevationChartHighlight()
             elevationChart.moveViewToX(mapMin)
         }
@@ -1008,8 +1007,8 @@ class RouteProfile(
                     climbClicked.startEndPoint.lastIndexOf("/") + 1,
                 )
                 val endPointString = s.split(" ").dropLastWhile { it.isEmpty() }.toTypedArray()[0]
-                val startPointDouble = startPointString.toDouble() + 0.01
-                val endPointDouble = endPointString.toDouble() - 0.01
+                val startPointDouble = startPointString.toDouble() * 1000 + 0.01
+                val endPointDouble = endPointString.toDouble() * 1000 - 0.01
 
                 elevationChart.highlightValue(null)
                 SdkCall.execute {
@@ -1018,6 +1017,8 @@ class RouteProfile(
                 }
 
                 updateElevationChartInterval(startPointDouble, endPointDouble)
+
+                scrollView.postDelayed({ scrollView.fullScroll(ScrollView.FOCUS_UP) }, 50)
 
                 removeSelection(surfacesChart)
                 removeSelection(roadsChart)
@@ -1066,7 +1067,7 @@ class RouteProfile(
 
                         setPadding(20, 30, 20, 30)
                         setTypeface(textView.typeface, Typeface.BOLD)
-                        textSize = 16f
+                        textSize = 11f
                         setTextColor(Color.BLACK)
                         maxLines = 2
                         ellipsize = TextUtils.TruncateAt.END
@@ -1366,18 +1367,23 @@ class RouteProfile(
     }
 
     private fun initLayout(tableViewRowHeight: Int) {
-        var chartVerticalBandsCount = 0
-        SdkCall.execute { chartVerticalBandsCount = getElevationChartVerticalBandsCount() }
+        var climbDetailsRowsCount = 0
+        SdkCall.execute { climbDetailsRowsCount = getElevationChartVerticalBandsCount() }
 
-        tableView.layoutParams.apply {
-            width = LinearLayout.LayoutParams.MATCH_PARENT
-            height = if (chartVerticalBandsCount > 0) {
-                tableViewRowHeight + chartVerticalBandsCount * (tableViewRowHeight + 1)
+        val paramsClimbDetailsTableView = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+        )
+
+        paramsClimbDetailsTableView.run {
+            if (climbDetailsRowsCount > 0) {
+                height = tableViewRowHeight + climbDetailsRowsCount * (tableViewRowHeight + 1)
             } else {
-                0
+                height = 0
             }
         }
-        tableView.requestLayout()
+
+        tableView.layoutParams = paramsClimbDetailsTableView
     }
 
     private fun setAttributesToElevationChart() {
@@ -1422,7 +1428,7 @@ class RouteProfile(
                 0f,
                 CHART_OFFSET_TOP.toFloat(),
                 CHART_OFFSET_RIGHT.toFloat(),
-                (-CHART_OFFSET_BOTTOM).toFloat(),
+                CHART_OFFSET_BOTTOM.toFloat(),
             )
             fitScreen()
         }
@@ -1525,7 +1531,7 @@ class RouteProfile(
 
             val landmark = Landmark()
             ImageDatabase().getImageById(
-                SdkImages.Engine_Misc.LocationDetails_PlacePushpin.value,
+                SdkImages.Core.Search_Results_Pin.value,
             )?.let {
                 landmark.image = it
             }
@@ -1805,8 +1811,7 @@ class RouteProfile(
         }
 
         if (automaticZoomToRoute) {
-            val mainRoute = mapView?.preferences?.routes?.mainRoute
-            parentActivity.flyToRoute(mainRoute)
+            parentActivity.zoomToRoute()
         } else {
             mapView?.centerOnDistRoute(route, minX.toInt(), maxX.toInt(), Rect(), Animation())
         }
@@ -1884,10 +1889,10 @@ class RouteProfile(
                 TClimbDetailsInfoType.ERating -> getElevationChartVerticalBandText(row)
                 TClimbDetailsInfoType.EStartEndPoints -> String.format(
                     "%.2f %s/%.2f %s",
-                    getElevationChartVerticalBandMinX(row),
-                    "m",
-                    getElevationChartVerticalBandMaxX(row),
-                    "m",
+                    getElevationChartVerticalBandMinX(row) / 1000.0,
+                    "km",
+                    getElevationChartVerticalBandMaxX(row) / 1000.0,
+                    "km",
                 )
                 TClimbDetailsInfoType.EStartEndElevation -> String.format(
                     "%d %s/%d %s",
@@ -1898,8 +1903,8 @@ class RouteProfile(
                 )
                 TClimbDetailsInfoType.ELength -> String.format(
                     "%.2f %s",
-                    getElevationChartVerticalBandMaxX(row) - getElevationChartVerticalBandMinX(row),
-                    "m",
+                    (getElevationChartVerticalBandMaxX(row) - getElevationChartVerticalBandMinX(row)) / 1000.0,
+                    "km",
                 )
                 TClimbDetailsInfoType.EAvgGrade -> String.format(
                     "%.1f%%",
@@ -2072,6 +2077,7 @@ class RouteProfile(
         else -> ""
     }
 
+    @SuppressLint("DefaultLocale")
     private fun getElevationString(distance: Int) =
         String.format("%d %s", distance, GemUtil.getUIString(EStringIds.eStrMeter))
 
@@ -2080,7 +2086,6 @@ class RouteProfile(
         ESurfaceType.Paved -> parentActivity.resources.getString(R.string.paved)
         ESurfaceType.Unpaved -> parentActivity.resources.getString(R.string.unpaved)
         ESurfaceType.Unknown -> parentActivity.resources.getString(R.string.unknown)
-        else -> ""
     }
 
     private fun getSurfaceColor(type: ESurfaceType): Int = when (type) {
@@ -2088,7 +2093,6 @@ class RouteProfile(
         ESurfaceType.Paved -> Rgba(212, 212, 212, 255).value
         ESurfaceType.Unpaved -> Rgba(157, 133, 104, 255).value
         ESurfaceType.Unknown -> Rgba(0, 0, 0, 255).value
-        else -> 0
     }
 
     private fun getRoadPercent(index: Int): Double {
@@ -2377,10 +2381,6 @@ class RouteProfile(
             legend.orientation = Legend.LegendOrientation.HORIZONTAL
             legend.xOffset = 0f
             legend.isWordWrapEnabled = true
-
-            layoutParams?.height = parentActivity.resources.getDimension(
-                R.dimen.bar_chart_height,
-            ).toInt()
         }
     }
 
@@ -2412,7 +2412,7 @@ class RouteProfile(
         elevationChart.apply {
             xAxis.position = XAxis.XAxisPosition.BOTTOM
 
-            val horizontalAxisUnit = "m"
+            val horizontalAxisUnit = "km"
             val verticalAxisUnit = "m"
             var chartMinValueY = 0f
             var chartMaxValueY = 0f
@@ -2431,11 +2431,12 @@ class RouteProfile(
             xAxis.valueFormatter = IAxisValueFormatter { value, axis ->
                 val df = DecimalFormat("#.#")
                 val tempValue = (highestVisibleX - lowestVisibleX) / (axis.labelCount + 2)
+                val kmValue = value / 1000.0
 
                 if (value > highestVisibleX - tempValue && value < highestVisibleX + tempValue) {
-                    df.format(value.toDouble()) + " " + horizontalAxisUnit
+                    df.format(kmValue) + " " + horizontalAxisUnit
                 } else {
-                    df.format(value.toDouble())
+                    df.format(kmValue)
                 }
             }
 

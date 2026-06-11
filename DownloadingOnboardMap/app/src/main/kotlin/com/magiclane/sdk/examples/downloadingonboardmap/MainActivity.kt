@@ -18,6 +18,7 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -48,109 +49,106 @@ class MainActivity : AppCompatActivity() {
 
     private val contentStore = ContentStore()
 
+    // Cache flag bitmaps by ISO country code to avoid redundant rendering.
     private val flagBitmapsMap = HashMap<String, Bitmap?>()
 
+    // Called back when the SDK token verification completes.
     private val checkAuthorizationListener = ProgressListener.create(onCompleted = { errorCode, _ ->
         if (errorCode != GemError.NoError) {
-            showInvalidTokenDialog()
+            runOnAliveUi { showInvalidTokenDialog() }
         } else {
-            // The app authorization is valid, we can start loading the content store.
             loadMapsCatalog()
         }
     })
 
+    // Tracks catalog fetch progress and triggers the first-item download on success.
     private val progressListener = ProgressListener.create(
         onStarted = {
-            binding.progressBar.visibility = View.VISIBLE
-            showStatusMessage(getString(R.string.status_downloading_maps_catalog))
+            runOnAliveUi {
+                binding.progressBar.visibility = View.VISIBLE
+                showStatusMessage(getString(R.string.status_downloading_maps_catalog))
+            }
         },
         onCompleted = { errorCode, _ ->
-            binding.progressBar.visibility = View.GONE
+            runOnAliveUi { binding.progressBar.visibility = View.GONE }
 
             when (errorCode) {
                 GemError.NoError -> {
                     SdkCall.execute {
-                        // No error encountered, we can handle the results.
-                        val models = contentStore.getStoreContentList(
-                            EContentType.RoadMap,
-                        )?.first
+                        val mapsCatalog = contentStore.getStoreContentList(EContentType.RoadMap)?.first
 
-                        if (!models.isNullOrEmpty()) {
-                            // The map items list is not empty or null.
-                            val mapItem = models[0]
+                        if (!mapsCatalog.isNullOrEmpty()) {
+                            val mapItem = mapsCatalog[0]
                             val itemName = mapItem.name
 
-                            // Define a listener to the progress of the map download action.
                             val downloadProgressListener = ProgressListener.create(
                                 onStarted = {
-                                    showStatusMessage(getString(R.string.status_downloading_item, itemName))
+                                    runOnAliveUi {
+                                        showStatusMessage(
+                                            getString(R.string.status_downloading_item, itemName),
+                                        )
+                                    }
                                 },
                                 onProgress = {
-                                    binding.listView.adapter?.notifyItemChanged(0)
+                                    runOnAliveUi { binding.listView.adapter?.notifyItemChanged(0) }
                                 },
-                                onCompleted = { errorCode, _ ->
-                                    binding.listView.adapter?.notifyItemChanged(0)
-                                    if (errorCode == GemError.NoError) {
-                                        showStatusMessage(getString(R.string.status_item_downloaded, itemName))
+                                onCompleted = { dlErrorCode, _ ->
+                                    runOnAliveUi { binding.listView.adapter?.notifyItemChanged(0) }
+                                    if (dlErrorCode == GemError.NoError) {
+                                        runOnAliveUi {
+                                            showStatusMessage(getString(R.string.status_item_downloaded, itemName))
+                                        }
                                     } else {
-                                        showStatusMessage(
-                                            getString(
-                                                R.string.status_item_download_error,
-                                                itemName,
-                                                GemError.getMessage(errorCode, this),
-                                            ),
-                                        )
+                                        runOnAliveUi {
+                                            showStatusMessage(
+                                                getString(
+                                                    R.string.status_item_download_error,
+                                                    itemName,
+                                                    SdkCall.runSynced { GemError.getMessage(dlErrorCode, this) },
+                                                ),
+                                            )
+                                        }
                                     }
                                     EspressoIdlingResource.decrement()
                                 },
                             )
 
-                            // Start downloading the first map item.
                             SdkCall.execute {
-                                val errorCode = mapItem.asyncDownload(
+                                val error = mapItem.asyncDownload(
                                     downloadProgressListener,
                                     GemSdk.EDataSavePolicy.UseDefault,
                                     true,
                                 )
-
-                                when (errorCode) {
-                                    GemError.UpToDate -> {
-                                        // The item is already downloaded and up to date.
-                                        Util.postOnMain {
-                                            showStatusMessage(
-                                                getString(R.string.status_item_already_downloaded, itemName),
-                                            )
-                                        }
+                                when (error) {
+                                    GemError.NoError -> { /* Download started; downloadProgressListener will handle updates. */ }
+                                    GemError.UpToDate -> runOnAliveUi {
+                                        showStatusMessage(getString(R.string.status_item_already_downloaded, itemName))
                                     }
-                                    else -> {
-                                        // There was a problem at starting the download action.
-                                        Util.postOnMain {
-                                            showStatusMessage(
-                                                getString(
-                                                    R.string.status_download_item_error,
-                                                    GemError.getMessage(errorCode, this),
-                                                ),
-                                            )
-                                        }
+                                    else -> runOnAliveUi {
+                                        showStatusMessage(
+                                            getString(
+                                                R.string.status_download_item_error,
+                                                SdkCall.runSynced { GemError.getMessage(error, this) },
+                                            ),
+                                        )
                                     }
                                 }
                             }
                         }
 
-                        Util.postOnMain {
-                            displayList(models)
-                        }
+                        Util.postOnMain { displayList(mapsCatalog) }
                     }
                 }
 
                 else -> {
-                    // There was a problem at retrieving the content store items.
-                    showStatusMessage(
-                        getString(
-                            R.string.status_maps_catalog_download_error,
-                            GemError.getMessage(errorCode, this),
-                        ),
-                    )
+                    runOnAliveUi {
+                        showStatusMessage(
+                            getString(
+                                R.string.status_maps_catalog_download_error,
+                                SdkCall.runSynced { GemError.getMessage(errorCode, this) },
+                            ),
+                        )
+                    }
                     EspressoIdlingResource.decrement()
                 }
             }
@@ -158,15 +156,13 @@ class MainActivity : AppCompatActivity() {
     )
 
     private fun loadMapsCatalog() = SdkCall.execute {
-        // Call to the content store to asynchronously retrieve the list of maps.
         val error = contentStore.asyncGetStoreContentList(EContentType.RoadMap, progressListener)
         if (error != GemError.NoError) {
-            // There was a problem at starting the content store retrieval action.
-            Util.postOnMain {
+            runOnAliveUi {
                 showStatusMessage(
                     getString(
                         R.string.status_maps_catalog_download_error,
-                        GemError.getMessage(error, this),
+                        SdkCall.runSynced { GemError.getMessage(error, this) },
                     ),
                 )
             }
@@ -178,50 +174,29 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         EspressoIdlingResource.increment()
 
         binding.listView.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
-
-            val separator = DividerItemDecoration(
-                applicationContext,
-                (layoutManager as LinearLayoutManager).orientation,
+            addItemDecoration(
+                DividerItemDecoration(applicationContext, (layoutManager as LinearLayoutManager).orientation),
             )
-            addItemDecoration(separator)
-
-            val lateralPadding = resources.getDimension(R.dimen.bigPadding).toInt()
-            setPadding(lateralPadding, 0, lateralPadding, 0)
-
             itemAnimator = null
         }
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
-            if (status == EOffboardListenerStatus.UpToDate) {
-                showStatusMessage(getString(R.string.status_checking_token_validity))
-                SdkSettings.appAuthorization?.let {
-                    SdkCall.execute {
-                        SdkSettings.verifyAppAuthorization(it, checkAuthorizationListener)
-                    }
-                } ?: run {
-                    showInvalidTokenDialog()
-                }
-
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
-            }
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            showInvalidTokenDialog()
-        }
+        registerSdkListeners()
 
         // This step of initialization is mandatory if you want to use the SDK without a map.
         val errorCode = GemSdk.initSdkWithDefaults(this)
         if (errorCode != GemError.NoError) {
-            // The SDK initialization failed, we can't continue.
             showDialog(
                 getString(
                     R.string.dialog_sdk_initialization_error,
-                    GemError.getMessage(errorCode, this),
+                    SdkCall.runSynced { GemError.getMessage(errorCode, this) },
                 ),
             ) {
                 finish()
@@ -239,20 +214,52 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-
-        // Release the SDK.
+        clearSdkListeners()
         GemSdk.release()
         exitProcess(0)
     }
 
-    private fun displayList(models: ArrayList<ContentStoreItem>?) {
-        if (models != null) {
-            val adapter = CustomAdapter(models)
-            binding.listView.adapter = adapter
+    // Registers all SDK-level callbacks.
+    private fun registerSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                runOnAliveUi { showStatusMessage(getString(R.string.status_checking_token_validity)) }
+                SdkSettings.appAuthorization?.let {
+                    SdkCall.execute { SdkSettings.verifyAppAuthorization(it, checkAuthorizationListener) }
+                } ?: run {
+                    runOnAliveUi { showInvalidTokenDialog() }
+                }
+                // Unsubscribe after the first UpToDate event to avoid repeated verification.
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnAliveUi { showInvalidTokenDialog() }
         }
     }
 
+    // Clears SDK-level callbacks to prevent them reaching a destroyed activity.
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+    }
+
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
+
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
+    }
+
+    private fun displayList(models: ArrayList<ContentStoreItem>?) {
+        if (models != null) {
+            binding.listView.adapter = CustomAdapter(models)
+        }
+    }
+
+    /** Shows a non-dismissable bottom-sheet error dialog. */
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
             title.text = getString(R.string.error)
@@ -272,13 +279,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showInvalidTokenDialog() {
-        showDialog(
-            getString(R.string.invalid_token),
-        ) {
+        showDialog(getString(R.string.invalid_token)) {
             finish()
             exitProcess(0)
         }
-
         binding.progressBar.isVisible = false
     }
 
@@ -322,8 +326,7 @@ class MainActivity : AppCompatActivity() {
 
                     EContentStoreItemStatus.DownloadRunning -> {
                         progressBar.visibility = View.VISIBLE
-                        progressBar.progress =
-                            SdkCall.execute { dataSet[position].downloadProgress } ?: 0
+                        progressBar.progress = SdkCall.execute { dataSet[position].downloadProgress } ?: 0
                     }
 
                     else -> return
@@ -339,10 +342,8 @@ class MainActivity : AppCompatActivity() {
                     val isoCode = codes[0]
                     if (!flagBitmapsMap.containsKey(isoCode)) {
                         val size = resources.getDimension(R.dimen.icon_size).toInt()
-                        flagBitmapsMap[isoCode] =
-                            MapDetails().getCountryFlag(isoCode)?.asBitmap(size, size)
+                        flagBitmapsMap[isoCode] = MapDetails().getCountryFlag(isoCode)?.asBitmap(size, size)
                     }
-
                     return flagBitmapsMap[isoCode]
                 }
                 return null

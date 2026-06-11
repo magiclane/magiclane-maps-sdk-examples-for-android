@@ -13,15 +13,20 @@ import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.EOffboardListenerStatus
+import com.magiclane.sdk.core.ErrorCode
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.Image
 import com.magiclane.sdk.core.ProgressListener
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.SoundPlayingListener
@@ -54,6 +59,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         const val ALARM_HIGHLIGHT_ID = 0
         const val ALARM_WARNING_TEXT = "Caution, Speed camera ahead"
         const val SAFETY_FIELD_OF_VIEW_TAG = "safety_fov"
+
+        // Window insets the map should keep clear so the Magic Lane logo stays visible.
+        val SYSTEM_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -165,15 +174,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             }
         },
 
-        onDestinationReached = {
-            SdkCall.execute {
-                mapView?.let { currentMapView ->
-                    currentMapView.preferences?.routes?.clear()
-                }
-            }
+        onDestinationReached = { onNavigationEnded() },
 
-            setFollowGpsButtonVisibility(isVisible = false)
-        },
+        // Notify the user if navigation stops because of an error.
+        onNavigationError = { error -> onNavigationEnded(error) },
     )
 
     // Define a listener that will let us know the progress of the routing process.
@@ -182,8 +186,14 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             binding.progressBar.visibility = View.VISIBLE
         },
 
-        onCompleted = { _, _ ->
+        onCompleted = { errorCode, _ ->
             binding.progressBar.visibility = View.GONE
+
+            // Surface any routing failure to the user.
+            if (errorCode != GemError.NoError) {
+                val message = SdkCall.runSynced { GemError.getMessage(errorCode, this) } ?: ""
+                showDialog(getString(R.string.routing_error, message))
+            }
         },
 
         postOnMain = true,
@@ -197,7 +207,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         alarmImageSize = resources.getDimensionPixelSize(R.dimen.alarm_image_size)
 
         registerSdkListeners()
@@ -222,10 +235,21 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private fun registerSdkListeners() {
         binding.gemSurfaceView.onSdkInitFailed = { error ->
+            // onSdkInitFailed already runs on the SDK thread, so getMessage needs no SdkCall wrapper.
             val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
             runOnUiThread {
                 showDialog(errorMessage) { finish() }
             }
+        }
+
+        binding.gemSurfaceView.onDefaultMapViewCreated = {
+            // Align the Magic Lane logo with the system window insets once the map exists.
+            updateFocusViewport()
+        }
+
+        // Re-align the logo whenever the surface is resized (e.g. on rotation).
+        binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
         }
 
         SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
@@ -244,9 +268,40 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     }
 
     private fun clearSdkListeners() {
-        binding.gemSurfaceView.onSdkInitFailed = { _ -> }
+        binding.gemSurfaceView.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
+        }
         SdkSettings.onWorldwideRoadMapSupportStatus = {}
         SdkSettings.onApiTokenRejected = {}
+    }
+
+    /**
+     * Adjusts the map's focus viewport so the Magic Lane logo (anchored to the
+     * bottom-left of the viewport) is not hidden behind the status bar, navigation
+     * bar or a display cutout. When the speed-camera alarm panel is showing, the
+     * logo is lifted above it as well.
+     */
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            val currentMapView = mapView ?: return@runSynced
+            val viewport = currentMapView.viewport ?: return@runSynced
+            val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(SYSTEM_INSET_TYPES)
+
+            val left = insets?.left ?: 0
+            val top = insets?.top ?: 0
+            val right = (viewport.width - (insets?.right ?: 0)).coerceAtLeast(left)
+
+            // Keep the logo above the alarm panel when it is visible, otherwise just
+            // above the bottom system inset.
+            val bottom = if (binding.alarmPanel.isVisible) {
+                binding.alarmPanel.top.coerceAtLeast(top)
+            } else {
+                (viewport.height - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            }
+            currentMapView.preferences?.focusViewport = Rect(left, top, right, bottom)
+        }
     }
 
     private fun configureGpsButton() {
@@ -292,7 +347,32 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             Landmark("B", 53.06178963549359, 8.876610724727849),
         )
 
-        navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
+        val error = navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
+        if (error != GemError.NoError) {
+            // We are already on the SDK thread here, so getMessage needs no SdkCall wrapper.
+            val message = GemError.getMessage(error, this@MainActivity)
+            Util.postOnMain {
+                showDialog(getString(R.string.route_simulation_error, message))
+            }
+        }
+    }
+
+    /**
+     * Cleans up the map when navigation ends, either because the destination was
+     * reached or because an error occurred. A non-fatal error is reported to the user.
+     */
+    private fun onNavigationEnded(errorCode: ErrorCode = GemError.NoError) {
+        runOnUiThread {
+            if (errorCode != GemError.NoError && errorCode != GemError.Cancel) {
+                val message = SdkCall.runSynced { GemError.getMessage(errorCode, this) } ?: ""
+                showDialog(message)
+            }
+            setFollowGpsButtonVisibility(isVisible = false)
+        }
+
+        SdkCall.execute {
+            mapView?.preferences?.routes?.clear()
+        }
     }
 
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
@@ -340,11 +420,16 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         binding.alarmPanel.visibility = View.VISIBLE
         alarmBitmap?.let { binding.alarmImage.setImageBitmap(it) }
         EspressoIdlingResource.updateAlarmVisibility(isVisible = true)
+        // Defer until the panel has been laid out so its top edge is known, then
+        // lift the logo above it.
+        binding.alarmPanel.post { updateFocusViewport() }
     }
 
     private fun hideAlarmPanel() {
         binding.alarmPanel.visibility = View.GONE
         EspressoIdlingResource.updateAlarmVisibility(isVisible = false)
+        // Restore the logo to its default bottom position.
+        updateFocusViewport()
     }
 
     private fun updateAlarmText(distance: Float) {

@@ -56,6 +56,7 @@ Explore the examples to learn the capabilities of the Magic Lane Maps Android SD
 * [Hello Map](HelloMap) - Display a map.
 * [Hello Map Compose](HelloMapCompose) - Display a map using Jetpack Compose.
 * [Hello SDK](HelloSdk) - Show how the Maps SDK for Android can be integrated into your project.
+* [Import GeoJSON Markers](ImportGeoJsonMarkers) - Import markers from a GeoJSON file and display them on the map as a clustered marker collection.
 * [Lane Instructions](LaneInstructions) - Calculate the routes between 2 given landmarks; display the recommended lanes for the next turn instruction.
 * [Location Wikipedia](LocationWikipedia) - Search for a landmark; request Wikipedia info about first resulted landmark, if exists.
 * [Map Compass](MapCompass) - Display an interactive map with a compass.
@@ -66,8 +67,8 @@ Explore the examples to learn the capabilities of the Magic Lane Maps Android SD
 * [Marker Collection Display Icon](MarkerCollectionDisplayIcon) - Show usage of `MarkerCollection`.
 * [Monitor Geofence Area](MonitorGeofenceArea) - Get notified when crossing a geographic area.
 * [Multiple Surfaces in Fragment](MultipleSurfacesInFragment) - Display a variable list of maps on an Android Fragment.
-* [Multiple Surfaces in Fragment Recycler](MultipleSurfacesInFragmentRecycler) - Display a variable list of maps on an Android Fragment using RecyclerView.
 * [Overlapped Maps](OverlappedMaps) - Display a second map view over the existing one.
+* [Overspeed TTS Warning](OverspeedTTSWarning) - Start a navigation from the current position to a given landmark. Display the current speed and the legal speed limit. Send a TTS warning when the current speed exceeds the legal speed limit (throttled to at most once every 5 minutes).
 * [Projection](Projection) - Show various types of projections for landmarks.
 * [Public Transit Routing on Map](PublicTransitRoutingOnMap) - Calculate the public transport routes between 2 given landmarks; display all results on the map and fly to the main route, if exists.
 * [Range Finder](RangeFinder) - Calculate the routes between 2 given landmarks; display and fly to the first route in the resulting route list, if it exists.
@@ -77,8 +78,7 @@ Explore the examples to learn the capabilities of the Magic Lane Maps Android SD
 * [Route Navigation](RouteNavigation) - Start navigation from the current position to a given landmark if any route can be calculated.
 * [Route Restrictions](RouteRestrictions) - Start simulated navigation between 2 given landmarks using a truck (lorry) route profile with a mass exceeding 3500 kg. Listen for route restrictions during navigation. Display active route restrictions.
 * [Route Simulation](RouteSimulation) - Start simulation between 2 given landmarks if any route can be calculated.
-* [Route Simulation with Instructions](RouteSimulationWithInstructions) - Start simulation between 2 given landmarks. Display turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance.
-* [Route Simulation with Instructions Compose](RouteSimulationWithInstructionsCompose) - Route simulation with instructions example using Jetpack Compose.
+* [Route Simulation Compose](RouteSimulationCompose) - Start simulated navigation between 2 given landmarks. Display turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance, sign post and road code images, and traffic event information along the route. Uses Jetpack Compose.
 * [Route Simulation without Map](RouteSimulationWithoutMap) - Start simulated navigation between 2 given landmarks. Display turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance. No map is displayed.
 * [Route Terrain Profile](RouteTerrainProfile) - Calculate the routes between 2 given landmarks; display some of the route terrain profile details available for a route.
 * [Routing](Routing) - Calculate the routes between 2 given landmarks.
@@ -91,15 +91,11 @@ Explore the examples to learn the capabilities of the Magic Lane Maps Android SD
 * [Set TTS Language](SetTTSLanguage) - Show usage of `SoundPlayingService` class and setting TTS language.
 * [Social Event Voting](SocialEventVoting) - Present a social event panel that displays the score of the event and the option to vote the event.
 * [Social Report](SocialReport) - Wait for a valid position. Submit a social report.
-* [Speed TTS Warning Navigation](SpeedTTSWarningNavigation) - Start a navigation from the current position to a given landmark. Display the current speed and the legal speed limit. Send a TTS warning each time the current speed overcomes the legal speed limit.
-* [Speed TTS Warning Tracking](SpeedTTSWarningTracking) - Display the current speed and the legal speed limit. Send a TTS warning each time the current speed overcomes the legal speed limit.
-* [Speed Watcher](SpeedWatcher) - Start simulation between 2 given landmarks. Display the current speed and the legal speed limit.
 * [Stay Inside Geofence Area](StayInsideGeofenceArea) - Get notified when leaving a geographic area.
 * [Take Screenshot](TakeScreenshot) - Capture a screenshot of the map view by tapping the "Take Screenshot" button at the bottom of the screen. Preview the captured screenshot in a bottom sheet dialog.
-* [Track Positions](TrackPostions) - Mock navigation from point A to point B using external data source while tracking positions. Display path using tracked positions.
+* [Track Positions](TrackPositions) - Mock navigation from point A to point B using external data source while tracking positions. Display path using tracked positions.
 * [Truck Profile](TruckProfile) - Calculate the truck routes between 2 given landmarks. Change the truck profile and recalculate routes depending on the new settings.
 * [Voice Downloading](VoiceDownloading) - Gather the list of available voices; download first available voice.
-* [Voice Instructions Route Simulation](VoiceInstrRouteSimulation) - Start simulation between 2 given landmarks if any route can be calculated; use TTS to play navigation instructions.
 * [Weather](Weather) - Show how to use weather service to display forecast for a selected landmark.
 * [What's Nearby](WhatsNearby) - Search all landmarks near current position; display a list of found landmarks.
 * [What's Nearby Category](WhatsNearbyCategory) - Search all landmarks of a specific category near current position; display a list of found landmarks.

@@ -8,5 +8,8 @@
     <string name="routing_error">Routing error: %1$s</string>
     <string name="route_simulation_error">Route simulation error: %s</string>
     <string name="waiting_for_internet_connection">Waiting for internet connection…</string>
+    <string name="calculating">Calculating…</string>
+    <string name="getting_position">Getting position…</string>
+    <string name="gps_accuracy_not_good_enough">GPS accuracy is not good enough</string>
 </resources>
 

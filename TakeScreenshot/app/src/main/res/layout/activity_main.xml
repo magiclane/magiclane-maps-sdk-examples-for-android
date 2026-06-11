@@ -32,9 +32,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/take_screenshot"
-        android:layout_margin="@dimen/big_padding"
-        app:marginBottomWithSystemWindowInsets='@{"0dp"}'
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginTop="@dimen/big_padding"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 

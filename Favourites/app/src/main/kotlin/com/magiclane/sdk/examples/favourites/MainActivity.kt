@@ -7,15 +7,20 @@
 
 package com.magiclane.sdk.examples.favourites
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -48,21 +53,10 @@ import kotlin.system.exitProcess
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
-    private var imageSize: Int = 0
+    // Portrait ConstraintSet captured once at creation; landscape constraints are derived from it.
+    private lateinit var portraitConstraintSet: ConstraintSet
 
-    private var leftInset = 0
-
-    private var rightInset = 0
-
-    private var bottomInset = 0
-
-    private var inflate = 0
-
-    private var toolbarHeight = 0
-
-    private var bottomDialogHeight = 0
-
-    // Define a Landmark Store so we can write the favourite landmarks in the data folder.
+    // Landmark store for persisting favourite locations.
     private var store: LandmarkStore? = null
 
     private lateinit var landmark: Landmark
@@ -85,7 +79,11 @@ class MainActivity : AppCompatActivity() {
                             GemUtil.formatName(landmark),
                             GemUtil.getLandmarkDescription(landmark, true),
                         ) {
-                            highlightLandmarkOnMap(landmark, getFreeScreenRect(), isFavourite(landmark))
+                            highlightLandmarkOnMap(
+                                landmark,
+                                getMapFreeRect(mapFreeSpacePadding()),
+                                isFavourite(landmark),
+                            )
                         }
 
                         binding.statusText.visibility = View.GONE
@@ -95,7 +93,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 else -> {
                     showStatusMessage(
-                        getString(R.string.search_completed_with_error, GemError.getMessage(errorCode, this)),
+                        getString(
+                            R.string.search_completed_with_error,
+                            SdkCall.runSynced { GemError.getMessage(errorCode, this) },
+                        ),
                     )
                 }
             }
@@ -110,55 +111,18 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        imageSize = resources.getDimensionPixelSize(R.dimen.image_size)
-        inflate = resources.getDimension(R.dimen.padding_40).toInt()
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
 
-        // Measure app bar height after layout
-        binding.toolbar.post {
-            toolbarHeight = binding.toolbar.height
-        }
+        // Clone portrait constraints before any runtime changes are applied.
+        portraitConstraintSet = ConstraintSet().also { it.clone(binding.root as ConstraintLayout) }
 
-        // Set up window insets listener
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            leftInset = systemBars.left + inflate
-            rightInset = systemBars.right + inflate
-            bottomInset = systemBars.bottom + inflate
-            insets
-        }
-
-        binding.gemSurfaceView.onDefaultMapViewCreated = { mapView ->
-            store = LandmarkStoreService().createLandmarkStore("Favourites")?.first
-            store?.let {
-                mapView.preferences?.landmarkStores?.addAllStoreCategories(it.id)
-            }
-        }
-
-        binding.gemSurfaceView.onSdkInitFailed = { error ->
-            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
-            Util.postOnMain {
-                showDialog(errorMessage) {
-                    finish()
-                    exitProcess(0)
-                }
-            }
-        }
+        // Apply orientation-specific layout once the root view is measured.
+        binding.root.post { applyOrientationLayout() }
 
         EspressoIdlingResource.increment()
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
-            if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
-
-                SdkCall.execute {
-                    searchService.searchByFilter("Statue of Liberty New York", Coordinates(40.68925476, -74.04456329))
-                }
-            }
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            showDialog(getString(R.string.token_rejected_message))
-        }
+        registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
             showDialog(getString(R.string.internet_required))
@@ -167,13 +131,196 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-
-        // Deinitialize the SDK.
+        clearSdkListeners()
         GemSdk.release()
         exitProcess(0)
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        binding.root.post { applyOrientationLayout() }
+    }
+
+    // Registers all SDK surface and settings callbacks.
+    private fun registerSdkListeners() {
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnAliveUi {
+                showDialog(errorMessage) {
+                    finish()
+                    exitProcess(0)
+                }
+            }
+        }
+
+        binding.gemSurfaceView.onDefaultMapViewCreated = { mapView ->
+            store = LandmarkStoreService().createLandmarkStore("Favourites")?.first
+            store?.let { mapView.preferences?.landmarkStores?.addAllStoreCategories(it.id) }
+            // Position the Magic Lane logo respecting system insets and any visible panels.
+            updateFocusViewport()
+        }
+
+        // Re-align the Magic Lane logo whenever the surface is resized (e.g. on rotation).
+        binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
+        }
+
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkCall.execute {
+                    searchService.searchByFilter("Statue of Liberty New York", Coordinates(40.68925476, -74.04456329))
+                }
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnAliveUi { showDialog(getString(R.string.token_rejected_message)) }
+        }
+    }
+
+    // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
+    private fun clearSdkListeners() {
+        SdkSettings.onApiTokenRejected = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        binding.gemSurfaceView.apply {
+            onDefaultMapViewCreated = {}
+            onSdkInitFailed = {}
+            onSurfaceChanged = null
+        }
+    }
+
+    // Re-applies constraints for the current orientation and fixes panel inset padding.
+    // Landscape: panel is wrap_content at bottom-left, 40% screen width.
+    private fun applyOrientationLayout() {
+        val rootLayout = binding.root as ConstraintLayout
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        // ConstraintSet.applyTo() resets view visibility; save and restore.
+        val panelVis = binding.locationDetailsPanel.root.visibility
+        val statusVis = binding.statusText.visibility
+        val progressVis = binding.progressBar.visibility
+
+        ConstraintSet().apply {
+            clone(portraitConstraintSet)
+            if (isLandscape) {
+                val panelWidth = (resources.displayMetrics.widthPixels * 0.4f).toInt()
+                constrainWidth(R.id.location_details_panel, panelWidth)
+                // WRAP_CONTENT height: panel grows with its content, no link to the toolbar.
+                constrainHeight(R.id.location_details_panel, ConstraintSet.WRAP_CONTENT)
+                connect(
+                    R.id.location_details_panel,
+                    ConstraintSet.START,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.START,
+                    0,
+                )
+                connect(
+                    R.id.location_details_panel,
+                    ConstraintSet.BOTTOM,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.BOTTOM,
+                    0,
+                )
+                // No TOP constraint: panel sits in the bottom-left corner, wrap_content tall.
+                clear(R.id.location_details_panel, ConstraintSet.TOP)
+                clear(R.id.location_details_panel, ConstraintSet.END)
+            }
+        }.applyTo(rootLayout)
+
+        binding.locationDetailsPanel.root.visibility = panelVis
+        binding.statusText.visibility = statusVis
+        binding.progressBar.visibility = progressVis
+
+        // Override the binding-adapter insets listener with one that is orientation-aware.
+        updatePanelInsets(isLandscape)
+        updateFocusViewport()
+    }
+
+    // Replaces the binding adapter's inset listener on the details panel with an
+    // orientation-aware version. In landscape the panel is on the left, so the right
+    // system bar inset must not be applied as right padding.
+    private fun updatePanelInsets(isLandscape: Boolean) {
+        val panel = binding.locationDetailsPanel.root
+        val bigPadding = resources.getDimensionPixelSize(R.dimen.big_padding)
+
+        ViewCompat.setOnApplyWindowInsetsListener(panel) { v, insets ->
+            val sys = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
+            )
+            v.updatePadding(
+                left = bigPadding + sys.left,
+                top = bigPadding,
+                right = if (isLandscape) bigPadding else bigPadding + sys.right,
+                bottom = bigPadding + sys.bottom,
+            )
+            insets
+        }
+        panel.requestApplyInsets()
+    }
+
+    // Sets the Magic Lane logo viewport to the visible map area (no padding).
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            binding.gemSurfaceView.mapView?.preferences?.focusViewport = getMapFreeRect()
+        }
+    }
+
+    // Returns the visible map area, accounting for toolbar, system bars, and any visible panels.
+    // An optional padding deflates the rect on all sides (useful for camera-centering animations).
+    // Portrait: panel at bottom → restricts bottom edge; landscape: panel at left → restricts left edge.
+    // Status text is considered in both orientations.
+    private fun getMapFreeRect(padding: Int = 0): Rect {
+        val root = binding.root
+        val insets = ViewCompat.getRootWindowInsets(root)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+
+        val width = root.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+        val height = root.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val top = binding.toolbar.bottom
+
+        val left: Int
+        val right: Int
+        val bottom: Int
+
+        if (isLandscape) {
+            left = if (binding.locationDetailsPanel.root.isVisible) {
+                binding.locationDetailsPanel.root.right
+            } else {
+                insets?.left ?: 0
+            }
+            right = (width - (insets?.right ?: 0)).coerceAtLeast(left)
+            bottom = when {
+                binding.statusText.isVisible -> binding.statusText.top.coerceAtLeast(top)
+                else -> (height - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            }
+        } else {
+            left = insets?.left ?: 0
+            right = (width - (insets?.right ?: 0)).coerceAtLeast(left)
+            bottom = when {
+                binding.locationDetailsPanel.root.isVisible ->
+                    binding.locationDetailsPanel.root.top.coerceAtLeast(top)
+                binding.statusText.isVisible ->
+                    binding.statusText.top.coerceAtLeast(top)
+                else ->
+                    (height - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            }
+        }
+
+        // Apply symmetric padding (for camera animations) while keeping the rect valid.
+        val paddedLeft = (left + padding).coerceAtMost(right - 1)
+        val paddedRight = (right - padding).coerceAtLeast(paddedLeft + 1)
+        val paddedTop = (top + padding).coerceAtMost(bottom - 1)
+        val paddedBottom = (bottom - padding).coerceAtLeast(paddedTop + 1)
+
+        return Rect(paddedLeft, paddedTop, paddedRight, paddedBottom)
+    }
+
+    private fun mapFreeSpacePadding() = resources.getDimensionPixelSize(R.dimen.map_free_space_padding)
+
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
             title.text = getString(R.string.error)
@@ -194,18 +341,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun showStatusMessage(text: String) {
         binding.apply {
-            if (!statusText.isVisible) {
-                statusText.visibility = View.VISIBLE
-            }
+            if (!statusText.isVisible) statusText.visibility = View.VISIBLE
             statusText.text = text
+            // Post so the status text is laid out before we recompute the viewport.
+            statusText.post { updateFocusViewport() }
         }
     }
 
     private fun getFavouriteId(landmark: Landmark): Int = SdkCall.execute {
-        /**
-         * Get the ID of the landmark saved in the store so we can use it to remove it
-         * or to check if it's already a favourite.
-         */
+        // Search a small area around the landmark to find its store ID.
         val radius = 5.0 // meters
         val area = landmark.coordinates?.let { RectangleGeographicArea(it, radius, radius) }
         val landmarks = area?.let { store?.getLandmarksByArea(it) } ?: return@execute -1
@@ -216,7 +360,11 @@ class MainActivity : AppCompatActivity() {
             val landmarkCoordinates = landmark.coordinates
 
             if (itCoordinates != null && landmarkCoordinates != null) {
-                if ((itCoordinates.latitude - landmarkCoordinates.latitude < threshold) && (itCoordinates.longitude - landmarkCoordinates.longitude < threshold)) return@execute it.id
+                if ((itCoordinates.latitude - landmarkCoordinates.latitude < threshold) &&
+                    (itCoordinates.longitude - landmarkCoordinates.longitude < threshold)
+                ) {
+                    return@execute it.id
+                }
             } else {
                 return@execute -1
             }
@@ -229,41 +377,19 @@ class MainActivity : AppCompatActivity() {
     private fun addToFavourites(landmark: Landmark) = SdkCall.execute {
         val lmk = Landmark()
         lmk.assign(landmark)
-        ImageDatabase().getImageById(
-            SdkImages.Engine_Misc.LocationDetails_FavouritePushPin.value,
-        )?.let {
-            lmk.image = it
-        }
-
-        // Add the landmark to the desired LandmarkStore
+        ImageDatabase().getImageById(SdkImages.Engine_Misc.LocationDetails_FavouritePushPin.value)
+            ?.let { lmk.image = it }
         store?.addLandmark(lmk)
     }
 
     private fun deleteFromFavourites(landmarkId: Int) = SdkCall.execute {
-        // Remove the landmark associated to this ID from the LandmarkStore.
         store?.removeLandmark(landmarkId)
     }
 
     private fun setFavouriteButtonIcon(button: MaterialButton, isFavourite: Boolean) {
-        val bmp = SdkCall.execute {
-            if (isFavourite) {
-                ContextCompat.getDrawable(this, R.drawable.baseline_star_24)
-            } else {
-                ContextCompat.getDrawable(this, R.drawable.baseline_star_border_24)
-            }
-        }
-
-        bmp?.let {
-            button.icon = bmp
-        }
-    }
-
-    private fun getFreeScreenRect(): Rect {
-        return Rect(
-            leftInset,
-            toolbarHeight + inflate,
-            binding.root.width - rightInset,
-            binding.root.height - bottomDialogHeight - inflate,
+        button.icon = ContextCompat.getDrawable(
+            this,
+            if (isFavourite) R.drawable.baseline_star_24 else R.drawable.baseline_star_border_24,
         )
     }
 
@@ -284,7 +410,7 @@ class MainActivity : AppCompatActivity() {
             @Suppress("VerboseNullabilityAndEmptiness")
             if ((contour != null) && !contour.isEmpty()) {
                 if (flyToLandmark) {
-                    binding.gemSurfaceView.mapView?.centerOnRectArea(
+                    mapView.centerOnRectArea(
                         contour,
                         zoomLevel = -1,
                         viewRc = rect,
@@ -303,18 +429,13 @@ class MainActivity : AppCompatActivity() {
                     Rgba(255, 98, 0, 255),
                     Rgba(255, 98, 0, 255),
                     0.75,
-                ).also {
-                    it.imageSize = 6.0
-                }
+                ).also { it.imageSize = 6.0 }
 
-                mapView.activateHighlightLandmarks(
-                    landmark,
-                    highlightSettings,
-                )
+                mapView.activateHighlightLandmarks(landmark, highlightSettings)
             } else {
                 if (flyToLandmark) {
                     landmark.coordinates?.let {
-                        binding.gemSurfaceView.mapView?.centerOnCoordinates(
+                        mapView.centerOnCoordinates(
                             it,
                             -1,
                             rect.center,
@@ -326,16 +447,9 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 if (!isFavorite) {
-                    highlightSettings = HighlightRenderSettings(
-                        EHighlightOptions.ShowLandmark,
-                    ).also {
-                        it.imageSize = 6.0
-                    }
-
-                    mapView.activateHighlightLandmarks(
-                        landmark,
-                        highlightSettings,
-                    )
+                    highlightSettings = HighlightRenderSettings(EHighlightOptions.ShowLandmark)
+                        .also { it.imageSize = 6.0 }
+                    mapView.activateHighlightLandmarks(landmark, highlightSettings)
                 }
             }
         }
@@ -359,19 +473,23 @@ class MainActivity : AppCompatActivity() {
                     setFavouriteButtonIcon(favoritesButton, true)
                     true
                 }
-
-                highlightLandmarkOnMap(landmark, getFreeScreenRect(), isFavourite, false)
+                highlightLandmarkOnMap(landmark, getMapFreeRect(mapFreeSpacePadding()), isFavourite, false)
             }
 
-            // Show the panel
             root.visibility = View.VISIBLE
 
-            // Measure height after it's shown
+            // After the panel is laid out, update the logo position then fly to the landmark.
             root.post {
-                bottomDialogHeight = root.height
+                updateFocusViewport()
                 onViewCreated?.invoke()
             }
         }
+    }
+
+    private fun isActivityAlive() = !isFinishing && !isDestroyed
+
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
     }
 }
 

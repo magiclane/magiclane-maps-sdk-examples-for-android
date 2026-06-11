@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2023-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -35,23 +36,15 @@ import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-
     private lateinit var gemOffscreenSurfaceView: GemOffscreenSurfaceView
 
     private var screenshotTaken = false
 
-    private val thumbnailWidth by lazy {
-        resources.getDimension(R.dimen.thumbnail_width).toInt()
-    }
+    private val thumbnailWidth by lazy { resources.getDimension(R.dimen.thumbnail_width).toInt() }
+    private val thumbnailHeight by lazy { resources.getDimension(R.dimen.thumbnail_height).toInt() }
+    private val padding by lazy { resources.getDimension(R.dimen.big_padding).toInt() }
 
-    private val thumbnailHeight by lazy {
-        resources.getDimension(R.dimen.thumbnail_height).toInt()
-    }
-
-    private val padding by lazy {
-        resources.getDimension(R.dimen.big_padding).toInt()
-    }
-
+    // Routing service with callbacks for the route calculation lifecycle.
     private val routingService = RoutingService(
         onStarted = {
             binding.progressBar.visibility = View.VISIBLE
@@ -65,13 +58,15 @@ class MainActivity : AppCompatActivity() {
 
                     binding.statusText.text = getString(R.string.route_calculation_completed)
 
+                    // Switch to the SDK thread to access the map view and present the route.
                     SdkCall.execute {
                         gemOffscreenSurfaceView.mapView?.let { mapView ->
+                            // Wait for the map to finish rendering before capturing the screenshot.
                             mapView.onViewRendered = onViewRendered@{ tivStatus, camStatus ->
                                 if (screenshotTaken) return@onViewRendered
 
-                                if ((tivStatus == EViewDataTransitionStatus.Complete) &&
-                                    (camStatus == EViewCameraTransitionStatus.Stationary)
+                                if (tivStatus == EViewDataTransitionStatus.Complete &&
+                                    camStatus == EViewCameraTransitionStatus.Stationary
                                 ) {
                                     Util.postOnMain {
                                         binding.statusText.text = getString(R.string.taking_screenshot)
@@ -81,15 +76,12 @@ class MainActivity : AppCompatActivity() {
                                             binding.apply {
                                                 mapThumbnailImageView.setImageBitmap(bitmap)
                                                 progressBar.isVisible = false
-                                                statusText.text = getString(
-                                                    R.string.screenshot_taken,
-                                                )
+                                                statusText.text = getString(R.string.screenshot_taken)
                                             }
                                         }
                                         screenshotTaken = true
                                         gemOffscreenSurfaceView.destroy()
                                     }
-
                                     mapView.onViewRendered = null
                                 }
                             }
@@ -106,9 +98,11 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 else -> {
-                    binding.progressBar.isVisible = false
-                    // There was a problem at computing the routing operation.
-                    showDialog(getString(R.string.routing_error, GemError.getMessage(errorCode, this)))
+                    val errorMessage = SdkCall.runSynced { GemError.getMessage(errorCode, this) }
+                    runOnAliveUi {
+                        binding.progressBar.isVisible = false
+                        showDialog(getString(R.string.routing_error, errorMessage))
+                    }
                 }
             }
         },
@@ -119,37 +113,31 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         val error = GemSdk.initSdkWithDefaults(this)
         if (error != GemError.NoError) {
-            Util.postOnMain {
-                showDialog(getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))) {
-                    finish()
-                    exitProcess(0)
+            val errorMessage = SdkCall.runSynced { GemError.getMessage(error, this) }
+            showDialog(getString(R.string.sdk_initialization_failed, errorMessage)) {
+                finish()
+                exitProcess(0)
+            }
+            return
+        }
+
+        gemOffscreenSurfaceView = GemOffscreenSurfaceView(
+            thumbnailWidth,
+            thumbnailHeight,
+            resources.displayMetrics.densityDpi,
+            onDefaultMapViewCreated = { mapView ->
+                mapView.preferences?.apply {
+                    mapLabelsFading = false
                 }
-            }
-        }
+            },
+        )
 
-        gemOffscreenSurfaceView = GemOffscreenSurfaceView(thumbnailWidth, thumbnailHeight, resources.displayMetrics.densityDpi, onDefaultMapViewCreated = { mapView ->
-            mapView.preferences?.apply {
-                mapLabelsFading = false
-            }
-        })
-
-        binding.statusText.text = getString(R.string.waiting_for_data)
-
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
-            if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
-
-                binding.statusText.text = getString(R.string.map_data_ready)
-
-                calculateRouteFromGPX()
-            }
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            showDialog(getString(R.string.token_rejected_message))
-        }
+        registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
             showDialog(getString(R.string.internet_required))
@@ -158,31 +146,51 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-
-        // Deinitialize the SDK.
+        clearSdkListeners()
         GemSdk.release()
         exitProcess(0)
     }
 
-    private fun calculateRouteFromGPX() = SdkCall.execute {
-        val gpxAssetsFilename = "gpx/test_route.gpx"
+    // Registers SDK-level callbacks for map data readiness and token validation.
+    private fun registerSdkListeners() {
+        binding.statusText.text = getString(R.string.waiting_for_data)
 
-        // Opens GPX input stream.
-        val input = applicationContext.resources.assets.open(gpxAssetsFilename)
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                // Unregister immediately so the callback fires only once.
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
 
-        // Produce a Path based on the data in the buffer.
-        val track = Path.produceWithGpx(input) ?: return@execute
-
-        // Set the transport mode to car and calculate the route.
-        val error = routingService.calculateRoute(track, ERouteTransportMode.Car)
-        if (error != GemError.NoError) {
-            Util.postOnMain {
-                showDialog(getString(R.string.routing_error, GemError.getMessage(error, this)))
+                binding.statusText.text = getString(R.string.map_data_ready)
+                calculateRouteFromGPX()
             }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnAliveUi { showDialog(getString(R.string.token_rejected_message)) }
         }
     }
 
+    // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+    }
+
+    // Loads the bundled GPX file and starts a car route calculation along its track.
+    private fun calculateRouteFromGPX() = SdkCall.execute {
+        val input = applicationContext.resources.assets.open("gpx/test_route.gpx")
+        val track = Path.produceWithGpx(input) ?: return@execute
+
+        val error = routingService.calculateRoute(track, ERouteTransportMode.Car)
+        if (error != GemError.NoError) {
+            val errorMessage = GemError.getMessage(error, this)
+            runOnAliveUi { showDialog(getString(R.string.routing_error, errorMessage)) }
+        }
+    }
+
+    // Shows a non-dismissable bottom-sheet error dialog with an optional dismiss callback.
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
             title.text = getString(R.string.error)
@@ -200,4 +208,10 @@ class MainActivity : AppCompatActivity() {
             show()
         }
     }
+
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
+    }
+
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
 }

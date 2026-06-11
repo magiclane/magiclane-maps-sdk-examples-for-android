@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2024-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -12,6 +12,9 @@ import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -22,6 +25,7 @@ import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.Image
 import com.magiclane.sdk.core.MapDetails
 import com.magiclane.sdk.core.MapSpeedLimit
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.RectF
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
@@ -34,6 +38,7 @@ import com.magiclane.sdk.d3scene.TextState
 import com.magiclane.sdk.examples.basicshapedrawer.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.basicshapedrawer.databinding.DialogLayoutBinding
 import com.magiclane.sdk.routesandnavigation.EImageFileFormat
+import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
 import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
@@ -42,6 +47,11 @@ import java.util.Locale.getDefault
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        private val SYSTEM_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+    }
 
     private lateinit var binding: ActivityMainBinding
 
@@ -67,80 +77,125 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         speedSignSize = resources.getDimensionPixelSize(R.dimen.speed_sign_size)
         fontSize = resources.getDimensionPixelSize(R.dimen.speed_panel_font_size)
         padding = resources.getDimensionPixelSize(R.dimen.padding).toFloat()
 
-        binding.apply {
-            gemSurfaceView.onSdkInitFailed = { error ->
-                val errorMessage = "SDK initialization failed: ${GemError.getMessage(error, this@MainActivity)}"
-                Util.postOnMain {
-                    showDialog(errorMessage) {
-                        finish()
-                        exitProcess(0)
-                    }
-                }
-            }
-
-            // Get toolbar height programmatically after layout is complete
-            toolbar.post {
-                toolbarHeight = toolbar.height.toFloat()
-            }
-
-            gemSurfaceView.onScreenCreated = { screen ->
-                val rectF = RectF(0.0f, 0.0f, 1.0f, 1.0f) // 0%, 0%, 100%, 100%
-                canvas = Canvas.produce(screen, rectF, canvasListener)
-                shapeDrawer = BasicShapeDrawer.produce(canvas)
-            }
-
-            gemSurfaceView.onDefaultMapViewCreated = {
-                Util.postOnMain { progressBarView.isVisible = false }
-
-                insideUrbanAreasTextureId = createFlagTexture("inside_urban_areas.png", speedSignSize, speedSignSize)
-                outsideUrbanAreasTextureId = createFlagTexture("outside_urban_areas.png", speedSignSize, speedSignSize)
-                expressRoadsTextureId = createFlagTexture("express_roads.png", speedSignSize, speedSignSize)
-                motorwaysTextureId = createFlagTexture("motorways.png", speedSignSize, speedSignSize)
-
-                gemSurfaceView.onDrawFrameCustom = { _ ->
-                    shapeDrawer?.apply {
-                        gemSurfaceView.mapView?.let { mapView ->
-                            mapView.viewport?.center?.let { center ->
-                                val coordinates = mapView.transformScreenToWgs(center)
-                                coordinates?.let { coord ->
-                                    val isoCode = mapDetails.getCountryCode(coord)
-                                    if (!isoCode.isNullOrEmpty() && (isoCode != countryIsoCode)) {
-                                        countryIsoCode = isoCode
-                                        countryName = mapDetails.getCountryName(countryIsoCode)?.uppercase(getDefault())
-                                        speedLimits = mapDetails.getCountrySpeedLimits(countryIsoCode)
-                                    }
-                                }
-                            }
-                        }
-
-                        if (!countryName.isNullOrEmpty() && !speedLimits.isNullOrEmpty()) {
-                            drawSpeedLimitsPanel(countryName!!, speedLimits!!)
-                            renderShapes()
-                        }
-                    }
-                }
-            }
+        // Capture toolbar height after layout to use as the canvas origin offset.
+        binding.toolbar.post {
+            toolbarHeight = binding.toolbar.height.toFloat()
         }
 
-        SdkSettings.onApiTokenRejected = {
-            showDialog(
-                "The token you provided was rejected. " +
-                    "Make sure you provide the correct value, or if you don't have a token, " +
-                    "check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.",
-            )
-        }
+        registerSdkListeners()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-
-        // Release the SDK.
+        clearSdkListeners()
         GemSdk.release()
         exitProcess(0)
+    }
+
+    private fun registerSdkListeners() {
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            Util.postOnMain {
+                showDialog(errorMessage) {
+                    finish()
+                    exitProcess(0)
+                }
+            }
+        }
+
+        // Create the canvas and shape drawer once the GL surface is ready.
+        binding.gemSurfaceView.onScreenCreated = { screen ->
+            val rectF = RectF(0.0f, 0.0f, 1.0f, 1.0f) // full-screen canvas
+            canvas = Canvas.produce(screen, rectF, canvasListener)
+            shapeDrawer = BasicShapeDrawer.produce(canvas)
+        }
+
+        binding.gemSurfaceView.onDefaultMapViewCreated = {
+            Util.postOnMain { binding.progressBarView.isVisible = false }
+            updateFocusViewport()
+
+            // Load speed-sign textures once the map view is available.
+            insideUrbanAreasTextureId = createFlagTexture("inside_urban_areas.png", speedSignSize, speedSignSize)
+            outsideUrbanAreasTextureId = createFlagTexture("outside_urban_areas.png", speedSignSize, speedSignSize)
+            expressRoadsTextureId = createFlagTexture("express_roads.png", speedSignSize, speedSignSize)
+            motorwaysTextureId = createFlagTexture("motorways.png", speedSignSize, speedSignSize)
+
+            binding.gemSurfaceView.onDrawFrameCustom = { _ ->
+                shapeDrawer?.apply {
+                    binding.gemSurfaceView.mapView?.let { mapView ->
+                        mapView.viewport?.center?.let { center ->
+                            val coordinates = mapView.transformScreenToWgs(center)
+                            coordinates?.let { coord ->
+                                // Update country data only when the map centre crosses into a new country.
+                                val isoCode = mapDetails.getCountryCode(coord)
+                                if (!isoCode.isNullOrEmpty() && (isoCode != countryIsoCode)) {
+                                    countryIsoCode = isoCode
+                                    countryName = mapDetails.getCountryName(countryIsoCode)?.uppercase(getDefault())
+                                    speedLimits = mapDetails.getCountrySpeedLimits(countryIsoCode)
+                                }
+                            }
+                        }
+                    }
+
+                    if (!countryName.isNullOrEmpty() && !speedLimits.isNullOrEmpty()) {
+                        drawSpeedLimitsPanel(countryName!!, speedLimits!!)
+                        renderShapes()
+                    }
+                }
+            }
+        }
+
+        // Re-adjust the Magic Lane logo position after rotation or surface size changes.
+        binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
+        }
+
+        // Show error dialog if the app token is rejected by the server.
+        SdkSettings.onApiTokenRejected = {
+            Util.postOnMain {
+                showDialog(getString(R.string.token_rejected_message))
+            }
+        }
+    }
+
+    private fun clearSdkListeners() {
+        SdkSettings.onApiTokenRejected = {}
+        binding.gemSurfaceView.apply {
+            onSdkInitFailed = {}
+            onScreenCreated = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
+        }
+    }
+
+    // Adjusts the Magic Lane logo position to respect system window insets and the status panel.
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            val mapView = binding.gemSurfaceView.mapView ?: return@runSynced
+            val viewport = mapView.viewport ?: return@runSynced
+            val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(SYSTEM_INSET_TYPES)
+
+            val w = viewport.width
+            val h = viewport.height
+            val left = insets?.left ?: 0
+            val top = insets?.top ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            // Use the status panel height when visible, system bar inset otherwise.
+            val bottom = if (binding.statusText.isVisible) {
+                val panelHeight = binding.statusText.height.takeIf { it > 0 } ?: binding.statusText.measuredHeight
+                (h - panelHeight).coerceAtLeast(top)
+            } else {
+                (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            }
+            mapView.preferences?.focusViewport = Rect(left, top, right, bottom)
+        }
     }
 
     private fun drawSpeedLimitRow(
@@ -152,6 +207,7 @@ class MainActivity : AppCompatActivity() {
         speedLimit: String,
     ) {
         shapeDrawer?.apply {
+            // Red ring outline.
             drawCircle(
                 (right + left) / 2,
                 (bottom + top) / 2,
@@ -159,6 +215,7 @@ class MainActivity : AppCompatActivity() {
                 Rgba(255, 0, 0, 255).value,
                 true,
             )
+            // White fill inside the ring.
             drawCircle(
                 (right + left) / 2,
                 (bottom + top) / 2,
@@ -179,9 +236,9 @@ class MainActivity : AppCompatActivity() {
                 ),
             )
 
+            // Road-type icon drawn to the right of the speed sign.
             val w = right - left
             val x = w + padding
-
             drawTextureRectangle(textureId, x, top, x + w, bottom)
         }
     }
@@ -203,22 +260,10 @@ class MainActivity : AppCompatActivity() {
             val panelRight = x + max(countryTextWidth + 3 * padding, 2 * speedSignSize + 2 * padding)
             val panelBottom = y + countryTextHeight + 2 * padding + speedLimits.size * (speedSignSize + padding)
 
-            drawRectangle(
-                x,
-                y,
-                panelRight,
-                panelBottom,
-                Rgba(255, 255, 255, 155).value,
-                true,
-                2f,
-            )
+            // Semi-transparent white background panel.
+            drawRectangle(x, y, panelRight, panelBottom, Rgba(255, 255, 255, 155).value, true, 2f)
 
-            drawText(
-                country,
-                x + 2 * padding,
-                y + 2.5f * padding,
-                countryTextState,
-            )
+            drawText(country, x + 2 * padding, y + 2.5f * padding, countryTextState)
 
             val left = padding
             var top = y + countryTextHeight + 2f * padding
@@ -248,7 +293,7 @@ class MainActivity : AppCompatActivity() {
                         top,
                         right,
                         bottom,
-                        2,
+                        expressRoadsTextureId,
                         speedLimit.speedLimit.toString(),
                     )
                     EMapSpeedLimitCoverage.Highway -> drawSpeedLimitRow(
@@ -256,7 +301,7 @@ class MainActivity : AppCompatActivity() {
                         top,
                         right,
                         bottom,
-                        3,
+                        motorwaysTextureId,
                         speedLimit.speedLimit.toString(),
                     )
                 }
@@ -269,12 +314,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun createFlagTexture(fileName: String, width: Int, height: Int): Int {
         val imgDataBuffer = getImageDataBuffer(fileName)
-        var id: Int = -1
+        var id = -1
 
-        Image.produceWithDataBuffer(
-            imgDataBuffer,
-            EImageFileFormat.Png,
-        )?.apply {
+        Image.produceWithDataBuffer(imgDataBuffer, EImageFileFormat.Png)?.apply {
             size?.width = width
             size?.height = height
         }?.let { texture ->
@@ -287,12 +329,9 @@ class MainActivity : AppCompatActivity() {
     private fun getImageDataBuffer(fileName: String): DataBuffer {
         try {
             val stream = ByteArrayOutputStream()
-            val bitmap = assets.open(
-                fileName,
-            ).use { BitmapFactory.decodeStream(it) }
+            val bitmap = assets.open(fileName).use { BitmapFactory.decodeStream(it) }
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-            val imageArray = stream.toByteArray()
-            return DataBuffer(byteArray = imageArray)
+            return DataBuffer(byteArray = stream.toByteArray())
         } catch (e: FileNotFoundException) {
             showDialog(e.message.toString())
             return DataBuffer()
@@ -312,6 +351,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (isFinishing || isDestroyed) return
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
             title.text = getString(R.string.error)

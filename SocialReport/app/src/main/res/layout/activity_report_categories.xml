@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/primary"
+            app:navigationIcon="@drawable/ic_arrow_back_white"
+            app:title="@string/report_event"
+            app:titleTextColor="@color/on_primary"
+            app:paddingTopWithSystemWindowInsets='@{"0dp"}'
+            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
+            android:paddingBottom="12dp"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/categories_recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:padding="@dimen/small_padding"
+            app:paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}" />
+
+    </LinearLayout>
+</layout>

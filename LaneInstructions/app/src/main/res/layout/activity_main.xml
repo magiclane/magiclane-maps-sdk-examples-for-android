@@ -37,12 +37,18 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <!--
+            Top navigation panel: shows the next turn icon + distance (grouped in turn_container)
+            and the instruction / status text. Its width is 0dp so it can be constrained to the full
+            width in portrait or to the left 40% in landscape (see applyOrientationLayout()).
+        -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/top_panel"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="@dimen/top_panel_height"
             android:layout_margin="@dimen/big_padding"
             android:background="@android:color/black"
+            android:elevation="@dimen/elevation_height"
             android:gravity="center"
             android:orientation="horizontal"
             android:visibility="gone"
@@ -50,33 +56,44 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/toolbar"
             app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            >
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}">
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/nav_instruction_icon"
-                android:layout_width="@dimen/turn_image_size"
-                android:layout_height="@dimen/turn_image_size"
-                android:layout_marginStart="@dimen/top_panel_margin"
-                android:layout_marginTop="@dimen/big_padding"
-                android:layout_marginEnd="@dimen/top_panel_margin"
-                app:layout_constraintBottom_toTopOf="@id/nav_instruction_distance"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="ContentDescription" />
-
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/nav_instruction_distance"
+            <!-- Turn icon + distance. Hidden as a group while a transient status message is shown. -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/turn_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/big_padding"
-                android:textColor="@android:color/white"
-                android:textSize="@dimen/medium_text_size"
-                android:textStyle="bold"
+                android:layout_marginStart="@dimen/top_panel_margin"
+                android:layout_marginEnd="@dimen/top_panel_margin"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="@id/nav_instruction_icon"
-                app:layout_constraintStart_toStartOf="@id/nav_instruction_icon"
-                app:layout_constraintTop_toBottomOf="@id/nav_instruction_icon" />
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/nav_instruction_icon"
+                    android:layout_width="@dimen/turn_image_size"
+                    android:layout_height="@dimen/turn_image_size"
+                    android:layout_marginTop="@dimen/big_padding"
+                    app:layout_constraintBottom_toTopOf="@id/nav_instruction_distance"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:ignore="ContentDescription" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/nav_instruction_distance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/big_padding"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/medium_text_size"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/nav_instruction_icon" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/nav_instruction"
@@ -85,16 +102,23 @@
                 android:layout_marginStart="@dimen/top_panel_margin"
                 android:layout_marginEnd="@dimen/top_panel_margin"
                 android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="3"
                 android:textColor="@android:color/white"
                 android:textSize="@dimen/instruction_text_size"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/nav_instruction_icon"
+                app:layout_constraintStart_toEndOf="@id/turn_container"
                 app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
+        <!--
+            Lane guidance panel. In portrait it sits centered just above the bottom panel; in
+            landscape applyOrientationLayout() re-anchors it to the bottom-right, filling the gap
+            between the bottom panel's right edge and the right edge of the map viewport.
+        -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/lane_container"
             android:layout_width="wrap_content"
@@ -103,6 +127,7 @@
             android:layout_marginEnd="@dimen/big_padding"
             android:layout_marginBottom="@dimen/big_padding"
             android:background="@android:color/black"
+            android:elevation="@dimen/elevation_height"
             android:visibility="gone"
             app:layout_constraintBottom_toTopOf="@id/bottom_panel"
             app:layout_constraintEnd_toEndOf="parent"
@@ -112,8 +137,8 @@
                 android:id="@+id/lane_image"
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/lane_panel_height"
-                android:foregroundGravity="center"
                 android:layout_margin="@dimen/medium_padding"
+                android:foregroundGravity="center"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -122,12 +147,17 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
+        <!--
+            Bottom panel: ETA / remaining time / remaining distance. Width is 0dp so it can be
+            constrained full width (portrait) or to the left 40% (landscape).
+        -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/bottom_panel"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="@dimen/turn_image_size"
             android:layout_margin="@dimen/big_padding"
             android:background="@android:color/white"
+            android:elevation="@dimen/elevation_height"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -188,8 +218,8 @@
             app:backgroundTint="@color/primary"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:tint="@android:color/white"
             tools:ignore="ContentDescription" />
 

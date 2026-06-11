@@ -37,23 +37,24 @@
             app:backgroundTint="@color/primary"
             app:layout_constraintBottom_toTopOf="@id/location_details_container"
             app:layout_constraintEnd_toEndOf="parent"
-            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:tint="@color/on_primary"
             tools:ignore="ContentDescription" />
 
+        <!--
+          Info panel. In portrait it spans the bottom edge (full width); in landscape it is
+          re-constrained at runtime (see MainActivity.applyOrientationLayout) into a card pinned
+          to the bottom-left corner. System-window insets are applied programmatically in an
+          orientation-aware way (see MainActivity.updatePanelInsets).
+        -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/location_details_container"
             android:clickable="true"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/background"
+            android:background="@drawable/bottom_panel_background"
             android:focusable="true"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             tools:layout_editor_absoluteX="10dp">
 
             <com.google.android.material.imageview.ShapeableImageView

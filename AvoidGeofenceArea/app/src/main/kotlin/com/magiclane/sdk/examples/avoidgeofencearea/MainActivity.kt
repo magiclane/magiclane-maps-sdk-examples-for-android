@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -8,10 +8,12 @@
 package com.magiclane.sdk.examples.avoidgeofencearea
 
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -43,10 +45,15 @@ import kotlin.system.exitProcess
 @Suppress("SameParameterValue")
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        private val SYSTEM_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+        private const val FREE_SPACE_INFLATE_DP = 30
+    }
+
     private lateinit var binding: ActivityMainBinding
 
-    private var inset = 0
-
+    // Routing service that handles route calculation with geofence avoidance.
     private val routingService = RoutingService(
         onStarted = {
             showStatusMessage(getString(R.string.calculating_route), withProgress = true)
@@ -55,19 +62,26 @@ class MainActivity : AppCompatActivity() {
             showStatusMessage(getString(R.string.route_calculation_completed))
 
             if (errorCode != GemError.NoError) {
-                showDialog(getString(R.string.route_calculation_failed, GemError.getMessage(errorCode, this))) {
-                    finish()
-                    exitProcess(0)
+                runOnAliveUi {
+                    showDialog(
+                        getString(
+                            R.string.route_calculation_failed,
+                            SdkCall.runSynced { GemError.getMessage(errorCode, this) },
+                        ),
+                    ) {
+                        finish()
+                        exitProcess(0)
+                    }
                 }
                 return@onCompleted
-            } else {
-                SdkCall.execute {
-                    if (routes.isNotEmpty()) {
-                        binding.gemSurface.mapView?.presentRoute(
-                            routes[0],
-                            edgeAreaInsets = Rect(inset, inset, inset, inset),
-                        )
-                    }
+            }
+
+            SdkCall.execute {
+                if (routes.isNotEmpty()) {
+                    binding.gemSurface.mapView?.presentRoute(
+                        routes[0],
+                        edgeAreaInsets = getEdgeAreaInsets(),
+                    )
                 }
             }
         },
@@ -77,20 +91,24 @@ class MainActivity : AppCompatActivity() {
 
     private var geofenceAreas: GeofenceAreaList = arrayListOf()
 
+    // Listener invoked once geofence areas have been registered; renders them on the map and starts routing.
     private val addAreasProgressListener = ProgressListener.create(onCompleted = { error, _ ->
         if (error != GemError.NoError) {
-            showDialog(getString(R.string.add_area_failed, GemError.getMessage(error, this))) {
-                finish()
-                exitProcess(0)
+            runOnAliveUi {
+                showDialog(
+                    getString(R.string.add_area_failed, SdkCall.runSynced { GemError.getMessage(error, this) }),
+                ) {
+                    finish()
+                    exitProcess(0)
+                }
             }
         } else {
             SdkCall.execute {
                 binding.gemSurface.mapView?.let { mapView ->
-                    val polygonSettings =
-                        MarkerCollectionRenderSettings(
-                            polylineInnerColor = Rgba.magenta(),
-                            polygonFillColor = Rgba(255, 0, 0, 128),
-                        )
+                    val polygonSettings = MarkerCollectionRenderSettings(
+                        polylineInnerColor = Rgba.magenta(),
+                        polygonFillColor = Rgba(255, 0, 0, 128),
+                    )
                     polygonSettings.polylineInnerSize = 1.0 // mm
                     val polygonCollection = MarkerCollection(EMarkerType.Polygon, "Polygon")
 
@@ -111,11 +129,14 @@ class MainActivity : AppCompatActivity() {
         }
     })
 
+    // Listener invoked after external login completes; sets up geofence areas on success.
     private val loginProgressListener = ProgressListener.create(onCompleted = { error, _ ->
         if (error != GemError.NoError) {
-            showDialog(getString(R.string.login_failed, GemError.getMessage(error, this))) {
-                finish()
-                exitProcess(0)
+            runOnAliveUi {
+                showDialog(getString(R.string.login_failed, SdkCall.runSynced { GemError.getMessage(error, this) })) {
+                    finish()
+                    exitProcess(0)
+                }
             }
         } else {
             SdkCall.execute {
@@ -125,10 +146,15 @@ class MainActivity : AppCompatActivity() {
                         getString(R.string.area_to_avoid),
                     ),
                 )
-                val error = geofence.addAreas(geofenceAreas, addAreasProgressListener)
-                if (error != GemError.NoError) {
-                    Util.postOnMain {
-                        showDialog(getString(R.string.cant_add_area, GemError.getMessage(error, this))) {
+                val addError = geofence.addAreas(geofenceAreas, addAreasProgressListener)
+                if (addError != GemError.NoError) {
+                    runOnAliveUi {
+                        showDialog(
+                            getString(
+                                R.string.cant_add_area,
+                                SdkCall.runSynced { GemError.getMessage(addError, this) },
+                            ),
+                        ) {
                             finish()
                             exitProcess(0)
                         }
@@ -141,13 +167,27 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        inset = getSizeInPixels(85)
 
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
+        registerSdkListeners()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        clearSdkListeners()
+        GemSdk.release()
+        exitProcess(0)
+    }
+
+    private fun registerSdkListeners() {
         binding.gemSurface.onSdkInitFailed = { error ->
             val errorMessage = getString(R.string.sdk_init_failed, GemError.getMessage(error, this))
-            Util.postOnMain {
+            runOnAliveUi {
                 showDialog(errorMessage) {
                     finish()
                     exitProcess(0)
@@ -155,14 +195,19 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Adjust the Magic Lane logo position once the map view is ready.
         binding.gemSurface.onDefaultMapViewCreated = { _ ->
-            Util.postOnMain {
-                if (!Util.isInternetConnected(this)) {
-                    showStatusMessage(getString(R.string.internet_required))
-                } else {
-                    showStatusMessage(getString(R.string.waiting_for_map_data))
-                }
+            updateFocusViewport()
+            if (!Util.isInternetConnected(this)) {
+                showStatusMessage(getString(R.string.internet_required))
+            } else {
+                showStatusMessage(getString(R.string.waiting_for_map_data))
             }
+        }
+
+        // Re-adjust after rotation or other surface size changes.
+        binding.gemSurface.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
         }
 
         SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
@@ -173,29 +218,90 @@ class MainActivity : AppCompatActivity() {
                         loginProgressListener,
                     )
                     if (error != GemError.NoError) {
-                        Util.postOnMain {
-                            showDialog(getString(R.string.external_login_error, GemError.getMessage(error, this))) {
+                        runOnAliveUi {
+                            showDialog(
+                                getString(
+                                    R.string.external_login_error,
+                                    SdkCall.runSynced { GemError.getMessage(error, this) },
+                                ),
+                            ) {
                                 finish()
                                 exitProcess(0)
                             }
                         }
                     }
                 }
+                // Self-clear: only the first map-ready event matters.
                 SdkSettings.onWorldwideRoadMapSupportStatus = {}
             }
         }
 
         SdkSettings.onApiTokenRejected = {
-            showDialog(getString(R.string.token_rejected))
+            runOnAliveUi { showDialog(getString(R.string.token_rejected)) }
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+        binding.gemSurface.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
+        }
+    }
 
-        // Deinitialize the SDK.
-        GemSdk.release()
-        exitProcess(0)
+    // Adjusts the Magic Lane logo position to respect system window insets and the status panel.
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            val mapView = binding.gemSurface.mapView ?: return@runSynced
+            val viewport = mapView.viewport ?: return@runSynced
+            val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(SYSTEM_INSET_TYPES)
+
+            val w = viewport.width
+            val h = viewport.height
+            val left = insets?.left ?: 0
+            val top = insets?.top ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            // Use the status panel height when visible, system bar inset otherwise.
+            val bottom = if (binding.statusText.isVisible) {
+                val panelHeight = binding.statusText.height.takeIf { it > 0 } ?: binding.statusText.measuredHeight
+                (h - panelHeight).coerceAtLeast(top)
+            } else {
+                (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            }
+            mapView.preferences?.focusViewport = Rect(left, top, right, bottom)
+        }
+    }
+
+    // Returns edge insets (px) for presentRoute: top uses the toolbar bottom, bottom uses the
+    // status panel height when visible, all other sides use system bar / cutout insets,
+    // with FREE_SPACE_INFLATE_DP added to every edge.
+    private fun getEdgeAreaInsets(): Rect {
+        val (left, top, right, bottom) = resolveMapPadding()
+        return Rect(left, top, right, bottom)
+    }
+
+    // Shared padding values (px) for getEdgeAreaInsets.
+    // Top is toolbar.bottom (which already absorbs the status-bar height); bottom uses the status
+    // panel height when visible, system bar inset otherwise. FREE_SPACE_INFLATE_DP on every edge.
+    private fun resolveMapPadding(): Array<Int> {
+        val sysInsets = ViewCompat.getRootWindowInsets(binding.root)
+            ?.getInsets(SYSTEM_INSET_TYPES)
+        val inflate = (FREE_SPACE_INFLATE_DP * resources.displayMetrics.density).toInt()
+        val toolbarBottom = binding.toolbar.bottom.takeIf { it > 0 } ?: 0
+        // Use the status panel height when visible, system bar inset otherwise.
+        val bottomInset = if (binding.statusText.isVisible) {
+            binding.statusText.height.takeIf { it > 0 } ?: binding.statusText.measuredHeight
+        } else {
+            sysInsets?.bottom ?: 0
+        }
+        return arrayOf(
+            (sysInsets?.left ?: 0) + inflate,
+            toolbarBottom + inflate,
+            (sysInsets?.right ?: 0) + inflate,
+            bottomInset + inflate,
+        )
     }
 
     private fun calculateRoute() = SdkCall.execute {
@@ -208,8 +314,13 @@ class MainActivity : AppCompatActivity() {
 
         val error = routingService.calculateRoute(waypoints)
         if (error != GemError.NoError) {
-            Util.postOnMain {
-                showDialog(getString(R.string.route_calculation_failed, GemError.getMessage(error, this))) {
+            runOnAliveUi {
+                showDialog(
+                    getString(
+                        R.string.route_calculation_failed,
+                        SdkCall.runSynced { GemError.getMessage(error, this) },
+                    ),
+                ) {
                     finish()
                     exitProcess(0)
                 }
@@ -217,7 +328,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Shows a non-dismissable bottom-sheet error dialog. */
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
             title.text = getString(R.string.error)
@@ -236,14 +349,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getSizeInPixels(dpi: Int): Int {
-        return TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            dpi.toFloat(),
-            resources.displayMetrics,
-        ).toInt()
-    }
-
     private fun showStatusMessage(text: String, withProgress: Boolean = false) {
         Util.postOnMain {
             binding.apply {
@@ -251,13 +356,16 @@ class MainActivity : AppCompatActivity() {
                     statusText.visibility = View.VISIBLE
                 }
                 statusText.text = text
-
-                if (withProgress) {
-                    statusProgressBar.visibility = View.VISIBLE
-                } else {
-                    statusProgressBar.visibility = View.GONE
-                }
+                statusProgressBar.visibility = if (withProgress) View.VISIBLE else View.GONE
+                // Re-run after layout so the logo clears the panel's new height.
+                statusText.post { updateFocusViewport() }
             }
         }
     }
+
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
+    }
+
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
 }

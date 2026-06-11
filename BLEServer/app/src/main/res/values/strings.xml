@@ -2,4 +2,9 @@
     <string name="app_name">BLEServer</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
+    <string name="sdk_init_failed">SDK initialization failed: %s</string>
+    <string name="internet_required">This app requires Internet connection for searching and routing features. Please connect to the Internet.</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="start_simulation_error">Route simulation error: %s</string>
+    <string name="missing_bluetooth_support">This device does not support Bluetooth LE.</string>
 </resources>

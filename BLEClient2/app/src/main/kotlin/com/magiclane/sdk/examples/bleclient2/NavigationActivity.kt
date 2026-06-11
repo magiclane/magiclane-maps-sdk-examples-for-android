@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2023-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -28,6 +28,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.WindowCompat
 import androidx.databinding.DataBindingUtil
 import com.magiclane.sdk.examples.bleclient2.BLEService.LocalBinder
 import com.magiclane.sdk.examples.bleclient2.databinding.NavigationActivityBinding
@@ -403,6 +404,9 @@ class NavigationActivity : AppCompatActivity() {
         enableEdgeToEdge()
 
         binding = DataBindingUtil.setContentView(this, R.layout.navigation_activity)
+
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
 
         tag = getString(R.string.app_name)
         deviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS)

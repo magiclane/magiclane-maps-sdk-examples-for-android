@@ -22,7 +22,7 @@
     <dimen name="nav_top_panel_traffic_img_size">44dp</dimen>
     <dimen name="nav_top_panel_traffic_big_text_size">22sp</dimen>
     <dimen name="nav_top_panel_traffic_small_text_size">16sp</dimen>
-    <dimen name="nav_top_panel_traffic_delay_margin">8dp</dimen>
+    <dimen name="nav_top_panel_traffic_delay_margin">10dp</dimen>
     <dimen name="nav_top_panel_alarm_img_size">44dp</dimen>
     <dimen name="nav_top_panel_alarm_min_width">26dp</dimen>
     <dimen name="nav_top_panel_alarm_small_text_size">14sp</dimen>
@@ -52,4 +52,6 @@
     <dimen name="navigation_image_size">46dp</dimen>
     <dimen name="current_road_code_height">35dp</dimen>
     <dimen name="no_extra_inset">0dp</dimen>
+    <dimen name="toolbar_padding_bottom">12dp</dimen>
+    <dimen name="nav_speed_unit_translation">-6dp</dimen>
 </resources>

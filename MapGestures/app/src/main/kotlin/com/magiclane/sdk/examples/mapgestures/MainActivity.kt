@@ -12,23 +12,32 @@ import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.Xy
 import com.magiclane.sdk.examples.mapgestures.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.mapgestures.databinding.DialogLayoutBinding
 import com.magiclane.sdk.util.SdkCall
+import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val GESTURE_TAG = "Gesture"
+
+        // Window insets we want the map's focus viewport (and thus the logo) to avoid.
+        private val SYSTEM_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
     }
 
     @VisibleForTesting
@@ -38,26 +47,41 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        EspressoIdlingResource.increment()
         gemSurfaceView = binding.gemSurface
 
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
+        EspressoIdlingResource.increment()
+
+        registerSdkListeners()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        clearSdkListeners()
+        GemSdk.release()
+        exitProcess(0)
+    }
+
+    // Registers all SDK surface and settings callbacks.
+    private fun registerSdkListeners() {
         gemSurfaceView.onSdkInitFailed = { error ->
             val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
-            runOnUiThread {
-                showDialog(errorMessage) { finish() }
-            }
+            runOnAliveUi { showDialog(errorMessage) { finish() } }
         }
 
         gemSurfaceView.onDefaultMapViewCreated = { mapView ->
-            mapView.onDoubleTouch = {
-                logGesture("onDoubleTouch at (${it.x}, ${it.y}).")
-            }
+            // Align the Magic Lane logo with system window insets on first map creation.
+            updateFocusViewport()
 
-            mapView.onLongDown = {
-                logGesture("onLongDown at (${it.x}, ${it.y}).")
-            }
+            // Register the gesture callbacks; each one logs the gesture details.
+            mapView.onDoubleTouch = { logGesture("onDoubleTouch at (${it.x}, ${it.y}).") }
+
+            mapView.onLongDown = { logGesture("onLongDown at (${it.x}, ${it.y}).") }
 
             mapView.onMove = { start: Xy, end: Xy ->
                 logGesture("onMove from (${start.x}, ${start.y}) to (${end.x}, ${end.y}).")
@@ -82,35 +106,53 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
-            mapView.onTouch = {
-                logGesture("onTouch at (${it.x}, ${it.y}).")
-            }
+            mapView.onTouch = { logGesture("onTouch at (${it.x}, ${it.y}).") }
 
-            mapView.onTwoTouches = {
-                logGesture("onTwoTouches with middle point (${it.x}, ${it.y}).")
-            }
+            mapView.onTwoTouches = { logGesture("onTwoTouches with middle point (${it.x}, ${it.y}).") }
 
             EspressoIdlingResource.decrement()
         }
 
+        // Re-align the logo whenever the surface is resized (e.g. rotation).
+        gemSurfaceView.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
+        }
+
         SdkSettings.onApiTokenRejected = {
-            runOnUiThread {
-                showDialog(getString(R.string.token_rejected_message))
-            }
+            runOnAliveUi { showDialog(getString(R.string.token_rejected_message)) }
         }
     }
 
-    override fun onDestroy() {
+    // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
+    private fun clearSdkListeners() {
         SdkSettings.onApiTokenRejected = {}
-        super.onDestroy()
-
-        // Release the SDK.
-        GemSdk.release()
-        exitProcess(0)
+        gemSurfaceView.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
+        }
     }
 
+    // Adjusts the Magic Lane logo position to respect system window insets.
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            val mapView = gemSurfaceView.mapView ?: return@runSynced
+            val viewport = mapView.viewport ?: return@runSynced
+            val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(SYSTEM_INSET_TYPES)
+
+            val w = viewport.width
+            val h = viewport.height
+            val left = insets?.left ?: 0
+            val top = insets?.top ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            mapView.preferences?.focusViewport = Rect(left, top, right, bottom)
+        }
+    }
+
+    /** Shows a non-dismissable bottom-sheet error dialog. */
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
-        if (isFinishing || isDestroyed) return
+        if (!isActivityAlive()) return
 
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
@@ -129,6 +171,12 @@ class MainActivity : AppCompatActivity() {
             show()
         }
     }
+
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
+    }
+
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
 
     private fun logGesture(message: String) {
         SdkCall.execute {

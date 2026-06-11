@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -7,10 +7,13 @@
 
 package com.magiclane.sdk.examples.rangefindercompose
 
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,11 +23,18 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -48,6 +58,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,17 +67,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
@@ -74,289 +85,398 @@ import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.examples.rangefindercompose.ui.theme.RangeFinderTheme
 import com.magiclane.sdk.routesandnavigation.ERouteTransportMode
+import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
 
+// Fraction of the screen width the options panel occupies when shown as a full-height left card in
+// landscape.
+private const val LANDSCAPE_PANEL_WIDTH_FRACTION = 0.45f
+
+// Height of the options panel when it spans the bottom edge in portrait.
+private val PORTRAIT_PANEL_HEIGHT = 300.dp
+
 class MainActivity : ComponentActivity() {
-    private lateinit var viewModel: RangeFinderModel
+
+    private val viewModel: RangeFinderModel by viewModels()
+
+    private lateinit var mapSurfaceView: GemSurfaceView
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ),
+            navigationBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ),
+        )
         super.onCreate(savedInstanceState)
+        configureWindow()
         setContent {
             RangeFinderTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background,
-                ) {
-                    viewModel = viewModel()
-                    RangeFinderScreen(viewModel = viewModel)
-                }
+                RangeFinderApp(viewModel) { setMapSurfaceView(it) }
             }
         }
 
-        SdkSettings.onApiTokenRejected = {
-            viewModel.errorMessage = getString(R.string.token_rejected_message)
+        registerSdkListeners()
+
+        // The example needs the network to compute routes; warn the user if there is none.
+        if (!Util.isInternetConnected(this)) {
+            viewModel.errorMessage = getString(R.string.internet_required)
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
-        viewModel.surfaceView = null
-        viewModel.context = null
-
-        if (isFinishing) {
-            GemSdk.release()
-        }
+        clearSdkListeners()
+        GemSdk.release() // Release the SDK.
         exitProcess(0)
+    }
+
+    // Registers all SDK-level listeners. The map surface listeners are wired in the MapSurface
+    // composable factory and reset in clearSdkListeners().
+    private fun registerSdkListeners() {
+        SdkSettings.onApiTokenRejected = {
+            viewModel.errorMessage = getString(R.string.token_rejected_message)
+        }
+    }
+
+    // Clears SDK-level and map surface listeners so callbacks never reach a destroyed activity.
+    private fun clearSdkListeners() {
+        SdkSettings.onApiTokenRejected = {}
+        if (::mapSurfaceView.isInitialized) {
+            mapSurfaceView.onSdkInitSucceeded = {}
+            mapSurfaceView.onSdkInitFailed = {}
+            mapSurfaceView.onSurfaceChanged = null
+        }
+    }
+
+    private fun configureWindow() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+    }
+
+    private fun setMapSurfaceView(view: GemSurfaceView) {
+        mapSurfaceView = view
     }
 }
 
-private val RangePanelHeight = 300.dp
-private val RangePanelTopPadding = 5.dp
-private val RangePanelBottomContentPadding = 16.dp
-
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun RangeFinderScreen(modifier: Modifier = Modifier, viewModel: RangeFinderModel = viewModel()) {
-    val context = LocalContext.current
-    val scrollState = rememberScrollState()
+fun RangeFinderApp(viewModel: RangeFinderModel = viewModel(), mapSurfaceViewSetter: (GemSurfaceView) -> Unit) {
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-    viewModel.initializeStrings(context)
-
-    if (viewModel.surfaceView == null) {
-        val surfaceView = GemSurfaceView(context)
-        viewModel.surfaceView = surfaceView
-
-        surfaceView.onSdkInitSucceeded = {
-            viewModel.onSdkInitSucceeded(context)
-        }
-
-        surfaceView.onSdkInitFailed = { error ->
-            viewModel.errorMessage = context.getString(
-                R.string.sdk_initialization_failed,
-                GemError.getMessage(error, context),
-            )
-        }
+    // Keep the model's orientation in sync and recompute the free map area on rotation so the
+    // Magic Lane logo and the route centering stay clear of the options panel.
+    LaunchedEffect(isLandscape) {
+        viewModel.isLandscape = isLandscape
+        viewModel.updateMapAreas()
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { viewModel.surfaceView!! },
-        )
+    Box(Modifier.fillMaxSize().background(color = Color.Black)) {
+        // Full-screen map. The Magic Lane logo is kept inside the visible area via the focus
+        // viewport (see RangeFinderModel.updateMapAreas), so it never hides behind the panel.
+        MapSurface(Modifier.fillMaxSize(), mapSurfaceViewSetter, viewModel)
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .navigationBarsPadding(),
-        ) {
-            Spacer(modifier = Modifier.weight(1f))
-
-            Column(
+        // Portrait: the panel spans the bottom edge. Landscape: it becomes a full-height card
+        // pinned to the left edge, leaving the rest of the map visible.
+        RangePanel(
+            modifier = if (isLandscape) {
                 Modifier
-                    .padding(top = RangePanelTopPadding)
-                    .clip(shape = RoundedCornerShape(topStart = 15.dp, topEnd = 15.dp))
-                    .background(Color.White)
-                    .height(RangePanelHeight)
-                    .fillMaxWidth(1f),
-            ) {
-                val alpha = if (viewModel.displayProgress) 1f else 0f
-                LinearProgressIndicator(
-                    Modifier
-                        .fillMaxWidth(1f)
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 10.dp)
-                        .alpha(alpha),
-                )
-
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(1f)
-                        .padding(bottom = RangePanelBottomContentPadding)
-                        .verticalScroll(scrollState),
-                ) {
-                    LazyRow {
-                        itemsIndexed(viewModel.ranges) { index, range ->
-                            RangeItem(
-                                range.imageResourceId,
-                                range.text,
-                                borderColor = range.borderColor,
-                                enabled = range.enabled,
-                                onItemClick = {
-                                    range.enabled.value = !range.enabled.value
-                                    viewModel.didTapRange(index, range.enabled.value)
-                                },
-                                onItemLongClick = {
-                                    viewModel.zoomToRange(index)
-                                },
-                                onDeleteItemClick = {
-                                    viewModel.didTapRemoveRangeButton(index)
-                                },
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier
-                            .padding(all = 10.dp)
-                            .fillMaxWidth(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(start = 10.dp),
-                            text = stringResource(R.string.range_value),
-                            color = Color.Black,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        Button(
-                            onClick = { viewModel.didTapAddRangeButton() },
-                            enabled = viewModel.addRangeButtonIsEnabled,
-                        ) {
-                            Text(
-                                text = stringResource(R.string.add_range),
-                                fontSize = 20.sp,
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier.padding(start = 10.dp, end = 10.dp)
-                            .fillMaxWidth(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(start = 5.dp),
-                            text = viewModel.rangeSlider.leftSideText.value,
-                            color = Color.Black,
-                            fontSize = 15.sp,
-                        )
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        Text(
-                            text = viewModel.rangeSlider.valueText.value,
-                            color = Color.Black,
-                            fontSize = 15.sp,
-                        )
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        Text(
-                            modifier = Modifier.padding(end = 5.dp),
-                            text = viewModel.rangeSlider.rightSideText.value,
-                            color = Color.Black,
-                            fontSize = 15.sp,
-                        )
-                    }
-
-                    Slider(
-                        modifier = Modifier.padding(start = 10.dp, end = 10.dp),
-                        value = viewModel.rangeSlider.value.value,
-                        onValueChange = { viewModel.didChangeRangeSliderPosition(it) },
-                        steps = viewModel.rangeSlider.steps.value,
-                        valueRange = viewModel.rangeSlider.leftSide.value..viewModel.rangeSlider.rightSide.value,
-                    )
-
-                    Row(
-                        modifier.padding(start = 10.dp, end = 10.dp).fillMaxWidth(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.transport_mode),
-                            color = Color.Black,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-
-                        // Spacer(modifier = Modifier.weight(1f))
-
-                        DropdownMenuBox(
-                            viewModel.transportModes,
-                            viewModel.selectedTransportModeText,
-                        ) { transportMode: Int ->
-                            viewModel.didSelectNewTransportMode(transportMode)
-                        }
-                    }
-
-                    if (viewModel.selectedTransportMode.value != ERouteTransportMode.Pedestrian.value) {
-                        SelectionRow(
-                            titleResId = R.string.range_type,
-                            options = viewModel.rangeTypes,
-                            selectedText = viewModel.selectedRangeTypeText,
-                            onSelectionChanged = viewModel::didSelectNewRangeType,
-                        )
-                    }
-
-                    if (viewModel.selectedTransportMode.value == ERouteTransportMode.Bicycle.value) {
-                        SelectionRow(
-                            titleResId = R.string.bike_type,
-                            options = viewModel.bikeTypes,
-                            selectedText = viewModel.selectedBikeTypeText,
-                            onSelectionChanged = viewModel::didSelectNewBikeType,
-                        )
-
-                        Row(
-                            modifier.padding(start = 10.dp, end = 10.dp, top = 10.dp)
-                                .fillMaxWidth(1f),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                modifier = Modifier.padding(start = 5.dp),
-                                text = viewModel.hillsFactorSlider.leftSideText.value,
-                                color = Color.Black,
-                                fontSize = 15.sp,
-                            )
-
-                            Spacer(modifier = Modifier.weight(1f))
-
-                            Text(
-                                text = viewModel.hillsFactorSlider.valueText.value,
-                                color = Color.Black,
-                                fontSize = 15.sp,
-                            )
-
-                            Spacer(modifier = Modifier.weight(1f))
-
-                            Text(
-                                modifier = Modifier.padding(end = 5.dp),
-                                text = viewModel.hillsFactorSlider.rightSideText.value,
-                                color = Color.Black,
-                                fontSize = 15.sp,
-                            )
-                        }
-
-                        Slider(
-                            modifier = Modifier.padding(start = 10.dp, end = 10.dp),
-                            value = viewModel.hillsFactorSlider.value.value,
-                            onValueChange = { viewModel.didChangeHillsFactorSliderPosition(it) },
-                            steps = viewModel.hillsFactorSlider.steps.value,
-                            valueRange = viewModel.hillsFactorSlider.leftSide.value..viewModel.hillsFactorSlider.rightSide.value,
-                        )
-                    }
-
-                    Text(
-                        modifier = Modifier.padding(start = 10.dp, top = 10.dp),
-                        text = stringResource(R.string.avoid),
-                        color = Color.Black,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-
-                    AvoidOptions(viewModel = viewModel)
-                }
-            }
-        }
+                    .align(Alignment.TopStart)
+                    .fillMaxWidth(LANDSCAPE_PANEL_WIDTH_FRACTION)
+                    .fillMaxHeight()
+            } else {
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(PORTRAIT_PANEL_HEIGHT)
+            },
+            viewModel = viewModel,
+            isLandscape = isLandscape,
+        )
     }
 
     if (viewModel.errorMessage.isNotEmpty()) {
         ErrorDialog(viewModel)
     }
+}
+
+@Composable
+fun MapSurface(
+    modifier: Modifier = Modifier,
+    mapSurfaceViewSetter: (GemSurfaceView) -> Unit,
+    viewModel: RangeFinderModel,
+) {
+    AndroidView(modifier = modifier, factory = { context ->
+        GemSurfaceView(context).also { surfaceView ->
+            surfaceView.onSdkInitSucceeded = {
+                viewModel.onSdkInitSucceeded()
+                // Store the surface and position the Magic Lane logo as soon as the map is ready.
+                viewModel.initialize(surfaceView)
+            }
+
+            // Re-align the Magic Lane logo whenever the surface is resized (e.g. on rotation).
+            surfaceView.onSurfaceChanged = { _, _ ->
+                viewModel.updateMapAreas(surfaceView)
+            }
+
+            surfaceView.onSdkInitFailed = { error ->
+                // The SDK is not initialized here, so resolve the message directly (no SdkCall).
+                viewModel.errorMessage = context.getString(
+                    R.string.sdk_initialization_failed,
+                    GemError.getMessage(error, context),
+                )
+            }
+
+            mapSurfaceViewSetter(surfaceView)
+        }
+    })
+}
+
+// Options panel hosting the range list and the routing controls. Spans the bottom edge in portrait
+// and becomes a full-height card on the left in landscape.
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun RangePanel(modifier: Modifier = Modifier, viewModel: RangeFinderModel, isLandscape: Boolean) {
+    val scrollState = rememberScrollState()
+
+    // Round only the corners that face the map interior.
+    val shape = if (isLandscape) {
+        RoundedCornerShape(topEnd = 15.dp, bottomEnd = 15.dp)
+    } else {
+        RoundedCornerShape(topStart = 15.dp, topEnd = 15.dp)
+    }
+
+    // Content must clear the system bars: the bottom always, both sides in portrait, but the left
+    // and full height in landscape (the panel hugs the left edge, so the right inset does not apply).
+    val insetSides = if (isLandscape) {
+        WindowInsetsSides.Start + WindowInsetsSides.Vertical
+    } else {
+        WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
+    }
+
+    Surface(
+        modifier = modifier.onGloballyPositioned { coordinates ->
+            // Report the panel extent so the model keeps the logo / centering clear of it.
+            val width = coordinates.size.width
+            val height = coordinates.size.height
+            val changed = if (isLandscape) {
+                viewModel.panelWidthPx != width
+            } else {
+                viewModel.panelHeightPx != height
+            }
+            if (changed) {
+                viewModel.panelWidthPx = width
+                viewModel.panelHeightPx = height
+                viewModel.updateMapAreas()
+            }
+        },
+        shape = shape,
+        color = Color.White,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(
+                    WindowInsets.systemBars.union(WindowInsets.displayCutout).only(insetSides),
+                ),
+        ) {
+            // Indeterminate progress bar shown while a range route is being computed (kept in the
+            // layout via alpha so the content below does not jump).
+            LinearProgressIndicator(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 10.dp)
+                    .alpha(if (viewModel.displayProgress) 1f else 0f),
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+                    .verticalScroll(scrollState),
+            ) {
+                RangeList(viewModel)
+
+                RangeValueRow(viewModel)
+
+                SliderRow(
+                    leftSideText = viewModel.rangeSlider.leftSideText.value,
+                    valueText = viewModel.rangeSlider.valueText.value,
+                    rightSideText = viewModel.rangeSlider.rightSideText.value,
+                )
+
+                Slider(
+                    modifier = Modifier.padding(horizontal = 10.dp),
+                    value = viewModel.rangeSlider.value.value,
+                    onValueChange = { viewModel.didChangeRangeSliderPosition(it) },
+                    steps = viewModel.rangeSlider.steps.value,
+                    valueRange = viewModel.rangeSlider.leftSide.value..viewModel.rangeSlider.rightSide.value,
+                )
+
+                Row(
+                    Modifier
+                        .padding(horizontal = 10.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    SectionTitle(stringResource(R.string.transport_mode))
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    DropdownMenuBox(
+                        viewModel.transportModes,
+                        viewModel.selectedTransportModeText,
+                    ) { transportMode: Int ->
+                        viewModel.didSelectNewTransportMode(transportMode)
+                    }
+                }
+
+                if (viewModel.selectedTransportMode.value != ERouteTransportMode.Pedestrian.value) {
+                    SelectionRow(
+                        titleResId = R.string.range_type,
+                        options = viewModel.rangeTypes,
+                        selectedText = viewModel.selectedRangeTypeText,
+                        onSelectionChanged = viewModel::didSelectNewRangeType,
+                    )
+                }
+
+                if (viewModel.selectedTransportMode.value == ERouteTransportMode.Bicycle.value) {
+                    SelectionRow(
+                        titleResId = R.string.bike_type,
+                        options = viewModel.bikeTypes,
+                        selectedText = viewModel.selectedBikeTypeText,
+                        onSelectionChanged = viewModel::didSelectNewBikeType,
+                    )
+
+                    SliderRow(
+                        modifier = Modifier.padding(top = 10.dp),
+                        leftSideText = viewModel.hillsFactorSlider.leftSideText.value,
+                        valueText = viewModel.hillsFactorSlider.valueText.value,
+                        rightSideText = viewModel.hillsFactorSlider.rightSideText.value,
+                    )
+
+                    Slider(
+                        modifier = Modifier.padding(horizontal = 10.dp),
+                        value = viewModel.hillsFactorSlider.value.value,
+                        onValueChange = { viewModel.didChangeHillsFactorSliderPosition(it) },
+                        steps = viewModel.hillsFactorSlider.steps.value,
+                        valueRange = viewModel.hillsFactorSlider.leftSide.value..viewModel.hillsFactorSlider.rightSide.value,
+                    )
+                }
+
+                SectionTitle(
+                    text = stringResource(R.string.avoid),
+                    modifier = Modifier.padding(start = 10.dp, top = 10.dp),
+                )
+
+                AvoidOptions(viewModel = viewModel)
+            }
+        }
+    }
+}
+
+// Horizontally scrollable list of the ranges currently shown on the map.
+@Composable
+private fun RangeList(viewModel: RangeFinderModel) {
+    LazyRow {
+        itemsIndexed(viewModel.ranges) { index, range ->
+            RangeItem(
+                range.imageResourceId,
+                range.text,
+                borderColor = range.borderColor,
+                enabled = range.enabled,
+                onItemClick = {
+                    range.enabled.value = !range.enabled.value
+                    viewModel.didTapRange(index, range.enabled.value)
+                },
+                onItemLongClick = {
+                    viewModel.zoomToRange(index)
+                },
+                onDeleteItemClick = {
+                    viewModel.didTapRemoveRangeButton(index)
+                },
+            )
+        }
+    }
+}
+
+// "Range Value" title together with the button that adds a new range.
+@Composable
+private fun RangeValueRow(viewModel: RangeFinderModel) {
+    Row(
+        Modifier
+            .padding(all = 10.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SectionTitle(
+            text = stringResource(R.string.range_value),
+            modifier = Modifier.padding(start = 10.dp),
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Button(
+            onClick = { viewModel.didTapAddRangeButton() },
+            enabled = viewModel.addRangeButtonIsEnabled,
+        ) {
+            Text(
+                text = stringResource(R.string.add_range),
+                fontSize = 20.sp,
+            )
+        }
+    }
+}
+
+// Row showing a slider's left bound, current value and right bound.
+@Composable
+private fun SliderRow(modifier: Modifier = Modifier, leftSideText: String, valueText: String, rightSideText: String) {
+    Row(
+        modifier
+            .padding(horizontal = 10.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            modifier = Modifier.padding(start = 5.dp),
+            text = leftSideText,
+            color = Color.Black,
+            fontSize = 15.sp,
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Text(
+            text = valueText,
+            color = Color.Black,
+            fontSize = 15.sp,
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Text(
+            modifier = Modifier.padding(end = 5.dp),
+            text = rightSideText,
+            color = Color.Black,
+            fontSize = 15.sp,
+        )
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
+    Text(
+        modifier = modifier,
+        text = text,
+        color = Color.Black,
+        fontSize = 20.sp,
+        fontWeight = FontWeight.Bold,
+    )
 }
 
 @Composable
@@ -369,15 +489,10 @@ private fun SelectionRow(
     Row(
         modifier = Modifier
             .padding(start = 10.dp, end = 10.dp, top = 10.dp)
-            .fillMaxWidth(1f),
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = stringResource(titleResId),
-            color = Color.Black,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-        )
+        SectionTitle(stringResource(titleResId))
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -389,6 +504,7 @@ private fun SelectionRow(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AvoidOptions(viewModel: RangeFinderModel) {
     when (viewModel.selectedTransportMode.value) {
@@ -544,12 +660,4 @@ fun ErrorDialog(viewModel: RangeFinderModel) {
             }
         },
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RangeFinderPreview() {
-    RangeFinderTheme {
-        RangeFinderScreen()
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2022-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -29,6 +29,9 @@ class ElevationCustomMarkerView(
     private val routeProfile: RouteProfile,
 ) : MarkerView(context, layoutResource) {
 
+    // MarkerView inflates its layout via a plain LayoutInflater in its own constructor, so
+    // DataBinding.bind() cannot be used here — it requires tags set during DataBinding-managed
+    // inflation. Use findViewById instead.
     private val markerText: TextView = findViewById(R.id.marker_text)
     private val markerImage: ImageView = findViewById(R.id.marker_image)
     private val iconSize = resources.getDimension(R.dimen.pin_size).toInt()
@@ -43,7 +46,7 @@ class ElevationCustomMarkerView(
         var markerBmp: Bitmap? = null
         SdkCall.execute {
             markerBmp = GemUtilImages.asBitmap(
-                SdkImages.Engine_Misc.LocationDetails_PlacePushpin.value,
+                SdkImages.Core.Search_Results_Pin.value,
                 iconSize,
                 iconSize,
             )

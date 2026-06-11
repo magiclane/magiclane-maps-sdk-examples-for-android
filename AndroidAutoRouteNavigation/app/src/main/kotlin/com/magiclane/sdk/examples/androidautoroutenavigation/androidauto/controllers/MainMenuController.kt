@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -25,13 +25,13 @@ abstract class MainScreen(context: CarContext) : QuickLeftListScreen(context)
 class MainMenuController(context: CarContext) : MainScreen(context) {
 
     override fun updateData() {
-        title = "Android Auto Example"
+        title = context.getString(R.string.main_menu_title)
         headerAction = UIActionModel.appIconModel()
 
         listItemModelList = ArrayList()
         listItemModelList.add(
             GenericListItemModel(
-                title = "Map select",
+                title = context.getString(R.string.map_select),
                 icon = Icons.getPinEndIcon(),
                 isBrowsable = true,
                 onClicked = onClicked@{
@@ -46,7 +46,7 @@ class MainMenuController(context: CarContext) : MainScreen(context) {
 
         listItemModelList.add(
             GenericListItemModel(
-                title = "History",
+                title = context.getString(R.string.history),
                 iconId = R.drawable.ic_baseline_history_24,
                 isBrowsable = true,
                 onClicked = onClicked@{
@@ -61,7 +61,7 @@ class MainMenuController(context: CarContext) : MainScreen(context) {
 
         listItemModelList.add(
             GenericListItemModel(
-                title = "Points of interest",
+                title = context.getString(R.string.points_of_interest),
                 iconId = R.drawable.ic_baseline_interests_24,
                 isBrowsable = true,
                 onClicked = onClicked@{

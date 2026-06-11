@@ -17,7 +17,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
             app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingTopWithSystemWindowInsets='@{"8dp"}'
+            app:paddingTopWithSystemWindowInsets='@{@dimen/toolbar_top_padding}'
             app:title="@string/app_name"
             app:titleTextColor="@color/on_primary" />
 
@@ -26,7 +26,10 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/toolbar" />
+            app:layout_constraintTop_toBottomOf="@id/toolbar"
+            app:paddingLeftWithSystemWindowInsets='@{@dimen/no_extra_inset}'
+            app:paddingRightWithSystemWindowInsets='@{@dimen/no_extra_inset}'
+            app:paddingBottomWithSystemWindowInsets='@{@dimen/no_extra_inset}'/>
 
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progress_bar"

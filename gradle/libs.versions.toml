@@ -1,5 +1,5 @@
 [versions]
-magicLaneMapsKotlinVersion = "1.8.7"
+magicLaneMapsKotlinVersion = "1.8.8"
 
 minSdkVersion = "21"
 targetSdkVersion = "36"

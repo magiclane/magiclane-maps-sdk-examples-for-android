@@ -8,6 +8,7 @@
 package com.magiclane.sdk.examples.locationwikipedia
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.os.Bundle
@@ -20,10 +21,13 @@ import android.widget.ProgressBar
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.idling.CountingIdlingResource
@@ -58,9 +62,19 @@ class MainActivity : AppCompatActivity() {
         private const val BOTTOM_SHEET_HEIGHT_RATIO = 0.5
         private const val DEFAULT_SEARCH_NAME = "Statue Of Liberty"
         private const val FLY_TO_ANIMATION_DURATION_MS = 900
+
+        // In landscape the panel becomes a side column taking this fraction of the screen width.
+        private const val LANDSCAPE_PANEL_WIDTH_RATIO = 0.45f
+
+        // System bars + display cutout: the screen regions the map should stay clear of.
+        private val SYSTEM_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
     }
 
     private lateinit var binding: ActivityMainBinding
+
+    // Portrait ConstraintSet captured once at creation; landscape constraints are derived from it.
+    private lateinit var portraitConstraintSet: ConstraintSet
 
     private var wikipediaImagesList = mutableListOf<WikipediaImageModel>()
 
@@ -97,11 +111,9 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     else -> {
+                        val errorMessage = SdkCall.runSynced { GemError.getMessage(errorCode, this@MainActivity) }
                         showDialog(
-                            getString(
-                                R.string.search_completed_with_error,
-                                GemError.getMessage(errorCode, this@MainActivity),
-                            ),
+                            getString(R.string.search_completed_with_error, errorMessage),
                         )
                     }
                 }
@@ -130,12 +142,19 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         EspressoIdlingResource.increment()
 
         mapInsetPaddingPx = resources.getDimension(R.dimen.padding_40).toInt()
 
-        binding.wikipediaContainer.layoutParams.height =
-            (Resources.getSystem().displayMetrics.heightPixels * BOTTOM_SHEET_HEIGHT_RATIO).toInt()
+        // Clone the portrait constraints before any runtime (landscape) changes are applied.
+        portraitConstraintSet = ConstraintSet().also { it.clone(binding.root as ConstraintLayout) }
+
+        // Apply orientation-specific layout once the root view has been measured.
+        binding.root.post { applyOrientationLayout() }
 
         standardHeight = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_MM,
@@ -156,6 +175,16 @@ class MainActivity : AppCompatActivity() {
             runOnAliveUi {
                 showDialog(errorMessage) { finish() }
             }
+        }
+
+        binding.gemSurface.onDefaultMapViewCreated = {
+            // Align the Magic Lane logo with the system window insets on first map creation.
+            updateFocusViewport()
+        }
+
+        // Re-align the logo whenever the surface is resized (e.g. rotation).
+        binding.gemSurface.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
         }
 
         SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
@@ -179,6 +208,11 @@ class MainActivity : AppCompatActivity() {
     private fun clearSdkListeners() {
         SdkSettings.onWorldwideRoadMapSupportStatus = {}
         SdkSettings.onApiTokenRejected = {}
+        binding.gemSurface.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
+        }
     }
 
     override fun onDestroy() {
@@ -188,6 +222,12 @@ class MainActivity : AppCompatActivity() {
         // Release the SDK before the activity is fully destroyed.
         GemSdk.release()
         exitProcess(0)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Re-flow the panel for the new orientation once the root has been re-measured.
+        binding.root.post { applyOrientationLayout() }
     }
 
     private fun requestWiki(value: Landmark) = SdkCall.execute {
@@ -217,7 +257,8 @@ class MainActivity : AppCompatActivity() {
             binding.gemSurface.mapView?.let { mapView ->
                 mapView.centerOnRectArea(
                     area,
-                    viewRc = getFreeScreenRect(),
+                    // Deflate the free area so the highlighted landmark isn't framed edge-to-edge.
+                    viewRc = getFreeScreenRect(mapInsetPaddingPx),
                     animation = Animation(EAnimation.Linear, FLY_TO_ANIMATION_DURATION_MS),
                 )
 
@@ -227,35 +268,126 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getFreeScreenRect(): Rect {
+    // Re-flows the Wikipedia panel for the current orientation.
+    // Portrait: full-width sheet pinned to the bottom, half the screen tall.
+    // Landscape: a wider side column anchored to the start edge, filling the height below the toolbar.
+    private fun applyOrientationLayout() {
+        val rootLayout = binding.root as ConstraintLayout
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        // ConstraintSet.applyTo() resets view visibility; save and restore it around the change.
+        val panelVisibility = binding.wikipediaContainer.visibility
+        val progressVisibility = binding.progressBar.visibility
+
+        ConstraintSet().apply {
+            clone(portraitConstraintSet)
+            if (isLandscape) {
+                val panelWidth = (resources.displayMetrics.widthPixels * LANDSCAPE_PANEL_WIDTH_RATIO).toInt()
+                constrainWidth(R.id.wikipedia_container, panelWidth)
+                // MATCH_CONSTRAINT height: fill from below the toolbar down to the bottom edge.
+                constrainHeight(R.id.wikipedia_container, ConstraintSet.MATCH_CONSTRAINT)
+                connect(R.id.wikipedia_container, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
+                connect(R.id.wikipedia_container, ConstraintSet.TOP, R.id.toolbar, ConstraintSet.BOTTOM)
+                connect(R.id.wikipedia_container, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
+                // Drop the END constraint so the fixed-width panel stays left-aligned.
+                clear(R.id.wikipedia_container, ConstraintSet.END)
+            } else {
+                // Bottom sheet keeps its full width (from the cloned set); only the height is fixed.
+                constrainHeight(R.id.wikipedia_container, portraitPanelHeightPx())
+            }
+        }.applyTo(rootLayout)
+
+        binding.wikipediaContainer.visibility = panelVisibility
+        binding.progressBar.visibility = progressVisibility
+
+        // Override the binding-adapter inset listener with an orientation-aware one.
+        updatePanelInsets(isLandscape)
+        updateFocusViewport()
+    }
+
+    // Half the portrait screen height, computed from the larger display dimension so it stays
+    // correct regardless of the orientation the activity was created in.
+    private fun portraitPanelHeightPx(): Int {
+        val dm = resources.displayMetrics
+        return (max(dm.widthPixels, dm.heightPixels) * BOTTOM_SHEET_HEIGHT_RATIO).toInt()
+    }
+
+    // Applies the system-bar / cutout insets as padding on the panel so its background stays
+    // edge-to-edge while only the content is offset. Every edge is set explicitly so padding from
+    // the previous orientation is never carried over on rotation.
+    private fun updatePanelInsets(isLandscape: Boolean) {
+        val panel = binding.wikipediaContainer
+        ViewCompat.setOnApplyWindowInsetsListener(panel) { view, insets ->
+            val systemInsets = insets.getInsets(SYSTEM_INSET_TYPES)
+            view.updatePadding(
+                // Landscape: the panel hugs the start edge, so clear the left system bar / cutout.
+                left = if (isLandscape) systemInsets.left else 0,
+                top = 0,
+                right = 0,
+                bottom = systemInsets.bottom,
+            )
+            insets
+        }
+        panel.requestApplyInsets()
+    }
+
+    // Anchors the Magic Lane logo to the visible map area (no padding).
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            binding.gemSurface.mapView?.preferences?.focusViewport = getFreeScreenRect()
+            binding.gemSurface.mapView?.invalidate()
+        }
+    }
+
+    // Returns the portion of the map not covered by the toolbar, system bars or the Wikipedia panel.
+    // Portrait: the panel sits at the bottom, so it restricts the bottom edge.
+    // Landscape: the panel sits on the start edge, so it restricts the left edge.
+    // An optional padding deflates the rect on every side (used for camera-centering animations).
+    private fun getFreeScreenRect(padding: Int = 0): Rect {
         val root = binding.root
-        val insets = ViewCompat.getRootWindowInsets(root)
-            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+        val insets = ViewCompat.getRootWindowInsets(root)?.getInsets(SYSTEM_INSET_TYPES)
 
         val width = root.width.takeIf { it > 0 } ?: Resources.getSystem().displayMetrics.widthPixels
         val height = root.height.takeIf { it > 0 } ?: Resources.getSystem().displayMetrics.heightPixels
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-        val left = insets?.left ?: 0
-        val right = (width - (insets?.right ?: 0)).coerceAtLeast(left)
-
+        // Push the top below the toolbar so the map content (and logo) never sit behind it.
         val topInset = insets?.top ?: 0
         val toolbarBottom = binding.toolbar.bottom.takeIf { it > 0 } ?: 0
         val top = max(topInset, toolbarBottom)
 
+        val insetRight = width - (insets?.right ?: 0)
         val insetBottom = height - (insets?.bottom ?: 0)
+        val panelVisible = binding.wikipediaContainer.isVisible
 
-        // Account for visible Wikipedia panel at the bottom
-        val bottom = if (binding.wikipediaContainer.isVisible && binding.wikipediaContainer.top > 0) {
-            binding.wikipediaContainer.top.coerceAtMost(insetBottom)
+        val left: Int
+        val right: Int
+        val bottom: Int
+        if (isLandscape) {
+            // Free area starts at the right edge of the side panel.
+            left = if (panelVisible && binding.wikipediaContainer.right > 0) {
+                binding.wikipediaContainer.right
+            } else {
+                insets?.left ?: 0
+            }
+            right = insetRight.coerceAtLeast(left)
+            bottom = insetBottom.coerceAtLeast(top)
         } else {
-            insetBottom
-        }.coerceAtLeast(top)
+            // Free area ends at the top edge of the bottom sheet.
+            left = insets?.left ?: 0
+            right = insetRight.coerceAtLeast(left)
+            bottom = if (panelVisible && binding.wikipediaContainer.top > 0) {
+                binding.wikipediaContainer.top.coerceAtMost(insetBottom)
+            } else {
+                insetBottom
+            }.coerceAtLeast(top)
+        }
 
-        val mapFocusPadding = mapInsetPaddingPx.takeIf { it > 0 } ?: 0
-        val paddedLeft = left + mapFocusPadding
-        val paddedTop = top + mapFocusPadding
-        val paddedRight = (right - mapFocusPadding).coerceAtLeast(paddedLeft)
-        val paddedBottom = (bottom - mapFocusPadding).coerceAtLeast(paddedTop)
+        // Deflate by padding while keeping the rect non-degenerate.
+        val paddedLeft = (left + padding).coerceAtMost(right - 1)
+        val paddedRight = (right - padding).coerceAtLeast(paddedLeft + 1)
+        val paddedTop = (top + padding).coerceAtMost(bottom - 1)
+        val paddedBottom = (bottom - padding).coerceAtLeast(paddedTop + 1)
 
         return Rect(paddedLeft, paddedTop, paddedRight, paddedBottom)
     }
@@ -337,7 +469,8 @@ class MainActivity : AppCompatActivity() {
         binding.wikipediaContainer.visibility = View.VISIBLE
 
         binding.wikipediaContainer.post {
-            // Fly to the landmark now that the panel is displayed
+            // Now that the panel is laid out, lift the logo above it and fly to the landmark.
+            updateFocusViewport()
             flyTo(currentLandmark)
         }
     }

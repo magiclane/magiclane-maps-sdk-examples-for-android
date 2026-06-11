@@ -11,9 +11,7 @@
         <com.magiclane.sdk.core.GemSurfaceView
             android:id="@+id/gem_surface_view"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            app:layout_constraintBottom_toTopOf="@id/overlay_container"
-            app:layout_constraintTop_toBottomOf="@id/toolbar" />
+            android:layout_height="match_parent" />
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
@@ -29,30 +27,39 @@
             app:titleTextColor="@color/on_primary" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/follow_cursor"
+            android:id="@+id/follow_gps_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/standard_margin"
             android:src="@drawable/ic_baseline_gps_fixed_24"
             android:visibility="gone"
             app:backgroundTint="@color/primary"
-            app:layout_constraintBottom_toTopOf="@id/overlay_container"
-            app:layout_constraintStart_toStartOf="parent"
-            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:layout_constraintBottom_toTopOf="@id/location_details_container"
+            app:layout_constraintEnd_toEndOf="parent"
             app:tint="@color/on_primary"
             tools:ignore="ContentDescription" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/overlay_container"
-            android:layout_width="match_parent"
+            android:id="@+id/location_details_container"
+            android:clickable="true"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="@color/background"
+            android:focusable="true"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            tools:layout_editor_absoluteX="10dp">
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/image"
+                android:layout_width="@dimen/image_size"
+                android:layout_height="@dimen/image_size"
+                android:layout_margin="@dimen/big_padding"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:ignore="ContentDescription" />
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/name"
@@ -63,13 +70,10 @@
                 android:layout_marginEnd="@dimen/big_padding"
                 android:textColor="@color/on_background"
                 android:textSize="@dimen/big_text_size"
-                app:layout_constraintBottom_toTopOf="@+id/description"
-                app:layout_constraintEnd_toStartOf="@id/image"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_bias="0.5"
-                app:layout_constraintVertical_chainStyle="packed"
-                app:layout_goneMarginBottom="@dimen/big_padding" />
+                android:textStyle="bold"
+                app:layout_constraintEnd_toStartOf="@id/close_button"
+                app:layout_constraintStart_toEndOf="@id/image"
+                app:layout_constraintTop_toTopOf="parent" />
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/description"
@@ -80,65 +84,71 @@
                 android:layout_marginBottom="@dimen/big_padding"
                 android:textColor="@color/on_background"
                 android:textSize="@dimen/standard_text_size"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/image"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/name"
-                app:layout_constraintVertical_bias="0.5" />
-
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/image"
-                android:layout_width="@dimen/image_size"
-                android:layout_height="@dimen/image_size"
-                android:layout_margin="@dimen/big_padding"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:ignore="ContentDescription" />
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toTopOf="@id/overlay_container"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}">
+                app:layout_constraintEnd_toStartOf="@id/close_button"
+                app:layout_constraintStart_toEndOf="@id/image"
+                app:layout_constraintTop_toBottomOf="@id/name" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/forecast_button"
-                android:layout_width="@dimen/weather_buttons_width"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="@dimen/standard_margin"
-                android:text="@string/current_forecast"
+                android:id="@+id/close_button"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_margin="@dimen/big_padding"
+                app:icon="@drawable/cancel_24px"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="40dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/daily_forecast_button"
-                android:layout_width="@dimen/weather_buttons_width"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="@dimen/standard_margin"
-                android:text="@string/daily_forecast"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/forecast_button" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/hourly_forecast_button"
-                android:layout_width="@dimen/weather_buttons_width"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="@dimen/standard_margin"
-                android:layout_marginBottom="@dimen/standard_margin"
-                android:text="@string/hourly_forecast"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/daily_forecast_button" />
-
-            <androidx.constraintlayout.widget.Group
-                android:id="@+id/buttons_group"
+            <androidx.constraintlayout.widget.Barrier
+                android:id="@+id/header_barrier"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:constraint_referenced_ids="forecast_button,daily_forecast_button,hourly_forecast_button" />
+                app:barrierDirection="bottom"
+                app:constraint_referenced_ids="image,name,description" />
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/forecast_buttons_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/header_barrier">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/forecast_button"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="start|center_vertical"
+                        android:text="@string/current_forecast" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/daily_forecast_button"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="start|center_vertical"
+                        android:text="@string/daily_forecast" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/hourly_forecast_button"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="start|center_vertical"
+                        android:text="@string/hourly_forecast" />
+
+                </LinearLayout>
+
+            </androidx.core.widget.NestedScrollView>
+
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <com.google.android.material.progressindicator.CircularProgressIndicator
@@ -150,6 +160,23 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/status_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/surface"
+            android:padding="@dimen/list_item_padding"
+            android:textColor="@color/on_surface"
+            android:textSize="@dimen/standard_text_size"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

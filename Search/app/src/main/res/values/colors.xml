@@ -8,5 +8,8 @@
     <color name="on_background">#211D2A</color>
     <color name="surface">#FFFFFF</color>
     <color name="on_surface">#211D2A</color>
+    <color name="search_field_background">#EBEBEB</color>
+    <color name="search_dark_gray">#555555</color>
+    <color name="search_progress_green">#2E7D32</color>
 </resources>
 

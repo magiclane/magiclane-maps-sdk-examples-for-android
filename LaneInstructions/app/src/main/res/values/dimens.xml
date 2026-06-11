@@ -13,4 +13,6 @@
     <dimen name="small_padding">4dp</dimen>
     <dimen name="medium_padding">7dp</dimen>
     <dimen name="lane_panel_height">60dp</dimen>
+    <!-- Horizontal margin used to dock the navigation panels in landscape orientation. -->
+    <dimen name="nav_panel_margin">10dp</dimen>
 </resources>

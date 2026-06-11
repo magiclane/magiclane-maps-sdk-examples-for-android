@@ -1,7 +1,11 @@
 <resources>
     <string name="app_name">Search</string>
     <string name="error">Error</string>
-    <string name="info">Info</string>
     <string name="ok">OK</string>
     <string name="no_results">No search results</string>
+    <string name="invalid_token">This example requires a valid token. If you don\'t have a token, check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="internet_required">This app requires an Internet connection. Please connect and try again.</string>
+    <string name="search_error">Search error: %s</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+
 </resources>

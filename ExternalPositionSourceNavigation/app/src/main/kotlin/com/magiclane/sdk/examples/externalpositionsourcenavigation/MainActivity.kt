@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2022-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -10,10 +10,16 @@
 package com.magiclane.sdk.examples.externalpositionsourcenavigation
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -24,12 +30,14 @@ import com.magiclane.sdk.core.ErrorCode
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.ProgressListener
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.SoundPlayingListener
 import com.magiclane.sdk.core.SoundPlayingPreferences
 import com.magiclane.sdk.core.SoundPlayingService
 import com.magiclane.sdk.core.Time
+import com.magiclane.sdk.core.XyF
 import com.magiclane.sdk.examples.externalpositionsourcenavigation.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.externalpositionsourcenavigation.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Landmark
@@ -55,6 +63,8 @@ import kotlin.concurrent.fixedRateTimer
 import kotlin.math.acos
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sin
 import kotlin.system.exitProcess
 
@@ -156,13 +166,22 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         val destination = Pair(48.17192581, 11.80789822)
     }
 
-    class TSameImage(var value: Boolean = false)
-
     private lateinit var binding: ActivityMainBinding
-
     private lateinit var positionListener: PositionListener
 
-    // Define a navigation service from which we will start navigation
+    // Captured once at portrait orientation and reused as the base for all subsequent orientation
+    // constraint adjustments, so the portrait layout is never recomputed from scratch.
+    private lateinit var portraitConstraintSet: ConstraintSet
+
+    private var navigationPanelPadding: Int = 0
+    private var turnImageSize: Int = 0
+
+    // Long.MAX_VALUE ensures the first real image UID never matches, so it is always rendered.
+    private var lastTurnImageId: Long = Long.MAX_VALUE
+
+    private var isNavigationStarted = false
+    private var navigationStatus = ENavigationStatus.Running
+
     private val navigationService = NavigationService()
 
     private val navRoute: Route?
@@ -171,20 +190,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private var timer: Timer? = null
 
     private val playingListener = object : SoundPlayingListener() {}
-
     private val soundPreference = SoundPlayingPreferences()
 
-    private var turnImageSize: Int = 0
-
-    private var lastTurnImageId: Long = Long.MAX_VALUE
-
-    private var isNavigationStarted = false
-
-    private var navigationStatus = ENavigationStatus.Running
-
     /**
-     * Define a navigation listener that will receive notifications from the
-     * navigation service.
+     * Receives navigation events from the navigation service.
      */
     private val navigationListener: NavigationListener = NavigationListener.create(
         onNavigationStarted = {
@@ -193,74 +202,23 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             SdkCall.execute {
                 binding.gemSurfaceView.mapView?.let { mapView ->
                     mapView.preferences?.enableCursor = false
-                    navRoute?.let { route ->
-                        mapView.presentRoute(route)
-                    }
-
+                    navRoute?.let { route -> mapView.presentRoute(route) }
                     enableGPSButton()
                     mapView.followPosition()
-
                     EspressoIdlingResource.decrement()
                 }
             }
 
-            binding.topPanel.isVisible = true
-            binding.bottomPanel.isVisible = true
-            binding.statusText.isVisible = false
+            applyCameraFocus()
+            setNavigationPanelsVisible(isVisible = true)
         },
-        onNavigationInstructionUpdated = { instr ->
-            var instrText = ""
-            var instrIcon: Bitmap? = null
-            var instrDistance = ""
-
-            var etaText = ""
-            var rttText = ""
-            var rtdText = ""
-            val sameTurnImage = TSameImage()
-
-            SdkCall.execute {
-                // Fetch data for the navigation top panel (instruction related info).
-                instrText = instr.nextStreetName ?: ""
-
-                if (instrText.isEmpty()) {
-                    instrText = instr.nextTurnInstruction ?: ""
-                }
-
-                instrIcon = getNextTurnImage(instr, turnImageSize, turnImageSize, sameTurnImage)
-                instrDistance = instr.getDistance()
-
-                // Fetch data for the navigation bottom panel (route related info).
-                navRoute?.apply {
-                    etaText = getEta() // estimated time of arrival
-                    rttText = getRtt() // remaining travel time
-                    rtdText = getRtd() // remaining travel distance
-                }
-            }
-
-            // Update the navigation panels info.
-            binding.apply {
-                if (!sameTurnImage.value) {
-                    navIcon.setImageBitmap(instrIcon)
-                }
-
-                instructionDistance.text = instrDistance
-                navInstruction.text = instrText
-
-                eta.text = etaText
-                rtt.text = rttText
-                rtd.text = rtdText
-            }
-        },
-        onDestinationReached = {
-            onNavigationEnded()
-        },
+        onNavigationInstructionUpdated = { instr -> updateNavigationInstruction(instr) },
+        onDestinationReached = { onNavigationEnded() },
         onNotifyStatusChange = { status ->
             navigationStatus = status
             refreshStatusMessage()
         },
-        onNavigationError = { error ->
-            onNavigationEnded(error)
-        },
+        onNavigationError = { error -> onNavigationEnded(error) },
         onNavigationSound = { sound ->
             SdkCall.execute {
                 SoundPlayingService.play(sound, playingListener, soundPreference)
@@ -269,12 +227,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         canPlayNavigationSound = true,
     )
 
-    // Define a listener that will let us know the progress of the routing process.
+    // Tracks routing progress: shows a spinner before navigation begins.
     private val routingProgressListener = ProgressListener.create(
         onStarted = {
             if (!isNavigationStarted) {
                 binding.progressBar.isVisible = true
-                showStatusMessage(getString(R.string.calculating_route))
             }
         },
         onCompleted = { _, _ ->
@@ -288,117 +245,384 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         postOnMain = true,
     )
 
-    private fun refreshStatusMessage() {
-        val statusMessage = getStatusMessage()
-        if (statusMessage.isEmpty()) {
-            binding.turnContainer.isVisible = true
-        } else {
-            binding.turnContainer.isVisible = false
-            binding.navInstruction.text = statusMessage
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-
-        turnImageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
-
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         EspressoIdlingResource.increment()
 
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         SoundUtils.addTTSPlayerInitializationListener(this)
 
-        binding.gemSurfaceView.onSdkInitFailed = { error ->
-            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
-            Util.postOnMain {
-                showDialog(errorMessage) {
-                    finish()
-                    exitProcess(0)
+        turnImageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
+        navigationPanelPadding = resources.getDimensionPixelSize(R.dimen.nav_panel_margin)
+
+        portraitConstraintSet = ConstraintSet().apply { clone(binding.root as ConstraintLayout) }
+        applyOrientationLayout()
+
+        // When the activity launches in landscape, the panels need their horizontal margins set
+        // immediately because applyOrientationLayout() removes the END constraint (margin=0).
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            val panelMargin = resources.getDimensionPixelSize(R.dimen.nav_panel_margin)
+            listOf(binding.topPanel, binding.bottomPanel).forEach { panel ->
+                (panel.layoutParams as ConstraintLayout.LayoutParams).apply {
+                    marginStart = panelMargin
+                    marginEnd = panelMargin
+                    panel.layoutParams = this
                 }
             }
         }
 
-        SdkSettings.onApiTokenRejected = {
-            showDialog(getString(R.string.token_rejected_message))
-        }
-
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
-            if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
-
-                var externalDataSource: ExternalDataSource?
-
-                SdkCall.execute {
-                    externalDataSource =
-                        DataSourceFactory.produceExternal(arrayListOf(EDataType.Position))
-                    externalDataSource?.start()
-
-                    positionListener = PositionListener { position: PositionData ->
-                        if (position.isValid()) {
-                            navigationService.startNavigation(
-                                Landmark("Poing", destination.first, destination.second),
-                                navigationListener,
-                                routingProgressListener,
-                            )
-
-                            PositionService.removeListener(positionListener)
-                        }
-                    }
-
-                    PositionService.dataSource = externalDataSource
-                    PositionService.addListener(positionListener)
-
-                    var index = 0
-                    externalDataSource?.let { dataSource ->
-                        timer = fixedRateTimer("timer", false, 0L, 1000) {
-                            SdkCall.execute {
-                                val externalPosition = PositionData.produce(
-                                    System.currentTimeMillis(),
-                                    positions[index].first,
-                                    positions[index].second,
-                                    -1.0,
-                                    positions.getBearing(index),
-                                    positions.getSpeed(index),
-                                )
-                                externalPosition?.let { pos ->
-                                    dataSource.pushData(pos)
-                                }
-                            }
-                            index++
-                            if (index == positions.size) {
-                                index = 0
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
             showDialog(getString(R.string.internet_required))
         }
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applyOrientationLayout()
+        applyCameraFocus()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         timer?.cancel()
         timer = null
-        // Deinitialize the SDK.
+        clearSdkListeners()
+        // Release the SDK.
         GemSdk.release()
+        // exitProcess is required because the SDK holds native threads that do not stop on their
+        // own when the Activity is destroyed, which would leave the process alive indefinitely.
         exitProcess(0)
     }
 
+    private fun registerSdkListeners() {
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnUiThread {
+                showDialog(errorMessage) { finish() }
+            }
+        }
+
+        binding.gemSurfaceView.onDefaultMapViewCreated = {
+            updateFocusViewport()
+        }
+
+        binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
+        }
+
+        // Delay navigation start until the worldwide road map is fully downloaded and up to date;
+        // the callback is cleared immediately after firing to avoid repeat invocations.
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                startNavigation()
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnUiThread {
+                showDialog(getString(R.string.token_rejected_message))
+            }
+        }
+    }
+
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+        binding.gemSurfaceView.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
+        }
+    }
+
+    // Adjusts panel widths and constraints for the current orientation.
+    private fun applyOrientationLayout() {
+        val rootLayout = binding.root as ConstraintLayout
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        // ConstraintSet.applyTo() restores visibility from the time of clone (all panels were
+        // GONE at that point), so we must save and restore the live visibility state.
+        val topVis = binding.topPanel.visibility
+        val bottomVis = binding.bottomPanel.visibility
+        val fabVis = binding.followGpsButton.visibility
+        val progressVis = binding.progressBar.visibility
+
+        val panelMargin = resources.getDimensionPixelSize(R.dimen.nav_panel_margin)
+        ConstraintSet().apply {
+            clone(portraitConstraintSet)
+            if (isLandscape) {
+                // In landscape the navigation panel occupies the left 40% so the map area
+                // remains visible on the right side of the screen.
+                val panelWidth = (resources.displayMetrics.widthPixels * 0.4f).toInt()
+                for (id in intArrayOf(R.id.top_panel, R.id.bottom_panel)) {
+                    constrainWidth(id, panelWidth)
+                    connect(id, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, 0)
+                    clear(id, ConstraintSet.END)
+                }
+            } else {
+                for (id in intArrayOf(R.id.top_panel, R.id.bottom_panel)) {
+                    connect(id, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, panelMargin)
+                    connect(id, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, panelMargin)
+                }
+            }
+        }.applyTo(rootLayout)
+
+        binding.topPanel.visibility = topVis
+        binding.bottomPanel.visibility = bottomVis
+        binding.followGpsButton.visibility = fabVis
+        binding.progressBar.visibility = progressVis
+    }
+
+    // Shifts the camera focus point so the GPS arrow stays in the visible map area.
+    private fun applyCameraFocus() {
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        SdkCall.execute {
+            // In landscape the navigation panel occupies the left 40%, so shift the camera
+            // focus right (0.7) to keep the arrow in the visible map area.
+            binding.gemSurfaceView.mapView?.preferences?.followPositionPreferences?.cameraFocus =
+                if (isLandscape) XyF(0.7f, 0.75f) else XyF(0.5f, 0.75f)
+        }
+    }
+
+    // Adjusts the Magic Lane logo position to stay within the visible map area (below the toolbar
+    // and beside the navigation panels).
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            binding.gemSurfaceView.mapView?.preferences?.focusViewport = getFocusViewport()
+        }
+    }
+
+    private fun getFocusViewport(): Rect {
+        val root = binding.root
+        val insets = ViewCompat.getRootWindowInsets(root)
+            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+
+        val width = root.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+        val height = root.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
+
+        // toolbar.bottom already includes the status bar height because the toolbar has
+        // paddingTopWithSystemWindowInsets applied to it.
+        val toolbarBottom = binding.toolbar.bottom.takeIf { it > 0 } ?: (insets?.top ?: 0)
+
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        return if (isLandscape) {
+            val w = max(width, height)
+            val h = min(width, height)
+
+            val left = if (binding.topPanel.isVisible) binding.topPanel.right else insets?.left ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(toolbarBottom)
+            Rect(left, toolbarBottom, right, bottom)
+        } else {
+            val w = min(width, height)
+            val h = max(width, height)
+
+            val left = insets?.left ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val top = if (binding.topPanel.isVisible) binding.topPanel.bottom else toolbarBottom
+            val bottom = if (binding.bottomPanel.isVisible) {
+                binding.bottomPanel.top.coerceAtLeast(top)
+            } else {
+                (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            }
+            Rect(left, top, right, bottom)
+        }
+    }
+
+    private fun setNavigationPanelsVisible(isVisible: Boolean) {
+        binding.topPanel.isVisible = isVisible
+        binding.bottomPanel.isVisible = isVisible
+        if (!isVisible) {
+            updateFocusViewport()
+        } else {
+            binding.root.post { updateFocusViewport() }
+        }
+    }
+
+    // Sets up the external position source, feeds simulated GPS points, and starts navigation
+    // once a valid position is received.
+    private fun startNavigation() = SdkCall.execute {
+        val externalDataSource: ExternalDataSource? =
+            DataSourceFactory.produceExternal(arrayListOf(EDataType.Position))
+        externalDataSource?.start()
+
+        positionListener = PositionListener { position: PositionData ->
+            if (position.isValid()) {
+                val error = navigationService.startNavigation(
+                    Landmark("Poing", destination.first, destination.second),
+                    navigationListener,
+                    routingProgressListener,
+                )
+                if (error != GemError.NoError) {
+                    val message = SdkCall.runSynced { GemError.getMessage(error, this@MainActivity) } ?: ""
+                    runOnUiThread {
+                        showDialog(getString(R.string.start_navigation_error, message))
+                    }
+                }
+                PositionService.removeListener(positionListener)
+            }
+        }
+
+        PositionService.dataSource = externalDataSource
+        PositionService.addListener(positionListener)
+
+        var index = 0
+        externalDataSource?.let { dataSource ->
+            timer = fixedRateTimer("timer", false, 0L, 1000) {
+                SdkCall.execute {
+                    val externalPosition = PositionData.produce(
+                        System.currentTimeMillis(),
+                        positions[index].first,
+                        positions[index].second,
+                        -1.0,
+                        positions.getBearing(index),
+                        positions.getSpeed(index),
+                    )
+                    externalPosition?.let { pos -> dataSource.pushData(pos) }
+                }
+                index++
+                if (index == positions.size) index = 0
+            }
+        }
+    }
+
+    private fun enableGPSButton() {
+        // Set actions for entering/exiting following position mode.
+        binding.apply {
+            gemSurfaceView.mapView?.apply {
+                onExitFollowingPosition = {
+                    followGpsButton.isVisible = true
+                    setNavigationPanelsVisible(isVisible = false)
+                }
+                onEnterFollowingPosition = {
+                    followGpsButton.isVisible = false
+                    if (isNavigationStarted) {
+                        setNavigationPanelsVisible(isVisible = true)
+                    }
+                }
+                followGpsButton.setOnClickListener {
+                    SdkCall.execute { followPosition() }
+                }
+            }
+        }
+    }
+
+    private fun disableGPSButton() {
+        binding.gemSurfaceView.mapView?.apply {
+            onExitFollowingPosition = null
+            onEnterFollowingPosition = null
+            binding.followGpsButton.setOnClickListener(null)
+            binding.followGpsButton.isVisible = false
+        }
+    }
+
+    private fun onNavigationEnded(errorCode: ErrorCode = GemError.NoError) {
+        isNavigationStarted = false
+        runOnUiThread {
+            if ((errorCode != GemError.NoError) && (errorCode != GemError.Cancel)) {
+                val message = SdkCall.runSynced { GemError.getMessage(errorCode, this) } ?: ""
+                if (message.isNotEmpty()) {
+                    showDialog(message)
+                }
+            }
+            setNavigationPanelsVisible(isVisible = false)
+            disableGPSButton()
+        }
+
+        SdkCall.execute {
+            binding.gemSurfaceView.mapView?.hideRoutes()
+        }
+    }
+
+    private fun updateNavigationInstruction(instruction: NavigationInstruction) {
+        var instrText = ""
+        var instrIcon: Bitmap? = null
+        var instrDistance = ""
+        var etaText = ""
+        var rttText = ""
+        var rtdText = ""
+        var hasSameTurnImage = false
+
+        SdkCall.execute {
+            instrText = instruction.nextStreetName?.takeIf { it.isNotEmpty() }
+                ?: instruction.nextTurnInstruction.orEmpty()
+
+            instrIcon = getNextTurnImage(instruction, turnImageSize, turnImageSize) { isSame ->
+                hasSameTurnImage = isSame
+            }
+            instrDistance = instruction.getDistanceInMeters()
+
+            navRoute?.apply {
+                etaText = getEta()
+                rttText = getRtt()
+                rtdText = getRtd()
+            }
+        }
+
+        binding.apply {
+            if (!hasSameTurnImage) {
+                navIcon.setImageBitmap(instrIcon)
+            }
+            instructionDistance.text = instrDistance
+            navInstruction.text = instrText
+            eta.text = etaText
+            rtt.text = rttText
+            rtd.text = rtdText
+        }
+    }
+
+    private fun refreshStatusMessage() {
+        val statusMessage = getStatusMessage()
+        binding.turnContainer.isVisible = statusMessage.isEmpty()
+        if (statusMessage.isNotEmpty()) {
+            binding.navInstruction.text = statusMessage
+        }
+    }
+
+    private fun getStatusMessage(): String {
+        when (navigationStatus) {
+            ENavigationStatus.WaitingRoute -> {
+                return when (navRoute?.status) {
+                    ERouteStatus.WaitingInternetConnection -> getString(R.string.waiting_for_internet_connection)
+                    ERouteStatus.Calculating -> getString(R.string.calculating)
+                    ERouteStatus.Ready -> getString(R.string.gps_accuracy_not_good_enough)
+                    else -> getString(R.string.calculating)
+                }
+            }
+            ENavigationStatus.WaitingGPS -> {
+                return getString(R.string.getting_position)
+            }
+            else -> { /* No message for other statuses. */ }
+        }
+        return ""
+    }
+
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
-        val dialog = BottomSheetDialog(this)
-        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
-            title.text = getString(R.string.error)
-            message.text = text
-            button.setOnClickListener {
+        showBottomSheetDialog(
+            title = getString(R.string.error),
+            message = text,
+            onButtonClick = { dialog ->
                 onDismiss?.invoke()
                 dialog.dismiss()
-            }
+            },
+        )
+    }
+
+    private fun showBottomSheetDialog(title: String, message: String, onButtonClick: (BottomSheetDialog) -> Unit) {
+        val dialog = BottomSheetDialog(this)
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            this.title.text = title
+            this.message.text = message
+            button.setOnClickListener { onButtonClick(dialog) }
         }
         dialog.apply {
             behavior.state = BottomSheetBehavior.STATE_EXPANDED
@@ -409,91 +633,60 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }
     }
 
-    private fun showStatusMessage(text: String) {
-        binding.statusText.isVisible = true
-        binding.statusText.text = text
-    }
-
-    private fun enableGPSButton() {
-        // Set actions for entering/ exiting following position mode.
-        binding.apply {
-            gemSurfaceView.mapView?.apply {
-                onExitFollowingPosition = {
-                    followGpsButton.isVisible = true
-                }
-
-                onEnterFollowingPosition = {
-                    followGpsButton.isVisible = false
-                }
-
-                // Set on click action for the GPS button.
-                followGpsButton.setOnClickListener {
-                    SdkCall.execute { followPosition() }
-                }
-            }
-        }
-    }
-
-    private fun NavigationInstruction.getDistance(): String {
+    private fun NavigationInstruction.getDistanceInMeters(): String {
         return GemUtil.getDistText(
             this.timeDistanceToNextTurn?.totalDistance ?: 0,
             EUnitSystem.Metric,
-        ).let { pair ->
-            pair.first + " " + pair.second
-        }
+        ).let { pair -> pair.first + " " + pair.second }
     }
 
-    /**
-     * @return estimated time of arrival
-     */
     @SuppressLint("DefaultLocale")
     private fun Route.getEta(): String {
         val etaNumber = this.getTimeDistance(true)?.totalTime ?: 0
-
         val time = Time()
         time.setLocalTime()
         time.longValue += etaNumber * 1000
         return String.format("%d:%02d", time.hour, time.minute)
     }
 
-    /**
-     * @return remaining travel time
-     */
     private fun Route.getRtt(): String {
         return GemUtil.getTimeText(
             this.getTimeDistance(true)?.totalTime ?: 0,
-        ).let { pair ->
-            pair.first + " " + pair.second
-        }
+        ).let { pair -> pair.first + " " + pair.second }
     }
 
-    /**
-     * @return remaining travel distance
-     */
     private fun Route.getRtd(): String {
         return GemUtil.getDistText(
             this.getTimeDistance(true)?.totalDistance ?: 0,
             EUnitSystem.Metric,
-        ).let { pair ->
-            pair.first + " " + pair.second
-        }
+        ).let { pair -> pair.first + " " + pair.second }
     }
 
-    private fun onNavigationEnded(errorCode: ErrorCode = GemError.NoError) {
-        runOnUiThread {
-            if ((errorCode != GemError.NoError) && (errorCode != GemError.Cancel)) {
-                showDialog(GemError.getMessage(errorCode))
-            }
+    private fun getNextTurnImage(
+        navInstr: NavigationInstruction,
+        width: Int,
+        height: Int,
+        onSameImage: (Boolean) -> Unit = {},
+    ): Bitmap? {
+        if (!navInstr.hasNextTurnInfo()) return null
 
-            binding.apply {
-                binding.topPanel.isVisible = false
-                binding.bottomPanel.isVisible = false
-            }
+        if ((navInstr.nextTurnDetails?.abstractGeometryImage?.uid ?: 0) == lastTurnImageId) {
+            onSameImage(true)
+            return null
         }
 
-        SdkCall.execute {
-            binding.gemSurfaceView.mapView?.hideRoutes()
+        val image = navInstr.nextTurnDetails?.abstractGeometryImage
+        if (image != null) {
+            lastTurnImageId = image.uid
         }
+
+        // Active turn icon: white fill with black outline; inactive: grey fill and outline.
+        val aInner = Rgba(255, 255, 255, 255)
+        val aOuter = Rgba(0, 0, 0, 255)
+        val iInner = Rgba(128, 128, 128, 255)
+        val iOuter = Rgba(128, 128, 128, 255)
+
+        return GemUtilImages.asBitmap(image, width, height, aInner, aOuter, iInner, iOuter)
     }
 
     // ITTSPlayerInitializationListener
@@ -505,111 +698,39 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     override fun onTTSPlayerInitializationFailed() {
         SoundPlayingService.setDefaultHumanVoice()
     }
-
-    private fun getStatusMessage(): String {
-        when (navigationStatus) {
-            ENavigationStatus.WaitingRoute -> {
-                val routeStatus = navRoute?.status
-
-                return when (routeStatus) {
-                    ERouteStatus.WaitingInternetConnection -> {
-                        getString(R.string.waiting_for_internet_connection)
-                    }
-
-                    ERouteStatus.Calculating -> {
-                        getString(R.string.calculating)
-                    }
-
-                    ERouteStatus.Ready -> {
-                        getString(R.string.gps_accuracy_not_good_enough)
-                    }
-
-                    else -> {
-                        getString(R.string.calculating)
-                    }
-                }
-            }
-            ENavigationStatus.WaitingGPS -> {
-                return getString(R.string.getting_position)
-            }
-            else -> {
-                // Do nothing for other statuses
-            }
-        }
-
-        return ""
-    }
-
-    private fun getNextTurnImage(
-        navInstr: NavigationInstruction,
-        width: Int,
-        height: Int,
-        sameImage: TSameImage,
-    ): Bitmap? {
-        if (!navInstr.hasNextTurnInfo()) return null
-        if ((navInstr.nextTurnDetails?.abstractGeometryImage?.uid ?: 0) == lastTurnImageId) {
-            sameImage.value = true
-            return null
-        }
-
-        val image = navInstr.nextTurnDetails?.abstractGeometryImage
-        if (image != null) {
-            lastTurnImageId = image.uid
-        }
-
-        val aInner = Rgba(255, 255, 255, 255)
-        val aOuter = Rgba(0, 0, 0, 255)
-        val iInner = Rgba(128, 128, 128, 255)
-        val iOuter = Rgba(128, 128, 128, 255)
-
-        return GemUtilImages.asBitmap(
-            image,
-            width,
-            height,
-            aInner,
-            aOuter,
-            iInner,
-            iOuter,
-        )
-    }
 }
 
 /**
- * Mathematical formula for calculating real distance between 2 coordinates
- * @return real distance between 2 geographical points
+ * Mathematical formula for calculating real distance between 2 coordinates.
+ * @return real distance in metres between two geographical points
  */
 fun Pair<Double, Double>.getDistanceOnGeoid(to: Pair<Double, Double>): Double {
     val (latitude1, longitude1) = this
     val (latitude2, longitude2) = to
-    // convert degrees to radians
     val lat1 = latitude1 * Math.PI / 180.0
     val lon1 = longitude1 * Math.PI / 180.0
     val lat2 = latitude2 * Math.PI / 180.0
     val lon2 = longitude2 * Math.PI / 180.0
 
-    // radius of earth in metres
     val r = 6378100.0
-    // P
     val rho1 = r * cos(lat1)
     val z1 = r * sin(lat1)
     val x1 = rho1 * cos(lon1)
     val y1 = rho1 * sin(lon1)
-    // Q
     val rho2 = r * cos(lat2)
     val z2 = r * sin(lat2)
     val x2 = rho2 * cos(lon2)
     val y2 = rho2 * sin(lon2)
-    // dot product
+
     val dot = (x1 * x2 + y1 * y2 + z1 * z2)
     val cosTheta = dot / (r * r)
     val theta = acos(cosTheta)
-    // distance in Metres
-    return (r * theta)
+    return r * theta
 }
 
 /**
- * @return speed value equal with distance between point at [index] and previous point.
- * If there is no previous point returns -1.0
+ * @return speed equal to the distance between the point at [index] and the previous point,
+ * or -1.0 if there is no previous point.
  */
 fun Array<Pair<Double, Double>>.getSpeed(index: Int): Double {
     if ((index > 0) && (index < size)) {
@@ -619,18 +740,16 @@ fun Array<Pair<Double, Double>>.getSpeed(index: Int): Double {
 }
 
 /**
- * Calculates bearing between 2 points Formula β = atan2(X,Y) where  X and Y are two quantities
- * that can be calculated based on the given latitude and longitude
- * @return Bearing value between point at [index] and previous point.
- * If there is no previous point returns -1.0
+ * Bearing formula: β = atan2(X, Y) where X and Y are quantities derived from the two coordinates.
+ * @return bearing in degrees between the point at [index] and the previous point,
+ * or -1.0 if there is no previous point.
  */
 fun Array<Pair<Double, Double>>.getBearing(index: Int): Double {
     if ((index > 0) && (index < size)) {
         val x = cos(this[index].first) * sin(this[index].second - this[index - 1].second)
-        val y =
-            cos(this[index - 1].first) * sin(this[index].first) - sin(this[index - 1].first) * cos(
-                this[index].first,
-            ) * cos(this[index].second - this[index - 1].second)
+        val y = cos(this[index - 1].first) * sin(this[index].first) -
+            sin(this[index - 1].first) * cos(this[index].first) *
+            cos(this[index].second - this[index - 1].second)
         return (atan2(x, y) * 180) / Math.PI
     }
     return -1.0

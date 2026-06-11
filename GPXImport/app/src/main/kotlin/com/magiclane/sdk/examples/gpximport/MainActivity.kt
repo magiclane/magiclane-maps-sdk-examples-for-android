@@ -12,6 +12,7 @@ import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -32,6 +33,11 @@ import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        private val SYSTEM_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+    }
+
     private lateinit var binding: ActivityMainBinding
 
     private var inflate = 0
@@ -48,7 +54,6 @@ class MainActivity : AppCompatActivity() {
                 GemError.NoError -> {
                     if (!routes.isEmpty()) {
                         val route = routes[0]
-
                         SdkCall.execute {
                             binding.gemSurfaceView.mapView?.presentRoute(
                                 route,
@@ -63,8 +68,8 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 else -> {
-                    // There was a problem at computing the routing operation.
-                    showDialog(getString(R.string.routing_error, GemError.getMessage(errorCode, this)))
+                    val message = SdkCall.runSynced { GemError.getMessage(errorCode, this) }
+                    runOnAliveUi { showDialog(getString(R.string.routing_error, message)) }
                 }
             }
         },
@@ -76,29 +81,12 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Keep status-bar icons light against the dark primary toolbar background.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+
         inflate = resources.getDimension(R.dimen.padding_40).toInt()
 
-        binding.gemSurfaceView.onSdkInitFailed = { error ->
-            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
-            Util.postOnMain {
-                showDialog(errorMessage) {
-                    finish()
-                    exitProcess(0)
-                }
-            }
-        }
-
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
-            if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
-
-                calculateRouteFromGPX()
-            }
-        }
-
-        SdkSettings.onApiTokenRejected = {
-            showDialog(getString(R.string.token_rejected_message))
-        }
+        registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
             showDialog(getString(R.string.internet_required))
@@ -107,10 +95,67 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-
-        // Deinitialize the SDK.
+        clearSdkListeners()
         GemSdk.release()
         exitProcess(0)
+    }
+
+    // Registers all SDK surface and settings callbacks.
+    private fun registerSdkListeners() {
+        binding.gemSurfaceView.onSdkInitFailed = { error ->
+            val errorMessage = getString(R.string.sdk_initialization_failed, GemError.getMessage(error, this))
+            runOnAliveUi { showDialog(errorMessage) { finish() } }
+        }
+
+        binding.gemSurfaceView.onDefaultMapViewCreated = { _ ->
+            // Align the Magic Lane logo with system window insets on first map creation.
+            updateFocusViewport()
+        }
+
+        // Re-align the logo whenever the surface is resized (e.g. rotation).
+        binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
+            updateFocusViewport()
+        }
+
+        // Wait for the worldwide road map to be ready before calculating the route from GPX.
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                calculateRouteFromGPX()
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            runOnAliveUi { showDialog(getString(R.string.token_rejected_message)) }
+        }
+    }
+
+    // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+        binding.gemSurfaceView.apply {
+            onSdkInitFailed = {}
+            onDefaultMapViewCreated = {}
+            onSurfaceChanged = { _, _ -> }
+        }
+    }
+
+    // Adjusts the Magic Lane logo position to respect system window insets.
+    private fun updateFocusViewport() {
+        SdkCall.runSynced {
+            val mapView = binding.gemSurfaceView.mapView ?: return@runSynced
+            val viewport = mapView.viewport ?: return@runSynced
+            val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(SYSTEM_INSET_TYPES)
+
+            val w = viewport.width
+            val h = viewport.height
+            val left = insets?.left ?: 0
+            val top = insets?.top ?: 0
+            val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+            mapView.preferences?.focusViewport = Rect(left, top, right, bottom)
+        }
     }
 
     private fun calculateRouteFromGPX() = SdkCall.execute {
@@ -132,7 +177,9 @@ class MainActivity : AppCompatActivity() {
         routingService.calculateRoute(track, ERouteTransportMode.Bicycle)
     }
 
+    /** Shows a non-dismissable bottom-sheet error dialog. */
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
         val dialog = BottomSheetDialog(this)
         val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
             title.text = getString(R.string.error)
@@ -151,10 +198,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain { if (isActivityAlive()) block() }
+    }
+
+    private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
+
     fun getInsetsRect(): Rect {
         val root = binding.root
-        val insets = ViewCompat.getRootWindowInsets(root)
-            ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+        val insets = ViewCompat.getRootWindowInsets(root)?.getInsets(SYSTEM_INSET_TYPES)
 
         val left = (insets?.left ?: 0) + inflate
         val right = (insets?.right ?: 0) + inflate

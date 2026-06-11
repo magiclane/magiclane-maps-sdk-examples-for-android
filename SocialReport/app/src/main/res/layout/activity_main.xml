@@ -27,34 +27,105 @@
             android:paddingBottom="12dp"
             />
 
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/status_text"
-            android:layout_width="0dp"
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/event_panel"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/surface"
-            android:padding="@dimen/list_item_padding"
-            android:textSize="@dimen/standard_text_size"
-            android:textStyle="bold"
-            android:textColor="@color/on_surface"
+            android:layout_marginTop="@dimen/big_padding"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/status_progress_bar"
-            app:layout_constraintStart_toStartOf="parent"
-            app:paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}" />
+            app:cardBackgroundColor="@color/surface"
+            app:cardElevation="@dimen/big_padding"
+            app:layout_constraintTop_toBottomOf="@id/report_event_button"
+            app:marginLeftWithSystemWindowInsets="@{@dimen/big_padding}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/big_padding}">
 
-        <com.google.android.material.progressindicator.CircularProgressIndicator
-            android:id="@+id/status_progress_bar"
-            android:indeterminate="true"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/icon"
+                    android:layout_width="@dimen/event_image_size"
+                    android:layout_height="@dimen/event_image_size"
+                    android:layout_margin="@dimen/list_item_padding"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:ignore="ContentDescription" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/list_item_padding"
+                    android:layout_marginTop="@dimen/list_item_padding"
+                    android:layout_marginEnd="@dimen/list_item_padding"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textColor="@color/on_surface"
+                    android:textSize="@dimen/big_text_size"
+                    android:textStyle="bold"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/icon"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/time"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/list_item_padding"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="@dimen/small_padding"
+                    android:layout_marginBottom="@dimen/list_item_padding"
+                    android:singleLine="true"
+                    android:textColor="@android:color/holo_orange_dark"
+                    android:textSize="@dimen/standard_text_size"
+                    android:textStyle="bold"
+                    app:layout_constraintEnd_toStartOf="@id/delete_button"
+                    app:layout_constraintStart_toEndOf="@id/icon"
+                    app:layout_constraintTop_toBottomOf="@id/text" />
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/delete_button"
+                    android:layout_width="@dimen/image_size"
+                    android:layout_height="@dimen/image_size"
+                    android:layout_marginEnd="@dimen/list_item_padding"
+                    android:layout_marginBottom="@dimen/list_item_padding"
+                    app:srcCompat="@drawable/red_x_icon"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/time"
+                    tools:ignore="ContentDescription" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/follow_gps_button"
             android:layout_width="wrap_content"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@id/status_text"
+            android:src="@drawable/ic_baseline_gps_fixed_24"
+            app:backgroundTint="@color/primary"
+            app:tint="@color/on_primary"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/status_text"
-            app:layout_constraintTop_toTopOf="@id/status_text"
-            app:paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}" />
+            app:marginRightWithSystemWindowInsets="@{@dimen/list_item_padding}"
+            app:marginBottomWithSystemWindowInsets="@{@dimen/list_item_padding}"
+            tools:ignore="ContentDescription" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/report_event_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/big_padding"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp"
+            android:text="@string/report_event"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

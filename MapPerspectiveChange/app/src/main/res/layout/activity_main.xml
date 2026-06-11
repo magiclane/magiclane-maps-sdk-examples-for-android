@@ -47,9 +47,9 @@
             app:iconSize="42dp"
             app:iconTint="@color/on_primary"
             app:layout_constraintBottom_toBottomOf="@id/surface_view"
-            app:layout_constraintStart_toStartOf="@id/surface_view"
+            app:layout_constraintEnd_toEndOf="@id/surface_view"
             app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             tools:ignore="UnusedAttribute" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

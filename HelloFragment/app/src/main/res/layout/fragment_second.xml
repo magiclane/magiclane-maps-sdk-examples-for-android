@@ -6,17 +6,12 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:paddingBottomWithSystemWindowInsets='@{0f}'
         tools:context="com.magiclane.sdk.examples.hellofragment.SecondFragment">
 
         <com.magiclane.sdk.core.GemSurfaceView
             android:id="@+id/gem_surface_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:layout_constraintBottom_toTopOf="@id/button_second"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:layout_height="match_parent" />
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
@@ -35,10 +30,11 @@
             android:id="@+id/button_second"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/small_padding"
             android:text="@string/previous"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:marginBottomWithSystemWindowInsets='@{@dimen/button_padding}'
+            />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

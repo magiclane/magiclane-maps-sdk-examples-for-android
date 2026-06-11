@@ -34,7 +34,9 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toolbar" />
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
+        app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

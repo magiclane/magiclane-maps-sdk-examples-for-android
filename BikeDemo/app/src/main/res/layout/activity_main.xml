@@ -12,6 +12,7 @@
         android:layout_height="match_parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/map_root"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
@@ -159,29 +160,11 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/bike_settings_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/padding_10"
-                android:src="@drawable/settings_34"
-                android:visibility="gone"
-                app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-                app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-                app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                tools:ignore="ContentDescription" />
-
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/follow_gps_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="@dimen/padding_10"
                 android:src="@drawable/ic_baseline_gps_fixed_24"
                 android:visibility="gone"
-                app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-                app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-                app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 tools:ignore="ContentDescription" />
@@ -201,6 +184,26 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
 
+            <include
+                android:id="@+id/calculate_route_panel"
+                layout="@layout/dialog_calculate_route_layout"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <include
+                android:id="@+id/start_navigation_panel"
+                layout="@layout/dialog_start_navigation_layout"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <com.google.android.material.appbar.AppBarLayout
@@ -216,7 +219,7 @@
                 android:id="@+id/map_search_bar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/search_for_destination"
+                android:hint="@string/search"
                 app:forceDefaultNavigationOnClickListener="true" />
         </com.google.android.material.appbar.AppBarLayout>
 
@@ -267,22 +270,6 @@
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-
-    <include
-        android:id="@+id/calculate_route_panel"
-        layout="@layout/dialog_calculate_route_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:visibility="gone" />
-
-    <include
-        android:id="@+id/start_navigation_panel"
-        layout="@layout/dialog_start_navigation_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:visibility="gone" />
 
     </FrameLayout>
 </layout>

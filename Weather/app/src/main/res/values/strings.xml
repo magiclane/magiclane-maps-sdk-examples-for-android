@@ -3,7 +3,12 @@
     <string name="current_forecast">Current forecast</string>
     <string name="daily_forecast">Daily forecast</string>
     <string name="error">Error</string>
+    <string name="info">Info</string>
     <string name="hourly_forecast">Hourly Forecast</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
     <string name="my_position">My position</string>
     <string name="ok">OK</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="tap_on_map_to_see_weather_info">Tap on the map to see the weather info in that place</string>
 </resources>

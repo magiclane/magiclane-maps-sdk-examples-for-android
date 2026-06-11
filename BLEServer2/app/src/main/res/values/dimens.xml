@@ -10,4 +10,5 @@
     <dimen name="instruction_text_size">22sp</dimen>
     <dimen name="no_extra_inset">0dp</dimen>
     <dimen name="small_padding">5dp</dimen>
+    <dimen name="nav_panel_margin">10dp</dimen>
 </resources>

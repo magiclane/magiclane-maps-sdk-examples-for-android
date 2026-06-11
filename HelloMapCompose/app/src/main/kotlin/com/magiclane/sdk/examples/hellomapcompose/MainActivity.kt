@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2025-2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -37,13 +37,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
+import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.examples.hellomapcompose.ui.theme.HelloMapComposeTheme
+import com.magiclane.sdk.util.SdkCall
 import kotlin.system.exitProcess
+
+// System window insets the Magic Lane logo should stay clear of.
+private val SYSTEM_INSET_TYPES =
+    WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,10 +119,33 @@ private fun GEMMap(modifier: Modifier = Modifier, viewModel: MainViewModel) {
                 )
             }
             onDefaultMapViewCreated = {
+                // Align the Magic Lane logo with system window insets on first map creation.
+                updateFocusViewport()
                 viewModel.onMapReady()
+            }
+            // Re-align the logo whenever the surface is resized (e.g. rotation).
+            onSurfaceChanged = { _, _ ->
+                updateFocusViewport()
             }
         }
     })
+}
+
+// Adjusts the Magic Lane logo position to respect system window insets.
+private fun GemSurfaceView.updateFocusViewport() {
+    SdkCall.runSynced {
+        val mapView = mapView ?: return@runSynced
+        val viewport = mapView.viewport ?: return@runSynced
+        val insets = ViewCompat.getRootWindowInsets(this)?.getInsets(SYSTEM_INSET_TYPES)
+
+        val w = viewport.width
+        val h = viewport.height
+        val left = insets?.left ?: 0
+        val top = insets?.top ?: 0
+        val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
+        val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(top)
+        mapView.preferences?.focusViewport = Rect(left, top, right, bottom)
+    }
 }
 
 @Composable

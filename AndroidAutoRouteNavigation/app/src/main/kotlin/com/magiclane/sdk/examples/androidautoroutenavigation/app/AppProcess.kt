@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2026 Magic Lane International B.V. <info@magiclane.com>
+ * SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
@@ -79,7 +79,7 @@ class AppProcess : Application() {
             }
 
             SdkSettings.onApiTokenRejected = {
-                Toast.makeText(context, "The provided token has been rejected", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.token_rejected_message), Toast.LENGTH_LONG).show()
                 Log.e(
                     "AppProcess",
                     "The TOKEN you provided in the AndroidManifest.xml file was rejected. " +

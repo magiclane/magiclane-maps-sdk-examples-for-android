@@ -50,4 +50,9 @@
                 android:title="@string/road" />
         </menu>
     </item>
+    <item
+        android:id="@+id/settings"
+        android:icon="@drawable/settings_34"
+        android:title="@string/bike_settings_text"
+        app:showAsAction="always" />
 </menu>

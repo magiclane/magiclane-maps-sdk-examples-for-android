@@ -7,19 +7,22 @@
 
 package com.magiclane.sdk.examples.routing
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.examples.routing.databinding.ActivityMainBinding
+import com.magiclane.sdk.examples.routing.databinding.DialogLayoutBinding
+import com.magiclane.sdk.examples.routing.databinding.RouteInfoRowBinding
+import com.magiclane.sdk.examples.routing.databinding.RouteSectionHeaderBinding
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.routesandnavigation.RoutingService
@@ -34,32 +37,26 @@ class MainActivity : AppCompatActivity() {
 
     private val routingService = RoutingService(
         onStarted = {
-            binding.progressBar.visibility = View.VISIBLE
+            runOnAliveUi {
+                binding.progressBar.visibility = View.VISIBLE
+            }
         },
 
-        onCompleted = onCompleted@{ routes, errorCode, _ ->
-            binding.progressBar.visibility = View.GONE
+        onCompleted = { routes, errorCode, _ ->
+            runOnAliveUi {
+                binding.progressBar.visibility = View.GONE
 
-            when (errorCode) {
-                GemError.NoError ->
-                    {
-                        if (routes.size == 0) return@onCompleted
-
-                        // Get the main route from the ones that were found.
-                        displayRouteInfo(formatRouteName(routes[0]))
-                    }
-
-                GemError.Cancel ->
-                    {
-                        // The routing action was cancelled.
-                        showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
-                    }
-
-                else ->
-                    {
-                        // There was a problem at computing the routing operation.
-                        showDialog("Routing service error: ${GemError.getMessage(errorCode)}")
-                    }
+                when (errorCode) {
+                    GemError.NoError -> routes.firstOrNull()?.let { displayRouteInfo(it) }
+                    else -> showDialog(
+                        getString(
+                            R.string.routing_service_error,
+                            SdkCall.runSynced {
+                                GemError.getMessage(errorCode, this)
+                            },
+                        ),
+                    )
+                }
             }
         },
     )
@@ -70,50 +67,118 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        SdkSettings.onMapDataReady = onMapDataReady@{ isReady ->
-            if (!isReady) return@onMapDataReady
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
 
-            // Defines an action that should be done after the world map is updated.
-            calculateRoute()
-        }
+        registerSdkListeners()
 
-        SdkSettings.onApiTokenRejected = {
-            /**
-             * The TOKEN you provided in the AndroidManifest.xml file was rejected.
-             * Make sure you provide the correct value, or if you don't have a TOKEN,
-             * check the magiclane.com website, sign up/sign in and generate one.
-             */
-            showDialog("TOKEN REJECTED")
-        }
-
-        if (GemSdk.initSdkWithDefaults(this) != GemError.NoError) {
-            // The SDK initialization was not completed.
-            finish()
+        val initError = GemSdk.initSdkWithDefaults(this)
+        if (initError != GemError.NoError) {
+            showDialog(
+                getString(
+                    R.string.sdk_initialization_failed,
+                    SdkCall.runSynced { GemError.getMessage(initError, this) },
+                ),
+            ) {
+                finish()
+            }
+            return
         }
 
         if (!Util.isInternetConnected(this)) {
-            showDialog("You must be connected to the internet!")
-        }
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-            exitProcess(0)
+            showDialog(getString(R.string.internet_required))
         }
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+        clearSdkListeners()
 
-        // Release the SDK.
+        // Release the SDK before the activity is fully destroyed.
         GemSdk.release()
+
+        super.onDestroy()
+        exitProcess(0)
     }
 
-    private fun displayRouteInfo(routeName: String) {
-        findViewById<TextView>(R.id.text).text = routeName
+    private fun registerSdkListeners() {
+        // Self-cleared on first fire to avoid recalculating on subsequent map updates.
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+            if (status == EOffboardListenerStatus.UpToDate) {
+                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                calculateRoute()
+            }
+        }
+
+        SdkSettings.onApiTokenRejected = {
+            // The TOKEN you provided in the AndroidManifest.xml file was rejected.
+            // Make sure you provide the correct value, or if you don't have a TOKEN,
+            // check the magiclane.com website, sign up/sign in and generate one.
+            runOnAliveUi {
+                showDialog(getString(R.string.token_rejected_message))
+            }
+        }
+    }
+
+    private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onApiTokenRejected = {}
+    }
+
+    private fun displayRouteInfo(route: Route) {
+        SdkCall.execute {
+            val wayPoints = route.waypoints ?: return@execute
+            val timeDistance = route.timeDistance ?: return@execute
+
+            val distTextPair = GemUtil.getDistText(
+                timeDistance.totalDistance,
+                SdkSettings.unitSystem,
+                bHighResolution = true,
+            )
+            val timeTextPair = GemUtil.getTimeText(
+                timeDistance.totalTime + GemUtil.getTrafficEventsDelay(route, true),
+            )
+
+            val waypointNames = wayPoints.map { it.name ?: "" }
+            val distText = "${distTextPair.first} ${distTextPair.second}"
+            val timeText = "${timeTextPair.first} ${timeTextPair.second}"
+
+            runOnAliveUi {
+                binding.routeInfoContainer.removeAllViews()
+
+                addSectionHeader(getString(R.string.route_waypoints))
+                waypointNames.forEachIndexed { index, name ->
+                    addInfoRow(
+                        when (index) {
+                            0 -> R.drawable.departure_waypoint
+                            waypointNames.lastIndex -> R.drawable.destination_waypoint
+                            else -> R.drawable.intermediate_waypoint
+                        },
+                        name,
+                    )
+                }
+
+                addSectionHeader(getString(R.string.route_info))
+                addInfoRow(R.drawable.distance, distText)
+                addInfoRow(R.drawable.time_duration, timeText)
+            }
+        }
+    }
+
+    private fun addSectionHeader(title: String) {
+        RouteSectionHeaderBinding.inflate(layoutInflater, binding.routeInfoContainer, true).apply {
+            sectionTitle.text = title
+        }
+    }
+
+    private fun addInfoRow(@DrawableRes iconRes: Int, text: String) {
+        RouteInfoRowBinding.inflate(layoutInflater, binding.routeInfoContainer, true).apply {
+            icon.setImageResource(iconRes)
+            label.text = text
+        }
     }
 
     private fun calculateRoute() = SdkCall.execute {
         val wayPoints = arrayListOf(
-            Landmark("Frankfurt am Main", 50.11428, 8.68133),
+            Landmark("Frankfurt", 50.11428, 8.68133),
             Landmark("Karlsruhe", 49.0069, 8.4037),
             Landmark("Munich", 48.1351, 11.5820),
         )
@@ -121,46 +186,36 @@ class MainActivity : AppCompatActivity() {
         routingService.calculateRoute(wayPoints)
     }
 
-    private fun formatRouteName(route: Route): String = SdkCall.execute {
-        val timeDistance = route.timeDistance ?: return@execute ""
-        val distInMeters = timeDistance.totalDistance
-        val timeInSeconds = timeDistance.totalTime
+    private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {
+        if (!isActivityAlive()) return
 
-        val distTextPair = GemUtil.getDistText(
-            distInMeters,
-            SdkSettings.unitSystem,
-            bHighResolution = true,
-        )
-
-        val timeTextPair = GemUtil.getTimeText(timeInSeconds)
-
-        var wayPointsText = ""
-        route.waypoints?.let { wayPoints ->
-            for (point in wayPoints) {
-                wayPointsText += (point.name + "\n")
-            }
-        }
-
-        return@execute String.format(
-            "$wayPointsText \n\n ${distTextPair.first} ${distTextPair.second} \n " +
-                "${timeTextPair.first} ${timeTextPair.second}",
-        )
-    } ?: ""
-
-    @SuppressLint("InflateParams")
-    private fun showDialog(text: String) {
         val dialog = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.dialog_layout, null).apply {
-            findViewById<TextView>(R.id.title).text = getString(R.string.error)
-            findViewById<TextView>(R.id.message).text = text
-            findViewById<Button>(R.id.button).setOnClickListener {
+        val dialogBinding = DialogLayoutBinding.inflate(layoutInflater).apply {
+            title.text = getString(R.string.error)
+            message.text = text
+            button.setOnClickListener {
+                onDismiss?.invoke()
                 dialog.dismiss()
             }
         }
         dialog.apply {
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = false
             setCancelable(false)
-            setContentView(view)
+            setContentView(dialogBinding.root)
             show()
         }
+    }
+
+    private fun runOnAliveUi(block: () -> Unit) {
+        Util.postOnMain {
+            if (isActivityAlive()) {
+                block()
+            }
+        }
+    }
+
+    private fun isActivityAlive(): Boolean {
+        return !isFinishing && !isDestroyed
     }
 }
