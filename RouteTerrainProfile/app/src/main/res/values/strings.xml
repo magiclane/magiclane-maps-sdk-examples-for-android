@@ -5,6 +5,7 @@
     <string name="terrain_profile_not_available">Route terrain profile is not available!</string>
     <string name="routing_cancelled">The routing action was cancelled.</string>
     <string name="routing_error">Routing service error: %s</string>
+    <string name="routing_failed_to_start">Could not start route calculation: %s</string>
     <string name="sdk_initialization_failed">SDK initialization failed: %s</string>
     <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
     <string name="internet_required">You must be connected to the internet!</string>

@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity() {
 
                 when (errorCode) {
                     GemError.NoError -> routes.firstOrNull()?.let { displayRouteInfo(it) }
+                    GemError.Cancel -> { /* Routing canceled — no action needed. */ }
                     else -> showDialog(
                         getString(
                             R.string.routing_service_error,
@@ -183,7 +184,16 @@ class MainActivity : AppCompatActivity() {
             Landmark("Munich", 48.1351, 11.5820),
         )
 
-        routingService.calculateRoute(wayPoints)
+        // calculateRoute returns synchronously whether the calculation could be started. On
+        // failure onCompleted never fires, so report the error and hide the progress bar here.
+        val errorCode = routingService.calculateRoute(wayPoints)
+        if (errorCode != GemError.NoError) {
+            val message = GemError.getMessage(errorCode, this)
+            runOnAliveUi {
+                binding.progressBar.visibility = View.GONE
+                showDialog(getString(R.string.routing_failed_to_start, message))
+            }
+        }
     }
 
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {

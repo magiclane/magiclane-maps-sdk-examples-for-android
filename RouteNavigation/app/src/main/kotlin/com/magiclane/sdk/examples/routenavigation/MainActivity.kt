@@ -158,12 +158,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         onNavigationStarted = {
             SdkCall.execute {
                 binding.gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.enableCursor = false
                     navRoute?.let { route ->
                         mapView.presentRoute(route)
                     }
 
-                    enableGPSButton()
                     mapView.followPosition()
                 }
             }
@@ -258,7 +256,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         val topVis = binding.topPanel.visibility
         val bottomVis = binding.bottomPanel.visibility
         val trafficVis = binding.trafficPanel.visibility
-        val fabVis = binding.followCursorButton.visibility
+        val fabVis = binding.followGpsButton.visibility
         val progressVis = binding.progressBar.visibility
 
         val panelMargin = resources.getDimensionPixelSize(R.dimen.nav_panel_margin)
@@ -286,7 +284,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         binding.topPanel.visibility = topVis
         binding.bottomPanel.visibility = bottomVis
         binding.trafficPanel.visibility = trafficVis
-        binding.followCursorButton.visibility = fabVis
+        binding.followGpsButton.visibility = fabVis
         binding.progressBar.visibility = progressVis
     }
 
@@ -383,6 +381,19 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         binding.gemSurfaceView.onDefaultMapViewCreated = {
             updateFocusViewport()
+
+            lateinit var positionListener: PositionListener
+            if (PositionService.position?.isValid() == true) {
+                Util.postOnMain { enableGPSButton() }
+            } else {
+                positionListener = PositionListener {
+                    if (!it.isValid()) return@PositionListener
+
+                    PositionService.removeListener(positionListener)
+                    Util.postOnMain { enableGPSButton() }
+                }
+                PositionService.addListener(positionListener, EDataType.Position)
+            }
         }
         binding.gemSurfaceView.onSurfaceChanged = { _, _ ->
             updateFocusViewport()
@@ -448,23 +459,25 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private fun enableGPSButton() {
         // Set actions for entering/ exiting following position mode.
         binding.apply {
+            followGpsButton.visibility = View.VISIBLE
+
             gemSurfaceView.mapView?.apply {
                 onExitFollowingPosition = {
-                    followCursorButton.visibility = View.VISIBLE
+                    followGpsButton.visibility = View.VISIBLE
                     setNavigationPanelsVisible(isVisible = false)
                 }
 
                 onEnterFollowingPosition = {
-                    followCursorButton.visibility = View.GONE
+                    followGpsButton.visibility = View.GONE
 
-                    val navigationIsActive = SdkCall.execute { navigationService.isNavigationActive() } ?: false
+                    val navigationIsActive = SdkCall.execute { navigationService.isNavigationActive(navigationListener) } ?: false
                     if (navigationIsActive) {
                         setNavigationPanelsVisible(isVisible = true)
                     }
                 }
 
                 // Set on click action for the GPS button.
-                followCursorButton.setOnClickListener {
+                followGpsButton.setOnClickListener {
                     SdkCall.execute { followPosition() }
                 }
             }

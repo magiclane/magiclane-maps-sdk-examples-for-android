@@ -408,7 +408,16 @@ class MainActivity : AppCompatActivity() {
             Landmark("Paris", 48.8566932, 2.3514616),
         )
 
-        routingService.calculateRoute(waypoints)
+        val error = routingService.calculateRoute(waypoints)
+        if (error != GemError.NoError) {
+            // The computation never started, so onCompleted won't fire: report the error and
+            // release the idling resource that onCreate incremented for this route request.
+            val message = GemError.getMessage(error, this)
+            runOnAliveUi {
+                showDialog(getString(R.string.routing_service_error, message))
+            }
+            EspressoIdlingResource.decrement()
+        }
     }
 
     private fun isSameMapScene(first: MapSceneObject, second: MapSceneObject): Boolean =

@@ -465,7 +465,6 @@ class MainActivity : AppCompatActivity() {
             val contour = landmark.getContourGeographicArea()
             val highlightSettings: HighlightRenderSettings
 
-            @Suppress("VerboseNullabilityAndEmptiness")
             if (contour != null && !contour.isEmpty()) {
                 mapView.centerOnRectArea(
                     contour,

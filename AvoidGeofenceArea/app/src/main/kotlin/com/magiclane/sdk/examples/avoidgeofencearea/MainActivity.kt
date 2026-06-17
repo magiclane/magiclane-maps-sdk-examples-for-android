@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private val SYSTEM_INSET_TYPES =
             WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-        private const val FREE_SPACE_INFLATE_DP = 30
+        private const val FREE_SPACE_INFLATE_DP = 80
     }
 
     private lateinit var binding: ActivityMainBinding

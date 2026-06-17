@@ -16,4 +16,5 @@
     <string name="traffic">Traffic</string>
     <string name="on_road_name">On %s</string>
     <string name="routing_error">Routing calculation failed with error: %s</string>
+    <string name="routing_failed_to_start">Could not start route calculation: %1$s</string>
 </resources>

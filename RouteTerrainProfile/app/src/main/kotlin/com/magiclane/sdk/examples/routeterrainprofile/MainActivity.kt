@@ -101,9 +101,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
-        // Keep status bar icons light so they stay visible over the dark map surface.
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
-
         // Increment idling resource so UI tests wait until route calculation completes.
         EspressoIdlingResource.increment()
 
@@ -230,7 +227,15 @@ class MainActivity : AppCompatActivity() {
          * without it the terrain profile is not calculated during routing.
          */
         routingService.preferences.buildTerrainProfile = true
-        routingService.calculateRoute(waypoints)
+
+        // calculateRoute returns synchronously whether the calculation could be started. On
+        // failure onCompleted never fires, so report the error and stop the idling wait here.
+        val errorCode = routingService.calculateRoute(waypoints)
+        if (errorCode != GemError.NoError) {
+            val errorMessage = GemError.getMessage(errorCode, this)
+            runOnAliveUi { showDialog(getString(R.string.routing_failed_to_start, errorMessage)) }
+            EspressoIdlingResource.decrement()
+        }
     }
 
     private fun showDialog(text: String, onDismiss: (() -> Unit)? = null) {

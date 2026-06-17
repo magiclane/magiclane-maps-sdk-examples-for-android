@@ -111,7 +111,17 @@ class MainActivity : AppCompatActivity() {
             Landmark("Poznan", 52.406374, 16.925168),
             Landmark("Copenhagen", 55.676097, 12.568337),
         )
-        routingService.calculateRoute(wayPoints)
+
+        // calculateRoute returns synchronously whether the calculation could be started. On
+        // failure onCompleted never fires, so report the error and hide the progress bar here.
+        val errorCode = routingService.calculateRoute(wayPoints)
+        if (errorCode != GemError.NoError) {
+            val errorMessage = GemError.getMessage(errorCode, this)
+            runOnUiThread {
+                showDialog(getString(R.string.routing_failed_to_start, errorMessage))
+            }
+            EspressoIdlingResource.decrement()
+        }
     }
 
     private fun displayRouteInstructions(route: Route) {

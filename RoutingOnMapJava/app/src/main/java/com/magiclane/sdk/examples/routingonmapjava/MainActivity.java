@@ -89,7 +89,16 @@ public class MainActivity extends AppCompatActivity {
             ArrayList<Landmark> waypoints = new ArrayList<>();
             waypoints.add(new Landmark("London", 51.5073204, -0.1276475));
             waypoints.add(new Landmark("Paris", 48.8566932, 2.3514616));
-            routingService.calculateRoute(waypoints, null, false, null, null, null);
+
+            // calculateRoute returns synchronously whether the calculation could be started. On
+            // failure onCompleted never fires, so report the error and hide the progress bar here.
+            int errorCode = routingService.calculateRoute(waypoints, null, false, null, null, null);
+            if (errorCode != GemError.NoError) {
+                String errorMessage = GemError.INSTANCE.getMessage(errorCode, this);
+                runOnAliveUi(() -> {
+                    showDialog(getString(R.string.routing_failed_to_start, errorMessage), null);
+                });
+            }
             return null;
         });
     }

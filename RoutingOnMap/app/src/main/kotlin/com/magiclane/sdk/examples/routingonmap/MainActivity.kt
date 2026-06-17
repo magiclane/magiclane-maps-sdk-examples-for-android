@@ -99,7 +99,19 @@ class MainActivity : AppCompatActivity() {
             Landmark("London", 51.5073204, -0.1276475),
             Landmark("Paris", 48.8566932, 2.3514616),
         )
-        routingService.calculateRoute(waypoints)
+
+        // calculateRoute returns synchronously whether the calculation could be started. On
+        // failure onCompleted never fires, so report the error and hide the progress bar here.
+        val errorCode = routingService.calculateRoute(waypoints)
+        if (errorCode != GemError.NoError) {
+            val message = GemError.getMessage(errorCode, this)
+            runOnAliveUi {
+                binding.progressBar.visibility = View.GONE
+                showDialog(
+                    getString(R.string.routing_failed_to_start, message)
+                )
+            }
+        }
     }
 
     // Called when routing succeeds. Stores the result and displays all routes on the map.

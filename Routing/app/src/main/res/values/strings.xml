@@ -7,6 +7,7 @@
     <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
     <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
     <string name="routing_service_error">Routing service error: %1$s</string>
+    <string name="routing_failed_to_start">Could not start route calculation: %1$s</string>
     <string name="route_waypoints">Route waypoints</string>
     <string name="route_info">Route info</string>
 </resources>
