@@ -9,7 +9,6 @@
     <dimen name="text_padding">3dp</dimen>
     <dimen name="very_small_padding">2dp</dimen>
     <dimen name="round_button_padding">1dp</dimen>
-    <dimen name="max_current_street_text_size">19dp</dimen>
     <dimen name="speed_panel_sign_size">56dp</dimen>
     <dimen name="speed_panel_sign_padding">2dp</dimen>
     <dimen name="speed_panel_text_size">26dp</dimen>

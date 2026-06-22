@@ -7,4 +7,5 @@
     <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
     <string name="no_route_instruction_found">No route instructions found!</string>
     <string name="routing_error">Routing error: %1$s</string>
+    <string name="routing_failed_to_start">Could not start route calculation: %1$s</string>
 </resources>

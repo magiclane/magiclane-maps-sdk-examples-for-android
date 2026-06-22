@@ -58,21 +58,26 @@ public class SearchAdapter extends ListAdapter<SearchResultItem, SearchAdapter.S
 
     public class SearchResultViewHolder extends RecyclerView.ViewHolder {
         private final MaterialTextView textView;
+        private final MaterialTextView descriptionView;
+        private final MaterialTextView distanceView;
+        private final MaterialTextView unitView;
         private final ImageView itemImage;
 
         public SearchResultViewHolder(@NonNull View view) {
             super(view);
             textView = view.findViewById(R.id.item_text);
+            descriptionView = view.findViewById(R.id.item_description);
+            distanceView = view.findViewById(R.id.item_distance);
+            unitView = view.findViewById(R.id.item_unit);
             itemImage = view.findViewById(R.id.item_img);
         }
 
         public void bind(SearchResultItem item) {
-            if (item.getText() != null) {
-                textView.setText(item.getText());
-            }
-            if (item.getBmp() != null) {
-                itemImage.setImageBitmap(item.getBmp());
-            }
+            textView.setText(item.getText());
+            descriptionView.setText(item.getSubText());
+            distanceView.setText(item.getDistance());
+            unitView.setText(item.getUnit());
+            itemImage.setImageBitmap(item.getBmp());
             itemView.setOnClickListener(v -> {
                 if (onClickListener != null) {
                     onClickListener.onItemClick(item);

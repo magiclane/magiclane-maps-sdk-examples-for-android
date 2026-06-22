@@ -8,13 +8,11 @@
 package com.magiclane.sdk.examples.bikedemo
 
 import android.graphics.Bitmap
-import com.magiclane.sdk.places.Landmark
 
-data class SearchResultItem(
-    val bmp: Bitmap? = null,
-    val text: String? = null,
-    val subText: String? = null,
-    val distance: String = "",
-    val unit: String = "",
-    val landmark: Landmark,
+// Represents a POI category chip in the horizontal bar.
+data class CategoryItem(
+    val name: String,
+    val icon: Bitmap?,
+    val landmarkStoreId: Int,
+    val categoryId: Int,
 )

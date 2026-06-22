@@ -38,6 +38,8 @@
                 android:layout_height="120dp"
                 android:layout_margin="10dp"
                 android:background="@color/black"
+                android:clickable="true"
+                android:focusable="true"
                 android:elevation="5dp"
                 android:gravity="center"
                 android:orientation="horizontal"
@@ -108,6 +110,8 @@
                 android:layout_height="50dp"
                 android:layout_margin="10dp"
                 android:background="@color/white"
+                android:clickable="true"
+                android:focusable="true"
                 android:elevation="5dp"
                 android:visibility="gone"
                 app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
@@ -238,13 +242,23 @@
             app:paddingRightWithSystemWindowInsets='@{@dimen/no_extra_inset}'
             app:paddingLeftWithSystemWindowInsets='@{@dimen/no_extra_inset}'>
 
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/categories_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/surface"
+                android:clipToPadding="false"
+                android:paddingTop="@dimen/category_bar_vertical_padding"
+                android:paddingBottom="@dimen/category_bar_vertical_padding"
+                app:layout_constraintTop_toTopOf="parent" />
+
             <com.google.android.material.progressindicator.LinearProgressIndicator
                 android:id="@+id/search_progress_bar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:indeterminate="true"
                 android:visibility="invisible"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toBottomOf="@id/categories_view" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/search_results_list"
@@ -256,11 +270,12 @@
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/no_results_text_view"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="0dp"
                 android:text="@string/no_results"
                 android:textSize="@dimen/big_text_size"
                 android:visibility="gone"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/search_progress_bar"
                 app:layout_constraintStart_toStartOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>

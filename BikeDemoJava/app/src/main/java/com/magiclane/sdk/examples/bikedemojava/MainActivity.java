@@ -103,6 +103,15 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
     private Handler searchDebounceHandler;
     private Runnable pendingSearchTask;
     private volatile String searchFilter = "";
+
+    // Index of the selected category chip (NO_CATEGORY when none), the reference point used for
+    // around-position searches and distance display, and a guard to ignore programmatic edits
+    // to the search field (e.g. when a category name is written into it).
+    private int activeCategoryIndex = CategoryAdapter.NO_CATEGORY;
+    private volatile boolean isProgrammaticQuery = false;
+    private Coordinates reference = null;
+    private int categoryIconSize = 0;
+
     private ArrayList<Route> routesList = new ArrayList<>();
     private int topInset = 0;
     private int leftInset = 0;
@@ -124,6 +133,7 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
     private ConstraintSet portraitConstraintSet;
 
     private final SearchAdapter searchAdapter = new SearchAdapter();
+    private final CategoryAdapter categoryAdapter = new CategoryAdapter();
     private MainActivityViewModel viewModel;
     private final NavigationService navigationService = new NavigationService();
     private final SoundPlayingListener playingListener = new SoundPlayingListener() {};
@@ -458,6 +468,7 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
         });
 
         searchIconSize = (int) getResources().getDimension(R.dimen.icon_size);
+        categoryIconSize = (int) getResources().getDimension(R.dimen.category_icon_size);
         inflate = (int) getResources().getDimension(R.dimen.padding_40);
 
         searchAdapter.setOnViewHolderClickListener(item -> {
@@ -513,68 +524,76 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
 
             @Override
             public void afterTextChanged(Editable s) {
+                // Ignore edits we make programmatically (e.g. writing a category name into the field).
+                if (isProgrammaticQuery) return;
+
                 String filter = s.toString().trim();
 
-                if (!filter.equals(searchFilter)) {
-                    searchFilter = filter;
+                if (filter.equals(searchFilter) && activeCategoryIndex == CategoryAdapter.NO_CATEGORY) {
+                    return;
+                }
 
-                    cancelPendingSearchTask();
+                searchFilter = filter;
 
-                    GemCall.INSTANCE.postAsync(() -> {
-                        searchService.cancelSearch();
-                        return null;
-                    });
+                // Typing clears any active category selection.
+                if (activeCategoryIndex != CategoryAdapter.NO_CATEGORY) {
+                    activeCategoryIndex = CategoryAdapter.NO_CATEGORY;
+                    viewModel.selectedCategory.setValue(CategoryAdapter.NO_CATEGORY);
+                }
 
-                    if (searchFilter.isEmpty()) {
-                        binding.searchProgressBar.setVisibility(View.INVISIBLE);
-                        viewModel.searchResultListLivedata.postValue(new ArrayList<>());
+                cancelPendingSearchTask();
+
+                GemCall.INSTANCE.postAsync(() -> {
+                    searchService.cancelSearch();
+                    return null;
+                });
+
+                if (searchFilter.isEmpty()) {
+                    binding.searchProgressBar.setVisibility(View.INVISIBLE);
+                    viewModel.searchResultListLivedata.postValue(new ArrayList<>());
+                    return;
+                }
+
+                binding.searchProgressBar.setVisibility(View.VISIBLE);
+                String currentFilter = searchFilter;
+                pendingSearchTask = () -> {
+                    if (!currentFilter.equals(searchFilter)) {
                         return;
                     }
 
-                    binding.searchProgressBar.setVisibility(View.VISIBLE);
-                    String currentFilter = searchFilter;
-                    pendingSearchTask = () -> {
-                        if (!currentFilter.equals(searchFilter)) {
-                            return;
+                    GemCall.INSTANCE.postAsync(() -> {
+                        setSearchReferencePoint();
+
+                        // Re-enable free-text address search after a category-only search disabled it.
+                        if (!searchService.getPreferences().getSearchAddressesEnabled()) {
+                            searchService.getPreferences().removeAllCategoryFilters();
+                            searchService.getPreferences().setSearchAddressesEnabled(true);
                         }
 
-                        GemCall.INSTANCE.postAsync(() -> {
-                            searchService.searchByFilter(
-                                currentFilter,
-                                null,
-                                (ArrayList<com.magiclane.sdk.core.EGenericCategoriesIDs>) null,
-                                (results, errorCode, errorMessage) -> {
-                                    if (errorCode == GemError.Cancel) return Unit.INSTANCE;
-                                    if (errorCode == GemError.NoError) {
-                                        GemCall.INSTANCE.execute(() -> {
-                                            List<SearchResultItem> list = new ArrayList<>();
-                                            for (Landmark landmark : results) {
-                                                list.add(new SearchResultItem(
-                                                    landmark.getImage() != null ?
-                                                        landmark.getImage().asBitmap(searchIconSize, searchIconSize) : null,
-                                                    GemUtil.INSTANCE.formatName(landmark),
-                                                    GemUtil.INSTANCE.getLandmarkDescription(landmark, true),
-                                                    landmark
-                                                ));
-                                            }
+                        searchService.searchByFilter(
+                            currentFilter,
+                            reference,
+                            null,
+                            (results, errorCode, errorMessage) -> {
+                                if (errorCode == GemError.Cancel) return Unit.INSTANCE;
+                                if (errorCode == GemError.NoError) {
+                                    GemCall.INSTANCE.execute(() -> {
+                                        viewModel.searchResultListLivedata.postValue(buildSearchItems(results));
+                                        return null;
+                                    });
+                                } else {
+                                    viewModel.searchResultListLivedata.postValue(new ArrayList<>());
+                                }
+                                return Unit.INSTANCE;
+                            },
+                            started -> Unit.INSTANCE
+                        );
 
-                                            viewModel.searchResultListLivedata.postValue(list);
-                                            return null;
-                                        });
-                                    } else {
-                                        viewModel.searchResultListLivedata.postValue(new ArrayList<>());
-                                    }
-                                    return Unit.INSTANCE;
-                                },
-                                started -> Unit.INSTANCE
-                            );
-
-                            return null;
-                        });
-                    };
-                    if (searchDebounceHandler != null) {
-                        searchDebounceHandler.postDelayed(pendingSearchTask, SEARCH_DEBOUNCE_MS);
-                    }
+                        return null;
+                    });
+                };
+                if (searchDebounceHandler != null) {
+                    searchDebounceHandler.postDelayed(pendingSearchTask, SEARCH_DEBOUNCE_MS);
                 }
             }
         });
@@ -614,12 +633,35 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
         binding.searchResultsList.setAdapter(searchAdapter);
         binding.searchResultsList.setLayoutManager(new LinearLayoutManager(this));
 
+        binding.categoriesView.setAdapter(categoryAdapter);
+        binding.categoriesView.setLayoutManager(
+            new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        binding.categoriesView.setItemAnimator(null);
+        categoryAdapter.setOnCategoryClickListener(this::selectCategory);
+
         viewModel.searchResultListLivedata.observe(this, list -> {
             searchAdapter.submitList(list);
             binding.searchProgressBar.setVisibility(View.INVISIBLE);
             binding.noResultsTextView.setVisibility(
-                list.isEmpty() && !searchFilter.isEmpty() ? View.VISIBLE : View.GONE
+                list.isEmpty() && (!searchFilter.isEmpty() || activeCategoryIndex != CategoryAdapter.NO_CATEGORY)
+                    ? View.VISIBLE : View.GONE
             );
+        });
+
+        viewModel.categoriesLivedata.observe(this, categoryAdapter::submitList);
+
+        viewModel.selectedCategory.observe(this, selectedIndex -> {
+            categoryAdapter.setSelectedIndex(selectedIndex);
+            if (selectedIndex != CategoryAdapter.NO_CATEGORY) {
+                List<CategoryItem> categories = viewModel.categoriesLivedata.getValue();
+                String name = (categories != null && selectedIndex >= 0 && selectedIndex < categories.size())
+                    ? categories.get(selectedIndex).getName() : "";
+                isProgrammaticQuery = true;
+                binding.mapSearchView.getEditText().setText(name);
+                binding.mapSearchView.getEditText().setSelection(name.length());
+                searchFilter = name;
+                isProgrammaticQuery = false;
+            }
         });
 
         binding.cancelButton.setOnClickListener(v -> {
@@ -801,12 +843,72 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
     }
 
     private Rect getFreeScreenRect() {
-        return new Rect(
-            leftInset,
-            getAppBarHeight() + inflate,
-            binding.getRoot().getWidth() - rightInset,
-            binding.getRoot().getHeight() - bottomDialogHeight - inflate
-        );
+        int mapWidth = binding.gemSurfaceView.getWidth();
+        int mapHeight = binding.gemSurfaceView.getHeight();
+
+        if (mapWidth <= 0 || mapHeight <= 0) {
+            int fallbackWidth = binding.gemSurfaceView.getMeasuredWidth();
+            int fallbackHeight = binding.gemSurfaceView.getMeasuredHeight();
+            return new Rect(0, 0, fallbackWidth, fallbackHeight);
+        }
+
+        WindowInsetsCompat windowInsets = ViewCompat.getRootWindowInsets(binding.getRoot());
+        androidx.core.graphics.Insets insets = windowInsets != null
+            ? windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout())
+            : null;
+        int leftSysInset = insets != null ? insets.left : 0;
+        int rightSysInset = insets != null ? insets.right : 0;
+        int bottomSysInset = insets != null ? insets.bottom : 0;
+
+        boolean isLandscape = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+        int padding = getResources().getDimensionPixelSize(R.dimen.map_free_space_padding);
+        int topLimit = getAppBarHeight();
+
+        int left;
+        int right;
+        int bottom;
+
+        if (isLandscape) {
+            if (binding.calculateRoutePanel.getRoot().getVisibility() == View.VISIBLE) {
+                left = Math.max(
+                    binding.calculateRoutePanel.getRoot().getRight() - binding.gemSurfaceView.getLeft(),
+                    leftSysInset
+                );
+            } else if (binding.startNavigationPanel.getRoot().getVisibility() == View.VISIBLE) {
+                left = Math.max(
+                    binding.startNavigationPanel.getRoot().getRight() - binding.gemSurfaceView.getLeft(),
+                    leftSysInset
+                );
+            } else {
+                left = leftSysInset;
+            }
+            right = Math.max(mapWidth - rightSysInset, left + 1);
+            bottom = Math.max(mapHeight - bottomSysInset, topLimit + 1);
+        } else {
+            left = Math.max(0, Math.min(leftSysInset, Math.max(mapWidth - 1, 0)));
+            right = Math.max(left + 1, Math.min(mapWidth - rightSysInset, mapWidth));
+            int bottomLimitRaw = getBottomLimitRaw(mapHeight);
+            bottom = Math.max(topLimit + 1, Math.min(bottomLimitRaw, mapHeight));
+        }
+
+        int paddedLeft = Math.min(left + padding, right - 1);
+        int paddedRight = Math.max(right - padding, paddedLeft + 1);
+        int paddedTop = Math.min(topLimit + padding, bottom - 1);
+        int paddedBottom = Math.max(bottom - padding, paddedTop + 1);
+
+        return new Rect(paddedLeft, paddedTop, paddedRight, paddedBottom);
+    }
+
+    private int getBottomLimitRaw(int mapHeight) {
+        int bottomLimitRaw;
+        if (binding.calculateRoutePanel.getRoot().getVisibility() == View.VISIBLE) {
+            bottomLimitRaw = binding.calculateRoutePanel.getRoot().getTop() - binding.gemSurfaceView.getTop();
+        } else if (binding.startNavigationPanel.getRoot().getVisibility() == View.VISIBLE) {
+            bottomLimitRaw = binding.startNavigationPanel.getRoot().getTop() - binding.gemSurfaceView.getTop();
+        } else {
+            bottomLimitRaw = mapHeight;
+        }
+        return bottomLimitRaw;
     }
 
     private int getBikeProfileIcon(EBikeProfile profile, boolean isElectric) {
@@ -863,6 +965,116 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
             handler.removeCallbacks(pendingSearchTask);
             pendingSearchTask = null;
         }
+    }
+
+    // Selects a category chip and runs an around-position search restricted to it. Tapping the
+    // already-selected chip is a no-op.
+    private void selectCategory(int index) {
+        if (activeCategoryIndex == index) return;
+        activeCategoryIndex = index;
+        viewModel.selectedCategory.setValue(index);
+
+        cancelPendingSearchTask();
+        GemCall.INSTANCE.postAsync(() -> {
+            searchService.cancelSearch();
+            return null;
+        });
+
+        if (index == CategoryAdapter.NO_CATEGORY) return;
+
+        binding.searchProgressBar.setVisibility(View.VISIBLE);
+
+        GemCall.INSTANCE.postAsync(() -> {
+            searchService.getPreferences().removeAllCategoryFilters();
+            searchService.getPreferences().setSearchAddressesEnabled(false);
+            setSearchReferencePoint();
+
+            List<CategoryItem> categories = viewModel.categoriesLivedata.getValue();
+            if (categories == null || index < 0 || index >= categories.size()) {
+                return null;
+            }
+
+            CategoryItem category = categories.get(index);
+            if (searchService.getPreferences().getLandmarkStores() != null) {
+                searchService.getPreferences().getLandmarkStores()
+                    .addStoreCategoryId(category.getLandmarkStoreId(), category.getCategoryId());
+            }
+
+            searchService.searchAroundPosition(
+                reference,
+                "",
+                null,
+                (results, errorCode, errorMessage) -> {
+                    if (errorCode == GemError.Cancel) return Unit.INSTANCE;
+                    if (errorCode == GemError.NoError) {
+                        GemCall.INSTANCE.execute(() -> {
+                            viewModel.searchResultListLivedata.postValue(buildSearchItems(results));
+                            return null;
+                        });
+                    } else {
+                        viewModel.searchResultListLivedata.postValue(new ArrayList<>());
+                    }
+                    return Unit.INSTANCE;
+                },
+                started -> Unit.INSTANCE
+            );
+
+            return null;
+        });
+    }
+
+    // Uses the current GPS position as the reference for searches and distance display when valid.
+    private void setSearchReferencePoint() {
+        PositionData position = PositionService.INSTANCE.getPosition();
+        if (position != null && position.isValid()) {
+            reference = position.getCoordinates();
+        }
+    }
+
+    // Maps SDK landmarks to list items, computing the distance from the reference point.
+    // Must be called from an SDK thread.
+    private List<SearchResultItem> buildSearchItems(ArrayList<Landmark> landmarks) {
+        List<SearchResultItem> list = new ArrayList<>();
+        for (Landmark landmark : landmarks) {
+            int meters = 0;
+            if (reference != null && landmark.getCoordinates() != null) {
+                meters = (int) landmark.getCoordinates().getDistance(reference);
+            }
+            Pair<String, String> dist = GemUtil.INSTANCE.getDistText(meters, EUnitSystem.Metric, true, false);
+            list.add(new SearchResultItem(
+                landmark.getImage() != null ? landmark.getImage().asBitmap(searchIconSize, searchIconSize) : null,
+                GemUtil.INSTANCE.formatName(landmark),
+                GemUtil.INSTANCE.getLandmarkDescription(landmark, true),
+                dist.getFirst(),
+                dist.getSecond(),
+                landmark
+            ));
+        }
+        return list;
+    }
+
+    // Presents [landmark] as a potential destination: opens the calculate-route panel, highlights
+    // it on the map, and routes to it from the current position on confirmation. Must be called
+    // from an SDK thread (e.g. inside an onTouch / onLongDown handler).
+    private void presentLandmarkForRouting(Landmark landmark) {
+        viewModel.destination = landmark;
+        Pair<String, String> details = GemUtil.INSTANCE.pairFormatLandmarkDetails(landmark, true);
+        showCalculateRouteDialog(
+            details.getFirst(),
+            details.getSecond(),
+            () -> GemCall.INSTANCE.execute(() -> {
+                PositionData position = PositionService.INSTANCE.getPosition();
+                if ((position != null) && position.isValid()) {
+                    Landmark departure = new Landmark(getString(R.string.my_position), position.getLatitude(), position.getLongitude());
+                    calculateRoute(departure, landmark);
+                } else {
+                    runOnUiThread(() -> showDialog(getString(R.string.current_position_not_available)));
+                }
+                return null;
+            }),
+            () -> highlightLandmarkOnMap(landmark),
+            this::deactivateHighlights
+        );
     }
 
     private void enableGPSButton() {
@@ -954,7 +1166,7 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
             waypoints.add(destination);
 
             routingService.setPreferences(viewModel.routePreferences);
-            routingService.calculateRoute(
+            int error = routingService.calculateRoute(
                 waypoints,
                 viewModel.routePreferences.getTransportMode(),
                 false,
@@ -962,6 +1174,16 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
                 null,
                 null
             );
+            if (error != GemError.NoError) {
+                // The computation never started, so onStarted/onCompleted won't fire: clear any
+                // progress UI and report the failure.
+                String message = GemError.INSTANCE.getMessage(error, this);
+                runOnAliveUi(() -> {
+                    binding.progressBar.setVisibility(View.GONE);
+                    binding.cancelButton.setVisibility(View.GONE);
+                    showDialog(getString(R.string.routing_error, message));
+                });
+            }
             return null;
         });
     }
@@ -1383,6 +1605,7 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
             }
 
             viewModel.initPreferences();
+            viewModel.loadCategories(categoryIconSize);
 
             ArrayList<Parameter> parametersList = new ArrayList<>();
             parametersList.add(new Parameter(ESConfigKeys.Position.ImprovedPosPreferRouteSnap, "", "1"));
@@ -1422,24 +1645,26 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
                         Landmark landmark = getLandmark(mapView);
 
                         if ((landmark != null) && (landmark.getCoordinates() != null)) {
-                            viewModel.destination = landmark;
-                            Pair<String, String> details = GemUtil.INSTANCE.pairFormatLandmarkDetails(landmark, true);
-                            showCalculateRouteDialog(
-                                details.getFirst(),
-                                details.getSecond(),
-                                () -> GemCall.INSTANCE.execute(() -> {
-                                    com.magiclane.sdk.sensordatasource.PositionData position = PositionService.INSTANCE.getPosition();
-                                    if ((position != null) && position.isValid()) {
-                                        Landmark departure = new Landmark("My position", position.getLatitude(), position.getLongitude());
-                                        calculateRoute(departure, landmark);
-                                    } else {
-                                        runOnUiThread(() -> showDialog(getString(R.string.current_position_not_available)));
-                                    }
-                                    return null;
-                                }),
-                                () -> highlightLandmarkOnMap(landmark),
-                                this::deactivateHighlights
-                            );
+                            presentLandmarkForRouting(landmark);
+                        }
+                        return null;
+                    });
+                    return Unit.INSTANCE;
+                });
+
+                // Long press: route to the closest street under the cursor.
+                mapView.setOnLongDown(xy -> {
+                    GemCall.INSTANCE.execute(() -> {
+                        if (navigationService.isNavigationActive(navigationListener) ||
+                            navigationService.isSimulationActive(navigationListener)) {
+                            return null;
+                        }
+
+                        mapView.setCursorScreenPosition(xy);
+
+                        List<Landmark> streets = mapView.getCursorSelectionStreets();
+                        if (streets != null && !streets.isEmpty()) {
+                            presentLandmarkForRouting(streets.get(0));
                         }
                         return null;
                     });
@@ -1660,13 +1885,7 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
         if (isLandscape) {
             int w = Math.max(width, height);
             int h = Math.min(width, height);
-            int panelRight = insetsLeft;
-            if (binding.topPanel.getVisibility() == View.VISIBLE)
-                panelRight = Math.max(panelRight, binding.topPanel.getRight());
-            if (binding.calculateRoutePanel.getRoot().getVisibility() == View.VISIBLE)
-                panelRight = Math.max(panelRight, binding.calculateRoutePanel.getRoot().getRight());
-            if (binding.startNavigationPanel.getRoot().getVisibility() == View.VISIBLE)
-                panelRight = Math.max(panelRight, binding.startNavigationPanel.getRoot().getRight());
+            int panelRight = getPanelRight(insetsLeft);
             int right = Math.max(w - insetsRight, panelRight);
             int bottom = Math.max(h - insetsBottom, insetsTop);
             return new Rect(panelRight, insetsTop, right, bottom);
@@ -1676,16 +1895,31 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
             int right = Math.max(w - insetsRight, insetsLeft);
             int top = binding.topPanel.getVisibility() == View.VISIBLE
                 ? binding.topPanel.getBottom() : insetsTop;
-            int bottomCandidate = h - insetsBottom;
-            if (binding.bottomPanel.getVisibility() == View.VISIBLE)
-                bottomCandidate = Math.min(bottomCandidate, binding.bottomPanel.getTop());
-            if (binding.calculateRoutePanel.getRoot().getVisibility() == View.VISIBLE)
-                bottomCandidate = Math.min(bottomCandidate, binding.calculateRoutePanel.getRoot().getTop());
-            if (binding.startNavigationPanel.getRoot().getVisibility() == View.VISIBLE)
-                bottomCandidate = Math.min(bottomCandidate, binding.startNavigationPanel.getRoot().getTop());
-            int bottom = Math.max(bottomCandidate, top);
+            int bottom = getBottom(h, insetsBottom, top);
             return new Rect(insetsLeft, top, right, bottom);
         }
+    }
+
+    private int getBottom(int h, int insetsBottom, int top) {
+        int bottomCandidate = h - insetsBottom;
+        if (binding.bottomPanel.getVisibility() == View.VISIBLE)
+            bottomCandidate = Math.min(bottomCandidate, binding.bottomPanel.getTop());
+        else if (binding.calculateRoutePanel.getRoot().getVisibility() == View.VISIBLE)
+            bottomCandidate = Math.min(bottomCandidate, binding.calculateRoutePanel.getRoot().getTop());
+        else if (binding.startNavigationPanel.getRoot().getVisibility() == View.VISIBLE)
+            bottomCandidate = Math.min(bottomCandidate, binding.startNavigationPanel.getRoot().getTop());
+        return Math.max(bottomCandidate, top);
+    }
+
+    private int getPanelRight(int insetsLeft) {
+        int panelRight = insetsLeft;
+        if (binding.topPanel.getVisibility() == View.VISIBLE)
+            panelRight = Math.max(panelRight, binding.topPanel.getRight());
+        else if (binding.calculateRoutePanel.getRoot().getVisibility() == View.VISIBLE)
+            panelRight = Math.max(panelRight, binding.calculateRoutePanel.getRoot().getRight());
+        else if (binding.startNavigationPanel.getRoot().getVisibility() == View.VISIBLE)
+            panelRight = Math.max(panelRight, binding.startNavigationPanel.getRoot().getRight());
+        return panelRight;
     }
 
     // endregion

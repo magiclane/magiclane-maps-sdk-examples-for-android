@@ -21,6 +21,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.DataBuffer
 import com.magiclane.sdk.core.EOffboardListenerStatus
+import com.magiclane.sdk.core.ErrorCode
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.ProgressListener
@@ -59,6 +60,8 @@ class MainActivity : AppCompatActivity() {
             // Signals to Espresso that the async navigation-start operation is complete.
             EspressoIdlingResource.decrement()
         },
+        onDestinationReached = { onNavigationEnded() },
+        onNavigationError = { error -> onNavigationEnded(error) },
     )
 
     private val routingProgressListener = ProgressListener.create(
@@ -217,6 +220,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Tears down the GPS follow button when navigation ends and surfaces any terminal error. */
+    private fun onNavigationEnded(errorCode: ErrorCode = GemError.NoError) {
+        runOnUiThread {
+            if ((errorCode != GemError.NoError) && (errorCode != GemError.Cancel)) {
+                val message = SdkCall.runSynced { GemError.getMessage(errorCode, this) } ?: ""
+                if (message.isNotEmpty()) {
+                    showDialog(message)
+                }
+            }
+            disableGPSButton()
+        }
+    }
+
     // ---- Logo viewport -------------------------------------------------------
 
     /** Pushes the current focus viewport to the map so the Magic Lane logo stays below the toolbar. */
@@ -254,6 +270,15 @@ class MainActivity : AppCompatActivity() {
             onExitFollowingPosition = { binding.followCursor.visibility = View.VISIBLE }
             onEnterFollowingPosition = { binding.followCursor.visibility = View.GONE }
             binding.followCursor.setOnClickListener { SdkCall.execute { followPosition() } }
+        }
+    }
+
+    private fun disableGPSButton() {
+        binding.gemSurface.mapView?.apply {
+            onExitFollowingPosition = null
+            onEnterFollowingPosition = null
+            binding.followCursor.setOnClickListener(null)
+            binding.followCursor.visibility = View.GONE
         }
     }
 

@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity() {
             if (!value) {
                 fingerRouteMode = false
                 binding.topRightButton.isVisible = false
-                binding.bottomLeftButton.isVisible = false
+                binding.bottomRightButton.isVisible = false
 
                 SdkCall.execute {
                     val mapRoutes = mapSurface.mapView?.preferences?.routes
@@ -166,7 +166,7 @@ class MainActivity : AppCompatActivity() {
                     fingerRouteIsVisible = true
                     binding.topRightButton.isVisible = true
                     setupLiningButton(true)
-                    binding.bottomLeftButton.isVisible = true
+                    binding.bottomRightButton.isVisible = true
                 }
 
                 GemError.Cancel -> routingIsActive = false
@@ -458,7 +458,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        binding.bottomLeftButton.setOnClickListener {
+        binding.bottomRightButton.setOnClickListener {
             SdkCall.execute {
                 path.exportAs(EPathFileFormat.Gpx)?.bytes?.let { bytes ->
                     val file = File(GemSdk.internalStoragePath, "route.gpx")

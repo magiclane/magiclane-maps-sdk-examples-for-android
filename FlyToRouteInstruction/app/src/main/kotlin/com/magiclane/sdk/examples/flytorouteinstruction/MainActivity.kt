@@ -130,7 +130,14 @@ class MainActivity : AppCompatActivity() {
                         Landmark("London", 51.5073204, -0.1276475),
                         Landmark("Paris", 48.8566932, 2.3514616),
                     )
-                    routingService.calculateRoute(waypoints)
+
+                    // calculateRoute returns synchronously whether the calculation could be
+                    // started. On failure onCompleted never fires, so report the error here.
+                    val errorCode = routingService.calculateRoute(waypoints)
+                    if (errorCode != GemError.NoError) {
+                        val errorMessage = GemError.getMessage(errorCode, this)
+                        runOnAliveUi { showDialog(getString(R.string.routing_failed_to_start, errorMessage)) }
+                    }
                 }
             }
         }

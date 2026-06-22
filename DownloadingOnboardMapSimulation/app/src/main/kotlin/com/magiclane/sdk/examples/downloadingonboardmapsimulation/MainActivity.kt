@@ -119,7 +119,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         onNavigationStarted = {
             SdkCall.execute {
                 binding.gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.enableCursor = false
                     navRoute?.let { route -> mapView.presentRoute(route) }
                     enableGPSButton()
                     mapView.followPosition()
@@ -144,11 +143,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         canPlayNavigationSound = true,
     )
 
-    // Tracks routing progress; drives the progress bar and the status text.
+    // Tracks routing progress; drives the progress bar.
     private val routingProgressListener = ProgressListener.create(
         onStarted = {
             binding.progressBar.isVisible = true
-            showStatusMessage(getString(R.string.routing_process_started))
         },
         onCompleted = { errorCode, _ ->
             binding.progressBar.isVisible = false
@@ -159,8 +157,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                         SdkCall.runSynced { GemError.getMessage(errorCode, this) },
                     ),
                 )
-            } else {
-                showStatusMessage(getString(R.string.routing_process_completed))
             }
         },
         postOnMain = true,
@@ -586,7 +582,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private fun onStatusChanged(status: Int) {
         val completed = EContentStoreItemStatus.entries.toTypedArray()[status] == EContentStoreItemStatus.Completed
-        binding.downloadedIcon.isVisible = completed
         binding.downloadProgressBar.isInvisible = completed
     }
 

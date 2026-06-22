@@ -254,22 +254,6 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent" />
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/downloaded_icon"
-                android:layout_width="@dimen/icon_size"
-                android:layout_height="@dimen/icon_size"
-                android:layout_margin="@dimen/big_padding"
-                android:src="@drawable/ic_baseline_phone_android"
-                app:layout_goneMarginEnd="@dimen/icon_gone_margin_end"
-                app:layout_goneMarginTop="@dimen/icon_gone_margin"
-                app:layout_goneMarginBottom="@dimen/icon_gone_margin"
-                app:layout_constraintStart_toStartOf="@id/download_progress_bar"
-                app:layout_constraintTop_toTopOf="@id/download_progress_bar"
-                app:layout_constraintEnd_toEndOf="@id/download_progress_bar"
-                app:layout_constraintBottom_toBottomOf="@id/download_progress_bar"
-                android:visibility="gone"
-                tools:ignore="ContentDescription" />
-
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <com.google.android.material.textview.MaterialTextView

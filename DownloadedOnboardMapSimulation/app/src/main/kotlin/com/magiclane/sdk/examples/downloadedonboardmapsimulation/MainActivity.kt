@@ -87,7 +87,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         onNavigationStarted = {
             SdkCall.execute {
                 binding.gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.enableCursor = false
                     navRoute?.let { route -> mapView.presentRoute(route) }
                     enableGPSButton()
                     mapView.followPosition()

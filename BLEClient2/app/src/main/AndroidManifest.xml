@@ -27,11 +27,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BLEClient"
         tools:targetApi="31">
-
-        <meta-data
-            android:name="com.magiclane.sdk.token"
-            android:value="${GEM_TOKEN}" />
-
+        
         <activity
             android:name=".MainActivity"
             android:exported="true"

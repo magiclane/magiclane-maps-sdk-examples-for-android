@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/category_container"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:minWidth="64dp"
+    android:orientation="vertical"
+    android:padding="@dimen/big_padding">
+
+    <ImageView
+        android:id="@+id/category_icon"
+        android:layout_width="@dimen/category_icon_size"
+        android:layout_height="@dimen/category_icon_size"
+        android:importantForAccessibility="no"
+        android:scaleType="fitCenter" />
+
+</LinearLayout>

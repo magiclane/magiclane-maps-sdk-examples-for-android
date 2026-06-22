@@ -9,17 +9,45 @@ package com.magiclane.sdk.examples.bikedemo
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.magiclane.sdk.core.GenericCategories
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.EBikeProfile
 import com.magiclane.sdk.routesandnavigation.ERouteTransportMode
 import com.magiclane.sdk.routesandnavigation.ElectricBikeProfile
 import com.magiclane.sdk.routesandnavigation.RoutePreferences
 import com.magiclane.sdk.util.SdkCall
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivityViewModel : ViewModel() {
 
     val searchResultListLivedata = MutableLiveData<MutableList<SearchResultItem>>()
     val isElectricBikeProfile = MutableLiveData(false)
+
+    // POI categories shown in the horizontal bar, and the index of the selected chip.
+    val categoriesLivedata = MutableLiveData<List<CategoryItem>>(emptyList())
+    val selectedCategory = MutableLiveData(CategoryAdapter.NO_CATEGORY)
+    private var categoriesLoaded = false
+
+    // Loads the generic POI categories once the SDK map data is ready.
+    fun loadCategories(iconSize: Int) {
+        if (categoriesLoaded) return
+        categoriesLoaded = true
+        viewModelScope.launch(Dispatchers.IO) {
+            val items = SdkCall.execute {
+                GenericCategories().categories?.mapNotNull { cat ->
+                    CategoryItem(
+                        name = cat.name ?: return@mapNotNull null,
+                        icon = cat.image?.asBitmap(iconSize, iconSize),
+                        landmarkStoreId = cat.landmarkStoreId,
+                        categoryId = cat.id,
+                    )
+                } ?: emptyList()
+            } ?: emptyList()
+            categoriesLivedata.postValue(items)
+        }
+    }
     var destination: Landmark? = null
     var isElectric = false
     var bikeProfile = EBikeProfile.City

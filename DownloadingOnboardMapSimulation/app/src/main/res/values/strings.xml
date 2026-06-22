@@ -8,8 +8,6 @@
     <string name="routing_error">Routing error: %1$s</string>
     <string name="route_simulation_error">Route simulation error: %s</string>
     <string name="waiting_for_internet_connection">Waiting for internet connection…</string>
-    <string name="routing_process_started">Routing process started</string>
-    <string name="routing_process_completed">Routing process completed</string>
     <string name="routing_process_failed">Routing process failed: %s</string>
     <string name="failed_to_start_simulation">Failed to start simulation: %s</string>
     <string name="content_store_started">Loading map list…</string>

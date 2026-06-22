@@ -45,7 +45,6 @@ import com.magiclane.sdk.sensordatasource.enums.EDataType
 import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.Util
-import kotlin.math.min
 import kotlin.system.exitProcess
 
 @Suppress("SameParameterValue")
@@ -334,22 +333,12 @@ class MainActivity : AppCompatActivity() {
             if (streetName.isNotEmpty()) {
                 if (streetName != currentStreetText.text) {
                     currentStreetText.text = streetName
-                    val maxTextSize = resources.getDimension(R.dimen.max_current_street_text_size)
-                    currentStreetText.setTextSize(
-                        TypedValue.COMPLEX_UNIT_PX,
-                        min(currentStreetText.textSize, maxTextSize),
-                    )
                 }
 
                 if (cityName.isNotEmpty()) {
                     currentCityText.visibility = View.VISIBLE
                     if (cityName != currentCityText.text) {
                         currentCityText.text = cityName
-                        val maxTextSize = resources.getDimension(R.dimen.max_current_street_text_size)
-                        currentCityText.setTextSize(
-                            TypedValue.COMPLEX_UNIT_PX,
-                            min(currentCityText.textSize, maxTextSize),
-                        )
                     }
                     (currentStreetText.layoutParams as ConstraintLayout.LayoutParams).bottomMargin = getSizeInPixels(1)
                 } else {

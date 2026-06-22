@@ -18,3 +18,6 @@ _REPORTS/
 local.properties
 /*/app/libs/*.aar
 /*/*/build
+
+# Claude / Cowork local agent folder
+.claude/

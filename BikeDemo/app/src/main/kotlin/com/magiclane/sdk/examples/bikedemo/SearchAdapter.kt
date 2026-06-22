@@ -35,10 +35,16 @@ class SearchAdapter : ListAdapter<SearchResultItem, SearchAdapter.SearchResultVi
 
     inner class SearchResultVieHolder(private val view: View) : RecyclerView.ViewHolder(view) {
         private var textView = view.findViewById<MaterialTextView>(R.id.item_text)
+        private var descriptionView = view.findViewById<MaterialTextView>(R.id.item_description)
+        private var distanceView = view.findViewById<MaterialTextView>(R.id.item_distance)
+        private var unitView = view.findViewById<MaterialTextView>(R.id.item_unit)
         private var itemImage = view.findViewById<ImageView>(R.id.item_img)
         fun bind(item: SearchResultItem) {
-            item.text?.let { textView.text = it }
-            item.bmp?.let { itemImage.setImageBitmap(it) }
+            textView.text = item.text
+            descriptionView.text = item.subText
+            distanceView.text = item.distance
+            unitView.text = item.unit
+            itemImage.setImageBitmap(item.bmp)
             view.setOnClickListener { onClickListener?.invoke(item) }
         }
     }

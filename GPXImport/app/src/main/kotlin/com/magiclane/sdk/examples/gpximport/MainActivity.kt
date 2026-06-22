@@ -164,7 +164,7 @@ class MainActivity : AppCompatActivity() {
         // Opens GPX input stream.
         val input = applicationContext.resources.assets.open(gpxAssetsFilename)
 
-        // Produce a Path based on the data in the buffer.
+        // Produce a Path based on the input stream data
         val track = Path.produceWithGpx(input) ?: return@execute
 
         val mapView = binding.gemSurfaceView.mapView ?: return@execute
@@ -174,7 +174,11 @@ class MainActivity : AppCompatActivity() {
         mapView.presentPath(track, lineColor, lineColor, 0.0, 0.6, false)
 
         // Set the transport mode to bike and calculate the route.
-        routingService.calculateRoute(track, ERouteTransportMode.Bicycle)
+        val error = routingService.calculateRoute(track, ERouteTransportMode.Bicycle)
+        if (GemError.isError(error)) {
+            val message = GemError.getMessage(error, this)
+            runOnAliveUi { showDialog(getString(R.string.routing_error, message)) }
+        }
     }
 
     /** Shows a non-dismissable bottom-sheet error dialog. */

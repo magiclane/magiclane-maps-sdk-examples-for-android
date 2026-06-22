@@ -7,6 +7,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/bottom_panel_background"
+        android:clickable="true"
+        android:focusable="true"
         android:elevation="8dp"
         android:padding="@dimen/big_padding"
         paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"

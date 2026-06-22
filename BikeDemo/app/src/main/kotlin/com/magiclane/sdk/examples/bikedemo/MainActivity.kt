@@ -108,6 +108,15 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private var bottomDialogHeight = 0 // height of the currently-visible bottom panel, px
 
     private var searchFilter = ""
+
+    // Index of the selected category chip (NO_CATEGORY when none), the reference point used for
+    // around-position searches and distance display, and a guard to ignore programmatic edits
+    // to the search field (e.g. when a category name is written into it).
+    private var activeCategoryIndex = CategoryAdapter.NO_CATEGORY
+    private var isProgrammaticQuery = false
+    private var reference: Coordinates? = null
+    private var categoryIconSize = 0
+
     private var routesList = ArrayList<Route>()
     private var navigationStatus = ENavigationStatus.Running
     private var lastTurnImageId: Long = Long.MAX_VALUE
@@ -128,6 +137,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private val viewModel: MainActivityViewModel by viewModels()
     private val searchAdapter = SearchAdapter()
+    private val categoryAdapter = CategoryAdapter()
     private val navigationService = NavigationService()
     private val searchService = SearchService()
     private val playingListener = object : SoundPlayingListener() {}
@@ -392,24 +402,25 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             delay(SEARCH_DEBOUNCE_MS)
 
             SdkCall.postAsync {
+                setSearchReferencePoint()
                 isSearching.set(true)
+
+                // Re-enable free-text address search after a category-only search disabled it.
+                if (!searchService.preferences.searchAddressesEnabled) {
+                    searchService.preferences.removeAllCategoryFilters()
+                    searchService.preferences.searchAddressesEnabled = true
+                }
+
                 searchService.searchByFilter(
                     textFilter = filter,
+                    reference = reference,
                     onCompleted = { results, errorCode, _ ->
                         isSearching.set(false)
                         when (errorCode) {
                             GemError.Cancel -> return@searchByFilter
                             GemError.NoError -> {
                                 SdkCall.execute {
-                                    val list = results.map { landmark ->
-                                        SearchResultItem(
-                                            landmark.image?.asBitmap(searchIconSize, searchIconSize),
-                                            GemUtil.formatName(landmark),
-                                            GemUtil.getLandmarkDescription(landmark, true),
-                                            landmark,
-                                        )
-                                    }.toMutableList()
-                                    viewModel.searchResultListLivedata.postValue(list)
+                                    viewModel.searchResultListLivedata.postValue(buildSearchItems(results))
                                 }
                             }
                             else -> viewModel.searchResultListLivedata.postValue(mutableListOf())
@@ -419,6 +430,73 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             }
         }
     }
+
+    // Selects a category chip and runs an around-position search restricted to it. Tapping the
+    // already-selected chip is a no-op.
+    private fun selectCategory(index: Int) {
+        if (activeCategoryIndex == index) return
+        activeCategoryIndex = index
+        viewModel.selectedCategory.value = index
+
+        if (isSearching.compareAndSet(true, false)) {
+            SdkCall.postAsync { searchService.cancelSearch() }
+        }
+        searchJob?.cancel()
+
+        if (index == CategoryAdapter.NO_CATEGORY) return
+
+        binding.searchProgressBar.isInvisible = false
+
+        SdkCall.postAsync {
+            searchService.preferences.removeAllCategoryFilters()
+            searchService.preferences.searchAddressesEnabled = false
+            setSearchReferencePoint()
+
+            viewModel.categoriesLivedata.value?.getOrNull(index)?.let { cat ->
+                searchService.preferences.landmarkStores?.addStoreCategoryId(cat.landmarkStoreId, cat.categoryId)
+
+                isSearching.set(true)
+                searchService.searchAroundPosition(
+                    reference = reference,
+                    onCompleted = { results, errorCode, _ ->
+                        isSearching.set(false)
+                        when (errorCode) {
+                            GemError.Cancel -> return@searchAroundPosition
+                            GemError.NoError -> {
+                                SdkCall.execute {
+                                    viewModel.searchResultListLivedata.postValue(buildSearchItems(results))
+                                }
+                            }
+                            else -> viewModel.searchResultListLivedata.postValue(mutableListOf())
+                        }
+                    },
+                )
+            }
+        }
+    }
+
+    // Uses the current GPS position as the reference for searches and distance display when valid.
+    private fun setSearchReferencePoint() {
+        val position = PositionService.position
+        if (position?.isValid() == true) {
+            reference = position.coordinates
+        }
+    }
+
+    // Maps SDK landmarks to list items, computing the distance from the reference point.
+    private fun buildSearchItems(landmarks: ArrayList<Landmark>): MutableList<SearchResultItem> =
+        landmarks.map { landmark ->
+            val meters = reference?.let { landmark.coordinates?.getDistance(it)?.toInt() } ?: 0
+            val dist = GemUtil.getDistText(meters, EUnitSystem.Metric, true)
+            SearchResultItem(
+                bmp = landmark.image?.asBitmap(searchIconSize, searchIconSize),
+                text = GemUtil.formatName(landmark),
+                subText = GemUtil.getLandmarkDescription(landmark, true),
+                distance = dist.first,
+                unit = dist.second,
+                landmark = landmark,
+            )
+        }.toMutableList()
 
     //endregion
 
@@ -439,6 +517,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         portraitConstraintSet = ConstraintSet().also { it.clone(binding.mapRoot) }
 
         searchIconSize = resources.getDimension(R.dimen.icon_size).toInt()
+        categoryIconSize = resources.getDimension(R.dimen.category_icon_size).toInt()
         inflate = resources.getDimension(R.dimen.padding_40).toInt()
 
         // Measure app bar height after layout
@@ -514,10 +593,21 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         binding.mapSearchView.setupWithSearchBar(binding.mapSearchBar)
 
         binding.mapSearchView.editText.addTextChangedListener {
+            // Ignore edits we make programmatically (e.g. writing a category name into the field).
+            if (isProgrammaticQuery) return@addTextChangedListener
+
             val filter = it.toString().trim()
-            if (filter == searchFilter) return@addTextChangedListener
+            if (filter == searchFilter && activeCategoryIndex == CategoryAdapter.NO_CATEGORY) {
+                return@addTextChangedListener
+            }
 
             searchFilter = filter
+
+            // Typing clears any active category selection.
+            if (activeCategoryIndex != CategoryAdapter.NO_CATEGORY) {
+                activeCategoryIndex = CategoryAdapter.NO_CATEGORY
+                viewModel.selectedCategory.value = CategoryAdapter.NO_CATEGORY
+            }
 
             if (isSearching.compareAndSet(true, false)) {
                 SdkCall.postAsync { searchService.cancelSearch() }
@@ -544,10 +634,34 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             layoutManager = LinearLayoutManager(this@MainActivity)
         }
 
+        binding.categoriesView.apply {
+            adapter = categoryAdapter
+            layoutManager = LinearLayoutManager(this@MainActivity, LinearLayoutManager.HORIZONTAL, false)
+            itemAnimator = null
+        }
+        categoryAdapter.setOnCategoryClickListener { index -> selectCategory(index) }
+
         viewModel.searchResultListLivedata.observe(this) {
             searchAdapter.submitList(it)
             binding.searchProgressBar.isInvisible = true
-            binding.noResultsTextView.isVisible = it.isEmpty() && searchFilter.isNotBlank()
+            binding.noResultsTextView.isVisible =
+                it.isEmpty() && (searchFilter.isNotBlank() || activeCategoryIndex != CategoryAdapter.NO_CATEGORY)
+        }
+
+        viewModel.categoriesLivedata.observe(this) { items ->
+            categoryAdapter.submitList(items)
+        }
+
+        viewModel.selectedCategory.observe(this) { selectedIndex ->
+            categoryAdapter.setSelectedIndex(selectedIndex)
+            if (selectedIndex != CategoryAdapter.NO_CATEGORY) {
+                val name = viewModel.categoriesLivedata.value?.getOrNull(selectedIndex)?.name ?: ""
+                isProgrammaticQuery = true
+                binding.mapSearchView.editText.setText(name)
+                binding.mapSearchView.editText.setSelection(name.length)
+                searchFilter = name
+                isProgrammaticQuery = false
+            }
         }
 
         binding.cancelButton.setOnClickListener {
@@ -1044,6 +1158,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             }
 
             viewModel.initPreferences()
+            viewModel.loadCategories(categoryIconSize)
 
             val parametersList =
                 arrayListOf(
@@ -1103,35 +1218,22 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                                 }
                             }
 
-                            landmark?.let { landmark ->
-                                viewModel.destination = landmark
-                                val details = GemUtil.pairFormatLandmarkDetails(landmark, true)
-                                showCalculateRouteDialog(
-                                    details.first,
-                                    details.second,
-                                    onCalculateRoute = {
-                                        SdkCall.execute {
-                                            val position = PositionService.position
-                                            if ((position != null) && position.isValid()) {
-                                                val departure =
-                                                    Landmark("My position", position.latitude, position.longitude)
-                                                calculateRoute(departure, landmark)
-                                            } else {
-                                                runOnUiThread {
-                                                    showDialog(
-                                                        getString(R.string.current_position_not_available),
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    },
-                                    onViewCreated = {
-                                        highlightLandmarkOnMap(landmark)
-                                    },
-                                    onViewClosed = {
-                                        deactivateHighlights()
-                                    },
-                                )
+                            landmark?.let { presentLandmarkForRouting(it) }
+                        }
+                    }
+
+                    // Long press: route to the closest street under the cursor.
+                    mapView.onLongDown = { xy ->
+                        SdkCall.execute {
+                            if (navigationService.isNavigationActive() || navigationService.isSimulationActive()) {
+                                return@execute
+                            }
+
+                            mapView.cursorScreenPosition = xy
+
+                            val streets = mapView.cursorSelectionStreets
+                            if (!streets.isNullOrEmpty()) {
+                                presentLandmarkForRouting(streets[0])
                             }
                         }
                     }
@@ -1266,7 +1368,47 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         )
 
         routingService.preferences = viewModel.routePreferences
-        routingService.calculateRoute(waypoints)
+        val error = routingService.calculateRoute(waypoints)
+        if (error != GemError.NoError) {
+            // The computation never started, so onStarted/onCompleted won't fire: clear any
+            // progress UI and report the failure.
+            val message = GemError.getMessage(error, this)
+            runOnAliveUi {
+                binding.progressBar.visibility = View.GONE
+                binding.cancelButton.visibility = View.GONE
+                showDialog(getString(R.string.routing_error, message))
+            }
+        }
+    }
+
+    // Presents [landmark] as a potential destination: opens the calculate-route panel, highlights
+    // it on the map, and routes to it from the current position on confirmation. Must be called
+    // from an SDK thread (e.g. inside an onTouch / onLongDown handler).
+    private fun presentLandmarkForRouting(landmark: Landmark) {
+        viewModel.destination = landmark
+        val details = GemUtil.pairFormatLandmarkDetails(landmark, true)
+        showCalculateRouteDialog(
+            details.first,
+            details.second,
+            onCalculateRoute = {
+                SdkCall.execute {
+                    val position = PositionService.position
+                    if ((position != null) && position.isValid()) {
+                        val departure =
+                            Landmark(getString(R.string.my_position), position.latitude, position.longitude)
+                        calculateRoute(departure, landmark)
+                    } else {
+                        runOnUiThread { showDialog(getString(R.string.current_position_not_available)) }
+                    }
+                }
+            },
+            onViewCreated = {
+                highlightLandmarkOnMap(landmark)
+            },
+            onViewClosed = {
+                deactivateHighlights()
+            },
+        )
     }
 
     fun getAppBarHeight(): Int {

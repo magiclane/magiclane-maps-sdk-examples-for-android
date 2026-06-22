@@ -214,7 +214,19 @@ class MainActivity : AppCompatActivity() {
 
                 SdkCall.execute {
                     val demoSearchCenter = Coordinates(40.68925476, -74.04456329)
-                    searchService.searchByFilter(demoSearchQuery, demoSearchCenter)
+                    val errorCode = searchService.searchByFilter(demoSearchQuery, demoSearchCenter)
+
+                    // A non-NoError result means the search never started, so onCompleted
+                    // won't fire to clear the progress bar — surface the error here instead.
+                    if (errorCode != GemError.NoError) {
+                        val errorMessage = GemError.getMessage(errorCode, this)
+                        runOnAliveUi {
+                            binding.progressBar.visibility = View.GONE
+                            showStatusMessage(
+                                getString(R.string.search_completed_with_error, errorMessage),
+                            )
+                        }
+                    }
                 }
             }
         }

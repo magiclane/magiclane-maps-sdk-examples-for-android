@@ -9,7 +9,9 @@ package com.magiclane.sdk.examples.bikedemojava;
 
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
+import com.magiclane.sdk.core.GenericCategories;
 import com.magiclane.sdk.places.Landmark;
+import com.magiclane.sdk.places.LandmarkCategory;
 import com.magiclane.sdk.routesandnavigation.EBikeProfile;
 import com.magiclane.sdk.routesandnavigation.EEBikeType;
 import com.magiclane.sdk.routesandnavigation.ERouteTransportMode;
@@ -17,12 +19,45 @@ import com.magiclane.sdk.routesandnavigation.ElectricBikeProfile;
 import com.magiclane.sdk.routesandnavigation.RoutePreferences;
 import com.magiclane.sdk.util.GemCall;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class MainActivityViewModel extends ViewModel {
 
     public final MutableLiveData<List<SearchResultItem>> searchResultListLivedata = new MutableLiveData<>();
     public final MutableLiveData<Boolean> isElectricBikeProfile = new MutableLiveData<>(false);
+
+    // POI categories shown in the horizontal bar, and the index of the selected chip.
+    public final MutableLiveData<List<CategoryItem>> categoriesLivedata = new MutableLiveData<>(Collections.emptyList());
+    public final MutableLiveData<Integer> selectedCategory = new MutableLiveData<>(CategoryAdapter.NO_CATEGORY);
+    private boolean categoriesLoaded = false;
+
+    // Loads the generic POI categories once the SDK map data is ready.
+    public void loadCategories(int iconSize) {
+        if (categoriesLoaded) return;
+        categoriesLoaded = true;
+        new Thread(() -> {
+            List<CategoryItem> items = GemCall.INSTANCE.execute(() -> {
+                List<CategoryItem> result = new ArrayList<>();
+                ArrayList<LandmarkCategory> categories = new GenericCategories().getCategories();
+                if (categories != null) {
+                    for (LandmarkCategory cat : categories) {
+                        String name = cat.getName();
+                        if (name == null) continue;
+                        result.add(new CategoryItem(
+                            name,
+                            cat.getImage() != null ? cat.getImage().asBitmap(iconSize, iconSize) : null,
+                            cat.getLandmarkStoreId(),
+                            cat.getId()
+                        ));
+                    }
+                }
+                return result;
+            });
+            categoriesLivedata.postValue(items != null ? items : Collections.emptyList());
+        }).start();
+    }
+
     public Landmark destination = null;
     public boolean isElectric = false;
     public EBikeProfile bikeProfile = EBikeProfile.City;

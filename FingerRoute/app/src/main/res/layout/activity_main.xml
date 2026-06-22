@@ -83,7 +83,7 @@
             tools:ignore="ContentDescription" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/bottom_left_button"
+            android:id="@+id/bottom_right_button"
             style="@style/Widget.Material3.Button.IconButton.Filled"
             android:layout_width="@dimen/map_button_size"
             android:layout_height="@dimen/map_button_size"
