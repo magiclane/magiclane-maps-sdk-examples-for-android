@@ -470,7 +470,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 onEnterFollowingPosition = {
                     followGpsButton.visibility = View.GONE
 
-                    val navigationIsActive = SdkCall.execute { navigationService.isNavigationActive(navigationListener) } ?: false
+                    val navigationIsActive = SdkCall.execute {
+                        navigationService.isNavigationActive(
+                            navigationListener,
+                        )
+                    } ?: false
                     if (navigationIsActive) {
                         setNavigationPanelsVisible(isVisible = true)
                     }

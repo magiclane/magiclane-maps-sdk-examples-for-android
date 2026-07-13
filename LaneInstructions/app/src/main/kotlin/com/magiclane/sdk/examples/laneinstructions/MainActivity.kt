@@ -363,11 +363,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             // Camera focus points (normalized) controlling where the GPS arrow sits on screen. In
             // landscape the panels cover the left side, so the focus is pushed right to keep the
             // arrow inside the visible map area.
-            val PORTRAIT_CAMERA_FOCUS = XyF(0.5f, 0.725f)
-            val LANDSCAPE_CAMERA_FOCUS = XyF(0.7f, 0.7f)
+            val portraitCameraFocus = XyF(0.5f, 0.725f)
+            val landscapeCameraFocus = XyF(0.7f, 0.7f)
 
             binding.gemSurfaceView.mapView?.preferences?.followPositionPreferences?.cameraFocus =
-                if (isLandscape) LANDSCAPE_CAMERA_FOCUS else PORTRAIT_CAMERA_FOCUS
+                if (isLandscape) landscapeCameraFocus else portraitCameraFocus
         }
     }
 

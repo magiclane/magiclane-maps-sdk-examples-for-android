@@ -26,8 +26,7 @@ class CategoryAdapter : ListAdapter<CategoryItem, CategoryAdapter.CategoryViewHo
             override fun areItemsTheSame(oldItem: CategoryItem, newItem: CategoryItem): Boolean =
                 oldItem.categoryId == newItem.categoryId
 
-            override fun areContentsTheSame(oldItem: CategoryItem, newItem: CategoryItem): Boolean =
-                oldItem == newItem
+            override fun areContentsTheSame(oldItem: CategoryItem, newItem: CategoryItem): Boolean = oldItem == newItem
         }
     }
 

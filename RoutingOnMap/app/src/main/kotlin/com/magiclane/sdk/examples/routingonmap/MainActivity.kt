@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity() {
             runOnAliveUi {
                 binding.progressBar.visibility = View.GONE
                 showDialog(
-                    getString(R.string.routing_failed_to_start, message)
+                    getString(R.string.routing_failed_to_start, message),
                 )
             }
         }

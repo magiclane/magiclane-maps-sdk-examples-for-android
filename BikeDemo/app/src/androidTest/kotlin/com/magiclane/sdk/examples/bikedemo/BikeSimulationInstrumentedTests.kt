@@ -68,8 +68,8 @@ class BikeSimulationInstrumentedTests {
     )
 
     private fun Int.sToMills() = this * 1000L
-    private val GM_LAT: Double = 45.651165
-    private val GM_LON: Double = 25.604826
+    private val gmLat: Double = 45.651165
+    private val gmLon: Double = 25.604826
 
     @Rule
     @JvmField
@@ -113,7 +113,7 @@ class BikeSimulationInstrumentedTests {
     @Test
     fun touchLandmarkAndStartSim(): Unit = runBlocking {
         delay(10.sToMills())
-        onView(withId(R.id.gem_surface_view)).perform(CenterAndTouch(GM_LAT, GM_LON))
+        onView(withId(R.id.gem_surface_view)).perform(CenterAndTouch(gmLat, gmLon))
         delay(2.sToMills())
         onView(withId(R.id.start_simulation)).perform(click())
         delay(10.sToMills())
@@ -159,7 +159,7 @@ class BikeSimulationInstrumentedTests {
         ).perform(SetSettingsSlider(100f))
         onView(withId(R.id.bike_settings_toolbar)).perform(ViewActions.pressBack())
         delay(2.sToMills())
-        onView(withId(R.id.gem_surface_view)).perform(CenterAndTouch(GM_LAT, GM_LON))
+        onView(withId(R.id.gem_surface_view)).perform(CenterAndTouch(gmLat, gmLon))
         delay(2.sToMills())
         onView(withId(R.id.start_simulation)).perform(click())
         delay(10.sToMills())
@@ -205,7 +205,7 @@ class BikeSimulationInstrumentedTests {
         ).perform(SetSettingsSlider(0f))
         onView(withId(R.id.bike_settings_toolbar)).perform(ViewActions.pressBack())
         delay(2.sToMills())
-        onView(withId(R.id.gem_surface_view)).perform(CenterAndTouch(GM_LAT, GM_LON))
+        onView(withId(R.id.gem_surface_view)).perform(CenterAndTouch(gmLat, gmLon))
         delay(2.sToMills())
         onView(withId(R.id.start_simulation)).perform(click())
         delay(10.sToMills())

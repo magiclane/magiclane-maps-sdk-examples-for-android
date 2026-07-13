@@ -125,9 +125,9 @@ class MainActivity : AppCompatActivity() {
 
         mapView.centerOnCoordinates(
             focusPlace.coordinates,
-            initialZoomLevel,
+            INITIAL_ZOOM_LEVEL,
             xy = getFreeScreenRect().center,
-            animation = Animation(EAnimation.Linear, animationDurationMs),
+            animation = Animation(EAnimation.Linear, ANIMATION_DURATION_MS),
         )
     }
 
@@ -146,9 +146,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         val settings = MarkerCollectionRenderSettings(image).apply {
-            labelTextSize = pointLabelTextSizeMm
+            labelTextSize = POINT_LABEL_TEXT_SIZE_MM
             labelingMode = EMarkerLabelingMode.Item.value
-            imageSize = pointImageSizeMm
+            imageSize = POINT_IMAGE_SIZE_MM
         }
 
         return collection to settings
@@ -162,7 +162,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val settings = MarkerCollectionRenderSettings(polylineInnerColor = Rgba.blue()).apply {
-            polylineInnerSize = polylineSizeMm
+            polylineInnerSize = POLYLINE_SIZE_MM
         }
         return collection to settings
     }
@@ -172,11 +172,11 @@ class MainActivity : AppCompatActivity() {
             polylineInnerColor = Rgba.magenta(),
             polygonFillColor = Rgba(255, 0, 0, 128),
         ).apply {
-            polylineInnerSize = polygonOutlineSizeMm
+            polylineInnerSize = POLYGON_OUTLINE_SIZE_MM
         }
 
         val collection = MarkerCollection(EMarkerType.Polygon, "Polygon")
-        collection.add(Marker(center, polygonRadiusMeters))
+        collection.add(Marker(center, POLYGON_RADIUS_METERS))
         return collection to settings
     }
 
@@ -270,12 +270,12 @@ class MainActivity : AppCompatActivity() {
         private val SYSTEM_INSET_TYPES =
             WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
 
-        private const val pointLabelTextSizeMm = 2.0
-        private const val pointImageSizeMm = 8.0
-        private const val polylineSizeMm = 1.5
-        private const val polygonOutlineSizeMm = 1.0
-        private const val polygonRadiusMeters = 50
-        private const val initialZoomLevel = 80
-        private const val animationDurationMs = 900
+        private const val POINT_LABEL_TEXT_SIZE_MM = 2.0
+        private const val POINT_IMAGE_SIZE_MM = 8.0
+        private const val POLYLINE_SIZE_MM = 1.5
+        private const val POLYGON_OUTLINE_SIZE_MM = 1.0
+        private const val POLYGON_RADIUS_METERS = 50
+        private const val INITIAL_ZOOM_LEVEL = 80
+        private const val ANIMATION_DURATION_MS = 900
     }
 }
