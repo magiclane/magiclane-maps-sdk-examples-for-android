@@ -15,6 +15,7 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.magiclane.sdk.core.SoundPlayingService
 import com.magiclane.sdk.examples.bikedemo.databinding.FragmentBikeSettingsBinding
 
 class BikeSettingsFragment : Fragment() {
@@ -35,12 +36,44 @@ class BikeSettingsFragment : Fragment() {
             settingsList.apply {
                 adapter = settingsAdapter
                 layoutManager = LinearLayoutManager(requireContext())
-                settingsAdapter.submitList(viewModel.getSettingsList())
+                settingsAdapter.submitList(buildSettingsList())
             }
             bikeSettingsToolbar.setNavigationOnClickListener {
                 requireActivity().supportFragmentManager.beginTransaction().remove(this@BikeSettingsFragment).commit()
             }
         }
+
+        // Keep the Voice row in sync with the voice applied to the SDK.
+        viewModel.currentVoice.observe(viewLifecycleOwner) {
+            settingsAdapter.submitList(buildSettingsList())
+        }
+        viewModel.refreshCurrentVoice()
+
         return binding.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        mBinding = null
+    }
+
+    private fun buildSettingsList() = viewModel.getSettingsList(currentVoiceDisplayName()) {
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, VoiceFragment())
+            .addToBackStack(null)
+            .commit()
+    }
+
+    private fun currentVoiceDisplayName(): String {
+        val selection = viewModel.currentVoice.value
+        return when {
+            selection == null -> if (SoundPlayingService.ttsPlayerIsInitialized) {
+                getString(R.string.text_to_speech)
+            } else {
+                MainActivityViewModel.DEFAULT_HUMAN_VOICE_NAME
+            }
+            selection.isTts -> getString(R.string.text_to_speech)
+            else -> selection.name
+        }
     }
 }

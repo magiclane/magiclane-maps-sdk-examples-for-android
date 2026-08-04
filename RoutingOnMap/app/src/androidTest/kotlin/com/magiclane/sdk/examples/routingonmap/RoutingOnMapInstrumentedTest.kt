@@ -7,8 +7,6 @@
 
 package com.magiclane.sdk.examples.routingonmap
 
-import android.content.Context
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.magiclane.sdk.core.GemError
@@ -25,46 +23,112 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/**
+ * SDK-level tests for the routing feature demonstrated by this example.
+ *
+ * These exercise [RoutingService] directly (no UI), mirroring the London -> Paris route the
+ * example calculates in [MainActivity]. UI behaviour is covered by [UIRoutingOnMapInstrumentedTests].
+ */
 @LargeTest
 @RunWith(AndroidJUnit4ClassRunner::class)
 class RoutingOnMapInstrumentedTest {
     companion object {
-        private val appContext: Context = ApplicationProvider.getApplicationContext()
-
         @get:ClassRule
         @JvmStatic
         val sdkRule = GemSdkTestRule()
+
+        private const val ROUTE_TIMEOUT_MS = 30_000L
+
+        // The same waypoints the example routes between.
+        private fun londonToParisWaypoints() = arrayListOf(
+            Landmark("London", 51.5073204, -0.1276475),
+            Landmark("Paris", 48.8566932, 2.3514616),
+        )
     }
 
-    @Test
-    fun routingServiceShouldReturnRoutes() = runBlocking {
-        var onCompletedPassed = false
-        var error = GemError.NoError
+    /** Calculates a route and returns (returnCode, completionErrorCode, routes). */
+    private fun calculateRouteBlocking(
+        waypoints: ArrayList<Landmark>,
+        timeoutMs: Long = ROUTE_TIMEOUT_MS,
+    ): Triple<Int, Int, RouteList> = runBlocking {
+        var completionError = GemError.NoError
+        var completedRoutes = RouteList()
         val channel = Channel<Unit>(Channel.RENDEZVOUS)
-        var routeList: RouteList? = null
-        val routingService = RoutingService(
+
+        val service = RoutingService(
             onCompleted = { routes, errorCode, _ ->
-                error = errorCode
-                onCompletedPassed = true
-                SdkCall.execute {
-                    routeList = routes
-                    launch { channel.send(Unit) }
-                }
+                completionError = errorCode
+                completedRoutes = routes
+                launch { channel.send(Unit) }
             },
         )
 
-        SdkCall.execute {
-            val waypoints = ArrayList<Landmark>()
-            waypoints.add(Landmark("London", 51.5073204, -0.1276475))
-            waypoints.add(Landmark("Paris", 48.8566932, 2.3514616))
+        val returnCode = SdkCall.execute {
+            service.calculateRoute(waypoints)
+        } ?: GemError.General
 
-            error = routingService.calculateRoute(waypoints = waypoints)
+        // onCompleted only fires when the calculation was successfully started.
+        if (returnCode == GemError.NoError) {
+            withTimeout(timeoutMs) { channel.receive() }
         }
-        withTimeout(12000) {
-            channel.receive()
-            assert(onCompletedPassed) { "OnCompleted not passed : ${GemError.getMessage(error)}" }
-            assert(error == GemError.NoError) { GemError.getMessage(error) }
-            assert(routeList?.isNotEmpty() == true) { "Routing service returned no results." }
+
+        Triple(returnCode, completionError, completedRoutes)
+    }
+
+    @Test
+    fun londonToParisRouteCalculationSucceeds() {
+        val (returnCode, completionError, routes) = calculateRouteBlocking(londonToParisWaypoints())
+
+        assert(returnCode == GemError.NoError) {
+            "calculateRoute did not start: ${GemError.getMessage(returnCode)}"
         }
+        assert(completionError == GemError.NoError) {
+            "Routing completed with error: ${GemError.getMessage(completionError)}"
+        }
+        assert(routes.isNotEmpty()) { "Routing service returned no routes." }
+    }
+
+    @Test
+    fun calculatedRouteHasWaypointsAndPositiveMetrics() {
+        val (_, completionError, routes) = calculateRouteBlocking(londonToParisWaypoints())
+        assert(completionError == GemError.NoError) {
+            "Routing completed with error: ${GemError.getMessage(completionError)}"
+        }
+        assert(routes.isNotEmpty()) { "Routing service returned no routes." }
+
+        SdkCall.execute {
+            val mainRoute = routes.first()
+
+            val waypointCount = mainRoute.waypoints?.size ?: 0
+            assert(waypointCount >= 2) {
+                "Expected at least departure and destination waypoints, got $waypointCount."
+            }
+
+            val timeDistance = mainRoute.timeDistance
+            assert(timeDistance != null) { "Route has no time/distance information." }
+            assert((timeDistance?.totalDistance ?: 0) > 0) { "Route distance should be positive." }
+            assert((timeDistance?.totalTime ?: 0) > 0) { "Route travel time should be positive." }
+        }
+    }
+
+    @Test
+    fun emptyWaypointListDoesNotProduceRoutes() {
+        val (returnCode, _, routes) = calculateRouteBlocking(ArrayList(), timeoutMs = 5_000L)
+
+        assert(returnCode != GemError.NoError) {
+            "Calculating a route with no waypoints should not start successfully."
+        }
+        assert(routes.isEmpty()) { "No routes should be produced for an empty waypoint list." }
+    }
+
+    @Test
+    fun singleWaypointDoesNotProduceRoutes() {
+        val waypoints = arrayListOf(Landmark("London", 51.5073204, -0.1276475))
+        val (returnCode, _, routes) = calculateRouteBlocking(waypoints, timeoutMs = 5_000L)
+
+        assert(returnCode != GemError.NoError) {
+            "Calculating a route with a single waypoint should not start successfully."
+        }
+        assert(routes.isEmpty()) { "No routes should be produced for a single waypoint." }
     }
 }

@@ -26,7 +26,7 @@ public class SearchAdapter extends ListAdapter<SearchResultItem, SearchAdapter.S
     private OnItemClickListener onClickListener;
 
     public SearchAdapter() {
-        super(new DiffUtil.ItemCallback<SearchResultItem>() {
+        super(new DiffUtil.ItemCallback<>() {
             @Override
             public boolean areItemsTheSame(@NonNull SearchResultItem oldItem, @NonNull SearchResultItem newItem) {
                 return oldItem == newItem;

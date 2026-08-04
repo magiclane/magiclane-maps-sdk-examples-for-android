@@ -672,9 +672,17 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }
 
         onBackPressedDispatcher.addCallback(this) {
-            if (binding.fragmentContainer.getFragment<BikeSettingsFragment?>() != null) {
-                supportFragmentManager.beginTransaction().remove(binding.fragmentContainer.getFragment()).commit()
-                return@addCallback
+            when (val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)) {
+                // The voice list sits on the back stack above the settings fragment.
+                is VoiceFragment -> {
+                    supportFragmentManager.popBackStack()
+                    return@addCallback
+                }
+                is BikeSettingsFragment -> {
+                    supportFragmentManager.beginTransaction().remove(fragment).commit()
+                    return@addCallback
+                }
+                else -> { /* no fragment shown, continue with the other back actions */ }
             }
 
             if (binding.calculateRoutePanel.root.isVisible) {
@@ -709,7 +717,12 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             }
 
             if (navigationIsActive || simulationIsActive) {
-                SdkCall.execute { navigationService.cancelNavigation() }
+                SdkCall.execute {
+                    navigationService.cancelNavigation()
+                    // Also stop any instruction sound that is playing or queued, so it
+                    // doesn't keep playing after the navigation / simulation was cancelled.
+                    SoundPlayingService.cancel(playingListener)
+                }
                 return@addCallback
             }
 
@@ -1785,11 +1798,13 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     //region ITTSPlayerInitializationListener
 
     override fun onTTSPlayerInitialized() {
-        SoundPlayingService.setTTSLanguage("eng-USA")
+        SoundPlayingService.setTTSLanguage(MainActivityViewModel.TTS_LANGUAGE)
+        Util.postOnMain { viewModel.refreshCurrentVoice() }
     }
 
     override fun onTTSPlayerInitializationFailed() {
         SoundPlayingService.setDefaultHumanVoice()
+        Util.postOnMain { viewModel.refreshCurrentVoice() }
     }
 
     //endregion

@@ -9,7 +9,7 @@ package com.magiclane.sdk.examples.bikedemojava;
 
 public class SettingsSliderItem extends SettingsItem {
     private final float valueFrom;
-    private float value;
+    private final float value;
     private final float valueTo;
     private final String unit;
     private final SliderCallback callback;
@@ -33,10 +33,6 @@ public class SettingsSliderItem extends SettingsItem {
 
     public float getValue() {
         return value;
-    }
-
-    public void setValue(float value) {
-        this.value = value;
     }
 
     public float getValueTo() {

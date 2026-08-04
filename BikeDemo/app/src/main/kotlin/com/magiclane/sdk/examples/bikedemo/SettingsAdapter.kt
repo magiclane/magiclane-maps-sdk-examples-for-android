@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.magiclane.sdk.examples.bikedemo.databinding.SliderSettingsItemBinding
 import com.magiclane.sdk.examples.bikedemo.databinding.SwitchSettingsItemBinding
+import com.magiclane.sdk.examples.bikedemo.databinding.TextSettingsItemBinding
 
 class SettingsAdapter : ListAdapter<SettingsItem, RecyclerView.ViewHolder>(settingsDiffUtil) {
 
@@ -31,6 +32,15 @@ class SettingsAdapter : ListAdapter<SettingsItem, RecyclerView.ViewHolder>(setti
     enum class ESettingsItemType {
         SWITCH,
         SLIDER,
+        TEXT,
+    }
+
+    class TextItemView(private val binding: TextSettingsItemBinding) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(item: SettingsTextItem) {
+            binding.settingItemText.text = item.title
+            binding.settingItemValue.text = item.value
+            binding.root.setOnClickListener { item.callback() }
+        }
     }
 
     class SwitchItemView(private val binding: SwitchSettingsItemBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -101,6 +111,13 @@ class SettingsAdapter : ListAdapter<SettingsItem, RecyclerView.ViewHolder>(setti
                     false,
                 ),
             )
+            ESettingsItemType.TEXT -> TextItemView(
+                TextSettingsItemBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false,
+                ),
+            )
         }
     }
 
@@ -113,6 +130,9 @@ class SettingsAdapter : ListAdapter<SettingsItem, RecyclerView.ViewHolder>(setti
             ESettingsItemType.SLIDER -> (holder as SliderItemView).bind(
                 getItem(position) as SettingsSliderItem,
             )
+            ESettingsItemType.TEXT -> (holder as TextItemView).bind(
+                getItem(position) as SettingsTextItem,
+            )
         }
     }
 
@@ -120,6 +140,7 @@ class SettingsAdapter : ListAdapter<SettingsItem, RecyclerView.ViewHolder>(setti
         val item = getItem(position)
         if (item is SettingsSwitchItem) return ESettingsItemType.SWITCH.ordinal
         if (item is SettingsSliderItem) return ESettingsItemType.SLIDER.ordinal
+        if (item is SettingsTextItem) return ESettingsItemType.TEXT.ordinal
         return -1
     }
 }

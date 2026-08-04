@@ -64,13 +64,14 @@ Explore the examples to learn the capabilities of the Magic Lane Maps Android SD
 * [Map Perspective Change](MapPerspectiveChange) - Display an interactive map with a button that changes the view perspective between 2D and 3D.
 * [Map Selection](MapSelection) - Present a map. Calculate the routes between 2 given landmarks. Illustrate how to tap on different map overlays.
 * [Map Selection Compose](MapSelectionCompose) - Map selection example using Jetpack Compose.
+* [Marker Clustering](MarkerClustering) - Render thousands of GeoJSON campsites, cluster them into count pills, and show green/red pins with a tap-to-list panel.
 * [Marker Collection Display Icon](MarkerCollectionDisplayIcon) - Show usage of `MarkerCollection`.
 * [Monitor Geofence Area](MonitorGeofenceArea) - Get notified when crossing a geographic area.
 * [Multiple Surfaces in Fragment](MultipleSurfacesInFragment) - Display a variable list of maps on an Android Fragment.
 * [Overlapped Maps](OverlappedMaps) - Display a second map view over the existing one.
 * [Overspeed TTS Warning](OverspeedTTSWarning) - Start a navigation from the current position to a given landmark. Display the current speed and the legal speed limit. Send a TTS warning when the current speed exceeds the legal speed limit (throttled to at most once every 5 minutes).
 * [Projection](Projection) - Show various types of projections for landmarks.
-* [Public Transit Routing on Map](PublicTransitRoutingOnMap) - Calculate the public transport routes between 2 given landmarks; display all results on the map and fly to the main route, if exists.
+* [Public Transit Routing](PublicTransitRouting) - Calculate the public transport routes between 2 given landmarks; display the selected route on the map with a Magic Earth-style routes list, route description and public transport settings.
 * [Range Finder](RangeFinder) - Calculate the routes between 2 given landmarks; display and fly to the first route in the resulting route list, if it exists.
 * [Range Finder Compose](RangeFinderCompose) - Range finder example using Jetpack Compose.
 * [Route Alarms](RouteAlarms) - Start simulated navigation between 2 given landmarks if a route can be calculated.

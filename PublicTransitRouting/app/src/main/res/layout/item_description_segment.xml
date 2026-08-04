@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- No vertical padding on the row itself: the rail column must reach the row edges so
+         the line connecting the stations stays continuous across rows. -->
+    <LinearLayout
+        android:id="@+id/segment_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp">
+
+        <LinearLayout
+            android:layout_width="52dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingVertical="@dimen/big_padding">
+
+            <ImageView
+                android:id="@+id/segment_icon"
+                android:layout_width="@dimen/segment_icon_size"
+                android:layout_height="@dimen/segment_icon_size"
+                android:contentDescription="@string/transit_segment_icon" />
+
+            <TextView
+                android:id="@+id/depart_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/on_background"
+                android:textSize="@dimen/medium_text_size"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Station ring + the rail line above (previous leg) and below it (this leg). -->
+        <LinearLayout
+            android:layout_width="@dimen/rail_width"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="@dimen/big_padding"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <com.magiclane.sdk.examples.publictransitrouting.RailLineView
+                android:id="@+id/rail_top"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/rail_top_height" />
+
+            <ImageView
+                android:id="@+id/station_ring"
+                android:layout_width="@dimen/station_ring_size"
+                android:layout_height="@dimen/station_ring_size"
+                android:importantForAccessibility="no"
+                android:src="@drawable/station_ring" />
+
+            <com.magiclane.sdk.examples.publictransitrouting.RailLineView
+                android:id="@+id/rail_bottom"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingVertical="@dimen/big_padding">
+
+            <TextView
+                android:id="@+id/station_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/on_background"
+                android:textSize="@dimen/standard_text_size"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/line_row"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/line_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/medium_text_size"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/towards"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/small_padding"
+                    android:textSize="@dimen/medium_text_size"
+                    android:textStyle="italic" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/platform"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/medium_text_size"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/stops_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/medium_text_size"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/stops_list"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="@dimen/big_padding"
+                android:paddingEnd="0dp"
+                android:textSize="@dimen/small_text_size"
+                android:visibility="gone" />
+
+            <!-- Turn-by-turn instructions of an expanded pedestrian segment. -->
+            <LinearLayout
+                android:id="@+id/instructions_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/stay_on_vehicle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/medium_text_size"
+                android:textStyle="italic"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+</layout>

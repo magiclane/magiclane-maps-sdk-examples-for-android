@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <LinearLayout
+        android:id="@+id/arrival_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp">
+
+        <TextView
+            android:id="@+id/arrive_time"
+            android:layout_width="52dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:paddingVertical="@dimen/big_padding"
+            android:textColor="@color/on_background"
+            android:textSize="@dimen/medium_text_size"
+            android:textStyle="bold" />
+
+        <!-- End of the rail: line of the arriving leg + the destination station ring. -->
+        <LinearLayout
+            android:layout_width="@dimen/rail_width"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/big_padding"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <com.magiclane.sdk.examples.publictransitrouting.RailLineView
+                android:id="@+id/rail_top"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/rail_top_height" />
+
+            <ImageView
+                android:layout_width="@dimen/station_ring_size"
+                android:layout_height="@dimen/station_ring_size"
+                android:importantForAccessibility="no"
+                android:src="@drawable/station_ring" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/destination_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingVertical="@dimen/big_padding"
+            android:textColor="@color/on_background"
+            android:textSize="@dimen/standard_text_size"
+            android:textStyle="bold" />
+    </LinearLayout>
+</layout>

@@ -8,25 +8,17 @@
         android:layout_height="match_parent"
         tools:context=".WebActivity">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/primary"
-        android:paddingBottom="12dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
-        app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
-        app:paddingTopWithSystemWindowInsets='@{"8dp"}'
-        app:title="@string/app_name"
-        app:titleTextColor="@color/on_primary" />
-
+    <!-- The system bar insets are applied as margins so the page never sits behind them. -->
     <WebView
         android:id="@+id/web_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:marginLeftWithSystemWindowInsets='@{"0dp"}'
+        app:marginTopWithSystemWindowInsets='@{"0dp"}'
+        app:marginRightWithSystemWindowInsets='@{"0dp"}'
+        app:marginBottomWithSystemWindowInsets='@{"0dp"}' />
 
     <ProgressBar
         android:id="@+id/progress_bar"

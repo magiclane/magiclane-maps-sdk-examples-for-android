@@ -17,16 +17,18 @@ import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 import com.magiclane.sdk.examples.bikedemojava.databinding.SwitchSettingsItemBinding;
 import com.magiclane.sdk.examples.bikedemojava.databinding.SliderSettingsItemBinding;
+import com.magiclane.sdk.examples.bikedemojava.databinding.TextSettingsItemBinding;
 
 public class SettingsAdapter extends ListAdapter<SettingsItem, RecyclerView.ViewHolder> {
 
     private enum ESettingsItemType {
         SWITCH,
-        SLIDER
+        SLIDER,
+        TEXT
     }
 
     public SettingsAdapter() {
-        super(new DiffUtil.ItemCallback<SettingsItem>() {
+        super(new DiffUtil.ItemCallback<>() {
             @Override
             public boolean areItemsTheSame(@NonNull SettingsItem oldItem, @NonNull SettingsItem newItem) {
                 return oldItem.getTitle().equals(newItem.getTitle());
@@ -37,6 +39,21 @@ public class SettingsAdapter extends ListAdapter<SettingsItem, RecyclerView.View
                 return false;
             }
         });
+    }
+
+    public static class TextItemView extends RecyclerView.ViewHolder {
+        private final TextSettingsItemBinding binding;
+
+        public TextItemView(TextSettingsItemBinding binding) {
+            super(binding.getRoot());
+            this.binding = binding;
+        }
+
+        public void bind(SettingsTextItem item) {
+            binding.settingItemText.setText(item.getTitle());
+            binding.settingItemValue.setText(item.getValue());
+            binding.getRoot().setOnClickListener(v -> item.getCallback().run());
+        }
     }
 
     public static class SwitchItemView extends RecyclerView.ViewHolder {
@@ -119,6 +136,14 @@ public class SettingsAdapter extends ListAdapter<SettingsItem, RecyclerView.View
                         false
                     )
                 );
+            case TEXT:
+                return new TextItemView(
+                    TextSettingsItemBinding.inflate(
+                        LayoutInflater.from(parent.getContext()),
+                        parent,
+                        false
+                    )
+                );
             default:
                 return new RecyclerView.ViewHolder(new View(parent.getContext())) {};
         }
@@ -134,6 +159,9 @@ public class SettingsAdapter extends ListAdapter<SettingsItem, RecyclerView.View
             case SLIDER:
                 ((SliderItemView) holder).bind((SettingsSliderItem) getItem(position));
                 break;
+            case TEXT:
+                ((TextItemView) holder).bind((SettingsTextItem) getItem(position));
+                break;
         }
     }
 
@@ -145,6 +173,9 @@ public class SettingsAdapter extends ListAdapter<SettingsItem, RecyclerView.View
         }
         if (item instanceof SettingsSliderItem) {
             return ESettingsItemType.SLIDER.ordinal();
+        }
+        if (item instanceof SettingsTextItem) {
+            return ESettingsItemType.TEXT.ordinal();
         }
         return -1;
     }

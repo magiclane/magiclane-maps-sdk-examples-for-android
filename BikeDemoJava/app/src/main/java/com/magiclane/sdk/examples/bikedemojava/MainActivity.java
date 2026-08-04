@@ -676,6 +676,11 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
             @Override
             public void handleOnBackPressed() {
                 Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                // The voice list sits on the back stack above the settings fragment.
+                if (fragment instanceof VoiceFragment) {
+                    getSupportFragmentManager().popBackStack();
+                    return;
+                }
                 if (fragment instanceof BikeSettingsFragment) {
                     getSupportFragmentManager().beginTransaction().remove(fragment).commit();
                     return;
@@ -720,6 +725,9 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
                 if (navigationIsActive || simulationIsActive) {
                     GemCall.INSTANCE.execute(() -> {
                         navigationService.cancelNavigation(navigationListener);
+                        // Also stop any instruction sound that is playing or queued, so it
+                        // doesn't keep playing after the navigation / simulation was cancelled.
+                        SoundPlayingService.INSTANCE.cancel(playingListener);
                         return null;
                     });
                     return;
@@ -1927,13 +1935,23 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
     // ITTSPlayerInitializationListener
     @Override
     public void onTTSPlayerInitialized() {
-        SoundPlayingService.INSTANCE.setTTSLanguage("eng-USA");
+        SoundPlayingService.INSTANCE.setTTSLanguage(MainActivityViewModel.TTS_LANGUAGE);
+        runOnUiThread(() -> {
+            if (viewModel != null) {
+                viewModel.refreshCurrentVoice();
+            }
+        });
     }
 
     // ITTSPlayerInitializationListener
     @Override
     public void onTTSPlayerInitializationFailed() {
         SoundPlayingService.INSTANCE.setDefaultHumanVoice();
+        runOnUiThread(() -> {
+            if (viewModel != null) {
+                viewModel.refreshCurrentVoice();
+            }
+        });
     }
 
     // TESTING

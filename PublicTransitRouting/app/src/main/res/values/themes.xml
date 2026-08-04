@@ -1,0 +1,58 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.GEMSdk" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimary</item>
+        <!-- Customize your theme here. -->
+        <item name="backgroundColor">@color/background</item>
+        <item name="colorOnBackground">@color/on_background</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+    </style>
+
+    <style name="SettingsSectionHeader">
+        <item name="android:textColor">@color/section_header</item>
+        <item name="android:textSize">@dimen/standard_text_size</item>
+        <item name="android:paddingTop">20dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:paddingHorizontal">4dp</item>
+    </style>
+
+    <!-- Card grouping the rows of one settings section, as in Magic Earth. -->
+    <style name="SettingsCard" parent="Widget.Material3.CardView.Elevated">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="cardBackgroundColor">@color/surface</item>
+        <item name="cardCornerRadius">@dimen/settings_card_corner_radius</item>
+        <item name="cardElevation">1dp</item>
+    </style>
+
+    <style name="SettingsDivider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:layout_marginHorizontal">16dp</item>
+        <item name="android:background">@color/divider</item>
+    </style>
+
+    <style name="SettingsRowTitle">
+        <item name="android:textColor">@color/on_background</item>
+        <item name="android:textSize">@dimen/standard_text_size</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="SettingsSwitch">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingHorizontal">16dp</item>
+        <item name="android:paddingVertical">14dp</item>
+        <item name="android:textColor">@color/on_background</item>
+        <item name="android:textSize">@dimen/standard_text_size</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+</resources>

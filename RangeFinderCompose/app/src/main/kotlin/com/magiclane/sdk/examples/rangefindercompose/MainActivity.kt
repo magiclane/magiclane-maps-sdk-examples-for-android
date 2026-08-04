@@ -8,6 +8,7 @@
 package com.magiclane.sdk.examples.rangefindercompose
 
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -90,10 +91,10 @@ import kotlin.system.exitProcess
 
 // Fraction of the screen width the options panel occupies when shown as a full-height left card in
 // landscape.
-private const val LANDSCAPE_PANEL_WIDTH_FRACTION = 0.45f
+private const val LANDSCAPE_PANEL_WIDTH_FRACTION = 0.5f
 
 // Height of the options panel when it spans the bottom edge in portrait.
-private val PORTRAIT_PANEL_HEIGHT = 300.dp
+private val PORTRAIT_PANEL_HEIGHT = 410.dp
 
 class MainActivity : ComponentActivity() {
 
@@ -156,6 +157,13 @@ class MainActivity : ComponentActivity() {
 
     private fun configureWindow() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // enableEdgeToEdge() sets a transparent navigation bar, but SystemBarStyle.auto also turns on
+        // contrast enforcement, which paints a translucent scrim that looks white over light content.
+        // Disable it so the navigation bar is truly transparent (API 29+).
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
     }
 
     private fun setMapSurfaceView(view: GemSurfaceView) {
@@ -249,12 +257,13 @@ fun RangePanel(modifier: Modifier = Modifier, viewModel: RangeFinderModel, isLan
         RoundedCornerShape(topStart = 15.dp, topEnd = 15.dp)
     }
 
-    // Content must clear the system bars: the bottom always, both sides in portrait, but the left
-    // and full height in landscape (the panel hugs the left edge, so the right inset does not apply).
+    // Content must clear the side/top system bars, but in portrait it deliberately ignores the
+    // bottom inset so the panel draws under the transparent navigation bar (edge-to-edge). In
+    // landscape the panel hugs the left edge, so only the start and top insets apply.
     val insetSides = if (isLandscape) {
-        WindowInsetsSides.Start + WindowInsetsSides.Vertical
+        WindowInsetsSides.Start + WindowInsetsSides.Top
     } else {
-        WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
+        WindowInsetsSides.Horizontal
     }
 
     Surface(

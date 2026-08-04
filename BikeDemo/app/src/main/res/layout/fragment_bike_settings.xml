@@ -20,7 +20,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0"
             app:navigationIcon="@drawable/baseline_arrow_back_24"
-            app:title="@string/bike_settings_text" />
+            app:title="@string/settings_text" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/settings_list"

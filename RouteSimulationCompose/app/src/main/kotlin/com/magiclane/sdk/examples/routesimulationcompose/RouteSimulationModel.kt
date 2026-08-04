@@ -419,7 +419,7 @@ class RouteSimulationModel(application: Application) : AndroidViewModel(applicat
         return GemUtil.getDistText(
             this.getTimeDistance(true)?.totalDistance ?: 0,
             EUnitSystem.Metric,
-        ).let { pair -> pair.first + pair.second }
+        ).let { pair -> pair.first + " " + pair.second }
     }
 
     fun applyCameraFocus() = SdkCall.runSynced {
@@ -482,6 +482,12 @@ class RouteSimulationModel(application: Application) : AndroidViewModel(applicat
             Landmark("Paris", 48.8566932, 2.3514616),
         )
 
-        navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
+        val error = navigationService.startSimulation(waypoints, navigationListener, routingProgressListener)
+        if (error != GemError.NoError) {
+            errorMessage = app.getString(
+                R.string.route_simulation_error,
+                GemError.getMessage(error, app),
+            )
+        }
     }
 }

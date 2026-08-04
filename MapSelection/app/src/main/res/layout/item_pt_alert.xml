@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
+  SPDX-License-Identifier: Apache-2.0
+
+  Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
+-->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- One line of the alerts note; icon and text are tinted at bind time. The name keeps
+         wrap_content + weight so the info icon sits right after it, yet never gets pushed
+         off-screen by a long name. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/big_padding"
+        android:paddingVertical="2dp">
+
+        <ImageView
+            android:id="@+id/alert_icon"
+            android:layout_width="@dimen/pt_small_icon_size"
+            android:layout_height="@dimen/pt_small_icon_size"
+            android:src="@drawable/ic_pt_alert_24"
+            tools:ignore="ContentDescription" />
+
+        <!-- Tapping the name opens the description popup too (ripples only when it got the
+             click listener, i.e. when there is a description). -->
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/alert_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/big_padding"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:textSize="@dimen/pt_small_text_size" />
+
+        <!-- Shown only when the alert carries a description; opens it in a popup (tapping
+             the alert name does the same). -->
+        <ImageView
+            android:id="@+id/info_icon"
+            android:layout_width="@dimen/pt_icon_size"
+            android:layout_height="@dimen/pt_icon_size"
+            android:layout_marginStart="@dimen/small_padding"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/pt_alert_details"
+            android:src="@drawable/ic_pt_info_24"
+            android:visibility="gone"
+            app:tint="@color/primary" />
+
+    </LinearLayout>
+</layout>

@@ -15,6 +15,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import androidx.activity.addCallback
@@ -40,6 +41,7 @@ import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.ImageDatabase
 import com.magiclane.sdk.core.Rect
+import com.magiclane.sdk.core.RectangleGeographicArea
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.Size
@@ -47,10 +49,18 @@ import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.ECommonOverlayId
 import com.magiclane.sdk.d3scene.EHighlightOptions
+import com.magiclane.sdk.d3scene.EMarkerType
 import com.magiclane.sdk.d3scene.ERouteDisplayMode
 import com.magiclane.sdk.d3scene.HighlightRenderSettings
 import com.magiclane.sdk.d3scene.MapSceneObject
 import com.magiclane.sdk.d3scene.MapView
+import com.magiclane.sdk.d3scene.MarkerCollection
+import com.magiclane.sdk.d3scene.MarkerCollectionRenderSettings
+import com.magiclane.sdk.d3scene.OverlayItem
+import com.magiclane.sdk.d3scene.PTShape
+import com.magiclane.sdk.d3scene.PTStopInfo
+import com.magiclane.sdk.d3scene.PTStopScheduleFilter
+import com.magiclane.sdk.examples.mapselection.PTUi.lineName
 import com.magiclane.sdk.examples.mapselection.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.mapselection.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Coordinates
@@ -66,6 +76,7 @@ import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.SdkImages
 import com.magiclane.sdk.util.Util
+import java.util.IdentityHashMap
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
@@ -82,6 +93,17 @@ class MainActivity : AppCompatActivity() {
 
     // Pixel size used for the location-detail thumbnails.
     private var imageSize = 0
+
+    // Content controller of the half screen public transport station panel.
+    private lateinit var ptStationPanel: PublicTransportStationPanel
+
+    // Marker collections drawing the station's route shapes, one per line color.
+    private val ptShapeCollections = ArrayList<MarkerCollection>()
+
+    // The opened station's shapes-bearing stop info, kept for redrawing the shapes when the
+    // panel's line filter changes — the panel's periodic refreshes don't request shapes again,
+    // so the store's stop info loses them after the first refresh.
+    private var ptStopInfoWithShapes: PTStopInfo? = null
 
     private val routingService = RoutingService(
         onStarted = {
@@ -122,10 +144,34 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         gemSurfaceView = binding.gemSurface
 
-        // Keep status-bar icons light against the dark primary toolbar background.
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+        // The status bar sits directly on the map / panel surface (there is no toolbar), so its
+        // icon appearance follows the theme.
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !isDarkThemeOn()
 
         imageSize = resources.getDimension(R.dimen.image_size).toInt()
+
+        ptStationPanel = PublicTransportStationPanel(
+            this,
+            binding,
+            onCloseRequested = { hidePublicTransportStationPanel() },
+            onLinesSelectionChanged = { selectedLines ->
+                // Redraw the route shapes restricted to the selected lines and re-frame the
+                // camera on what is left visible.
+                ptStopInfoWithShapes?.let { stopInfo ->
+                    SdkCall.execute {
+                        val shapesArea = showPublicTransportShapes(stopInfo, selectedLines)
+                        if (shapesArea != null && !shapesArea.isEmpty()) {
+                            binding.gemSurface.mapView?.centerOnRectArea(
+                                shapesArea,
+                                zoomLevel = -1,
+                                viewRc = getMapFreeRect(mapFreeSpacePadding()),
+                                Animation(EAnimation.Linear, 900),
+                            )
+                        }
+                    }
+                }
+            },
+        )
 
         // Re-apply the GPS button margins on every inset dispatch (e.g. after rotation, when the
         // navigation bar moves between the side and the bottom of the screen).
@@ -148,13 +194,16 @@ class MainActivity : AppCompatActivity() {
             showDialog(getString(R.string.internet_required))
         }
 
-        // Back press first dismisses the details panel (if shown), otherwise closes the app.
+        // Back press first dismisses the station panel or the details panel (if shown),
+        // otherwise closes the app.
         onBackPressedDispatcher.addCallback(this) {
-            if (binding.locationDetailsContainer.isVisible) {
-                hideLocationDetails()
-                deactivateHighlights()
-            } else {
-                finish()
+            when {
+                binding.ptStationContainer.isVisible -> hidePublicTransportStationPanel()
+                binding.locationDetailsContainer.isVisible -> {
+                    hideLocationDetails()
+                    deactivateHighlights()
+                }
+                else -> finish()
             }
         }
     }
@@ -301,24 +350,32 @@ class MainActivity : AppCompatActivity() {
                     if (!overlays.isNullOrEmpty()) {
                         val overlay = overlays[0]
 
-                        if (overlay.overlayInfo?.uid == ECommonOverlayId.Safety.value) {
-                            // Safety overlays (e.g. speed cameras) have their own preview page.
-                            openWebActivity(overlay.getPreviewUrl(Size()).toString())
-                        } else {
-                            overlay.coordinates?.let {
-                                val name = when {
-                                    !overlay.name.isNullOrEmpty() -> overlay.name!!
-                                    !overlay.overlayInfo?.name.isNullOrEmpty() -> overlay.overlayInfo?.name!!
-                                    else -> getString(R.string.unknown)
-                                }
+                        when (overlay.overlayInfo?.uid) {
+                            ECommonOverlayId.Safety.value -> {
+                                // Safety overlays (e.g. speed cameras) have their own preview page.
+                                openWebActivity(overlay.getPreviewUrl(Size()).toString())
+                            }
+                            ECommonOverlayId.PublicTransport.value -> {
+                                // Public transport stations get a dedicated half screen panel with
+                                // the lines crossing the station and its upcoming departures.
+                                openPublicTransportStation(overlay, mapView)
+                            }
+                            else -> {
+                                overlay.coordinates?.let {
+                                    val name = when {
+                                        !overlay.name.isNullOrEmpty() -> overlay.name!!
+                                        !overlay.overlayInfo?.name.isNullOrEmpty() -> overlay.overlayInfo?.name!!
+                                        else -> getString(R.string.unknown)
+                                    }
 
-                                landmark = Landmark(
-                                    name = name,
-                                    latitude = it.latitude,
-                                    longitude = it.longitude,
-                                ).apply {
-                                    image = overlay.image
-                                    description = getLandmarkDescription(mapView, it)
+                                    landmark = Landmark(
+                                        name = name,
+                                        latitude = it.latitude,
+                                        longitude = it.longitude,
+                                    ).apply {
+                                        image = overlay.image
+                                        description = getLandmarkDescription(mapView, it)
+                                    }
                                 }
                             }
                         }
@@ -420,6 +477,169 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Handles a tap on a public transport station: fetches the station's extended data (the
+    // lines crossing it, its upcoming departures and the routes' shapes) and opens the half
+    // screen station panel. Falls back to the regular details panel when the extended data is
+    // unavailable. Must be called on the SDK thread.
+    private fun openPublicTransportStation(overlay: OverlayItem, mapView: MapView) {
+        val name = when {
+            !overlay.name.isNullOrEmpty() -> overlay.name!!
+            !overlay.overlayInfo?.name.isNullOrEmpty() -> overlay.overlayInfo?.name!!
+            else -> getString(R.string.unknown)
+        }
+        val address = overlay.coordinates?.let { getLandmarkDescription(mapView, it) } ?: ""
+        val icon = overlay.image?.asBitmap(imageSize, imageSize)
+
+        // The station gets highlighted on the map like a regular landmark while its panel is up.
+        val stationLandmark = overlay.coordinates?.let { Landmark(name, it.latitude, it.longitude) }
+
+        // The station's UTC offset, needed to compare its wall-clock departure times with "now".
+        val utcOffsetMs = overlay.coordinates?.let { PTUi.stationUtcOffsetMs(it) }
+
+        val fallbackToDetailsPanel = { showLocationDetails(icon, name, address) }
+
+        runOnAliveUi { binding.progressBar.visibility = View.VISIBLE }
+        EspressoIdlingResource.increment()
+
+        // The shapes are requested here only — the panel's periodic refresh skips them, they
+        // are static and the largest part of the payload.
+        val error = overlay.getPTStopInfo(PTStopScheduleFilter(shapes = true)) { stopInfo ->
+            // The SDK delivers this callback on the main thread.
+            EspressoIdlingResource.decrement()
+            if (!isActivityAlive()) return@getPTStopInfo
+
+            binding.progressBar.visibility = View.GONE
+
+            if (stopInfo == null || (stopInfo.stops.isEmpty() && stopInfo.trips.isEmpty())) {
+                fallbackToDetailsPanel()
+            } else {
+                PTStationStore.set(overlay, name, address, icon, stopInfo, utcOffsetMs)
+                showPublicTransportStationPanel(stationLandmark, stopInfo)
+            }
+        }
+
+        if (error != GemError.NoError) {
+            // The request never started, so the callback won't fire.
+            EspressoIdlingResource.decrement()
+            runOnAliveUi {
+                binding.progressBar.visibility = View.GONE
+                fallbackToDetailsPanel()
+            }
+        }
+    }
+
+    // Shows the half screen station panel, pins the station on the map like a regular landmark
+    // and draws the shapes of the lines crossing it. Runs on the main thread.
+    private fun showPublicTransportStationPanel(stationLandmark: Landmark?, stopInfo: PTStopInfo) {
+        if (binding.locationDetailsContainer.isVisible) {
+            hideLocationDetails()
+        }
+
+        ptStopInfoWithShapes = stopInfo
+
+        ptStationPanel.show()
+        binding.ptStationContainer.visibility = View.VISIBLE
+
+        // Once the panel is laid out, recompute the free map area, then draw the route shapes
+        // and highlight the station within what remained visible of the map. The shapes are
+        // drawn first: when the station has drawable line shapes, the camera frames their
+        // bounding area instead of just the station coordinates.
+        binding.root.post {
+            updateFollowGpsButtonMargins()
+            updateFocusViewport()
+            SdkCall.execute {
+                val shapesArea = showPublicTransportShapes(stopInfo)
+                stationLandmark?.let { highlightLandmarkOnMap(it, shapesArea) }
+            }
+        }
+    }
+
+    // Hides the station panel and removes everything drawn on the map for it (the landmark
+    // highlight and the route shapes).
+    private fun hidePublicTransportStationPanel() {
+        ptStationPanel.hide()
+        binding.ptStationContainer.visibility = View.GONE
+        ptStopInfoWithShapes = null
+
+        SdkCall.execute { removePublicTransportShapes() }
+        deactivateHighlights()
+
+        updateFollowGpsButtonMargins()
+        updateFocusViewport()
+    }
+
+    // Draws the station's route shapes on top of the map, colored like their line chips so map
+    // and list agree. Shape instances are shared between PTStopInfo.shapes and the stop
+    // catalogue's routes, so the line color of each deduplicated shape is resolved by identity
+    // through the routes referencing it (first referencing route wins). Render settings are per
+    // collection, so the shapes are grouped into one polyline collection per color.
+    // A non-empty [selectedLines] restricts the drawing to the shapes of those lines (the same
+    // filter the panel applies to its departures); an empty set draws every shape, including
+    // the ones no route references (with the fallback color).
+    // Returns the bounding geographic area of everything drawn (null when nothing was drawn),
+    // so the caller can frame the camera on the station's lines.
+    // Must be called on the SDK thread.
+    private fun showPublicTransportShapes(
+        stopInfo: PTStopInfo,
+        selectedLines: Set<String> = emptySet(),
+    ): RectangleGeographicArea? {
+        val preferences = binding.gemSurface.mapView?.preferences ?: return null
+
+        removePublicTransportShapes()
+
+        val fallbackColor = ContextCompat.getColor(this, R.color.gray)
+
+        val shapeColors = IdentityHashMap<PTShape, Int>()
+        stopInfo.stops.asSequence().flatMap { it.routes }.forEach { route ->
+            val shape = route.shape ?: return@forEach
+            if (selectedLines.isNotEmpty() && route.lineName !in selectedLines) return@forEach
+            if (shape !in shapeColors) {
+                shapeColors[shape] = PTUi.parseColor(route.routeColor, fallbackColor)
+            }
+        }
+
+        var shapesArea: RectangleGeographicArea? = null
+
+        stopInfo.shapes
+            .filter { selectedLines.isEmpty() || it in shapeColors }
+            .mapNotNull { shape ->
+                // toMarker() is null for shapes that failed to decode (nothing drawable).
+                shape.toMarker()?.let { marker -> (shapeColors[shape] ?: fallbackColor) to marker }
+            }
+            .groupBy({ it.first }, { it.second })
+            .forEach { (color, markers) ->
+                val collection = MarkerCollection(EMarkerType.Polyline, "PT shapes")
+                markers.forEach { collection.add(it) }
+
+                val settings = MarkerCollectionRenderSettings(
+                    polylineInnerColor = Rgba(Color.red(color), Color.green(color), Color.blue(color), 255),
+                    polylineOuterColor = Rgba.black(),
+                ).apply {
+                    polylineInnerSize = 1.25
+                    polylineOuterSize = 0.5
+                }
+
+                preferences.markers?.add(collection, settings)
+                ptShapeCollections.add(collection)
+
+                collection.area?.takeIf { !it.isEmpty() }?.let { area ->
+                    shapesArea = shapesArea?.makeUnion(area) ?: area
+                }
+            }
+
+        return shapesArea
+    }
+
+    // Removes the station's route shapes from the map. Must be called on the SDK thread.
+    private fun removePublicTransportShapes() {
+        if (ptShapeCollections.isEmpty()) return
+
+        binding.gemSurface.mapView?.preferences?.markers?.let { markers ->
+            ptShapeCollections.forEach { markers.removeCollection(it) }
+        }
+        ptShapeCollections.clear()
+    }
+
     private fun isSameMapScene(first: MapSceneObject, second: MapSceneObject): Boolean =
         first.maxScaleFactor == second.maxScaleFactor &&
             first.scaleFactor == second.scaleFactor &&
@@ -440,6 +660,11 @@ class MainActivity : AppCompatActivity() {
         onViewClosed: (() -> Unit)? = null,
     ) = Util.postOnMain {
         if (!isActivityAlive()) return@postOnMain
+
+        // The two bottom panels are mutually exclusive.
+        if (binding.ptStationContainer.isVisible) {
+            hidePublicTransportStationPanel()
+        }
 
         binding.apply {
             name.text = text
@@ -486,8 +711,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     // Re-applies constraints for the current orientation.
-    // Landscape: the details panel becomes a half-width card pinned to the bottom-left corner and
-    // the GPS button moves to the bottom-right corner.
+    // Landscape: the details panel becomes a half-width card pinned to the bottom-left corner,
+    // the station panel becomes a half-width card spanning the full screen height and the GPS
+    // button moves to the bottom-right corner.
     private fun applyOrientationLayout() {
         val rootLayout = binding.root as ConstraintLayout
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -495,13 +721,15 @@ class MainActivity : AppCompatActivity() {
         // ConstraintSet.applyTo() resets view visibility; capture and restore it afterwards.
         val gpsVis = binding.followGpsButton.visibility
         val panelVis = binding.locationDetailsContainer.visibility
+        val stationPanelVis = binding.ptStationContainer.visibility
         val progressVis = binding.progressBar.visibility
 
         ConstraintSet().apply {
             clone(portraitConstraintSet)
             if (isLandscape) {
-                // Details panel: bottom-left card, half the screen width, height wraps content.
                 val panelWidth = (resources.displayMetrics.widthPixels * 0.5f).toInt()
+
+                // Details panel: bottom-left card, half the screen width, height wraps content.
                 constrainWidth(R.id.location_details_container, panelWidth)
                 constrainHeight(R.id.location_details_container, ConstraintSet.WRAP_CONTENT)
                 connect(
@@ -521,7 +749,33 @@ class MainActivity : AppCompatActivity() {
                 clear(R.id.location_details_container, ConstraintSet.TOP)
                 clear(R.id.location_details_container, ConstraintSet.END)
 
-                // GPS button: anchor to the bottom-right corner instead of above the (left-side) panel.
+                // Station panel: left-side card, half the screen width, spanning the full screen
+                // height — the status bar is cleared with padding (see updatePanelInsets), so
+                // the panel is anchored to the parent's edges (spread replaces the portrait
+                // 50%-of-parent height). Resetting the default height mode alone is not enough:
+                // LayoutParams.validate() forces percent mode back while the percent value stays
+                // below 1, so the percent itself is reset too.
+                constrainWidth(R.id.pt_station_container, panelWidth)
+                constrainPercentHeight(R.id.pt_station_container, 1f)
+                constrainDefaultHeight(R.id.pt_station_container, ConstraintSet.MATCH_CONSTRAINT_SPREAD)
+                connect(R.id.pt_station_container, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP, 0)
+                connect(
+                    R.id.pt_station_container,
+                    ConstraintSet.START,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.START,
+                    0,
+                )
+                connect(
+                    R.id.pt_station_container,
+                    ConstraintSet.BOTTOM,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.BOTTOM,
+                    0,
+                )
+                clear(R.id.pt_station_container, ConstraintSet.END)
+
+                // GPS button: anchor to the bottom-right corner instead of above the (left-side) panels.
                 clear(R.id.follow_gps_button, ConstraintSet.BOTTOM)
                 connect(R.id.follow_gps_button, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0)
             }
@@ -529,6 +783,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.followGpsButton.visibility = gpsVis
         binding.locationDetailsContainer.visibility = panelVis
+        binding.ptStationContainer.visibility = stationPanelVis
         binding.progressBar.visibility = progressVis
 
         updatePanelInsets(isLandscape)
@@ -536,21 +791,24 @@ class MainActivity : AppCompatActivity() {
         updateFocusViewport()
     }
 
-    // Applies system-window insets to the details panel as padding. In landscape the panel sits
-    // against the left edge, so the right inset must not be applied as right padding.
+    // Applies system-window insets to the bottom panels as padding. In landscape the panels sit
+    // against the left edge, so the right inset must not be applied as right padding; the
+    // station panel additionally reaches the top of the screen there, so its content must
+    // clear the status bar.
     private fun updatePanelInsets(isLandscape: Boolean) {
-        val panel = binding.locationDetailsContainer
-
-        ViewCompat.setOnApplyWindowInsetsListener(panel) { v, insets ->
-            val sys = insets.getInsets(SYSTEM_INSET_TYPES)
-            v.updatePadding(
-                left = sys.left,
-                right = if (isLandscape) 0 else sys.right,
-                bottom = sys.bottom,
-            )
-            insets
+        for (panel in listOf(binding.locationDetailsContainer, binding.ptStationContainer)) {
+            ViewCompat.setOnApplyWindowInsetsListener(panel) { v, insets ->
+                val sys = insets.getInsets(SYSTEM_INSET_TYPES)
+                v.updatePadding(
+                    left = sys.left,
+                    top = if (isLandscape && v === binding.ptStationContainer) sys.top else 0,
+                    right = if (isLandscape) 0 else sys.right,
+                    bottom = sys.bottom,
+                )
+                insets
+            }
+            panel.requestApplyInsets()
         }
-        panel.requestApplyInsets()
     }
 
     // Updates the GPS button margins so it always clears the system bars / display cutout.
@@ -560,7 +818,7 @@ class MainActivity : AppCompatActivity() {
         val params = binding.followGpsButton.layoutParams as? ConstraintLayout.LayoutParams ?: return
         val bigPadding = resources.getDimensionPixelSize(R.dimen.big_padding)
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val detailsVisible = binding.locationDetailsContainer.isVisible
+        val detailsVisible = binding.locationDetailsContainer.isVisible || binding.ptStationContainer.isVisible
 
         val sys = (insets ?: ViewCompat.getRootWindowInsets(binding.root))?.getInsets(SYSTEM_INSET_TYPES)
         val rightInset = sys?.right ?: 0
@@ -568,9 +826,9 @@ class MainActivity : AppCompatActivity() {
 
         // The button is always end-aligned, so it must clear a side navigation bar / cutout.
         val targetEndMargin = bigPadding + rightInset
-        // In portrait the button sits directly on top of the details panel, so no extra inset is
-        // needed when that panel is visible. In every other case it is anchored to the bottom of
-        // the screen and must clear the system navigation bar.
+        // In portrait the button sits directly on top of the visible bottom panel, so no extra
+        // inset is needed when one is visible. In every other case it is anchored to the bottom
+        // of the screen and must clear the system navigation bar.
         val targetBottomMargin = if (!isLandscape && detailsVisible) {
             bigPadding
         } else {
@@ -606,6 +864,9 @@ class MainActivity : AppCompatActivity() {
                 if (binding.locationDetailsContainer.isVisible) {
                     hideLocationDetails()
                     deactivateHighlights()
+                }
+                if (binding.ptStationContainer.isVisible) {
+                    hidePublicTransportStationPanel()
                 }
             }
 
@@ -698,7 +959,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun highlightLandmarkOnMap(landmark: Landmark) = SdkCall.execute {
+    // Highlights the landmark with the search-results pin. The camera frames, in order of
+    // precedence: the landmark's contour, the caller-provided focus area (e.g. the bounding
+    // area of a station's line shapes), or the landmark's coordinates.
+    private fun highlightLandmarkOnMap(landmark: Landmark, focusArea: RectangleGeographicArea? = null) = SdkCall.execute {
         binding.gemSurface.mapView?.let { mapView ->
             val rect = getMapFreeRect(mapFreeSpacePadding())
 
@@ -732,15 +996,24 @@ class MainActivity : AppCompatActivity() {
                     it.imageSize = 6.0
                 }
 
-                landmark.coordinates?.let {
-                    mapView.centerOnCoordinates(
-                        it,
-                        -1,
-                        rect.center,
+                if (focusArea != null && !focusArea.isEmpty()) {
+                    mapView.centerOnRectArea(
+                        focusArea,
+                        zoomLevel = -1,
+                        viewRc = rect,
                         Animation(EAnimation.Linear, 900),
-                        0.0,
-                        0.0,
                     )
+                } else {
+                    landmark.coordinates?.let {
+                        mapView.centerOnCoordinates(
+                            it,
+                            -1,
+                            rect.center,
+                            Animation(EAnimation.Linear, 900),
+                            0.0,
+                            0.0,
+                        )
+                    }
                 }
             }
 
@@ -751,8 +1024,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Returns the visible map area in surface-view coordinates, accounting for the toolbar, the
-    // system bars/display cutout and any visible details panel. An optional padding deflates the
+    // Returns the visible map area in surface-view coordinates, accounting for the system
+    // bars/display cutout and any visible bottom panel. An optional padding deflates the
     // rect on all sides (useful for camera-centering animations).
     // Portrait: the panel sits at the bottom → it restricts the bottom edge.
     // Landscape: the panel sits on the left → it restricts the left edge.
@@ -762,11 +1035,17 @@ class MainActivity : AppCompatActivity() {
 
         val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(SYSTEM_INSET_TYPES)
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val panel = binding.locationDetailsContainer
 
-        // The map area always starts just below the toolbar (translated to surface-local space).
-        val top = (binding.toolbar.bottom - gemSurfaceView.top)
-            .coerceIn(0, (surfaceHeight - 1).coerceAtLeast(0))
+        // Whichever bottom panel is currently shown restricts the map area (the details panel
+        // and the station panel are never visible together).
+        val panel = if (binding.ptStationContainer.isVisible) {
+            binding.ptStationContainer
+        } else {
+            binding.locationDetailsContainer
+        }
+
+        // The map area starts just below the status bar / display cutout.
+        val top = (insets?.top ?: 0).coerceIn(0, (surfaceHeight - 1).coerceAtLeast(0))
 
         val left: Int
         val right: Int
@@ -814,7 +1093,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // Aligns the Magic Lane logo (anchored to the focus viewport) with the visible map area so it
-    // is never hidden behind the toolbar, the system bars or a visible details panel.
+    // is never hidden behind the system bars or a visible details panel.
     private fun updateFocusViewport() {
         SdkCall.runSynced {
             binding.gemSurface.mapView?.preferences?.focusViewport = getMapFreeRect()

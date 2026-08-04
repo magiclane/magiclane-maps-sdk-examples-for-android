@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
+  SPDX-License-Identifier: Apache-2.0
+
+  Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
+-->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:padding="@dimen/big_padding">
+
+        <ImageView
+            android:id="@+id/vehicle_icon"
+            android:layout_width="@dimen/pt_icon_size"
+            android:layout_height="@dimen/pt_icon_size"
+            app:layout_constraintBottom_toBottomOf="@id/line_badge"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/line_badge"
+            app:tint="@color/on_background"
+            tools:ignore="ContentDescription" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/line_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/big_padding"
+            android:gravity="center"
+            android:minEms="2"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:textSize="@dimen/standard_text_size"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@id/vehicle_icon"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/destination"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/big_padding"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="@dimen/big_padding"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="@color/on_background"
+            android:textSize="@dimen/standard_text_size"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/departure_time"
+            app:layout_constraintStart_toEndOf="@id/line_badge"
+            app:layout_constraintTop_toTopOf="@id/line_badge" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/top_row_barrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="vehicle_icon,line_badge,destination" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textSize="@dimen/pt_small_text_size"
+            app:layout_constrainedWidth="true"
+            app:layout_constraintEnd_toStartOf="@id/wheelchair_icon"
+            app:layout_constraintHorizontal_bias="0"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/top_row_barrier" />
+
+        <ImageView
+            android:id="@+id/wheelchair_icon"
+            android:layout_width="@dimen/pt_small_icon_size"
+            android:layout_height="@dimen/pt_small_icon_size"
+            android:layout_marginStart="6dp"
+            android:contentDescription="@string/pt_wheelchair_accessible"
+            android:src="@drawable/ic_wheelchair_24"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/status"
+            app:layout_constraintEnd_toStartOf="@id/bike_icon"
+            app:layout_constraintStart_toEndOf="@id/status"
+            app:layout_constraintTop_toTopOf="@id/status"
+            app:tint="@color/gray" />
+
+        <ImageView
+            android:id="@+id/bike_icon"
+            android:layout_width="@dimen/pt_small_icon_size"
+            android:layout_height="@dimen/pt_small_icon_size"
+            android:layout_marginStart="6dp"
+            android:contentDescription="@string/pt_bikes_allowed"
+            android:src="@drawable/ic_bike_24"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/status"
+            app:layout_constraintEnd_toStartOf="@id/crowding_icon"
+            app:layout_constraintStart_toEndOf="@id/wheelchair_icon"
+            app:layout_constraintTop_toTopOf="@id/status"
+            app:tint="@color/gray" />
+
+        <!-- Live / predicted vehicle crowding; tint and content description set at bind time. -->
+        <ImageView
+            android:id="@+id/crowding_icon"
+            android:layout_width="@dimen/pt_small_icon_size"
+            android:layout_height="@dimen/pt_small_icon_size"
+            android:layout_marginStart="6dp"
+            android:src="@drawable/ic_pt_crowding_24"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/status"
+            app:layout_constraintEnd_toStartOf="@id/alert_icon"
+            app:layout_constraintStart_toEndOf="@id/bike_icon"
+            app:layout_constraintTop_toTopOf="@id/status"
+            tools:ignore="ContentDescription" />
+
+        <!-- Shown when service alerts apply to this departure; tinted by their severity. -->
+        <ImageView
+            android:id="@+id/alert_icon"
+            android:layout_width="@dimen/pt_small_icon_size"
+            android:layout_height="@dimen/pt_small_icon_size"
+            android:layout_marginStart="6dp"
+            android:contentDescription="@string/pt_service_alert"
+            android:src="@drawable/ic_pt_alert_24"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/status"
+            app:layout_constraintEnd_toStartOf="@id/departure_time"
+            app:layout_constraintStart_toEndOf="@id/crowding_icon"
+            app:layout_constraintTop_toTopOf="@id/status" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/departure_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/big_padding"
+            android:textSize="@dimen/pt_departure_text_size"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/departure_time_unit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/pt_small_text_size"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/departure_time" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

@@ -87,6 +87,14 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         clearSdkListeners()
 
+        // Under instrumentation the whole app runs inside the test process, so releasing the SDK
+        // and calling exitProcess(0) here would tear down the test runner mid-teardown (reported
+        // as "Process crashed"). The test harness owns the SDK lifecycle in that case, so skip both.
+        if (isRunningUnderTest()) {
+            super.onDestroy()
+            return
+        }
+
         // Release the SDK before the activity is fully destroyed.
         GemSdk.release()
 
@@ -269,4 +277,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
+
+    // True only when running under an instrumentation test: the androidx.test runtime is on the
+    // classpath during instrumented test runs, never in a normal app launch.
+    private fun isRunningUnderTest(): Boolean = try {
+        Class.forName("androidx.test.platform.app.InstrumentationRegistry")
+        true
+    } catch (_: ClassNotFoundException) {
+        false
+    }
 }

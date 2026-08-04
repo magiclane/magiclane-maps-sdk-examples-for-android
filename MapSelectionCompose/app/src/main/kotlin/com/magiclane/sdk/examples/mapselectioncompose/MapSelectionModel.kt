@@ -12,8 +12,10 @@ import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.AndroidViewModel
@@ -25,6 +27,7 @@ import com.magiclane.sdk.core.ImageDatabase
 import com.magiclane.sdk.core.Parameter
 import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.Rect
+import com.magiclane.sdk.core.RectangleGeographicArea
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.Time
 import com.magiclane.sdk.core.TimezoneResult
@@ -33,17 +36,27 @@ import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.ECommonOverlayId
 import com.magiclane.sdk.d3scene.EHighlightOptions
+import com.magiclane.sdk.d3scene.EMarkerType
 import com.magiclane.sdk.d3scene.HighlightRenderSettings
 import com.magiclane.sdk.d3scene.MapSceneObject
 import com.magiclane.sdk.d3scene.MapView
+import com.magiclane.sdk.d3scene.MarkerCollection
+import com.magiclane.sdk.d3scene.MarkerCollectionRenderSettings
 import com.magiclane.sdk.d3scene.MarkerRenderSettings
 import com.magiclane.sdk.d3scene.OverlayItem
+import com.magiclane.sdk.d3scene.PTShape
+import com.magiclane.sdk.d3scene.PTStopInfo
+import com.magiclane.sdk.d3scene.PTStopScheduleFilter
+import com.magiclane.sdk.d3scene.PTTrip
+import com.magiclane.sdk.examples.mapselectioncompose.PTUi.lineName
 import com.magiclane.sdk.examples.mapselectioncompose.data.ECardinalDirections
 import com.magiclane.sdk.examples.mapselectioncompose.data.LocationDetailsInfo
+import com.magiclane.sdk.examples.mapselectioncompose.data.PublicTransportStationInfo
 import com.magiclane.sdk.examples.mapselectioncompose.data.RouteInfo
 import com.magiclane.sdk.examples.mapselectioncompose.data.SafetyCameraInfo
 import com.magiclane.sdk.examples.mapselectioncompose.data.SocialReportInfo
 import com.magiclane.sdk.examples.mapselectioncompose.data.TrafficEventInfo
+import com.magiclane.sdk.examples.mapselectioncompose.ui.theme.PTGrayLight
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.EAddressField
 import com.magiclane.sdk.places.Landmark
@@ -54,6 +67,7 @@ import com.magiclane.sdk.util.GemList
 import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.GemUtilImages
 import com.magiclane.sdk.util.SdkCall
+import java.util.IdentityHashMap
 import java.util.Locale
 
 // AndroidViewModel (rather than a plain ViewModel) so that error messages can be resolved with an
@@ -68,6 +82,29 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
     var socialReportInfo: SocialReportInfo? by mutableStateOf(null)
 
     private var trafficEvent: TrafficEvent? = null
+
+    // Tapped public transport station shown by the half screen station panel; its extended stop
+    // data (lines and departures) is kept separately so the minute refresh can swap it in place.
+    var ptStationInfo: PublicTransportStationInfo? by mutableStateOf(null)
+    var ptStopInfo: PTStopInfo? by mutableStateOf(null)
+
+    // The opened station's shapes-bearing stop info, kept for redrawing the shapes when the
+    // panel's line filter changes — the periodic refreshes don't request shapes again, so
+    // [ptStopInfo] loses them after the first refresh.
+    private var ptStopInfoWithShapes: PTStopInfo? = null
+
+    // Marker collections drawing the station's route shapes, one per line color.
+    private val ptShapeCollections = ArrayList<MarkerCollection>()
+
+    // Line chips selection last mirrored on the map's route shapes, to redraw on real changes
+    // only — the station panel also reports the (unchanged) selection on periodic refreshes.
+    private var ptLastNotifiedSelection: Set<String> = emptySet()
+
+    // Departures listed by the station screen when one of them was tapped (after line filtering)
+    // and the index of the tapped one; non-null while the trip view is open.
+    var ptTripViewTrips: List<PTTrip>? by mutableStateOf(null)
+    var ptTripViewIndex = 0
+        private set
 
     // loading state
     var progressBarIsVisible by mutableStateOf(true)
@@ -155,6 +192,9 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
             onEnterFollowingPosition = {
                 followGpsButtonIsVisible = false
                 hideBottomView(this)
+                if (ptStationInfo != null) {
+                    closePublicTransportStationView()
+                }
             }
 
             // Single tap selects, in priority order, a route, traffic event, the current
@@ -201,7 +241,14 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
             Landmark("London", 51.5073204, -0.1276475),
             Landmark("Paris", 48.8566932, 2.3514616),
         )
-        routingService.calculateRoute(waypoints)
+
+        // calculateRoute returns synchronously whether the calculation could be started. On
+        // failure, onCompleted won't fire, so report the error and hide the progress bar here.
+        val errorCode = routingService.calculateRoute(waypoints)
+        if (errorCode != GemError.NoError) {
+            errorMessage = errorText(errorCode)
+            progressBarIsVisible = false
+        }
     }
 
     private fun highlightRoute(mapView: MapView): Boolean = SdkCall.execute {
@@ -259,8 +306,18 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
         onCompleted = { errorCode: Int, _ ->
             if (errorCode == GemError.NoError) {
                 SdkCall.execute {
-                    trafficEvent?.let {
-                        fillTrafficEventInfo(it, parameters)
+                    trafficEvent?.let { event ->
+                        fillTrafficEventInfo(event, parameters)
+
+                        // Highlight only now that the panel state is set: the highlight effect
+                        // is deferred until the panel has been laid out (and the free map area
+                        // updated for its height), so the event is centered in what remains
+                        // visible of the map above the panel, not in the screen center.
+                        val mapView = surfaceView?.mapView
+                        val referencePoint = event.referencePoint
+                        if (mapView != null && referencePoint != null) {
+                            highlightPlace(referencePoint, event.image!!, mapView)
+                        }
                     }
                 }
             } else if (errorCode != GemError.Cancel) {
@@ -286,15 +343,9 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
                 errorMessage = errorText(errorCode)
             } else {
                 progressBarIsVisible = true
-                trafficEvent?.referencePoint?.let {
-                    deactivateHighlights(mapView)
-
-                    highlightPlace(
-                        it,
-                        trafficEvent?.image!!,
-                        mapView,
-                    )
-                }
+                // Only clear the previous highlight here: the new one is placed by the preview
+                // data listener, after the traffic panel is displayed and its height is known.
+                deactivateHighlights(mapView)
             }
             return@execute true
         }
@@ -315,6 +366,11 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
                 ECommonOverlayId.SocialReports.value -> {
                     fillSocialReportInfo(overlay, mapView)
                     highlightOverlay(mapView, overlay, false)
+                }
+                ECommonOverlayId.PublicTransport.value -> {
+                    // Public transport stations get a dedicated half screen panel with the lines
+                    // crossing the station and its upcoming departures.
+                    openPublicTransportStation(overlay, mapView)
                 }
                 else -> {
                     overlay.coordinates?.let {
@@ -346,6 +402,233 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
         }
         return@execute false
     } ?: false
+
+    // Handles a tap on a public transport station: fetches the station's extended data (the
+    // lines crossing it, its upcoming departures and the routes' shapes) and opens the half
+    // screen station panel. Falls back to the regular details panel when the extended data is
+    // unavailable. Must be called on the SDK thread.
+    private fun openPublicTransportStation(overlay: OverlayItem, mapView: MapView) {
+        val name = when {
+            !overlay.name.isNullOrEmpty() -> overlay.name!!
+            !overlay.overlayInfo?.name.isNullOrEmpty() -> overlay.overlayInfo?.name!!
+            else -> "Unknown"
+        }
+        val address = overlay.coordinates?.let { getLandmarkDescription(mapView, it) } ?: ""
+        val icon = overlay.image
+            ?.asBitmap(detailsPanelImageSize, detailsPanelImageSize)
+            ?.asImageBitmap()
+
+        // The station gets highlighted on the map like a regular landmark while its panel is up.
+        val stationLandmark = overlay.coordinates?.let { Landmark(name, it.latitude, it.longitude) }
+
+        // The station's UTC offset, needed to compare its wall-clock departure times with "now".
+        val utcOffsetMs = overlay.coordinates?.let { PTUi.stationUtcOffsetMs(it) }
+
+        val fallbackToDetailsPanel = {
+            fillLocationDetailsInfo(icon ?: ImageBitmap(1, 1), name, address)
+            SdkCall.execute { highlightOverlay(mapView, overlay, false) }
+        }
+
+        progressBarIsVisible = true
+
+        // The shapes are requested here only — the periodic refresh skips them, they are static
+        // and the largest part of the payload.
+        val error = overlay.getPTStopInfo(PTStopScheduleFilter(shapes = true)) { stopInfo ->
+            // The SDK delivers this callback on the main thread.
+            progressBarIsVisible = false
+
+            if (stopInfo == null || (stopInfo.stops.isEmpty() && stopInfo.trips.isEmpty())) {
+                fallbackToDetailsPanel()
+            } else {
+                // The station panel replaces any visible info panel.
+                hideInfoPanelStates()
+
+                ptStopInfoWithShapes = stopInfo
+                ptLastNotifiedSelection = emptySet()
+                ptStopInfo = stopInfo
+                ptStationInfo = PublicTransportStationInfo(overlay, name, address, icon, utcOffsetMs)
+
+                // Once the panel is laid out (and the free map area updated), draw the route
+                // shapes and highlight the station within what remained visible of the map. The
+                // shapes are drawn first: when the station has drawable line shapes, the camera
+                // frames their bounding area instead of just the station coordinates.
+                invokeHighlight = true
+                highlightEffect = {
+                    val shapesArea = showPublicTransportShapes(stopInfo)
+                    highlightPublicTransportStation(stationLandmark, shapesArea, mapView)
+                }
+            }
+        }
+
+        if (error != GemError.NoError) {
+            // The request never started, so the callback won't fire.
+            progressBarIsVisible = false
+            fallbackToDetailsPanel()
+        }
+    }
+
+    // Re-requests the station's extended data so the realtime departures stay fresh.
+    fun refreshPublicTransportStation() = SdkCall.execute {
+        ptStationInfo?.overlayItem?.getPTStopInfo { stopInfo ->
+            // The SDK delivers this callback on the main thread.
+            if (ptStationInfo != null && stopInfo != null) {
+                ptStopInfo = stopInfo
+            }
+        }
+    }
+
+    // Opens the trip view for a tapped departure: the currently listed (filtered) departures are
+    // handed over so the trip view can page through the other trips of the same line.
+    fun openPublicTransportTripView(trips: List<PTTrip>, tappedIndex: Int) {
+        ptTripViewIndex = tappedIndex
+        ptTripViewTrips = trips
+    }
+
+    fun closePublicTransportTripView() {
+        ptTripViewTrips = null
+    }
+
+    // Closes the station panel (with any trip view stacked on it), removes everything drawn on
+    // the map for it (the landmark highlight and the route shapes) and releases the tapped
+    // station's data.
+    fun closePublicTransportStationView() {
+        ptTripViewTrips = null
+        ptStationInfo = null
+        ptStopInfo = null
+        ptStopInfoWithShapes = null
+
+        SdkCall.execute {
+            removePublicTransportShapes()
+            surfaceView?.mapView?.let { deactivateHighlights(it) }
+        }
+
+        // Forget the panel extent so that re-showing a panel at the same size is still detected
+        // as a change by the panel's onGloballyPositioned guard, forcing a focus-viewport refresh.
+        panelHeightPx = 0
+        panelWidthPx = 0
+        // The panel is gone: give the freed space back to the map (and the Magic Lane logo).
+        updateMapAreas()
+    }
+
+    // Mirrors the station panel's line chips selection on the map: only the selected lines'
+    // shapes stay drawn (an empty set means "all lines") and the camera re-frames on what is
+    // left visible. The initial "all lines" state of a freshly opened station is not redrawn —
+    // the opening path draws it itself.
+    fun onPublicTransportLinesSelectionChanged(selectedLines: Set<String>) {
+        if (selectedLines == ptLastNotifiedSelection) return
+        ptLastNotifiedSelection = selectedLines
+
+        val stopInfo = ptStopInfoWithShapes ?: return
+        SdkCall.execute {
+            val shapesArea = showPublicTransportShapes(stopInfo, selectedLines)
+            if (shapesArea != null && !shapesArea.isEmpty()) {
+                surfaceView?.mapView?.centerOnRectArea(shapesArea, -1, visibleArea, animation)
+            }
+        }
+    }
+
+    // Draws the station's route shapes on top of the map, colored like their line chips so map
+    // and list agree. Shape instances are shared between PTStopInfo.shapes and the stop
+    // catalogue's routes, so the line color of each deduplicated shape is resolved by identity
+    // through the routes referencing it (first referencing route wins). Render settings are per
+    // collection, so the shapes are grouped into one polyline collection per color.
+    // A non-empty [selectedLines] restricts the drawing to the shapes of those lines (the same
+    // filter the panel applies to its departures); an empty set draws every shape, including
+    // the ones no route references (with the fallback color).
+    // Returns the bounding geographic area of everything drawn (null when nothing was drawn),
+    // so the caller can frame the camera on the station's lines.
+    // Must be called on the SDK thread.
+    private fun showPublicTransportShapes(
+        stopInfo: PTStopInfo,
+        selectedLines: Set<String> = emptySet(),
+    ): RectangleGeographicArea? {
+        val preferences = surfaceView?.mapView?.preferences ?: return null
+
+        removePublicTransportShapes()
+
+        val shapeColors = IdentityHashMap<PTShape, Color>()
+        stopInfo.stops.asSequence().flatMap { it.routes }.forEach { route ->
+            val shape = route.shape ?: return@forEach
+            if (selectedLines.isNotEmpty() && route.lineName !in selectedLines) return@forEach
+            if (shape !in shapeColors) {
+                shapeColors[shape] = PTUi.parseColor(route.routeColor, PTGrayLight)
+            }
+        }
+
+        var shapesArea: RectangleGeographicArea? = null
+
+        stopInfo.shapes
+            .filter { selectedLines.isEmpty() || it in shapeColors }
+            .mapNotNull { shape ->
+                // toMarker() is null for shapes that failed to decode (nothing drawable).
+                shape.toMarker()?.let { marker -> (shapeColors[shape] ?: PTGrayLight) to marker }
+            }
+            .groupBy({ it.first }, { it.second })
+            .forEach { (color, markers) ->
+                val collection = MarkerCollection(EMarkerType.Polyline, "PT shapes")
+                markers.forEach { collection.add(it) }
+
+                val argb = color.toArgb()
+                val settings = MarkerCollectionRenderSettings(
+                    polylineInnerColor = Rgba(
+                        android.graphics.Color.red(argb),
+                        android.graphics.Color.green(argb),
+                        android.graphics.Color.blue(argb),
+                        255,
+                    ),
+                    polylineOuterColor = Rgba.black(),
+                ).apply {
+                    polylineInnerSize = 1.25
+                    polylineOuterSize = 0.5
+                }
+
+                preferences.markers?.add(collection, settings)
+                ptShapeCollections.add(collection)
+
+                collection.area?.takeIf { !it.isEmpty() }?.let { area ->
+                    shapesArea = shapesArea?.makeUnion(area) ?: area
+                }
+            }
+
+        return shapesArea
+    }
+
+    // Removes the station's route shapes from the map. Must be called on the SDK thread.
+    private fun removePublicTransportShapes() {
+        if (ptShapeCollections.isEmpty()) return
+
+        surfaceView?.mapView?.preferences?.markers?.let { markers ->
+            ptShapeCollections.forEach { markers.removeCollection(it) }
+        }
+        ptShapeCollections.clear()
+    }
+
+    // Highlights the station with the search-results pin. The camera frames the bounding area
+    // of the station's drawn line shapes when there is one, the station coordinates otherwise.
+    // Must be called on the SDK thread.
+    private fun highlightPublicTransportStation(
+        stationLandmark: Landmark?,
+        shapesArea: RectangleGeographicArea?,
+        mapView: MapView,
+    ) {
+        stationLandmark ?: return
+        stationLandmark.image = ImageDatabase.searchResultsPin
+
+        if (shapesArea != null && !shapesArea.isEmpty()) {
+            mapView.centerOnRectArea(shapesArea, -1, visibleArea, animation)
+        } else {
+            stationLandmark.coordinates?.let {
+                mapView.centerOnCoordinates(it, -1, visibleArea.center, animation, Double.MAX_VALUE, 0.0)
+            }
+        }
+
+        mapView.activateHighlightLandmarks(
+            stationLandmark,
+            HighlightRenderSettings(
+                EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
+            ),
+        )
+    }
 
     private fun highlightStreet(mapView: MapView): Boolean = SdkCall.execute {
         val streets = mapView.cursorSelectionStreets
@@ -390,27 +673,38 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
         surfaceView?.mapView?.followPosition()
     }
 
-    private fun fillLocationDetailsInfo(image: ImageBitmap?, text: String, description: String) {
+    // Clears every info panel state (hiding the panel) without touching the map.
+    private fun hideInfoPanelStates() {
         socialReportInfo = null
         trafficEventInfo = null
         safetyCameraInfo = null
         routeInfo = null
+        locationDetailsInfo = null
+    }
+
+    // The info panel and the station panel are mutually exclusive: opening the info panel for a
+    // newly tapped element dismisses a visible station panel (and everything drawn for it).
+    private fun hideStationPanelForInfoPanel() {
+        if (ptStationInfo != null) {
+            closePublicTransportStationView()
+        }
+    }
+
+    private fun fillLocationDetailsInfo(image: ImageBitmap?, text: String, description: String) {
+        hideStationPanelForInfoPanel()
+        hideInfoPanelStates()
         locationDetailsInfo = LocationDetailsInfo(image, text, description)
     }
 
     private fun fillRouteInfo(routeType: String, routeDescription: String) {
-        socialReportInfo = null
-        trafficEventInfo = null
-        safetyCameraInfo = null
-        locationDetailsInfo = null
+        hideStationPanelForInfoPanel()
+        hideInfoPanelStates()
         routeInfo = RouteInfo(routeType, routeDescription)
     }
 
     private fun fillSafetyCameraInfo(overlayItem: OverlayItem) {
-        socialReportInfo = null
-        trafficEventInfo = null
-        locationDetailsInfo = null
-        routeInfo = null
+        hideStationPanelForInfoPanel()
+        hideInfoPanelStates()
 
         overlayItem.getPreviewData()?.let { parameters ->
             var imageBitmap = ImageBitmap(1, 1)
@@ -604,10 +898,8 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
 
     @SuppressLint("DefaultLocale")
     private fun fillSocialReportInfo(overlayItem: OverlayItem, mapView: MapView) {
-        locationDetailsInfo = null
-        trafficEventInfo = null
-        safetyCameraInfo = null
-        routeInfo = null
+        hideStationPanelForInfoPanel()
+        hideInfoPanelStates()
 
         overlayItem.getPreviewData()?.let { parameters ->
             var imageBitmap = ImageBitmap(1, 1)
@@ -705,10 +997,8 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
     }
 
     private fun fillTrafficEventInfo(event: TrafficEvent, parameters: GemList<Parameter>) {
-        socialReportInfo = null
-        locationDetailsInfo = null
-        safetyCameraInfo = null
-        routeInfo = null
+        hideStationPanelForInfoPanel()
+        hideInfoPanelStates()
 
         var imageBitmap = ImageBitmap(1, 1)
 
@@ -954,11 +1244,7 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
     }
 
     fun hideBottomView(mapView: MapView?) = SdkCall.execute {
-        socialReportInfo = null
-        locationDetailsInfo = null
-        safetyCameraInfo = null
-        trafficEventInfo = null
-        routeInfo = null
+        hideInfoPanelStates()
         mapView?.let {
             deactivateHighlights(it)
         }
@@ -992,7 +1278,9 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
         val insetTop = insets?.top ?: 0
         val insetRight = insets?.right ?: 0
         val insetBottom = insets?.bottom ?: 0
-        val panelVisible = isBottomViewVisible()
+        // The info panel and the station panel restrict the free map area the same way (they
+        // are never visible together): bottom edge in portrait, left edge in landscape.
+        val panelVisible = isBottomViewVisible() || ptStationInfo != null
 
         val left: Int
         val top = insetTop

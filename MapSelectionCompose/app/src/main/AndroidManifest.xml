@@ -31,7 +31,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:configChanges="orientation|keyboardHidden|screenSize|fontScale"
             android:theme="@style/Theme.MapSelection">
             <intent-filter>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#A085FF</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="secondary">#272531</color>
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="background">#18171A</color>
+    <color name="on_background">#F7F7F3</color>
+    <color name="surface">#272531</color>
+    <color name="on_surface">#FFFFFF</color>
+</resources>

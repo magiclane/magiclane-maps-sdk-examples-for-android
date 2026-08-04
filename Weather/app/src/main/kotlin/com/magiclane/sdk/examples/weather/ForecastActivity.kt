@@ -24,7 +24,6 @@ import com.magiclane.sdk.util.SdkCall
 
 class ForecastActivity : AppCompatActivity() {
     companion object {
-        private var forecastAdapter: ForecastListAdapter? = null
         const val LATITUDE_ARG_ID = "LATITUDE"
         const val LONGITUDE_ARG_ID = "LONGITUDE"
         const val FORECAST_TYPE_ID = "FORECAST_TYPE"
@@ -32,6 +31,7 @@ class ForecastActivity : AppCompatActivity() {
     }
 
     private lateinit var coordinatesReference: Coordinates
+    private lateinit var forecastAdapter: ForecastListAdapter
     private var forecastType = EForecastType.NOT_ASSIGNED
     private lateinit var binding: ActivityForecastBinding
     private lateinit var portraitConstraintSet: ConstraintSet
@@ -58,10 +58,7 @@ class ForecastActivity : AppCompatActivity() {
         val location = intent.getStringExtra(LOCATION_NAME)
         forecastType = EForecastType.entries[intent.getIntExtra(FORECAST_TYPE_ID, 0)]
         // initialise adapter
-        if (forecastAdapter == null) {
-            forecastAdapter = ForecastListAdapter(forecastType)
-        }
-        forecastAdapter!!.type = forecastType
+        forecastAdapter = ForecastListAdapter(forecastType)
         binding.forecastList.adapter = forecastAdapter
         binding.forecastList.layoutManager = LinearLayoutManager(this)
         // request list of forecast items on sdk thread
@@ -109,7 +106,7 @@ class ForecastActivity : AppCompatActivity() {
                 }
             }
             // Send the new list to be processed and displayed by the adapter.
-            forecastAdapter?.submitList(newList)
+            forecastAdapter.submitList(newList)
         }
 
         viewModel.errorMessage.observe(this) {

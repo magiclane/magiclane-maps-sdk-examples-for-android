@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#834FFF</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="secondary">#211D2A</color>
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="background">#D9D9D5</color>
+    <color name="on_background">#211D2A</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="on_surface">#211D2A</color>
+    <color name="warning">#C75000</color>
+    <color name="default_line_badge">#E4E4E4</color>
+    <color name="section_header">#6E6A75</color>
+    <color name="divider">#1F211D2A</color>
+    <color name="rail_line">#AFAFAB</color>
+    <color name="walk_dots">#1FBBEF</color>
+</resources>
+

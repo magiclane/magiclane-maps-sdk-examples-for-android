@@ -23,6 +23,8 @@ import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.Path
 import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.d3scene.Animation
+import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.EViewCameraTransitionStatus
 import com.magiclane.sdk.d3scene.EViewDataTransitionStatus
 import com.magiclane.sdk.examples.gpxthumbnailimagewithrouting.databinding.ActivityMainBinding
@@ -61,6 +63,17 @@ class MainActivity : AppCompatActivity() {
                     // Switch to the SDK thread to access the map view and present the route.
                     SdkCall.execute {
                         gemOffscreenSurfaceView.mapView?.let { mapView ->
+
+                            val routeRenderSettings = RouteRenderSettings().also {
+                                it.innerSize = 1.0
+                            }
+                            mapView.presentRoute(
+                                routes[0],
+                                edgeAreaInsets = Rect(padding, padding, padding, padding),
+                                routeRenderSettings = routeRenderSettings,
+                                animation = Animation(EAnimation.None)
+                            )
+
                             // Wait for the map to finish rendering before capturing the screenshot.
                             mapView.onViewRendered = onViewRendered@{ tivStatus, camStatus ->
                                 if (screenshotTaken) return@onViewRendered
@@ -85,15 +98,6 @@ class MainActivity : AppCompatActivity() {
                                     mapView.onViewRendered = null
                                 }
                             }
-
-                            val routeRenderSettings = RouteRenderSettings().also {
-                                it.innerSize = 1.0
-                            }
-                            mapView.presentRoute(
-                                routes[0],
-                                edgeAreaInsets = Rect(padding, padding, padding, padding),
-                                routeRenderSettings = routeRenderSettings,
-                            )
                         }
                     }
                 }

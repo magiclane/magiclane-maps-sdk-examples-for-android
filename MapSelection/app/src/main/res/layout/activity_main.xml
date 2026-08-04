@@ -14,19 +14,6 @@
             android:layout_height="match_parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/primary"
-            android:paddingBottom="12dp"
-            app:layout_constraintTop_toTopOf="parent"
-            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingTopWithSystemWindowInsets='@{"8dp"}'
-            app:title="@string/app_name"
-            app:titleTextColor="@color/on_primary" />
-
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/follow_gps_button"
             android:layout_width="wrap_content"
@@ -45,6 +32,8 @@
           re-constrained at runtime (see MainActivity.applyOrientationLayout) into a card pinned
           to the bottom-left corner. System-window insets are applied programmatically in an
           orientation-aware way (see MainActivity.updatePanelInsets).
+          Its bottom is chained to the (mutually exclusive) station panel so the GPS button,
+          anchored above this panel, also clears the station panel when that one is visible.
         -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/location_details_container"
@@ -54,7 +43,7 @@
             android:background="@drawable/bottom_panel_background"
             android:focusable="true"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/pt_station_container"
             tools:layout_editor_absoluteX="10dp">
 
             <com.google.android.material.imageview.ShapeableImageView
@@ -111,6 +100,167 @@
                 app:iconPadding="0dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!--
+          Public transport station panel: the info panel's bigger sibling. In portrait it covers
+          the bottom half of the screen (full width); in landscape it is re-constrained at runtime
+          (see MainActivity.applyOrientationLayout) into a half-width card spanning the full
+          screen height. System-window insets are applied programmatically in an
+          orientation-aware way (see MainActivity.updatePanelInsets).
+        -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/pt_station_container"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:background="@drawable/bottom_panel_background"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintHeight_percent="0.5">
+
+            <!-- Header: same composition as the info panel — icon, station name on the first
+                 line, address on the second line, close button. -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/pt_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/pt_image"
+                    android:layout_width="@dimen/image_size"
+                    android:layout_height="@dimen/image_size"
+                    android:layout_margin="@dimen/big_padding"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:ignore="ContentDescription" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/pt_name"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/big_padding"
+                    android:layout_marginTop="@dimen/big_padding"
+                    android:layout_marginEnd="@dimen/big_padding"
+                    android:textColor="@color/on_background"
+                    android:textSize="@dimen/big_text_size"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toTopOf="@+id/pt_description"
+                    app:layout_constraintEnd_toStartOf="@id/pt_close_button"
+                    app:layout_constraintStart_toEndOf="@id/pt_image"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintVertical_bias="0.5"
+                    app:layout_constraintVertical_chainStyle="packed"
+                    app:layout_goneMarginBottom="@dimen/big_padding" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/pt_description"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/big_padding"
+                    android:layout_marginEnd="@dimen/big_padding"
+                    android:layout_marginBottom="@dimen/big_padding"
+                    android:textColor="@color/gray"
+                    android:textSize="@dimen/standard_text_size"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/pt_close_button"
+                    app:layout_constraintStart_toEndOf="@id/pt_image"
+                    app:layout_constraintTop_toBottomOf="@+id/pt_name"
+                    app:layout_constraintVertical_bias="0.5" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/pt_close_button"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_margin="@dimen/big_padding"
+                    android:contentDescription="@string/close"
+                    app:icon="@drawable/cancel_24px"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconSize="40dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Service alerts scoped to the station itself (closure, elevator outage, ...);
+                 text and icon are tinted by the most severe alert at bind time. -->
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/pt_station_alerts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawablePadding="@dimen/big_padding"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="@dimen/big_padding"
+                android:paddingBottom="@dimen/big_padding"
+                android:textSize="@dimen/pt_small_text_size"
+                android:visibility="gone"
+                app:drawableStartCompat="@drawable/ic_pt_alert_24"
+                app:layout_constraintTop_toBottomOf="@id/pt_header" />
+
+            <!-- Subheader: horizontal, selectable list of the lines crossing this station. -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/pt_lines_list"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/small_padding"
+                android:paddingVertical="@dimen/small_padding"
+                android:visibility="gone"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintEnd_toStartOf="@id/pt_clear_lines_button"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/pt_station_alerts" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/pt_clear_lines_button"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="@dimen/small_padding"
+                android:contentDescription="@string/pt_clear_line_selection"
+                android:visibility="gone"
+                app:icon="@drawable/cancel_24px"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="28dp"
+                app:layout_constraintBottom_toBottomOf="@id/pt_lines_list"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/pt_lines_list" />
+
+            <com.google.android.material.divider.MaterialDivider
+                android:id="@+id/pt_lines_divider"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/pt_lines_list" />
+
+            <!-- Upcoming departures at this station. -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/pt_vehicles_list"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:clipToPadding="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/pt_lines_divider" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/pt_empty_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/pt_no_departures"
+                android:textColor="@color/gray"
+                android:textSize="@dimen/standard_text_size"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@id/pt_vehicles_list"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/pt_vehicles_list" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

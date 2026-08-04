@@ -214,10 +214,6 @@ public class MainActivity extends AppCompatActivity
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // Keep status-bar icons light against the dark primary toolbar background.
-        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView())
-                .setAppearanceLightStatusBars(false);
-
         navigationListener.setCanPlayNavigationSound(true);
 
         turnImageSize = (int) getResources().getDimension(R.dimen.turn_image_size);
@@ -630,7 +626,7 @@ public class MainActivity extends AppCompatActivity
             int w = Math.min(width, height);
             int h = Math.max(width, height);
             int right = Math.max(w - insetsRight, insetsLeft);
-            // The toolbar and top panel sit above the map; exclude them from the safe area.
+            // The top panel sits above the map; exclude it from the safe area.
             int top = binding.topPanel.getVisibility() == View.VISIBLE
                     ? binding.topPanel.getBottom()
                     : insetsTop;

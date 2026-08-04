@@ -251,9 +251,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         setContentView(binding.root)
         EspressoIdlingResource.increment()
 
-        // Keep status-bar icons light against the dark primary toolbar background.
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
-
         SoundUtils.addTTSPlayerInitializationListener(this)
 
         turnImageSize = resources.getDimension(R.dimen.turn_image_size).toInt()
@@ -391,8 +388,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }
     }
 
-    // Adjusts the Magic Lane logo position to stay within the visible map area (below the toolbar
-    // and beside the navigation panels).
+    // Adjusts the Magic Lane logo position to stay within the visible map area (below the status
+    // bar and beside the navigation panels).
     private fun updateFocusViewport() {
         SdkCall.runSynced {
             binding.gemSurfaceView.mapView?.preferences?.focusViewport = getFocusViewport()
@@ -407,9 +404,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         val width = root.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
         val height = root.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
 
-        // toolbar.bottom already includes the status bar height because the toolbar has
-        // paddingTopWithSystemWindowInsets applied to it.
-        val toolbarBottom = binding.toolbar.bottom.takeIf { it > 0 } ?: (insets?.top ?: 0)
+        // Keep the map area clear of the status bar.
+        val statusBarBottom = insets?.top ?: 0
 
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
@@ -419,15 +415,15 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
             val left = if (binding.topPanel.isVisible) binding.topPanel.right else insets?.left ?: 0
             val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
-            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(toolbarBottom)
-            Rect(left, toolbarBottom, right, bottom)
+            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(statusBarBottom)
+            Rect(left, statusBarBottom, right, bottom)
         } else {
             val w = min(width, height)
             val h = max(width, height)
 
             val left = insets?.left ?: 0
             val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
-            val top = if (binding.topPanel.isVisible) binding.topPanel.bottom else toolbarBottom
+            val top = if (binding.topPanel.isVisible) binding.topPanel.bottom else statusBarBottom
             val bottom = if (binding.bottomPanel.isVisible) {
                 binding.bottomPanel.top.coerceAtLeast(top)
             } else {

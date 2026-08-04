@@ -9,4 +9,13 @@
     <dimen name="no_extra_inset">0dp</dimen>
     <dimen name="small_padding">4dp</dimen>
     <dimen name="map_free_space_padding">30dp</dimen>
+
+    <!-- Public transport station / trip views -->
+    <dimen name="pt_icon_size">28dp</dimen>
+    <dimen name="pt_small_icon_size">22dp</dimen>
+    <dimen name="pt_badge_corner_radius">12dp</dimen>
+    <dimen name="pt_departure_text_size">22sp</dimen>
+    <dimen name="pt_small_text_size">13sp</dimen>
+    <dimen name="pt_timeline_width">14dp</dimen>
+    <dimen name="pt_timeline_circle_size">10dp</dimen>
 </resources>

@@ -11,7 +11,6 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
-        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -20,7 +19,7 @@
 
         <meta-data
             android:name="com.magiclane.sdk.token"
-            android:value="${GEM_TOKEN}" />
+            android:value="eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIxYjkzNDc5Mi04MjQzLTQ0YWMtOTllNi0wZTY1ZGVhOTE2ZDQiLCJleHAiOjE4MDI5MDE2MDAsImlzcyI6Ik1hZ2ljIExhbmUiLCJqdGkiOiI1ZGY5ZWU2ZS05MWE4LTQ5MDctOWZiZC1hZTVlZDFiMGE4YzQifQ.XtiJ8f3e2HsGc0ElDu6QF0bmHCAYKZJNdXXsVxf_jviJVDg34whyuN8njuYGZrWqr93bsJ8YFp0jhh_HCA9mUA" />
 
         <activity
             android:name=".MainActivity"

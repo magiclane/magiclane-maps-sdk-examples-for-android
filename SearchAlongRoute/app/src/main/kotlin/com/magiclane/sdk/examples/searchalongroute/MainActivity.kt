@@ -335,10 +335,13 @@ class MainActivity : AppCompatActivity() {
                 side.equals("Right side", ignoreCase = true) -> SdkImages.Engine_Misc.Poi_ToRight.value
                 else -> -1
             }
+
+            val details = GemUtil.pairFormatLandmarkDetails(lm, true)
+
             ResultItem(
                 image = lm.imageAsBitmap(imageSize),
-                name = lm.name.orEmpty(),
-                description = GemUtil.getLandmarkDescription(lm, true),
+                name = details.first,
+                description = details.second,
                 distanceText = dist.first,
                 distanceUnit = dist.second,
                 sideImage = if (sideIconId >= 0) {

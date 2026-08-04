@@ -121,8 +121,10 @@ class MapSelectionInstrumentedTests {
 
     @Test
     fun centerOnRoutes(): Unit = runBlocking {
+        // The demo route is computed and presented automatically at startup; the details panel
+        // shows its summary once the computation has finished.
         delay(5000)
-        onView(withId(R.id.fly_to_routes_button)).perform(click())
+        onView(ViewMatchers.withSubstring("From London to Paris")).check(matches(isDisplayed()))
         assert(activityRes.routesList.size >= 2) { activityRes.routesList.size }
     }
 

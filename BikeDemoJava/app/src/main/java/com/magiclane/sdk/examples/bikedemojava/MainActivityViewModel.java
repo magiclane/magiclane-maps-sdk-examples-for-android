@@ -9,7 +9,13 @@ package com.magiclane.sdk.examples.bikedemojava;
 
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
+import com.magiclane.sdk.content.ContentStore;
+import com.magiclane.sdk.content.ContentStoreItem;
+import com.magiclane.sdk.core.EVoiceType;
 import com.magiclane.sdk.core.GenericCategories;
+import com.magiclane.sdk.core.SdkSettings;
+import com.magiclane.sdk.core.SoundPlayingService;
+import com.magiclane.sdk.core.Voice;
 import com.magiclane.sdk.places.Landmark;
 import com.magiclane.sdk.places.LandmarkCategory;
 import com.magiclane.sdk.routesandnavigation.EBikeProfile;
@@ -23,6 +29,26 @@ import java.util.Collections;
 import java.util.List;
 
 public class MainActivityViewModel extends ViewModel {
+
+    // Language set on the TTS engine (see MainActivity.onTTSPlayerInitialized).
+    public static final String TTS_LANGUAGE = "eng-USA";
+
+    // Name of the human voice bundled with the SDK, used as fallback when the
+    // TTS engine could not be initialized and no voice has been applied yet.
+    public static final String DEFAULT_HUMAN_VOICE_NAME = "Michael";
+
+    /** Snapshot of the voice currently applied to the SDK. */
+    public static class VoiceSelection {
+        public final boolean isTts;
+        public final String name;
+        public final String filename;
+
+        public VoiceSelection(boolean isTts, String name, String filename) {
+            this.isTts = isTts;
+            this.name = name;
+            this.filename = filename;
+        }
+    }
 
     public final MutableLiveData<List<SearchResultItem>> searchResultListLivedata = new MutableLiveData<>();
     public final MutableLiveData<Boolean> isElectricBikeProfile = new MutableLiveData<>(false);
@@ -58,12 +84,64 @@ public class MainActivityViewModel extends ViewModel {
         }).start();
     }
 
+    // Voice used for navigation / simulation instructions. The selection itself is held by the
+    // SDK (SdkSettings.voice); this LiveData mirrors it so the UI can react to changes.
+    public final MutableLiveData<VoiceSelection> currentVoice = new MutableLiveData<>(null);
+
+    // Human voices catalog from the content store; null until the first successful fetch.
+    public final MutableLiveData<List<ContentStoreItem>> voicesLivedata = new MutableLiveData<>(null);
+    public final ContentStore contentStore = new ContentStore();
+
+    public void refreshCurrentVoice() {
+        GemCall.INSTANCE.execute(() -> {
+            Voice voice = SdkSettings.INSTANCE.getVoice();
+            EVoiceType voiceType = voice != null ? voice.getType() : null;
+
+            VoiceSelection selection;
+            if (voiceType == EVoiceType.Computer) {
+                selection = new VoiceSelection(true, "", voice.getFilename() != null ? voice.getFilename() : "");
+            } else if (voiceType == EVoiceType.Human) {
+                String name = voice.getName();
+                selection = new VoiceSelection(
+                    false,
+                    name != null && !name.isEmpty() ? name : DEFAULT_HUMAN_VOICE_NAME,
+                    voice.getFilename() != null ? voice.getFilename() : ""
+                );
+            } else {
+                // No voice applied yet: reflect what MainActivity will apply once the
+                // TTS engine initialization outcome is known.
+                selection = new VoiceSelection(
+                    SoundPlayingService.INSTANCE.getTtsPlayerIsInitialized(),
+                    DEFAULT_HUMAN_VOICE_NAME,
+                    ""
+                );
+            }
+            currentVoice.postValue(selection);
+            return null;
+        });
+    }
+
+    public void selectTtsVoice() {
+        SoundPlayingService.INSTANCE.setTTSLanguage(TTS_LANGUAGE);
+        refreshCurrentVoice();
+    }
+
+    public void selectHumanVoice(ContentStoreItem item) {
+        GemCall.INSTANCE.execute(() -> {
+            String fileName = item.getFileName();
+            if (fileName != null && !fileName.isEmpty()) {
+                SdkSettings.INSTANCE.setVoiceByPath(fileName);
+            }
+            return null;
+        });
+        refreshCurrentVoice();
+    }
+
     public Landmark destination = null;
     public boolean isElectric = false;
     public EBikeProfile bikeProfile = EBikeProfile.City;
     public RoutePreferences routePreferences;
     private ElectricBikeProfile electricBikeProfile = null;
-    private final List<SettingsItem> settingsList = new ArrayList<>();
     private float hillsFactor = 5f;
     private float bikeWeight = 12f;
     private float bikerWeight = 70f;
@@ -96,8 +174,12 @@ public class MainActivityViewModel extends ViewModel {
         });
     }
 
-    public List<SettingsItem> getSettingsList() {
-        settingsList.clear();
+    public List<SettingsItem> getSettingsList(String voiceValue, Runnable onVoiceClicked) {
+        // Build a fresh list on every call: ListAdapter.submitList ignores a list with the
+        // same reference, and the Voice value can change between two calls.
+        List<SettingsItem> settingsList = new ArrayList<>();
+
+        settingsList.add(new SettingsTextItem("Voice", voiceValue, onVoiceClicked));
 
         settingsList.add(new SettingsSwitchItem("E-Bike", isElectric, this::setIsElectric));
 

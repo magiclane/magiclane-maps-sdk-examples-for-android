@@ -175,9 +175,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
-        // Use light (white) status bar symbols so they remain legible over the dark map / toolbar.
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
-
         setupTts()
         lanePanelHeight = resources.getDimension(R.dimen.lane_panel_height).toInt()
 
@@ -379,8 +376,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     }
 
     /**
-     * Computes the rectangle of the map that is not covered by the toolbar or the navigation
-     * panels. The Magic Lane logo and other map decorations are kept inside this rectangle.
+     * Computes the rectangle of the map that is not covered by the navigation panels. The Magic
+     * Lane logo and other map decorations are kept inside this rectangle.
      */
     private fun getFocusViewport(): Rect {
         val root = binding.root
@@ -392,8 +389,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-        // The toolbar always spans the top of the screen, so the map content starts below it.
-        val belowToolbar = max(binding.toolbar.bottom, insets?.top ?: 0)
+        // The map content starts below the top system bar (status bar / display cutout).
+        val topInset = insets?.top ?: 0
 
         return if (isLandscape) {
             // Guard against root dimensions still reflecting the previous orientation.
@@ -403,15 +400,15 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             // Panels are docked to the left, so keep the focus area to the right of the top panel.
             val left = if (binding.topPanel.isVisible) binding.topPanel.right else insets?.left ?: 0
             val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
-            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(belowToolbar)
-            Rect(left, belowToolbar, right, bottom)
+            val bottom = (h - (insets?.bottom ?: 0)).coerceAtLeast(topInset)
+            Rect(left, topInset, right, bottom)
         } else {
             val w = min(width, height)
             val h = max(width, height)
 
             val left = insets?.left ?: 0
             val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
-            val top = if (binding.topPanel.isVisible) binding.topPanel.bottom else belowToolbar
+            val top = if (binding.topPanel.isVisible) binding.topPanel.bottom else topInset
             // The lane panel is intentionally ignored here; only the bottom panel bounds the area.
             val bottom = if (binding.bottomPanel.isVisible) {
                 binding.bottomPanel.top.coerceAtLeast(top)

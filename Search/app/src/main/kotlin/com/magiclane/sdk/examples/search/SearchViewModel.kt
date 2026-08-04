@@ -238,10 +238,13 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         return landmarks.map { landmark ->
             val meters = reference?.let { landmark.coordinates?.getDistance(it)?.toInt() ?: 0 } ?: 0
             val dist = GemUtil.getDistText(meters, EUnitSystem.Metric, true)
+
+            val details = GemUtil.pairFormatLandmarkDetails(landmark, true)
+
             SearchItem(
                 image = landmark.imageAsBitmap(imageSize),
-                name = landmark.name.toString(),
-                description = GemUtil.getLandmarkDescription(landmark, true),
+                name = details.first,
+                description = details.second,
                 distance = dist.first,
                 unit = dist.second,
             )

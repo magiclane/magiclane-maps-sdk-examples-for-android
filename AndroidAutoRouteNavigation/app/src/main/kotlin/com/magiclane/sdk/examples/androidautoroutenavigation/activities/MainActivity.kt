@@ -62,7 +62,22 @@ class MainActivity : BaseActivity() {
         clearSdkListeners()
         super.onDestroy()
         controller.onDestroy()
+
+        // Under instrumentation the whole app runs inside the test process, so calling
+        // exitProcess(0) here would tear down the test runner mid-teardown (reported as
+        // "Process crashed"). The test harness owns the process lifecycle in that case.
+        if (isRunningUnderTest()) return
+
         exitProcess(0)
+    }
+
+    // True only when running under an instrumentation test: the androidx.test runtime is on the
+    // classpath during instrumented test runs, never in a normal app launch.
+    private fun isRunningUnderTest(): Boolean = try {
+        Class.forName("androidx.test.platform.app.InstrumentationRegistry")
+        true
+    } catch (_: ClassNotFoundException) {
+        false
     }
 
     private fun registerSdkListeners() {

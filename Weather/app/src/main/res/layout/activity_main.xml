@@ -145,9 +145,71 @@
                         android:gravity="start|center_vertical"
                         android:text="@string/hourly_forecast" />
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/warnings_button"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="start|center_vertical"
+                        android:text="@string/warnings" />
+
                 </LinearLayout>
 
             </androidx.core.widget.NestedScrollView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/warnings_container"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/background"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/warnings_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/big_padding"
+                android:layout_marginEnd="@dimen/big_padding"
+                android:text="@string/weather_warnings"
+                android:textColor="@color/on_background"
+                android:textSize="@dimen/big_text_size"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="@id/warnings_close_button"
+                app:layout_constraintEnd_toStartOf="@id/warnings_close_button"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/warnings_close_button" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/warnings_close_button"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_margin="@dimen/big_padding"
+                app:icon="@drawable/cancel_24px"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="40dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/warnings_list"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/warnings_close_button" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -17,7 +17,9 @@ import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import com.magiclane.sdk.core.SoundPlayingService;
 import com.magiclane.sdk.examples.bikedemojava.databinding.FragmentBikeSettingsBinding;
+import java.util.List;
 
 public class BikeSettingsFragment extends Fragment {
 
@@ -37,15 +39,42 @@ public class BikeSettingsFragment extends Fragment {
 
         getBinding().settingsList.setAdapter(settingsAdapter);
         getBinding().settingsList.setLayoutManager(new LinearLayoutManager(requireContext()));
-        settingsAdapter.submitList(viewModel.getSettingsList());
+        settingsAdapter.submitList(buildSettingsList());
 
-        getBinding().bikeSettingsToolbar.setNavigationOnClickListener(v -> {
-            requireActivity().getSupportFragmentManager().beginTransaction()
-                    .remove(BikeSettingsFragment.this)
-                    .commit();
-        });
+        getBinding().bikeSettingsToolbar.setNavigationOnClickListener(v -> requireActivity().getSupportFragmentManager().beginTransaction()
+                .remove(BikeSettingsFragment.this)
+                .commit());
+
+        // Keep the Voice row in sync with the voice applied to the SDK.
+        viewModel.currentVoice.observe(getViewLifecycleOwner(), selection ->
+            settingsAdapter.submitList(buildSettingsList()));
+        viewModel.refreshCurrentVoice();
 
         return getBinding().getRoot();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mBinding = null;
+    }
+
+    private List<SettingsItem> buildSettingsList() {
+        return viewModel.getSettingsList(currentVoiceDisplayName(), () ->
+            requireActivity().getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, new VoiceFragment())
+                .addToBackStack(null)
+                .commit());
+    }
+
+    private String currentVoiceDisplayName() {
+        MainActivityViewModel.VoiceSelection selection = viewModel.currentVoice.getValue();
+        if (selection == null) {
+            return SoundPlayingService.INSTANCE.getTtsPlayerIsInitialized()
+                ? getString(R.string.text_to_speech)
+                : MainActivityViewModel.DEFAULT_HUMAN_VOICE_NAME;
+        }
+        return selection.isTts ? getString(R.string.text_to_speech) : selection.name;
     }
 }
 

@@ -25,6 +25,7 @@ dependencies {
     implementation(shared.androidx.core.ktx)
     implementation(shared.androidx.appcompat)
     implementation(shared.androidx.activity.ktx)
+    implementation(shared.androidx.recyclerview)
     implementation(shared.androidx.espresso.idlingresource)
     implementation(shared.material)
 

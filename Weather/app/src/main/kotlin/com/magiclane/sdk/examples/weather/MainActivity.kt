@@ -29,20 +29,33 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
 import androidx.test.espresso.idling.CountingIdlingResource
+import com.magiclane.sdk.ECoverageGeometry
+import com.magiclane.sdk.OnWeatherForecastCompleted
+import com.magiclane.sdk.WeatherService
+import com.magiclane.sdk.WeatherWarning
 import com.magiclane.sdk.core.EOffboardListenerStatus
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.ImageDatabase
+import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.Rect
+import com.magiclane.sdk.core.RectangleGeographicArea
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.core.SdkSettings
+import com.magiclane.sdk.core.Time
+import com.magiclane.sdk.core.TimeDistanceCoordinate
+import com.magiclane.sdk.core.TimezoneResult
+import com.magiclane.sdk.core.TimezoneService
 import com.magiclane.sdk.core.Xy
 import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
 import com.magiclane.sdk.d3scene.EHighlightOptions
+import com.magiclane.sdk.d3scene.EMarkerType
 import com.magiclane.sdk.d3scene.HighlightRenderSettings
 import com.magiclane.sdk.d3scene.MapSceneObject
 import com.magiclane.sdk.d3scene.MapView
+import com.magiclane.sdk.d3scene.MarkerCollection
+import com.magiclane.sdk.d3scene.MarkerCollectionRenderSettings
 import com.magiclane.sdk.examples.weather.databinding.ActivityMainBinding
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.EAddressField
@@ -55,6 +68,10 @@ import com.magiclane.sdk.util.PermissionsHelper
 import com.magiclane.sdk.util.SdkCall
 import com.magiclane.sdk.util.SdkImages
 import com.magiclane.sdk.util.Util
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
@@ -67,7 +84,12 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var portraitConstraintSet: ConstraintSet
+    private lateinit var warningsAdapter: WarningsListAdapter
     private var imageSize = 0
+    private var weatherService: WeatherService? = null
+
+    // Coverage polygons currently drawn on the map, one collection per displayed warning.
+    private val warningCollections = mutableListOf<Pair<WarningItem, MarkerCollection>>()
 
     // region OVERRIDDEN METHODS
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,14 +104,18 @@ class MainActivity : AppCompatActivity() {
 
         portraitConstraintSet = ConstraintSet().also { it.clone(binding.root as ConstraintLayout) }
 
+        warningsAdapter = WarningsListAdapter { warningItem -> highlightWarningOnMap(warningItem) }
+        binding.warningsList.adapter = warningsAdapter
+        binding.warningsCloseButton.setOnClickListener { closeWarningsPanel() }
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
-            updateFollowGpsButtonBottomMargin(binding.locationDetailsContainer.isVisible)
+            updateFollowGpsButtonBottomMargin()
             insets
         }
 
         binding.root.post {
             applyOrientationLayout()
-            updateFollowGpsButtonBottomMargin(binding.locationDetailsContainer.isVisible)
+            updateFollowGpsButtonBottomMargin()
         }
 
         registerSdkListeners()
@@ -99,13 +125,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         onBackPressedDispatcher.addCallback(this) {
-            if (binding.locationDetailsContainer.isVisible) {
-                binding.locationDetailsContainer.visibility = View.GONE
-                updateFollowGpsButtonBottomMargin(isDetailsVisible = false)
-                updateFocusViewport()
-                deactivateHighlights()
-            } else {
-                finish()
+            when {
+                binding.warningsContainer.isVisible -> closeWarningsPanel()
+                binding.locationDetailsContainer.isVisible -> {
+                    binding.locationDetailsContainer.visibility = View.GONE
+                    updateFollowGpsButtonBottomMargin()
+                    updateFocusViewport()
+                    deactivateHighlights()
+                }
+                else -> finish()
             }
         }
     }
@@ -121,7 +149,7 @@ class MainActivity : AppCompatActivity() {
         super.onConfigurationChanged(newConfig)
         binding.root.post {
             applyOrientationLayout()
-            updateFollowGpsButtonBottomMargin(binding.locationDetailsContainer.isVisible)
+            updateFollowGpsButtonBottomMargin()
         }
     }
 
@@ -338,6 +366,10 @@ class MainActivity : AppCompatActivity() {
         onViewClosed: (() -> Unit)? = null,
     ) = Util.postOnMain {
         if (!isActivityAlive()) return@postOnMain
+        if (binding.warningsContainer.isVisible) {
+            binding.warningsContainer.visibility = View.GONE
+            removeWarningPolygons()
+        }
         binding.apply {
             name.text = text
             if (description.isNotEmpty()) {
@@ -359,14 +391,14 @@ class MainActivity : AppCompatActivity() {
 
             closeButton.setOnClickListener {
                 locationDetailsContainer.visibility = View.GONE
-                updateFollowGpsButtonBottomMargin(isDetailsVisible = false)
+                updateFollowGpsButtonBottomMargin()
                 updateFocusViewport()
                 onViewClosed?.invoke()
             }
 
             locationDetailsContainer.visibility = View.VISIBLE
             root.post {
-                updateFollowGpsButtonBottomMargin(isDetailsVisible = true)
+                updateFollowGpsButtonBottomMargin()
                 updateFocusViewport()
                 onViewCreated?.invoke()
             }
@@ -385,10 +417,14 @@ class MainActivity : AppCompatActivity() {
     private fun setupForecastButtons(coordinates: Coordinates, name: String) {
         val intent = Intent(this@MainActivity, ForecastActivity::class.java)
         SdkCall.execute {
-            intent.putExtra(ForecastActivity.LATITUDE_ARG_ID, coordinates.latitude)
-            intent.putExtra(ForecastActivity.LONGITUDE_ARG_ID, coordinates.longitude)
+            // The received Coordinates is backed by native memory owned by the transient cursor
+            // selection result, which may be released before the click listeners below run.
+            // Copy it into a standalone, Kotlin-owned object for any deferred use.
+            val ownedCoordinates = Coordinates(coordinates.latitude, coordinates.longitude)
+            intent.putExtra(ForecastActivity.LATITUDE_ARG_ID, ownedCoordinates.latitude)
+            intent.putExtra(ForecastActivity.LONGITUDE_ARG_ID, ownedCoordinates.longitude)
             val mapView = binding.gemSurfaceView.mapView
-            val cityName = if (mapView != null) getCityName(mapView, coordinates).ifEmpty { name } else name
+            val cityName = if (mapView != null) getCityName(mapView, ownedCoordinates).ifEmpty { name } else name
             binding.apply {
                 forecastButton.setOnClickListener {
                     intent.putExtra(ForecastActivity.FORECAST_TYPE_ID, EForecastType.CURRENT.ordinal)
@@ -403,8 +439,184 @@ class MainActivity : AppCompatActivity() {
                     intent.putExtra(ForecastActivity.FORECAST_TYPE_ID, EForecastType.DAILY.ordinal)
                     startActivity(intent)
                 }
+                warningsButton.setOnClickListener {
+                    requestWeatherWarnings(ownedCoordinates)
+                }
             }
         }
+    }
+
+    private fun requestWeatherWarnings(coordinates: Coordinates) {
+        binding.progressBar.visibility = View.VISIBLE
+        SdkCall.execute {
+            val service = weatherService ?: WeatherService().also { weatherService = it }
+
+            val listener: OnWeatherForecastCompleted = { results, errorCode, _ ->
+                if (errorCode != GemError.NoError) {
+                    runOnAliveUi {
+                        binding.progressBar.visibility = View.GONE
+                        showDialog(SdkCall.runSynced { GemError.getMessage(errorCode, this) } ?: "")
+                    }
+                } else {
+                    val warningItems = SdkCall.execute {
+                        results.firstOrNull()?.warnings?.let { buildWarningItems(it, coordinates) }
+                    } ?: emptyList()
+                    runOnAliveUi {
+                        binding.progressBar.visibility = View.GONE
+                        if (warningItems.isEmpty()) {
+                            showDialog(getString(R.string.no_weather_warnings), DialogType.INFO)
+                        } else {
+                            showWarningsPanel(warningItems)
+                        }
+                    }
+                }
+            }
+
+            // The forecast is requested for a single sample: the selected location at the current time.
+            val samples = arrayListOf(
+                TimeDistanceCoordinate().apply {
+                    this.coordinates = coordinates
+                },
+            )
+
+            val errorCode = service.getForecast(samples, onCompleted = listener, geometry = ECoverageGeometry.Polygons)
+            if (errorCode != GemError.NoError) {
+                runOnAliveUi {
+                    binding.progressBar.visibility = View.GONE
+                    showDialog(SdkCall.runSynced { GemError.getMessage(errorCode, this) } ?: "")
+                }
+            }
+        }
+    }
+
+    private fun buildWarningItems(warnings: List<WeatherWarning>, coordinates: Coordinates): List<WarningItem> {
+        // Warning timestamps are UTC epochs; shift them by the location's timezone offset
+        // and format with a GMT formatter, as done for the forecast timestamps.
+        val formatter = SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()).apply {
+            timeZone = TimeZone.getTimeZone("GMT")
+        }
+        val timeOffset = getUTCOffsetInMilliSeconds(coordinates) ?: 0
+        return warnings.map { warning ->
+            val title = listOf(warning.name, warning.phenomenon, warning.type)
+                .firstOrNull { !it.isNullOrEmpty() } ?: getString(R.string.weather_warning)
+            val severity = listOf(warning.severity, warning.phenomenon)
+                .filter { !it.isNullOrEmpty() }
+                .joinToString(" • ")
+            val period = listOf(warning.startTimestamp, warning.endTimestamp)
+                .filter { it?.isValid() == true }
+                .joinToString(" - ") { formatter.format(Date(it!!.asLong() + timeOffset)) }
+            WarningItem(
+                title = title,
+                severity = severity,
+                period = period,
+                description = warning.description ?: "",
+                color = warning.color?.argbValue ?: Rgba(255, 98, 0, 255).argbValue,
+                warning = warning,
+            )
+        }
+    }
+
+    private fun getUTCOffsetInMilliSeconds(coordinates: Coordinates): Int? = SdkCall.execute {
+        val timezoneResult = TimezoneResult()
+        val time = Time()
+
+        time.setUniversalTime()
+
+        TimezoneService.getTimezoneInfoWithCoordinates(
+            timezoneResult,
+            coordinates,
+            time,
+            ProgressListener(),
+        )
+
+        timezoneResult.offset * 1000
+    }
+
+    private fun showWarningsPanel(items: List<WarningItem>) {
+        // The warnings panel is stacked on top of the location details panel, which stays
+        // visible underneath (declared earlier in the layout) and is revealed again when
+        // the warnings panel closes.
+        warningsAdapter.clearSelection()
+        warningsAdapter.submitList(items)
+        binding.warningsList.scrollToPosition(0)
+        binding.warningsContainer.visibility = View.VISIBLE
+        binding.root.post {
+            updateFollowGpsButtonBottomMargin()
+            updateFocusViewport()
+            // Draw the polygons only after the layout pass so the centering
+            // uses the map space left free by the visible panel.
+            showWarningPolygons(items)
+        }
+    }
+
+    private fun closeWarningsPanel() {
+        binding.warningsContainer.visibility = View.GONE
+        removeWarningPolygons()
+        // The location details panel underneath becomes the visible panel again; its pin
+        // stays on the map until that panel is closed too.
+        updateFollowGpsButtonBottomMargin()
+        updateFocusViewport()
+    }
+
+    private fun removeWarningPolygons() {
+        if (warningCollections.isEmpty()) return
+        val collections = warningCollections.map { it.second }
+        warningCollections.clear()
+        SdkCall.execute {
+            val markers = binding.gemSurfaceView.mapView?.preferences?.markers
+            collections.forEach { markers?.removeCollection(it) }
+        }
+    }
+
+    // Draws the coverage polygons of all listed warnings and centers the map
+    // on the bounding geographic area of the whole set.
+    private fun showWarningPolygons(items: List<WarningItem>) = SdkCall.execute {
+        val mapView = binding.gemSurfaceView.mapView ?: return@execute
+        removeWarningPolygons()
+
+        val markers = mapView.preferences?.markers ?: return@execute
+        var allWarningsArea: RectangleGeographicArea? = null
+
+        for (item in items) {
+            val coverage = item.warning.coverage
+            if (coverage.isNullOrEmpty()) continue
+
+            val collection = MarkerCollection(EMarkerType.Polygon, item.title)
+            coverage.forEach { marker -> collection.add(marker) }
+
+            val warningColor = item.warning.color ?: Rgba(255, 98, 0, 255)
+            val settings = MarkerCollectionRenderSettings().apply {
+                polygonFillColor = Rgba(warningColor.red, warningColor.green, warningColor.blue, 110)
+                polylineInnerColor = Rgba(warningColor.red, warningColor.green, warningColor.blue, 255)
+                polylineInnerSize = 1.5
+            }
+
+            markers.add(collection, settings)
+            warningCollections.add(item to collection)
+
+            collection.area?.takeIf { !it.isEmpty() }?.let { area ->
+                val union = allWarningsArea
+                if (union == null) allWarningsArea = area else union.setUnion(area)
+            }
+        }
+
+        allWarningsArea?.let { centerOnArea(it) }
+    }
+
+    // Centers the map on the polygons of the tapped warning; they are already drawn.
+    private fun highlightWarningOnMap(item: WarningItem) = SdkCall.execute {
+        val collection = warningCollections.firstOrNull { it.first === item }?.second ?: return@execute
+        collection.area?.takeIf { !it.isEmpty() }?.let { centerOnArea(it) }
+    }
+
+    // Must be called from the SDK thread.
+    private fun centerOnArea(area: RectangleGeographicArea) {
+        binding.gemSurfaceView.mapView?.centerOnRectArea(
+            area,
+            -1,
+            getMapFreeSpace().rect,
+            Animation(EAnimation.Linear, 900),
+        )
     }
 
     private fun showDialog(text: String, type: DialogType = DialogType.ERROR, onDismiss: (() -> Unit)? = null) {
@@ -499,6 +711,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // The location details and the weather warnings panels share the same screen area,
+    // so at most one of them is visible at a time.
+    private fun visiblePanel(): View? = when {
+        binding.warningsContainer.isVisible -> binding.warningsContainer
+        binding.locationDetailsContainer.isVisible -> binding.locationDetailsContainer
+        else -> null
+    }
+
     private fun getMapFreeSpace(): MapFreeSpace {
         val mapWidth = binding.gemSurfaceView.width
         val mapHeight = binding.gemSurfaceView.height
@@ -531,10 +751,10 @@ class MainActivity : AppCompatActivity() {
             (mapHeight - 1).coerceAtLeast(0),
         )
 
+        val panel = visiblePanel()
         if (isLandscape) {
-            left = if (binding.locationDetailsContainer.isVisible) {
-                (binding.locationDetailsContainer.right - binding.gemSurfaceView.left)
-                    .coerceAtLeast(leftInset)
+            left = if (panel != null) {
+                (panel.right - binding.gemSurfaceView.left).coerceAtLeast(leftInset)
             } else {
                 leftInset
             }
@@ -543,8 +763,8 @@ class MainActivity : AppCompatActivity() {
         } else {
             left = leftInset.coerceIn(0, (mapWidth - 1).coerceAtLeast(0))
             right = (mapWidth - rightInset).coerceIn(left + 1, mapWidth)
-            val bottomLimitRaw = if (binding.locationDetailsContainer.isVisible) {
-                binding.locationDetailsContainer.top - binding.gemSurfaceView.top
+            val bottomLimitRaw = if (panel != null) {
+                panel.top - binding.gemSurfaceView.top
             } else {
                 mapHeight
             }
@@ -560,7 +780,7 @@ class MainActivity : AppCompatActivity() {
         return MapFreeSpace(rect, Xy(rect.x + rect.width / 2, rect.y + rect.height / 2))
     }
 
-    private fun updateFollowGpsButtonBottomMargin(isDetailsVisible: Boolean) {
+    private fun updateFollowGpsButtonBottomMargin() {
         val params = binding.followGpsButton.layoutParams as? ConstraintLayout.LayoutParams ?: return
         val bigPadding = resources.getDimensionPixelSize(R.dimen.big_padding)
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -568,13 +788,23 @@ class MainActivity : AppCompatActivity() {
             ?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
         val bottomInset = insets?.bottom ?: 0
         val rightInset = insets?.right ?: 0
+        val panel = visiblePanel()
         // In landscape the FAB sits above the system bar regardless of panel visibility;
-        // in portrait it sits just above the bottom sheet when it's open.
-        val targetBottomMargin = if (!isLandscape && isDetailsVisible) bigPadding else bottomInset + bigPadding
+        // in portrait it sits just above the visible bottom panel when one is open.
+        val targetBottomMargin = if (!isLandscape && panel != null) bigPadding else bottomInset + bigPadding
         val targetEndMargin = rightInset + bigPadding
+        var changed = false
+        if (!isLandscape && panel != null && params.bottomToTop != panel.id) {
+            params.bottomToTop = panel.id
+            params.bottomToBottom = ConstraintLayout.LayoutParams.UNSET
+            changed = true
+        }
         if (params.bottomMargin != targetBottomMargin || params.marginEnd != targetEndMargin) {
             params.bottomMargin = targetBottomMargin
             params.marginEnd = targetEndMargin
+            changed = true
+        }
+        if (changed) {
             binding.followGpsButton.layoutParams = params
         }
     }
@@ -583,18 +813,21 @@ class MainActivity : AppCompatActivity() {
         binding.gemSurfaceView.mapView?.apply {
             val isFollowingPosition = SdkCall.execute { isFollowingPosition() }
             binding.followGpsButton.visibility = if (isFollowingPosition == true) View.GONE else View.VISIBLE
-            updateFollowGpsButtonBottomMargin(binding.locationDetailsContainer.isVisible)
+            updateFollowGpsButtonBottomMargin()
 
             onExitFollowingPosition = {
                 binding.followGpsButton.visibility = View.VISIBLE
-                updateFollowGpsButtonBottomMargin(binding.locationDetailsContainer.isVisible)
+                updateFollowGpsButtonBottomMargin()
             }
 
             onEnterFollowingPosition = {
                 binding.followGpsButton.visibility = View.GONE
+                if (binding.warningsContainer.isVisible) {
+                    closeWarningsPanel()
+                }
                 if (binding.locationDetailsContainer.isVisible) {
                     binding.locationDetailsContainer.visibility = View.GONE
-                    updateFollowGpsButtonBottomMargin(isDetailsVisible = false)
+                    updateFollowGpsButtonBottomMargin()
                     updateFocusViewport()
                     deactivateHighlights()
                 }
@@ -628,34 +861,35 @@ class MainActivity : AppCompatActivity() {
 
         // ConstraintSet.applyTo() resets view visibility, so save and restore it manually.
         val panelVis = binding.locationDetailsContainer.visibility
+        val warningsVis = binding.warningsContainer.visibility
         val fabVis = binding.followGpsButton.visibility
 
         ConstraintSet().apply {
             clone(portraitConstraintSet)
             if (isLandscape) {
+                val panelId = R.id.location_details_container
                 val panelWidth = (resources.displayMetrics.widthPixels * 0.45f).toInt()
-                constrainWidth(R.id.location_details_container, panelWidth)
-                constrainHeight(R.id.location_details_container, 0)
-                connect(
-                    R.id.location_details_container,
-                    ConstraintSet.START,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.START,
-                    0,
-                )
-                connect(
-                    R.id.location_details_container,
-                    ConstraintSet.BOTTOM,
-                    ConstraintSet.PARENT_ID,
-                    ConstraintSet.BOTTOM,
-                    0,
-                )
-                connect(R.id.location_details_container, ConstraintSet.TOP, R.id.toolbar, ConstraintSet.BOTTOM, 0)
-                clear(R.id.location_details_container, ConstraintSet.END)
+                constrainWidth(panelId, panelWidth)
+                constrainHeight(panelId, 0)
+                connect(panelId, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, 0)
+                connect(panelId, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0)
+                connect(panelId, ConstraintSet.TOP, R.id.toolbar, ConstraintSet.BOTTOM, 0)
+                clear(panelId, ConstraintSet.END)
 
                 clear(R.id.follow_gps_button, ConstraintSet.BOTTOM)
                 connect(R.id.follow_gps_button, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0)
             }
+
+            // The warnings panel exactly overlaps the location details panel in both
+            // orientations: pin all four edges to it and let the size match.
+            val warningsId = R.id.warnings_container
+            val detailsId = R.id.location_details_container
+            connect(warningsId, ConstraintSet.START, detailsId, ConstraintSet.START, 0)
+            connect(warningsId, ConstraintSet.END, detailsId, ConstraintSet.END, 0)
+            connect(warningsId, ConstraintSet.TOP, detailsId, ConstraintSet.TOP, 0)
+            connect(warningsId, ConstraintSet.BOTTOM, detailsId, ConstraintSet.BOTTOM, 0)
+            constrainWidth(warningsId, 0)
+            constrainHeight(warningsId, 0)
         }.applyTo(rootLayout)
 
         val scrollParams = binding.forecastButtonsLayout.layoutParams as ConstraintLayout.LayoutParams
@@ -663,6 +897,7 @@ class MainActivity : AppCompatActivity() {
         binding.forecastButtonsLayout.layoutParams = scrollParams
 
         binding.locationDetailsContainer.visibility = panelVis
+        binding.warningsContainer.visibility = warningsVis
         binding.followGpsButton.visibility = fabVis
 
         updateFocusViewport()
@@ -684,12 +919,10 @@ class MainActivity : AppCompatActivity() {
 
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
+        val panel = visiblePanel()
+
         return if (isLandscape) {
-            val left = if (binding.locationDetailsContainer.isVisible) {
-                binding.locationDetailsContainer.right
-            } else {
-                insets?.left ?: 0
-            }
+            val left = panel?.right ?: (insets?.left ?: 0)
             val top = binding.toolbar.bottom
             val right = (width - (insets?.right ?: 0)).coerceAtLeast(left)
             val bottom = (height - (insets?.bottom ?: 0)).coerceAtLeast(top)
@@ -698,11 +931,7 @@ class MainActivity : AppCompatActivity() {
             val left = insets?.left ?: 0
             val right = (width - (insets?.right ?: 0)).coerceAtLeast(left)
             val top = binding.toolbar.bottom
-            val bottom = if (binding.locationDetailsContainer.isVisible) {
-                binding.locationDetailsContainer.top.coerceAtLeast(top)
-            } else {
-                (height - (insets?.bottom ?: 0)).coerceAtLeast(top)
-            }
+            val bottom = panel?.top?.coerceAtLeast(top) ?: (height - (insets?.bottom ?: 0)).coerceAtLeast(top)
             Rect(left, top, right, bottom)
         }
     }

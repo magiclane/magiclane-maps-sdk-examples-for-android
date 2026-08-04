@@ -7,9 +7,10 @@
 
 package com.magiclane.sdk.examples.weather
 
+import android.app.Application
 import android.graphics.Bitmap
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import com.magiclane.sdk.EDaylight
 import com.magiclane.sdk.OnWeatherForecastCompleted
 import com.magiclane.sdk.WeatherService
@@ -28,7 +29,7 @@ import java.util.Locale
 import java.util.TimeZone
 import kotlin.math.roundToInt
 
-class ForecastActivityViewModel : ViewModel() {
+class ForecastActivityViewModel(application: Application) : AndroidViewModel(application) {
     init
     {
         // initialise the weather service
@@ -54,12 +55,13 @@ class ForecastActivityViewModel : ViewModel() {
     var feelsLike = ""
 
     fun getForecastList(forecastType: EForecastType, coordinates: Coordinates) = SdkCall.execute {
-        listener = { results, err, msg ->
+        listener = { results, err, _ ->
             if (err == GemError.NoError) {
                 SdkCall.execute {
                     // in this example we require the weather forecast for only one location
-                    // results[0].forecast holds the list of forecast items for the selected landmark
-                    results[0].forecast?.let {
+                    // result.forecast holds the list of forecast items for the selected landmark
+                    val result = results.firstOrNull() ?: return@execute
+                    result.forecast?.let {
                         val list = mutableListOf<ForecastItem>()
                         // map the conditions list to a list of our data object, ForecastItem
                         val formatter = SimpleDateFormat("HH:mm", Locale.UK)
@@ -72,7 +74,7 @@ class ForecastActivityViewModel : ViewModel() {
                                 EForecastType.CURRENT ->
                                     {
                                         val forecastItemTimestamp = forecastItem.timestamp?.asLong() ?: 0L
-                                        updatedAt = results[0].updated?.run {
+                                        updatedAt = result.updated?.run {
                                             "Updated at: " + formatter.format(
                                                 Date(asLong() + timeOffset),
                                             )
@@ -224,13 +226,13 @@ class ForecastActivityViewModel : ViewModel() {
                     }
                 }
             } else {
-                errorMessage.postValue(msg)
+                errorMessage.postValue(SdkCall.runSynced { GemError.getMessage(err, getApplication()) } ?: "")
             }
         }
         val coords = CoordinatesList().apply { add(coordinates) }
         // get the type of forecast based on the activity's argument
-        when (forecastType) {
-            EForecastType.NOT_ASSIGNED -> null
+        val errorCode = when (forecastType) {
+            EForecastType.NOT_ASSIGNED -> GemError.NoError
             // retrieves a list of lists comprised of a single item with in depth details about the weather for each location
             EForecastType.CURRENT -> weatherService?.getCurrent(coords, onCompleted = listener)
             // retrieves a list of lists comprised of multiple items with a few details about the weather for each location
@@ -245,6 +247,10 @@ class ForecastActivityViewModel : ViewModel() {
                 coords,
                 onCompleted = listener,
             )
+        } ?: GemError.General // null means the weather service failed to initialise
+        // A non-zero code means the request was rejected upfront and the listener will never fire.
+        if (errorCode != GemError.NoError) {
+            errorMessage.postValue(GemError.getMessage(errorCode, getApplication()))
         }
     }
 

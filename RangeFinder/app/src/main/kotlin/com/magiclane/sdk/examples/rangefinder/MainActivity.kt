@@ -543,7 +543,27 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            routingService.calculateRoute(arrayListOf(Landmark("London", 51.5073204, -0.1276475)))
+            // calculateRoute returns synchronously whether the calculation could
+            // be started; the actual result arrives asynchronously in onCompleted.
+            val error = routingService.calculateRoute(
+                arrayListOf(Landmark("London", 51.5073204, -0.1276475)),
+            )
+            if (error != GemError.NoError) {
+                // The calculation could not even be started, so onStarted/onCompleted
+                // will not fire. Undo the optimistically added range profile, report
+                // the failure and release the idling resource so tests don't hang.
+                val message = GemError.getMessage(error, this@MainActivity)
+                runOnUiThread {
+                    enableButtons(true)
+                    if (viewModel.listOfRangeProfiles.isNotEmpty()) {
+                        viewModel.listOfRangeProfiles.removeAt(
+                            viewModel.listOfRangeProfiles.size - 1,
+                        )
+                    }
+                    showDialog(resources.getString(R.string.service_error, message))
+                    EspressoIdlingResource.decrement()
+                }
+            }
         }
     }
 

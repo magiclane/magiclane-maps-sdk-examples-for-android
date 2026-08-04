@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="big_padding">10dp</dimen>
+    <dimen name="standard_text_size">16sp</dimen>
+    <dimen name="big_text_size">20sp</dimen>
+    <dimen name="small_padding">4dp</dimen>
+    <dimen name="padding_40">40dp</dimen>
+
+    <!-- Free space kept around the presented route/segment (≈5 mm, as in Magic Earth). -->
+    <dimen name="map_free_space_padding">24dp</dimen>
+
+    <!-- Gap kept between the bottom routes panel and the navigation bar. -->
+    <dimen name="bottom_panel_bottom_padding">4dp</dimen>
+
+    <!-- Round map action buttons (route description / settings) -->
+    <dimen name="round_button_size">48dp</dimen>
+    <!-- Half of round_button_size: forces the filled background into a circle. -->
+    <dimen name="round_button_corner_radius">24dp</dimen>
+
+    <!-- Horizontal routes list chips -->
+    <dimen name="chip_corner_radius">12dp</dimen>
+    <dimen name="chip_stroke_width">2dp</dimen>
+    <dimen name="segment_icon_size">24dp</dimen>
+    <dimen name="segment_separator_size">18dp</dimen>
+    <dimen name="badge_corner_radius">4dp</dimen>
+
+    <!-- Segment strip texts are dp on purpose: the strip must not grow with the OS font scale. -->
+    <dimen name="segment_badge_text_size">12dp</dimen>
+    <dimen name="segment_walk_value_text_size">12dp</dimen>
+    <dimen name="segment_walk_unit_text_size">10dp</dimen>
+
+    <!-- Settings -->
+    <dimen name="settings_card_corner_radius">16dp</dimen>
+
+    <!-- Route description station rail (connecting line + station rings) -->
+    <dimen name="rail_width">20dp</dimen>
+    <dimen name="rail_line_width">3dp</dimen>
+    <dimen name="rail_dot_size">4dp</dimen>
+    <dimen name="rail_dot_gap">9dp</dimen>
+    <dimen name="station_ring_size">14dp</dimen>
+    <dimen name="rail_stop_dot_radius">2.5dp</dimen>
+    <!-- Distance from the row top to the station ring, aligning it with the station name. -->
+    <dimen name="rail_top_height">14dp</dimen>
+
+    <dimen name="medium_text_size">14sp</dimen>
+    <dimen name="small_text_size">12sp</dimen>
+
+    <!-- Turn icon of an expanded pedestrian segment's instruction row. -->
+    <dimen name="walk_instruction_icon_size">28dp</dimen>
+</resources>

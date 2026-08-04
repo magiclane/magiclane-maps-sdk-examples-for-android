@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
@@ -76,6 +77,10 @@ import kotlin.system.exitProcess
 // Fraction of the screen width the info panel occupies when shown as a bottom-left card in landscape.
 private const val LANDSCAPE_PANEL_WIDTH_FRACTION = 0.45f
 
+// Fraction of the screen the public transport station panel occupies: its height in portrait
+// (full width bottom panel) and its width in landscape (left-side card spanning the full height).
+private const val PT_STATION_PANEL_FRACTION = 0.5f
+
 // Predefined margin kept between the follow-GPS button and the screen edges (added on top of the
 // system bar / display cutout insets).
 private val GPS_BUTTON_MARGIN = 8.dp
@@ -112,11 +117,13 @@ class MainActivity : ComponentActivity() {
         registerSdkListeners()
 
         onBackPressedDispatcher.addCallback(this) {
-            // Back press first dismisses the details panel (if shown), otherwise closes the app.
-            if (viewModel.isBottomViewVisible()) {
-                viewModel.hideBottomView(getGemSurfaceView()?.mapView)
-            } else {
-                finish()
+            // Back press first closes the public transport trip view, then the station view,
+            // then dismisses the details panel (if shown), otherwise closes the app.
+            when {
+                viewModel.ptTripViewTrips != null -> viewModel.closePublicTransportTripView()
+                viewModel.ptStationInfo != null -> viewModel.closePublicTransportStationView()
+                viewModel.isBottomViewVisible() -> viewModel.hideBottomView(getGemSurfaceView()?.mapView)
+                else -> finish()
             }
         }
     }
@@ -248,7 +255,8 @@ fun MapSelectionApp(viewModel: MapSelectionModel = viewModel(), mapSurfaceViewSe
         MapSurface(Modifier.fillMaxSize(), mapSurfaceViewSetter, viewModel)
 
         if (isLandscape) {
-            // Landscape: the info panel is a card pinned to the bottom-left corner and the
+            // Landscape: the info panel is a card pinned to the bottom-left corner, the station
+            // panel a half-width card spanning the full screen height on the left, and the
             // follow-GPS button sits in the opposite (bottom-right) corner.
             InfoPanel(
                 modifier = Modifier
@@ -258,6 +266,17 @@ fun MapSelectionApp(viewModel: MapSelectionModel = viewModel(), mapSurfaceViewSe
                 activity = activity,
                 isLandscape = true,
             )
+            viewModel.ptStationInfo?.let { station ->
+                PublicTransportStationScreen(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .fillMaxHeight()
+                        .fillMaxWidth(PT_STATION_PANEL_FRACTION),
+                    viewModel = viewModel,
+                    station = station,
+                    isLandscape = true,
+                )
+            }
             FollowGpsButton(
                 modifier = Modifier.align(Alignment.BottomEnd),
                 viewModel = viewModel,
@@ -265,7 +284,8 @@ fun MapSelectionApp(viewModel: MapSelectionModel = viewModel(), mapSurfaceViewSe
                 applyBottomInset = true,
             )
         } else {
-            // Portrait: the follow-GPS button is stacked directly above a full-width bottom panel.
+            // Portrait: the follow-GPS button is stacked directly above the full-width bottom
+            // panel (the info panel, or the half screen station panel — never both).
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -275,9 +295,9 @@ fun MapSelectionApp(viewModel: MapSelectionModel = viewModel(), mapSurfaceViewSe
                 FollowGpsButton(
                     viewModel = viewModel,
                     activity = activity,
-                    // When the panel is visible it carries the bottom inset; the button only needs
+                    // When a panel is visible it carries the bottom inset; the button only needs
                     // it when it sits alone at the bottom of the screen.
-                    applyBottomInset = !viewModel.isBottomViewVisible(),
+                    applyBottomInset = !viewModel.isBottomViewVisible() && viewModel.ptStationInfo == null,
                 )
                 InfoPanel(
                     modifier = Modifier.fillMaxWidth(),
@@ -285,6 +305,16 @@ fun MapSelectionApp(viewModel: MapSelectionModel = viewModel(), mapSurfaceViewSe
                     activity = activity,
                     isLandscape = false,
                 )
+                viewModel.ptStationInfo?.let { station ->
+                    PublicTransportStationScreen(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(PT_STATION_PANEL_FRACTION),
+                        viewModel = viewModel,
+                        station = station,
+                        isLandscape = false,
+                    )
+                }
             }
         }
 
@@ -297,6 +327,20 @@ fun MapSelectionApp(viewModel: MapSelectionModel = viewModel(), mapSurfaceViewSe
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
             )
+        }
+
+        // Full screen view of the trip (stations list) of a departure tapped in the station
+        // panel, stacked on top of everything while it is inspected.
+        viewModel.ptStationInfo?.let { station ->
+            viewModel.ptTripViewTrips?.let { trips ->
+                PublicTransportTripScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    viewModel = viewModel,
+                    trips = trips,
+                    tappedIndex = viewModel.ptTripViewIndex,
+                    stationUtcOffsetMs = station.utcOffsetMs,
+                )
+            }
         }
     }
 

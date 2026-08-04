@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">WiFiClient1</string>
+    <string name="title_devices">WiFi Server Scan</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="error_discovery_failed">Server discovery failed with error code %d.</string>
+    <!--  Dialog  -->
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+</resources>

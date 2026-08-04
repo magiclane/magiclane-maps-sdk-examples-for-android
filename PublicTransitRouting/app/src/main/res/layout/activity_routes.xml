@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/background"
+        android:orientation="vertical"
+        app:paddingTopWithSystemWindowInsets='@{"0dp"}'
+        app:paddingLeftWithSystemWindowInsets='@{"0dp"}'
+        app:paddingRightWithSystemWindowInsets='@{"0dp"}'
+        tools:context=".PTRoutesActivity">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingVertical="@dimen/small_padding">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/back_button"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/back"
+                app:icon="@drawable/ic_arrow_back"
+                app:iconTint="@color/on_background" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/routes"
+                android:textColor="@color/on_background"
+                android:textSize="@dimen/big_text_size"
+                android:textStyle="bold" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/sort_button"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/sort_routes"
+                app:icon="@drawable/ic_more_vert"
+                app:iconTint="@color/on_background" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/routes_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="@dimen/big_padding"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_route_row" />
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <!-- "Depart at …" / "Arrive at …" anchor of the current request. -->
+        <TextView
+            android:id="@+id/time_anchor_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/surface"
+            android:gravity="center"
+            android:padding="@dimen/big_padding"
+            android:textColor="@color/on_surface"
+            android:textSize="@dimen/standard_text_size"
+            android:textStyle="bold"
+            app:paddingBottomWithSystemWindowInsets='@{"10dp"}' />
+    </LinearLayout>
+</layout>

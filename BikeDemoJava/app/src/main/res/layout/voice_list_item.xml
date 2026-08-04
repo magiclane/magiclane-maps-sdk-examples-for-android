@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/icon"
+            android:layout_width="@dimen/voice_icon_size"
+            android:layout_height="@dimen/voice_icon_size"
+            android:layout_marginStart="@dimen/big_padding"
+            android:layout_marginTop="@dimen/big_padding"
+            android:layout_marginBottom="@dimen/big_padding"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="ContentDescription" />
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/gender_icon"
+            android:layout_width="@dimen/voice_icon_size"
+            android:layout_height="@dimen/voice_icon_size"
+            android:layout_marginStart="@dimen/small_padding"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/icon"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="ContentDescription" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/big_padding"
+            android:layout_marginLeft="@dimen/big_padding"
+            android:layout_marginTop="@dimen/big_padding"
+            android:textDirection="locale"
+            android:textSize="@dimen/standard_text_size"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@id/description"
+            app:layout_constraintEnd_toStartOf="@id/item_progress_bar"
+            app:layout_constraintStart_toEndOf="@id/gender_icon"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.4"
+            app:layout_constraintVertical_chainStyle="packed" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/description"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/big_padding"
+            android:layout_marginLeft="@dimen/big_padding"
+            android:layout_marginBottom="@dimen/big_padding"
+            android:gravity="start|center_vertical"
+            android:textDirection="locale"
+            android:textSize="@dimen/small_text_size"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/item_progress_bar"
+            app:layout_constraintStart_toEndOf="@id/gender_icon"
+            app:layout_constraintTop_toBottomOf="@id/text" />
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/item_progress_bar"
+            android:layout_width="@dimen/progress_bar_size"
+            android:layout_height="@dimen/progress_bar_size"
+            android:layout_margin="@dimen/big_padding"
+            android:indeterminate="false"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/check_icon"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/status_icon"
+            android:layout_width="@dimen/voice_icon_size"
+            android:layout_height="@dimen/voice_icon_size"
+            android:layout_margin="@dimen/big_padding"
+            android:src="@drawable/ic_baseline_phone_android"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/check_icon"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="ContentDescription" />
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/check_icon"
+            android:layout_width="@dimen/voice_icon_size"
+            android:layout_height="@dimen/voice_icon_size"
+            android:layout_margin="@dimen/big_padding"
+            android:src="@drawable/check_green"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="ContentDescription" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</layout>

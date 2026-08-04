@@ -24,20 +24,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/primary"
-            app:layout_constraintTop_toTopOf="parent"
-            app:title="@string/app_name"
-            app:titleTextColor="@color/on_primary"
-            app:paddingTopWithSystemWindowInsets='@{"8dp"}'
-            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
-            android:paddingBottom="12dp"
-            />
-
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/top_panel"
             android:layout_width="match_parent"
@@ -49,7 +35,8 @@
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/toolbar"
+            app:layout_constraintTop_toTopOf="parent"
+            app:marginTopWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             >

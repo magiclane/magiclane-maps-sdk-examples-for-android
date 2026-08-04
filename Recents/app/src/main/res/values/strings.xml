@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Recents</string>
+    <string name="token_rejected_message">This example requires a valid token. If you don\'t have a token, check the magiclane.com website, sign up / in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="add_london">Add London</string>
+    <string name="add_paris">Add Paris</string>
+    <string name="add_rome">Add Rome</string>
+    <string name="show_recents">Show Recents</string>
+    <string name="recents">Recents</string>
+    <string name="no_recents">There are no recent landmarks yet.</string>
+    <string name="landmark_added">%1$s has been added to Recents.</string>
+    <string name="landmark_add_failed">%1$s could not be added to Recents.</string>
+    <string name="coordinates_format">%1$.6f, %2$.6f</string>
+    <string name="ok">OK</string>
+    <string name="error">Error</string>
+</resources>

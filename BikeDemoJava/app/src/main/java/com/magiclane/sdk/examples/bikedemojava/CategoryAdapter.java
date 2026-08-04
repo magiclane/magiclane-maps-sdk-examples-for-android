@@ -30,7 +30,7 @@ public class CategoryAdapter extends ListAdapter<CategoryItem, CategoryAdapter.C
     private OnCategoryClickListener onClickListener;
 
     public CategoryAdapter() {
-        super(new DiffUtil.ItemCallback<CategoryItem>() {
+        super(new DiffUtil.ItemCallback<>() {
             @Override
             public boolean areItemsTheSame(@NonNull CategoryItem oldItem, @NonNull CategoryItem newItem) {
                 return oldItem.getCategoryId() == newItem.getCategoryId();

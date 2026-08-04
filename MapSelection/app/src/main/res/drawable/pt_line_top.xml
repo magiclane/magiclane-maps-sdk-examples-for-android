@@ -1,0 +1,13 @@
+<!--
+  SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
+  SPDX-License-Identifier: Apache-2.0
+
+  Timeline segment for the first station of a trip. White so the runtime
+  backgroundTintList (route color) fully determines the final color.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="#FFFFFF" />
+    <corners
+        android:topLeftRadius="15dp"
+        android:topRightRadius="15dp" />
+</shape>

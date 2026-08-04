@@ -16,6 +16,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.magiclane.sdk.examples.mapselection.databinding.ActivityWebBinding
 
@@ -27,6 +28,7 @@ class WebActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         binding = ActivityWebBinding.inflate(layoutInflater)
@@ -34,8 +36,6 @@ class WebActivity : AppCompatActivity() {
 
         webView = binding.webView
         progressBar = binding.progressBar
-
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
@@ -48,8 +48,6 @@ class WebActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
                 view?.visibility = View.VISIBLE
                 progressBar.visibility = View.GONE
-
-                supportActionBar?.title = webView.title
             }
         }
 
@@ -69,10 +67,5 @@ class WebActivity : AppCompatActivity() {
             val url = intent.getStringExtra("url")
             url?.let { loadUrl(it) }
         }
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        onBackPressedDispatcher.onBackPressed()
-        return true
     }
 }

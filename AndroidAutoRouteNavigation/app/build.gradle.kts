@@ -33,4 +33,6 @@ dependencies {
     androidTestImplementation(project(":build-testing"))
     androidTestImplementation(shared.androidx.junit)
     androidTestImplementation(shared.androidx.espresso.core)
+    androidTestImplementation(shared.androidx.test.rules)
+    androidTestImplementation(shared.androidx.test.runner)
 }

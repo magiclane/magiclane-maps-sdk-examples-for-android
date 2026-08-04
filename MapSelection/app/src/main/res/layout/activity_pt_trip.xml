@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
+  SPDX-License-Identifier: Apache-2.0
+
+  Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
+-->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/background"
+        app:paddingLeftWithSystemWindowInsets='@{"0dp"}'
+        app:paddingRightWithSystemWindowInsets='@{"0dp"}'
+        tools:context=".PublicTransportTripActivity">
+
+        <!-- Header: vehicle icon, line badge, destination, accessibility icons, close. -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/surface"
+            android:paddingBottom="@dimen/big_padding"
+            app:layout_constraintTop_toTopOf="parent"
+            app:paddingTopWithSystemWindowInsets='@{"0dp"}'>
+
+            <ImageView
+                android:id="@+id/vehicle_icon"
+                android:layout_width="@dimen/pt_icon_size"
+                android:layout_height="@dimen/pt_icon_size"
+                android:layout_marginStart="@dimen/big_padding"
+                app:layout_constraintBottom_toBottomOf="@id/line_badge"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/line_badge"
+                app:tint="@color/on_background"
+                tools:ignore="ContentDescription" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/line_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/big_padding"
+                android:gravity="center"
+                android:minEms="2"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:textSize="@dimen/standard_text_size"
+                android:textStyle="bold"
+                app:layout_constraintStart_toEndOf="@id/vehicle_icon"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/destination"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/big_padding"
+                android:layout_marginTop="2dp"
+                android:layout_marginEnd="@dimen/big_padding"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textColor="@color/on_background"
+                android:textSize="@dimen/standard_text_size"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toStartOf="@id/close_button"
+                app:layout_constraintStart_toEndOf="@id/line_badge"
+                app:layout_constraintTop_toTopOf="@id/line_badge" />
+
+            <ImageView
+                android:id="@+id/wheelchair_icon"
+                android:layout_width="@dimen/pt_small_icon_size"
+                android:layout_height="@dimen/pt_small_icon_size"
+                android:layout_marginTop="@dimen/small_padding"
+                android:contentDescription="@string/pt_wheelchair_accessible"
+                android:src="@drawable/ic_wheelchair_24"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="@id/line_badge"
+                app:layout_constraintTop_toBottomOf="@id/line_badge"
+                app:tint="@color/gray" />
+
+            <ImageView
+                android:id="@+id/bike_icon"
+                android:layout_width="@dimen/pt_small_icon_size"
+                android:layout_height="@dimen/pt_small_icon_size"
+                android:layout_marginStart="6dp"
+                android:contentDescription="@string/pt_bikes_allowed"
+                android:src="@drawable/ic_bike_24"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@id/wheelchair_icon"
+                app:layout_constraintStart_toEndOf="@id/wheelchair_icon"
+                app:layout_constraintTop_toTopOf="@id/wheelchair_icon"
+                app:tint="@color/gray" />
+
+            <!-- Live / predicted crowding of the trip shown by the current page; tint and
+                 content description set at bind time. -->
+            <ImageView
+                android:id="@+id/crowding_icon"
+                android:layout_width="@dimen/pt_small_icon_size"
+                android:layout_height="@dimen/pt_small_icon_size"
+                android:layout_marginStart="6dp"
+                android:src="@drawable/ic_pt_crowding_24"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@id/wheelchair_icon"
+                app:layout_constraintStart_toEndOf="@id/bike_icon"
+                app:layout_constraintTop_toTopOf="@id/wheelchair_icon"
+                tools:ignore="ContentDescription" />
+
+            <!-- Service alerts of the trip shown by the current page, one item_pt_alert row
+                 per alert; the rows are tinted by the most severe alert at bind time. -->
+            <LinearLayout
+                android:id="@+id/trip_alerts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/small_padding"
+                android:orientation="vertical"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@id/wheelchair_icon" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/close_button"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_margin="@dimen/small_padding"
+                android:contentDescription="@string/close"
+                app:icon="@drawable/cancel_24px"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="32dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- One dot per trip of this line; visible only when there is more than one trip. -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tab_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="24dp"
+            android:background="@android:color/transparent"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/header"
+            app:tabBackground="@android:color/transparent"
+            app:tabGravity="center"
+            app:tabIndicator="@null"
+            app:tabMinWidth="24dp"
+            app:tabPaddingEnd="4dp"
+            app:tabPaddingStart="4dp"
+            app:tabRippleColor="@null" />
+
+        <com.google.android.material.divider.MaterialDivider
+            android:id="@+id/header_divider"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/tab_layout" />
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/stations_pager"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toTopOf="@id/agency_button"
+            app:layout_constraintTop_toBottomOf="@id/header_divider" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/agency_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center"
+            android:padding="@dimen/big_padding"
+            android:textColor="@color/primary"
+            android:textSize="@dimen/standard_text_size"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:paddingBottomWithSystemWindowInsets='@{"0dp"}' />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

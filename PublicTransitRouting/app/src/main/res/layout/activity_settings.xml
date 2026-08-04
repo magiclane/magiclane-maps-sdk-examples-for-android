@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/background"
+        android:orientation="vertical"
+        app:paddingTopWithSystemWindowInsets='@{"0dp"}'
+        app:paddingLeftWithSystemWindowInsets='@{"0dp"}'
+        app:paddingRightWithSystemWindowInsets='@{"0dp"}'
+        tools:context=".PTSettingsActivity">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingVertical="@dimen/small_padding">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/back_button"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/back"
+                app:icon="@drawable/ic_arrow_back"
+                app:iconTint="@color/on_background" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/public_transport"
+                android:textColor="@color/on_background"
+                android:textSize="@dimen/big_text_size"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            app:paddingBottomWithSystemWindowInsets='@{"10dp"}'>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="16dp">
+
+                <!-- Date & time -->
+                <TextView
+                    style="@style/SettingsSectionHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/date_time" />
+
+                <com.google.android.material.card.MaterialCardView style="@style/SettingsCard">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/time_mode_group"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:selectionRequired="true"
+                            app:singleSelection="true">
+
+                            <!-- The default 24dp button padding truncates "Depart" on the
+                                 3-way split, so the tabs use a small padding instead. -->
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/mode_depart"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:paddingHorizontal="4dp"
+                                android:text="@string/depart" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/mode_arrive"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:paddingHorizontal="4dp"
+                                android:text="@string/arrive" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/mode_last"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:paddingHorizontal="4dp"
+                                android:text="@string/last" />
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal">
+
+                            <!-- Small padding here too: the default 24dp one wraps the texts. -->
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/now_button"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingHorizontal="12dp"
+                                android:text="@string/now" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/date_button"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginHorizontal="8dp"
+                                android:layout_weight="1"
+                                android:maxLines="1"
+                                android:paddingHorizontal="4dp"
+                                tools:text="7/31/26" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/time_button"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingHorizontal="12dp"
+                                tools:text="14:30" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- General -->
+                <TextView
+                    style="@style/SettingsSectionHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/general" />
+
+                <com.google.android.material.card.MaterialCardView style="@style/SettingsCard">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:id="@+id/travel_mode_row"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="14dp">
+
+                            <TextView
+                                style="@style/SettingsRowTitle"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/travel_mode" />
+
+                            <TextView
+                                android:id="@+id/travel_mode_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/on_background"
+                                android:textSize="@dimen/standard_text_size"
+                                tools:text="Best route" />
+                        </LinearLayout>
+
+                        <View style="@style/SettingsDivider" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="14dp">
+
+                            <TextView
+                                style="@style/SettingsRowTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/min_transfer_time" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/min_transfer_min"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textColor="@color/on_background"
+                                    android:textSize="@dimen/medium_text_size"
+                                    tools:text="1 min" />
+
+                                <TextView
+                                    android:id="@+id/min_transfer_current"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center_horizontal"
+                                    android:textColor="@color/on_background"
+                                    android:textSize="@dimen/medium_text_size"
+                                    android:textStyle="bold"
+                                    tools:text="1 min" />
+
+                                <TextView
+                                    android:id="@+id/min_transfer_max"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textColor="@color/on_background"
+                                    android:textSize="@dimen/medium_text_size"
+                                    tools:text="10 min" />
+                            </LinearLayout>
+
+                            <com.google.android.material.slider.Slider
+                                android:id="@+id/min_transfer_slider"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:stepSize="1"
+                                android:valueFrom="1"
+                                android:valueTo="10" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Preferred means of transport -->
+                <TextView
+                    style="@style/SettingsSectionHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/preferred_means_of_transport" />
+
+                <com.google.android.material.card.MaterialCardView style="@style/SettingsCard">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_bus"
+                            style="@style/SettingsSwitch"
+                            android:text="@string/bus" />
+
+                        <View style="@style/SettingsDivider" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_underground"
+                            style="@style/SettingsSwitch"
+                            android:text="@string/underground" />
+
+                        <View style="@style/SettingsDivider" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_railway"
+                            style="@style/SettingsSwitch"
+                            android:text="@string/railway" />
+
+                        <View style="@style/SettingsDivider" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_tram"
+                            style="@style/SettingsSwitch"
+                            android:text="@string/tram" />
+
+                        <View style="@style/SettingsDivider" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_ferry"
+                            style="@style/SettingsSwitch"
+                            android:text="@string/ferry" />
+
+                        <View style="@style/SettingsDivider" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_other"
+                            style="@style/SettingsSwitch"
+                            android:text="@string/other" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Preferred accessibility -->
+                <TextView
+                    style="@style/SettingsSectionHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/preferred_accessibility" />
+
+                <com.google.android.material.card.MaterialCardView style="@style/SettingsCard">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_wheelchair"
+                            style="@style/SettingsSwitch"
+                            android:text="@string/wheelchair" />
+
+                        <View style="@style/SettingsDivider" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_bicycle"
+                            style="@style/SettingsSwitch"
+                            android:text="@string/bicycle" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</layout>

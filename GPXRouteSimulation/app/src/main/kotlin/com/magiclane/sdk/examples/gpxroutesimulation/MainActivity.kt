@@ -89,7 +89,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         onNavigationStarted = {
             SdkCall.execute {
                 binding.gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.enableCursor = false
                     navRoute?.let { route -> mapView.presentRoute(route) }
                     enableGPSButton()
                     mapView.followPosition()
@@ -151,9 +150,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        // Keep status-bar icons light against the dark primary toolbar background.
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
 
         SoundUtils.addTTSPlayerInitializationListener(this)
         turnImageSize = resources.getDimension(R.dimen.turn_image_size).toInt()

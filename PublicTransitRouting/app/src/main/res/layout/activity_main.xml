@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".MainActivity">
+
+        <com.magiclane.sdk.core.GemSurfaceView
+            android:id="@+id/gem_surface_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Opens the full-screen routes list (stand-alone view). -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/routes_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/routes"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:marginTopWithSystemWindowInsets='@{"10dp"}'
+            app:marginRightWithSystemWindowInsets='@{"10dp"}'
+            tools:visibility="visible" />
+
+        <!-- Route description / settings buttons + the horizontal routes list. Full-width in
+             portrait; MainActivity narrows it to half the screen in landscape (the map then
+             keeps the other side free), so both the width percent and the window-insets
+             padding are applied in code. -->
+        <LinearLayout
+            android:id="@+id/bottom_panel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintWidth_percent="1"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/big_padding">
+
+                <!-- Fixed square size + zero insets on all four sides keep the filled
+                     background circular (the M3 IconButton style insets it into an oval). -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/description_button"
+                    style="@style/Widget.Material3.Button.IconButton.Filled"
+                    android:layout_width="@dimen/round_button_size"
+                    android:layout_height="@dimen/round_button_size"
+                    android:insetLeft="0dp"
+                    android:insetTop="0dp"
+                    android:insetRight="0dp"
+                    android:insetBottom="0dp"
+                    android:contentDescription="@string/route_description"
+                    app:cornerRadius="@dimen/round_button_corner_radius"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:icon="@drawable/ic_list" />
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/settings_button"
+                    style="@style/Widget.Material3.Button.IconButton.Filled"
+                    android:layout_width="@dimen/round_button_size"
+                    android:layout_height="@dimen/round_button_size"
+                    android:insetLeft="0dp"
+                    android:insetTop="0dp"
+                    android:insetRight="0dp"
+                    android:insetBottom="0dp"
+                    android:contentDescription="@string/settings"
+                    app:cornerRadius="@dimen/round_button_corner_radius"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:icon="@drawable/ic_settings" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/routes_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:paddingHorizontal="@dimen/small_padding"
+                android:orientation="horizontal"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:itemCount="2"
+                tools:listitem="@layout/item_route_chip" />
+        </LinearLayout>
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progress_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

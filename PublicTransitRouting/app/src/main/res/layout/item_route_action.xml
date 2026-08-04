@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- Earlier / Later action card in the stand-alone routes list. -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/action_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="@dimen/big_padding"
+        app:cardCornerRadius="@dimen/chip_corner_radius"
+        app:cardElevation="1dp">
+
+        <TextView
+            android:id="@+id/action_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="@dimen/big_padding"
+            android:textColor="@color/primary"
+            android:textSize="@dimen/big_text_size"
+            android:textStyle="bold" />
+    </com.google.android.material.card.MaterialCardView>
+</layout>

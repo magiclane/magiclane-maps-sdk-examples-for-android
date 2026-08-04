@@ -9,4 +9,12 @@
     <color name="surface">#272531</color>
     <color name="on_surface">#FFFFFF</color>
     <color name="gray">#B2B0B4</color>
+
+    <!-- Realtime status colors: early / on time / late (default text color = scheduled). -->
+    <color name="pt_status_early">#82B1FF</color>
+    <color name="pt_status_on_time">#69F0AE</color>
+    <color name="pt_status_late">#FF6E6E</color>
+
+    <!-- Warning-level service alerts / medium crowding (severe reuses pt_status_late). -->
+    <color name="pt_alert_warning">#FFB74D</color>
 </resources>

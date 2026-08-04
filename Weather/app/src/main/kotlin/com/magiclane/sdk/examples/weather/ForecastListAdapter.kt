@@ -16,16 +16,22 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.magiclane.sdk.examples.weather.databinding.ForecastItemBinding
 
-class ForecastListAdapter(var type: EForecastType) : ListAdapter<ForecastItem, RecyclerView.ViewHolder>(
+class ForecastListAdapter(val type: EForecastType) : ListAdapter<ForecastItem, RecyclerView.ViewHolder>(
     diffUtilCallback,
 ) {
 
     companion object {
         // used by the adapter for calculating the optimum number of changes to be made when the list is being updated
         val diffUtilCallback = object : DiffUtil.ItemCallback<ForecastItem>() {
-            override fun areItemsTheSame(oldItem: ForecastItem, newItem: ForecastItem): Boolean = oldItem == newItem
+            // Items are identified by their stable labels (condition name for the current view,
+            // date/time for the daily and hourly views), not by full equality.
+            override fun areItemsTheSame(oldItem: ForecastItem, newItem: ForecastItem): Boolean =
+                oldItem.conditionName == newItem.conditionName &&
+                    oldItem.date == newItem.date &&
+                    oldItem.time == newItem.time &&
+                    oldItem.dayOfWeek == newItem.dayOfWeek
 
-            override fun areContentsTheSame(oldItem: ForecastItem, newItem: ForecastItem): Boolean = false
+            override fun areContentsTheSame(oldItem: ForecastItem, newItem: ForecastItem): Boolean = oldItem == newItem
         }
     }
 

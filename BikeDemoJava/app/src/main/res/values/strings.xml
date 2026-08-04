@@ -5,7 +5,14 @@
     <string name="close">Close</string>
     <string name="search">Search…</string>
     <string name="bike_type_text">Bike Type</string>
-    <string name="bike_settings_text">Bike Settings</string>
+    <string name="settings_text">Settings</string>
+    <string name="voice_text">Voice</string>
+    <string name="text_to_speech">Text-to-Speech</string>
+    <string name="status_item_downloaded">%1$s was downloaded. Tap it again to select it.</string>
+    <string name="status_item_download_error">%1$s download encountered an error: %2$s</string>
+    <string name="status_item_already_downloaded">%1$s is already downloaded.</string>
+    <string name="status_download_item_error">Download item error: %1$s</string>
+    <string name="status_voices_catalog_download_error">Voices catalog download encountered the following error: %1$s</string>
     <string name="city">City</string>
     <string name="cross">Cross</string>
     <string name="mountain">Mountain</string>

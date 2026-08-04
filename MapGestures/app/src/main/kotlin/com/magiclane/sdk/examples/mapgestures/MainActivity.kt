@@ -179,9 +179,7 @@ class MainActivity : AppCompatActivity() {
     private fun isActivityAlive(): Boolean = !isFinishing && !isDestroyed
 
     private fun logGesture(message: String) {
-        SdkCall.execute {
-            Log.i(GESTURE_TAG, message)
-        }
+        Log.i(GESTURE_TAG, message)
     }
 }
 

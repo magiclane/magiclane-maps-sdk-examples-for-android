@@ -227,10 +227,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
-
-        // Keep status-bar icons light against the dark primary toolbar background.
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
-
+        
         SoundUtils.addTTSPlayerInitializationListener(this)
 
         if (EspressoIdlingResource.isDownloadingTest) {
@@ -445,11 +442,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
             val left = insets?.left ?: 0
             val right = (w - (insets?.right ?: 0)).coerceAtLeast(left)
-            // When the top panel is visible it sits below the toolbar, so its bottom is the
-            // correct upper boundary. Otherwise, fall back to the toolbar bottom.
+            // When the top panel is visible its bottom is the correct upper boundary.
+            // Otherwise, fall back to the top system-bar inset.
             val top = when {
                 binding.topPanel.isVisible -> binding.topPanel.bottom
-                else -> binding.toolbar.bottom.takeIf { it > 0 } ?: (insets?.top ?: 0)
+                else -> insets?.top ?: 0
             }
             val bottom = bottomBoundary(h - (insets?.bottom ?: 0), top, includeNavPanel = true)
             Rect(left, top, right, bottom)
