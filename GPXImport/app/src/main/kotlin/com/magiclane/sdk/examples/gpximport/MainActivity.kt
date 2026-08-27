@@ -118,9 +118,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Wait for the worldwide road map to be ready before calculating the route from GPX.
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
                 calculateRouteFromGPX()
             }
         }
@@ -132,7 +132,7 @@ class MainActivity : AppCompatActivity() {
 
     // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
         binding.gemSurfaceView.apply {
             onSdkInitFailed = {}

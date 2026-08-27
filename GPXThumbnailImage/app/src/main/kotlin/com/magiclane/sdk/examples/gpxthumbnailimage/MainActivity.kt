@@ -106,10 +106,10 @@ class MainActivity : AppCompatActivity() {
 
     // Registers all SDK settings callbacks for map data and token events.
     private fun registerSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
                 // Clear the listener after the first UpToDate event — no need to react again.
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
                 runOnAliveUi { binding.statusText.text = getString(R.string.map_data_ready) }
 
                 SdkCall.execute {
@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity() {
 
     // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
     }
 

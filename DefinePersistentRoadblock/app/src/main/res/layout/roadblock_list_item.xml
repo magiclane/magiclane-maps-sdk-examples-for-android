@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Roadblock item layout, copied from the Magic Earth roadblocks view. -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+<com.google.android.material.card.MaterialCardView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/list_item_padding"
+    android:layout_marginTop="@dimen/list_item_vertical_margin"
+    android:layout_marginEnd="@dimen/list_item_padding"
+    android:layout_marginBottom="@dimen/list_item_vertical_margin"
+    android:importantForAccessibility="yes"
+    app:cardBackgroundColor="@color/surface"
+    app:cardElevation="@dimen/card_elevation"
+    app:contentPadding="@dimen/small_padding">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:importantForAccessibility="no">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <FrameLayout
+                android:id="@+id/icon_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/transport_mode"
+                    android:layout_width="@dimen/transport_icon_size"
+                    android:layout_height="@dimen/transport_icon_size"
+                    android:layout_gravity="center"
+                    android:layout_margin="@dimen/list_item_padding"
+                    android:src="@drawable/ic_directions_car_24"
+                    tools:ignore="ContentDescription" />
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/roadblock_image"
+                    android:layout_width="@dimen/small_icon_size"
+                    android:layout_height="@dimen/small_icon_size"
+                    android:layout_gravity="top|end"
+                    android:src="@drawable/ic_roadblock_24"
+                    tools:ignore="ContentDescription" />
+
+            </FrameLayout>
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/roadblock_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/list_item_padding"
+                android:layout_marginEnd="@dimen/list_item_padding"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/big_text_size"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toTopOf="@id/roadblock_length"
+                app:layout_constraintEnd_toStartOf="@id/delete_button"
+                app:layout_constraintStart_toEndOf="@id/icon_container"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.5"
+                app:layout_constraintVertical_chainStyle="packed"
+                tools:text="Boulevard Saturn" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/roadblock_length"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/list_item_padding"
+                android:layout_marginEnd="@dimen/list_item_padding"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/standard_text_size"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/delete_button"
+                app:layout_constraintStart_toEndOf="@id/icon_container"
+                app:layout_constraintTop_toBottomOf="@id/roadblock_name"
+                tools:text="Length: 2.5 km" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/delete_button"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="@dimen/delete_button_size"
+                android:layout_height="@dimen/delete_button_size"
+                android:layout_margin="@dimen/list_item_padding"
+                android:contentDescription="@string/delete_roadblock"
+                android:insetLeft="0dp"
+                android:insetTop="0dp"
+                android:insetRight="0dp"
+                android:insetBottom="0dp"
+                app:icon="@drawable/ic_delete_red_24"
+                app:iconGravity="textStart"
+                app:iconSize="@dimen/transport_icon_size"
+                app:iconTint="@color/color_red"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/details_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/header">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/from_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/list_item_padding"
+                android:layout_marginEnd="@dimen/list_item_padding"
+                android:layout_marginBottom="@dimen/list_item_padding"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/standard_text_size"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="From:" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/from_value"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/small_padding"
+                android:layout_marginEnd="@dimen/list_item_padding"
+                android:ellipsize="end"
+                android:maxLines="3"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/standard_text_size"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/from_text"
+                app:layout_constraintTop_toTopOf="@id/from_text"
+                tools:text="Boulevard Peripherique Interieur, Paris, France" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/to_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/list_item_padding"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/standard_text_size"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/from_value"
+                tools:text="To:" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/to_value"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/small_padding"
+                android:layout_marginEnd="@dimen/list_item_padding"
+                android:ellipsize="end"
+                android:maxLines="3"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/standard_text_size"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/to_text"
+                app:layout_constraintTop_toTopOf="@id/to_text"
+                tools:text="4E05, Boulevard Peripherique Interieur, Paris, France" />
+
+            <com.google.android.material.divider.MaterialDivider
+                android:id="@+id/valid_from_divider"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/list_item_padding"
+                app:dividerColor="@color/divider"
+                app:layout_constraintTop_toBottomOf="@id/to_value" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/valid_from_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/list_item_padding"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/standard_text_size"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/valid_from_divider"
+                tools:text="Valid from:" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/valid_from_value"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/small_padding"
+                android:layout_marginEnd="@dimen/list_item_padding"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/standard_text_size"
+                app:layout_constraintBottom_toBottomOf="@id/valid_from_text"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/valid_from_text"
+                app:layout_constraintTop_toTopOf="@id/valid_from_text"
+                tools:text="21.02.2024 11:56" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/valid_until_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/list_item_padding"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/standard_text_size"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/valid_from_value"
+                tools:text="Valid until:" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/valid_until_value"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/small_padding"
+                android:layout_marginEnd="@dimen/list_item_padding"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/standard_text_size"
+                app:layout_constraintBottom_toBottomOf="@id/valid_until_text"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/valid_until_text"
+                app:layout_constraintTop_toTopOf="@id/valid_until_text"
+                tools:text="21.02.2024 14:56" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
+</layout>

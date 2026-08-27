@@ -165,9 +165,9 @@ class MainActivity : AppCompatActivity() {
             updateFocusViewport()
         }
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
                 SdkCall.execute {
                     searchService.searchByFilter("Statue of Liberty New York", Coordinates(40.68925476, -74.04456329))
                 }
@@ -182,7 +182,7 @@ class MainActivity : AppCompatActivity() {
     // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
     private fun clearSdkListeners() {
         SdkSettings.onApiTokenRejected = {}
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         binding.gemSurfaceView.apply {
             onDefaultMapViewCreated = {}
             onSdkInitFailed = {}

@@ -7,7 +7,6 @@
 
 package com.magiclane.sdk.examples.rangefindercompose
 
-import android.annotation.SuppressLint
 import android.app.Application
 import androidx.annotation.StringRes
 import androidx.compose.runtime.MutableState
@@ -18,12 +17,9 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.AndroidViewModel
+import com.magiclane.sdk.compose.map.GemMapState
 import com.magiclane.sdk.core.GemError
-import com.magiclane.sdk.core.GemSurfaceView
-import com.magiclane.sdk.core.Rect
 import com.magiclane.sdk.core.Rgba
 import com.magiclane.sdk.d3scene.Animation
 import com.magiclane.sdk.d3scene.EAnimation
@@ -109,10 +105,9 @@ class RangeFinderModel(application: Application) : AndroidViewModel(application)
 
     var errorMessage by mutableStateOf("")
 
-    // The map surface, kept so the model can add/remove routes and recompute map areas without the
-    // UI passing it on every call. Released by the activity on destroy.
-    @SuppressLint("StaticFieldLeak")
-    var surfaceView: GemSurfaceView? = null
+    // Map access holder shared with the GemMap composable; grants SDK-thread-safe access
+    // to the map view for adding/removing routes and centering.
+    var mapState: GemMapState? = null
         private set
 
     private lateinit var animation: Animation
@@ -181,20 +176,6 @@ class RangeFinderModel(application: Application) : AndroidViewModel(application)
 
     val ranges = mutableStateListOf<Range>()
 
-    // Current screen orientation, reported by the UI. The options panel spans the bottom edge in
-    // portrait and hugs the full-height left edge in landscape; the free map area is computed
-    // accordingly so the Magic Lane logo and the route centering stay clear of the panel.
-    var isLandscape = false
-
-    // Measured extent of the options panel: its height when it spans the bottom (portrait) and its
-    // width when it is a full-height card on the left (landscape).
-    var panelHeightPx = 0
-    var panelWidthPx = 0
-
-    // Free map area (clear of the system bars / cutout and the options panel), deflated by the map
-    // padding. Used as the viewport when centering routes.
-    private var visibleArea = Rect(0, 0, 0, 0)
-
     init {
         // The application Context is available as soon as the model is constructed, so the option
         // labels can be built up-front (no need to wait for the surface / SDK).
@@ -223,10 +204,10 @@ class RangeFinderModel(application: Application) : AndroidViewModel(application)
         updateHillsFactorSliderTexts()
     }
 
-    // Stores the map surface and positions the Magic Lane logo for the current layout.
-    fun initialize(gemSurfaceView: GemSurfaceView) {
-        surfaceView = gemSurfaceView
-        updateMapAreas(gemSurfaceView)
+    // Stores the map access holder; the focus viewport / logo placement is handled by
+    // the maps-compose library.
+    fun initialize(mapState: GemMapState) {
+        this.mapState = mapState
     }
 
     fun onSdkInitSucceeded() {
@@ -250,84 +231,20 @@ class RangeFinderModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun addRouteToMap(route: Route, routeRenderSettings: RouteRenderSettings) {
-        surfaceView?.mapView?.preferences?.routes?.addWithRenderSettings(route, routeRenderSettings)
+        mapState?.mapView?.preferences?.routes?.addWithRenderSettings(route, routeRenderSettings)
     }
 
     private fun removeRouteFromMap(route: Route) {
-        surfaceView?.mapView?.preferences?.routes?.remove(route)
+        mapState?.mapView?.preferences?.routes?.remove(route)
     }
 
     /**
-     * Recomputes the free map area for the current orientation and panel extent, then applies it to:
-     *  - the map's focus viewport, which keeps the Magic Lane logo inside the visible area (clear of
-     *    the system bars, the display cutout and the options panel), and
-     *  - [visibleArea], the padding-deflated rectangle used to center routes.
-     *
-     * The free area is a Rect(left, top, right, bottom) that excludes the system bars, the display
-     * cutout and the options panel (the bottom edge in portrait, the left edge in landscape).
-     *
-     * Needs [SdkCall].
-     */
-    fun updateMapAreas(gemSurfaceView: GemSurfaceView? = surfaceView) = SdkCall.runSynced {
-        val view = gemSurfaceView ?: return@runSynced
-        val mapView = view.mapView ?: return@runSynced
-        val viewport = mapView.viewport ?: return@runSynced
-
-        val width = viewport.width
-        val height = viewport.height
-        if (width == 0 || height == 0) return@runSynced
-
-        val insets = ViewCompat.getRootWindowInsets(view)?.getInsets(SYSTEM_INSET_TYPES)
-        val insetLeft = insets?.left ?: 0
-        val insetTop = insets?.top ?: 0
-        val insetRight = insets?.right ?: 0
-        val insetBottom = insets?.bottom ?: 0
-
-        val left: Int
-        val top = insetTop
-        val right = (width - insetRight).coerceAtLeast(insetLeft + 1)
-        val bottom: Int
-
-        if (isLandscape) {
-            // The panel hugs the full-height left edge, so it pushes the free area's left edge inward.
-            left = if (panelWidthPx > 0) {
-                panelWidthPx.coerceIn(insetLeft, right - 1)
-            } else {
-                insetLeft
-            }
-            bottom = (height - insetBottom).coerceAtLeast(top + 1)
-        } else {
-            // The panel spans the bottom edge, so it raises the free area's bottom edge.
-            left = insetLeft
-            bottom = if (panelHeightPx > 0) {
-                (height - panelHeightPx).coerceIn(top + 1, height)
-            } else {
-                (height - insetBottom).coerceAtLeast(top + 1)
-            }
-        }
-
-        // Logo placement uses the full free area; centering uses a padded version so routes are not
-        // drawn flush against the edges.
-        mapView.preferences?.focusViewport = Rect(left, top, right, bottom)
-
-        val padding = mapPadding
-        visibleArea = Rect(
-            (left + padding).coerceAtMost(right - 1),
-            (top + padding).coerceAtMost(bottom - 1),
-            (right - padding).coerceAtLeast(left + 1),
-            (bottom - padding).coerceAtLeast(top + 1),
-        )
-    }
-
-    /**
-     * Centers a single [route] (or all routes when none is given) inside [visibleArea].
+     * Centers a single [route] (or all routes when none is given) inside the free map area.
      * Needs [SdkCall].
      */
     private fun centerRoutes(route: Route? = null) {
-        if (visibleArea.isEmpty()) {
-            return
-        }
-        val mapView = surfaceView?.mapView ?: return
+        val mapView = mapState?.mapView ?: return
+        val visibleArea = mapState?.visibleArea(mapPadding) ?: return
 
         route?.let {
             mapView.centerOnRoute(it, visibleArea, animation)
@@ -682,11 +599,5 @@ class RangeFinderModel(application: Application) : AndroidViewModel(application)
         } else {
             context.getString(resId, *formatArgs)
         }
-    }
-
-    companion object {
-        // Window insets the map's focus viewport (and the options panel) must stay clear of.
-        private val SYSTEM_INSET_TYPES =
-            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
     }
 }

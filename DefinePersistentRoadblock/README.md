@@ -2,7 +2,11 @@
 
 This example app demonstrates the following features:
 - Present a map.
-- Make possible the definition of a persistent roadblock.
+- Define a complex (multi-segment) persistent roadblock, using the Magic Earth mechanism: tap a road to start, pan the map and press the "+" button to add a new segment underneath the center target, then press the "✓" button (or cancel via the bottom left button / Back, with confirmation).
+- Set the roadblock name and validity interval in the panel opened by the "✓" button, with date and time pickers for both interval ends, then commit via "Done".
+- Select the transport mode the roadblock applies to (Car, Truck or Bike) via the bottom right settings button.
+- View the active persistent roadblocks in a list (top right button) and delete one by tapping its red garbage button.
+- Tap a roadblock icon on the map to open its info panel, showing the same details as the list, from where the roadblock can also be deleted.
 
 ## Requirements
 

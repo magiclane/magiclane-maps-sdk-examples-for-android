@@ -175,9 +175,9 @@ class MainActivity : AppCompatActivity() {
             updateFocusViewport()
         }
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
 
                 viewModel.load()
                 addPropertyCallback()
@@ -276,7 +276,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
         binding.gemSurfaceView.apply {
             onSdkInitFailed = {}

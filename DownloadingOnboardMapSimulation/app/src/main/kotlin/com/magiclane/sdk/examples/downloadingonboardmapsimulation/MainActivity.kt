@@ -18,7 +18,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
@@ -227,7 +226,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
-        
+
         SoundUtils.addTTSPlayerInitializationListener(this)
 
         if (EspressoIdlingResource.isDownloadingTest) {
@@ -312,9 +311,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             updateFocusViewport()
         }
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
 
                 if (!requiredMapHasBeenDownloaded) {
                     SdkSettings.appAuthorization?.let {
@@ -335,7 +334,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private fun clearSdkListeners() {
         SdkSettings.onApiTokenRejected = {}
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         binding.gemSurfaceView.apply {
             onSdkInitFailed = {}
             onSdkInitSucceeded = {}

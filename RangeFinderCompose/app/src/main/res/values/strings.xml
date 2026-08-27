@@ -33,6 +33,7 @@
     <string name="distance_meters">%1$d m</string>
     <string name="distance_kilometers">%1$.1f km</string>
     <string name="energy_watt_hours">%1$d wh</string>
+    <string name="hills_factor">Hills Factor</string>
     <string name="hills_factor_avoid">0 (avoid)</string>
     <string name="hills_factor_allow">10 (allow))</string>
 </resources>

@@ -60,11 +60,7 @@ class CampsitePOIRenderer(private val icons: CampsiteMarkerIcons) {
             if (marker?.name?.contains("\"bookable\":true") == true) bookablePin else notBookablePin
     }
 
-    fun syncPOIs(
-        mapView: MapView,
-        markers: List<CampsiteMarkerDescriptor>,
-        clusterMaxZoom: Double = 6.0,
-    ) {
+    fun syncPOIs(mapView: MapView, markers: List<CampsiteMarkerDescriptor>, clusterMaxZoom: Double = 6.0) {
         val prefs = mapView.preferences?.markers ?: return
         prefs.clear()
 

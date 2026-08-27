@@ -26,7 +26,6 @@ import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
 import com.magiclane.sdk.core.RectangleGeographicArea
 import com.magiclane.sdk.core.SdkSettings
-import com.magiclane.sdk.core.Time
 import com.magiclane.sdk.examples.recents.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.recents.databinding.DialogLayoutBinding
 import com.magiclane.sdk.places.Coordinates

@@ -120,10 +120,10 @@ class MainActivity : AppCompatActivity() {
             updateFocusViewport()
         }
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
                 // Clear the listener immediately to avoid repeated route calculations.
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
 
                 SdkCall.runSynced {
                     val waypoints = arrayListOf(
@@ -149,7 +149,7 @@ class MainActivity : AppCompatActivity() {
 
     // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
         binding.gemSurfaceView.apply {
             onSdkInitFailed = {}

@@ -71,7 +71,7 @@ class MainActivity : AppCompatActivity() {
                                 routes[0],
                                 edgeAreaInsets = Rect(padding, padding, padding, padding),
                                 routeRenderSettings = routeRenderSettings,
-                                animation = Animation(EAnimation.None)
+                                animation = Animation(EAnimation.None),
                             )
 
                             // Wait for the map to finish rendering before capturing the screenshot.
@@ -159,10 +159,10 @@ class MainActivity : AppCompatActivity() {
     private fun registerSdkListeners() {
         binding.statusText.text = getString(R.string.waiting_for_data)
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
                 // Unregister immediately so the callback fires only once.
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
 
                 binding.statusText.text = getString(R.string.map_data_ready)
                 calculateRouteFromGPX()
@@ -176,7 +176,7 @@ class MainActivity : AppCompatActivity() {
 
     // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
     }
 

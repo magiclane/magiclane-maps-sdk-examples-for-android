@@ -102,9 +102,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun registerSdkListeners() {
         // Self-cleared on first fire to avoid recalculating on subsequent map updates.
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
                 calculateRoute()
             }
         }
@@ -120,7 +120,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
     }
 

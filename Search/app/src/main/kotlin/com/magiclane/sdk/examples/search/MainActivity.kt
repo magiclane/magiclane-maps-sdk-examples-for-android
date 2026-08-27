@@ -198,9 +198,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun registerSdkListeners() {
         // Self-clearing listener: fires once when the SDK map data is ready, then removes itself.
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
                 runOnAliveUi {
                     binding.progressBar.visibility = View.GONE
                     binding.searchInput.isEnabled = true
@@ -226,7 +226,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
         SdkSettings.onConnectionStatusUpdated = {}
     }

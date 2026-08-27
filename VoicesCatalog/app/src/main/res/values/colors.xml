@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
+  SPDX-License-Identifier: Apache-2.0
+
+  Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
+-->
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Magic Lane brand colors, matching the maps-compose MagicLaneTheme. -->
+    <color name="magic_lane_primary">#FF834FFF</color>
+    <color name="magic_lane_background">#FFF1F1ED</color>
+    <color name="magic_lane_surface">#FFFFFFFF</color>
+    <color name="magic_lane_on_surface">#FF211D2A</color>
+
+    <!-- Accents shared by the catalog rows (CatalogDefaults in maps-compose). -->
+    <color name="catalog_paused">#FFF57C00</color>
+    <color name="catalog_completed">#FF43A047</color>
+
+    <!-- Gender badge accents (VoiceDefaults in maps-compose). -->
+    <color name="voice_male">#FF3E7BFA</color>
+    <color name="voice_female">#FFE94B68</color>
+</resources>

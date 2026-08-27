@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">SpeedCheckAreaAlarms</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+    <string name="speed_check_area">Speed check area</string>
+    <string name="speed_section_in">in %1$s</string>
+    <string name="speed_section_out_in">out in %1$s</string>
+    <string name="average_speed">Average speed</string>
+    <string name="tts_approaching_speed_check_area">Caution, speed check area ahead!</string>
+    <string name="tts_entering_speed_check_area">Entering speed check area.</string>
+    <string name="tts_exiting_speed_check_area">Exiting speed check area.</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="routing_error">Routing error: %1$s</string>
+    <string name="route_simulation_error">Route simulation error: %1$s</string>
+</resources>

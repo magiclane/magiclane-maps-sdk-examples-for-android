@@ -8,13 +8,18 @@
 package com.magiclane.sdk.examples.mapselectioncompose
 
 import android.content.Context
-import androidx.annotation.DrawableRes
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.fromHtml
 import androidx.core.graphics.toColorInt
+import com.magiclane.sdk.compose.components.transit.PTAlertData
+import com.magiclane.sdk.compose.components.transit.PTDepartureData
+import com.magiclane.sdk.compose.components.transit.PTLine
+import com.magiclane.sdk.compose.components.transit.PTPalette
+import com.magiclane.sdk.compose.components.transit.PTStopData
+import com.magiclane.sdk.compose.components.transit.PTTripPageData
+import com.magiclane.sdk.compose.components.transit.PTVehicleType
+import com.magiclane.sdk.compose.format.ValueWithUnit
 import com.magiclane.sdk.core.ETZStatus
 import com.magiclane.sdk.core.ProgressListener
 import com.magiclane.sdk.core.Time
@@ -26,37 +31,11 @@ import com.magiclane.sdk.d3scene.PTOccupancyStatus
 import com.magiclane.sdk.d3scene.PTRouteInfo
 import com.magiclane.sdk.d3scene.PTRouteType
 import com.magiclane.sdk.d3scene.PTTrip
-import com.magiclane.sdk.examples.mapselectioncompose.ui.theme.PTAlertWarningDark
-import com.magiclane.sdk.examples.mapselectioncompose.ui.theme.PTAlertWarningLight
-import com.magiclane.sdk.examples.mapselectioncompose.ui.theme.PTGrayDark
-import com.magiclane.sdk.examples.mapselectioncompose.ui.theme.PTGrayLight
-import com.magiclane.sdk.examples.mapselectioncompose.ui.theme.PTStatusEarlyDark
-import com.magiclane.sdk.examples.mapselectioncompose.ui.theme.PTStatusEarlyLight
-import com.magiclane.sdk.examples.mapselectioncompose.ui.theme.PTStatusLateDark
-import com.magiclane.sdk.examples.mapselectioncompose.ui.theme.PTStatusLateLight
-import com.magiclane.sdk.examples.mapselectioncompose.ui.theme.PTStatusOnTimeDark
-import com.magiclane.sdk.examples.mapselectioncompose.ui.theme.PTStatusOnTimeLight
 import com.magiclane.sdk.places.Coordinates
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-
-// Fixed colors of the public transport screens, resolved for the current theme with [ptPalette].
-data class PTPalette(
-    val gray: Color,
-    val statusEarly: Color,
-    val statusOnTime: Color,
-    val statusLate: Color,
-    val alertWarning: Color,
-)
-
-@Composable
-fun ptPalette(): PTPalette = if (isSystemInDarkTheme()) {
-    PTPalette(PTGrayDark, PTStatusEarlyDark, PTStatusOnTimeDark, PTStatusLateDark, PTAlertWarningDark)
-} else {
-    PTPalette(PTGrayLight, PTStatusEarlyLight, PTStatusOnTimeLight, PTStatusLateLight, PTAlertWarningLight)
-}
 
 // Presentation helpers shared by the public transport station and trip screens.
 object PTUi {
@@ -124,16 +103,15 @@ object PTUi {
 
     // Guarantees the badge text is readable: when the delivered text color equals the
     // background color, the inverted background color is used instead.
-    fun contrastingTextColor(backgroundColor: Color, textColor: Color): Color =
-        if (backgroundColor != textColor) {
-            textColor
-        } else {
-            Color(
-                red = 1f - backgroundColor.red,
-                green = 1f - backgroundColor.green,
-                blue = 1f - backgroundColor.blue,
-            )
-        }
+    fun contrastingTextColor(backgroundColor: Color, textColor: Color): Color = if (backgroundColor != textColor) {
+        textColor
+    } else {
+        Color(
+            red = 1f - backgroundColor.red,
+            green = 1f - backgroundColor.green,
+            blue = 1f - backgroundColor.blue,
+        )
+    }
 
     // "Now" / "5 min" for departures within the next hour, absolute "H:MM" otherwise.
     // Returns the value and its unit ("min" or empty).
@@ -172,26 +150,24 @@ object PTUi {
     }
 
     // "Arrived" (last station) / "Departed" / "Scheduled" status of a station along a trip.
-    fun stopStatus(context: Context, departed: Boolean, isLastStop: Boolean): String =
-        context.getString(
-            when {
-                departed && isLastStop -> R.string.pt_arrived
-                departed -> R.string.pt_departed
-                else -> R.string.pt_scheduled
-            },
-        )
+    fun stopStatus(context: Context, departed: Boolean, isLastStop: Boolean): String = context.getString(
+        when {
+            departed && isLastStop -> R.string.pt_arrived
+            departed -> R.string.pt_departed
+            else -> R.string.pt_scheduled
+        },
+    )
 
     fun clockTime(date: Date?): String = date?.let { clockFormat.format(it) } ?: ""
 
     // Realtime status color: blue = running early, red = delayed, green = on time,
     // default text color = no realtime data (scheduled only).
-    fun statusColor(palette: PTPalette, defaultColor: Color, hasRealtime: Boolean, delayMinutes: Int): Color =
-        when {
-            !hasRealtime -> defaultColor
-            delayMinutes < 0 -> palette.statusEarly
-            delayMinutes > 0 -> palette.statusLate
-            else -> palette.statusOnTime
-        }
+    fun statusColor(palette: PTPalette, defaultColor: Color, hasRealtime: Boolean, delayMinutes: Int): Color = when {
+        !hasRealtime -> defaultColor
+        delayMinutes < 0 -> palette.statusEarly
+        delayMinutes > 0 -> palette.statusLate
+        else -> palette.statusOnTime
+    }
 
     // How crowded a vehicle is, bucketed from the producer's occupancy states. The GTFS-RT
     // occupancy scale is not linear, so states are grouped instead of interpolated.
@@ -223,14 +199,6 @@ object PTUi {
         CrowdingLevel.Medium -> palette.alertWarning
         CrowdingLevel.High -> palette.statusLate
     }
-
-    fun crowdingLabel(context: Context, level: CrowdingLevel): String = context.getString(
-        when (level) {
-            CrowdingLevel.Low -> R.string.pt_crowding_low
-            CrowdingLevel.Medium -> R.string.pt_crowding_medium
-            CrowdingLevel.High -> R.string.pt_crowding_high
-        },
-    )
 
     private fun severityRank(level: PTAlertSeverityLevel?): Int = when (level) {
         PTAlertSeverityLevel.Severe -> 2
@@ -288,15 +256,87 @@ object PTUi {
             text.isNotEmpty() && text != alertName(alert).trim()
         }
 
-    // Icon resource of the vehicle type. PTRoute.routeType is the Kotlin counterpart of reading
-    // gem::opid::kPT_route_type from the native trip details (ERouteType has the same values).
-    @DrawableRes
-    fun vehicleIconRes(routeType: PTRouteType): Int = when (routeType) {
-        PTRouteType.Bus -> R.drawable.ic_pt_bus_24
-        PTRouteType.Underground -> R.drawable.ic_pt_underground_24
-        PTRouteType.Railway -> R.drawable.ic_pt_railway_24
-        PTRouteType.Tram -> R.drawable.ic_pt_tram_24
-        PTRouteType.WaterTransport -> R.drawable.ic_pt_water_24
-        PTRouteType.Misc -> R.drawable.ic_pt_misc_24
+    // Library vehicle kind of the route type. PTRoute.routeType is the Kotlin counterpart of
+    // reading gem::opid::kPT_route_type from the native trip details (ERouteType has the same
+    // values).
+    fun vehicleType(routeType: PTRouteType): PTVehicleType = when (routeType) {
+        PTRouteType.Bus -> PTVehicleType.Bus
+        PTRouteType.Underground -> PTVehicleType.Underground
+        PTRouteType.Railway -> PTVehicleType.Railway
+        PTRouteType.Tram -> PTVehicleType.Tram
+        PTRouteType.WaterTransport -> PTVehicleType.WaterTransport
+        PTRouteType.Misc -> PTVehicleType.Misc
+    }
+
+    // Library line badge of a route: the delivered brand colors, guarded for readability.
+    fun line(route: PTRouteInfo, palette: PTPalette): PTLine {
+        val background = parseColor(route.routeColor, palette.gray)
+        return PTLine(
+            name = route.lineName,
+            backgroundColor = background,
+            textColor = contrastingTextColor(background, parseColor(route.routeTextColor, Color.White)),
+        )
+    }
+
+    // Library departure row data of an upcoming trip at the station. isCancelled is the
+    // authoritative "don't ride this" flag; the departure keeps its slot but is marked red
+    // with a struck-through time. A Color.Unspecified status resolves to the theme's default
+    // text color inside the library row.
+    fun departureData(context: Context, trip: PTTrip, now: Date, palette: PTPalette): PTDepartureData {
+        val isCancelled = trip.isCancelled == true
+        val alerts = activeAlerts(trip.alerts, now)
+        val (time, unit) = departureLabel(context, trip.departureTime, now)
+
+        return PTDepartureData(
+            vehicleType = vehicleType(trip.route.routeType),
+            line = line(trip.route, palette),
+            heading = trip.route.heading ?: "",
+            statusText = tripStatus(context, trip.departureTime, now, trip.stopPlatformCode, isCancelled),
+            statusColor = if (isCancelled) {
+                palette.statusLate
+            } else {
+                statusColor(palette, Color.Unspecified, trip.hasRealtime, trip.delayMinutes ?: 0)
+            },
+            time = ValueWithUnit(time, unit),
+            isCancelled = isCancelled,
+            isWheelchairAccessible = trip.isWheelchairAccessible,
+            isBikeAllowed = trip.isBikeAllowed,
+            crowdingColor = crowdingLevel(trip)?.let { crowdingColor(palette, it) },
+            alertColor = if (alerts.isEmpty()) null else alertColor(palette, alerts),
+        )
+    }
+
+    // Library trip page data of one trip of the line: its accessibility/crowding badges, its
+    // alert notes (the cancellation first — isCancelled is authoritative, shown even when the
+    // feed delivers no explaining NoService alert) and its stations along the timeline.
+    fun tripPageData(context: Context, trip: PTTrip, now: Date, palette: PTPalette): PTTripPageData {
+        val alerts = activeAlerts(trip.alerts, now)
+        val isCancelled = trip.isCancelled == true
+        val timelineColor = parseColor(trip.route.routeColor, Color.Unspecified)
+
+        return PTTripPageData(
+            isWheelchairAccessible = trip.isWheelchairAccessible,
+            isBikeAllowed = trip.isBikeAllowed,
+            crowdingColor = crowdingLevel(trip)?.let { crowdingColor(palette, it) },
+            notes = buildList {
+                if (isCancelled) add(PTAlertData(context.getString(R.string.pt_cancelled)))
+                alerts.forEach { add(PTAlertData(alertName(it), alertDescription(it))) }
+            },
+            noteColor = if (isCancelled) palette.statusLate else alertColor(palette, alerts),
+            stops = trip.stopTimes.mapIndexed { index, stop ->
+                val departed = stop.departureTime?.before(now) == true
+                val isLastStop = index == trip.stopTimes.size - 1
+                PTStopData(
+                    name = stop.stopName,
+                    statusText = stopStatus(context, departed, isLastStop),
+                    statusColor = statusColor(palette, Color.Unspecified, stop.hasRealtime, stop.delay),
+                    time = clockTime(stop.departureTime),
+                    isPassed = stop.isBefore,
+                    isFirst = index == 0,
+                    isLast = isLastStop,
+                    timelineColor = timelineColor,
+                )
+            },
+        )
     }
 }

@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">DisplayCurrentStreetInfoCompose</string>
+    <string name="info">Info</string>
+    <string name="ok">OK</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="startup_info_message">This example demonstrates how to display the current street / city names and speed limit information using the improved position data provided by the Magic Lane SDK. Use a mock location app or move outside on the streets to see the information displayed on the screen while following the position.</string>
+    <string name="near_city">Near %1$s</string>
+</resources>

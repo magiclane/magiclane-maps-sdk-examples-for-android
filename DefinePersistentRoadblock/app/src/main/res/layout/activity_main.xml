@@ -13,38 +13,208 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/primary"
-            app:layout_constraintTop_toTopOf="parent"
-            app:title="@string/app_name"
-            app:titleTextColor="@color/on_primary"
-            app:paddingTopWithSystemWindowInsets='@{"8dp"}'
-            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
-            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
-            android:paddingBottom="12dp"
-            />
-
-        <TextView
-            android:id="@+id/hint"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:background="@color/background"
-            android:text="@string/hint"
-            android:textColor="@color/on_background"
-            android:textSize="@dimen/standard_text_size"
-            android:textStyle="bold"
+        <!-- Target cross moved along roads while defining a roadblock. -->
+        <ImageView
+            android:id="@+id/target"
+            android:layout_width="@dimen/target_size"
+            android:layout_height="@dimen/target_size"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_target_56"
             android:visibility="gone"
-            android:paddingStart="@dimen/big_padding"
-            android:paddingEnd="@dimen/big_padding"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:paddingBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
-            app:paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}" />
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
+
+        <!-- Roadblock definition top toolbar, copied from Magic Earth. -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/define_roadblock_top_toolbar"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/toolbar_height"
+            android:layout_marginStart="@dimen/big_padding"
+            android:layout_marginEnd="@dimen/big_padding"
+            android:background="@drawable/toolbar_background"
+            android:clickable="true"
+            android:elevation="@dimen/list_item_padding"
+            android:focusable="true"
+            android:layoutDirection="locale"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:marginTopWithSystemWindowInsets="@{@dimen/small_padding}"
+            tools:visibility="visible">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/left_button"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_margin="@dimen/map_buttons_padding"
+                android:contentDescription="@string/finish_roadblock_definition"
+                android:insetLeft="0dp"
+                android:insetTop="0dp"
+                android:insetRight="0dp"
+                android:insetBottom="0dp"
+                android:paddingTop="0dp"
+                android:paddingBottom="0dp"
+                app:backgroundTint="@color/neon_green"
+                app:icon="@drawable/ic_check_circle_outline_34"
+                app:iconGravity="textStart"
+                app:iconSize="@dimen/toolbar_icon_size"
+                app:iconTint="@android:color/white"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/toolbar_title"
+                app:layout_constraintHorizontal_weight="0.25"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/toolbar_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="center_horizontal"
+                android:maxLines="2"
+                android:text="@string/define_roadblock"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/big_text_size_dp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/right_button"
+                app:layout_constraintHorizontal_weight="1"
+                app:layout_constraintStart_toEndOf="@id/left_button"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:ignore="SpUsage" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/right_button"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_margin="@dimen/map_buttons_padding"
+                android:contentDescription="@string/add_roadblock_segment"
+                android:insetLeft="0dp"
+                android:insetTop="0dp"
+                android:insetRight="0dp"
+                android:insetBottom="0dp"
+                android:paddingTop="0dp"
+                android:paddingBottom="0dp"
+                app:backgroundTint="@color/color_blue"
+                app:icon="@drawable/ic_add_circle_outline_24"
+                app:iconGravity="textStart"
+                app:iconSize="@dimen/toolbar_icon_size"
+                app:iconTint="@android:color/white"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_weight="0.25"
+                app:layout_constraintStart_toEndOf="@id/toolbar_title"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Opens the list with the active persistent roadblocks. -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/list_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/open_roadblocks_list"
+            app:backgroundTint="@color/surface"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:marginRightWithSystemWindowInsets="@{@dimen/big_padding}"
+            app:marginTopWithSystemWindowInsets="@{@dimen/big_padding}"
+            app:srcCompat="@drawable/ic_list_24"
+            app:tint="@color/on_surface" />
+
+        <!-- Opens the transport mode selection. -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/settings_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/open_transport_mode_settings"
+            app:backgroundTint="@color/surface"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:marginBottomWithSystemWindowInsets="@{@dimen/big_padding}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/big_padding}"
+            app:srcCompat="@drawable/ic_settings_24"
+            app:tint="@color/on_surface" />
+
+        <!-- Cancels the roadblock definition; visible only while defining. -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/cancel_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/cancel_definition"
+            android:visibility="gone"
+            app:backgroundTint="@color/surface"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:marginBottomWithSystemWindowInsets="@{@dimen/big_padding}"
+            app:marginLeftWithSystemWindowInsets="@{@dimen/big_padding}"
+            app:srcCompat="@drawable/ic_close_24"
+            app:tint="@color/on_surface"
+            tools:visibility="visible" />
+
+        <!-- Full screen view with the active persistent roadblocks. -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/roadblocks_panel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/background"
+            android:clickable="true"
+            android:elevation="12dp"
+            android:focusable="true"
+            android:visibility="gone"
+            tools:visibility="gone">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/roadblocks_toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/primary"
+                android:paddingBottom="12dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:navigationContentDescription="@string/close_roadblocks_list"
+                app:navigationIcon="@drawable/ic_highlight_off_34"
+                app:navigationIconTint="@color/on_primary"
+                app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
+                app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
+                app:paddingTopWithSystemWindowInsets='@{"8dp"}'
+                app:title="@string/roadblocks"
+                app:titleTextColor="@color/on_primary" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/roadblocks_list"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:clipToPadding="false"
+                android:descendantFocusability="afterDescendants"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/roadblocks_toolbar"
+                app:paddingBottomWithSystemWindowInsets="@{@dimen/small_padding}"
+                app:paddingLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+                app:paddingRightWithSystemWindowInsets="@{@dimen/no_extra_inset}" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/empty_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/big_padding"
+                android:text="@string/no_roadblocks"
+                android:textColor="@color/on_background"
+                android:textSize="@dimen/standard_text_size"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/roadblocks_toolbar" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

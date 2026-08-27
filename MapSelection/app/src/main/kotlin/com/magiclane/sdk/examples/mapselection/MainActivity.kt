@@ -244,9 +244,9 @@ class MainActivity : AppCompatActivity() {
             updateFocusViewport()
         }
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
 
                 // The world map is ready: compute the demo route.
                 calculateRoute()
@@ -276,7 +276,7 @@ class MainActivity : AppCompatActivity() {
     // Clears SDK-level listeners to avoid callbacks reaching a destroyed activity.
     private fun clearSdkListeners() {
         SdkSettings.onApiTokenRejected = {}
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         binding.gemSurface.apply {
             onSdkInitFailed = {}
             onDefaultMapViewCreated = {}
@@ -962,67 +962,68 @@ class MainActivity : AppCompatActivity() {
     // Highlights the landmark with the search-results pin. The camera frames, in order of
     // precedence: the landmark's contour, the caller-provided focus area (e.g. the bounding
     // area of a station's line shapes), or the landmark's coordinates.
-    private fun highlightLandmarkOnMap(landmark: Landmark, focusArea: RectangleGeographicArea? = null) = SdkCall.execute {
-        binding.gemSurface.mapView?.let { mapView ->
-            val rect = getMapFreeRect(mapFreeSpacePadding())
+    private fun highlightLandmarkOnMap(landmark: Landmark, focusArea: RectangleGeographicArea? = null) =
+        SdkCall.execute {
+            binding.gemSurface.mapView?.let { mapView ->
+                val rect = getMapFreeRect(mapFreeSpacePadding())
 
-            mapView.deactivateAllHighlights()
+                mapView.deactivateAllHighlights()
 
-            landmark.image = ImageDatabase().getImageById(SdkImages.Core.Search_Results_Pin.value)
+                landmark.image = ImageDatabase().getImageById(SdkImages.Core.Search_Results_Pin.value)
 
-            val contour = landmark.getContourGeographicArea()
-            var highlightSettings: HighlightRenderSettings
+                val contour = landmark.getContourGeographicArea()
+                var highlightSettings: HighlightRenderSettings
 
-            if ((contour != null) && !contour.isEmpty()) {
-                mapView.centerOnRectArea(
-                    contour,
-                    zoomLevel = -1,
-                    viewRc = rect,
-                    Animation(EAnimation.Linear, 900),
-                )
-
-                highlightSettings = HighlightRenderSettings(
-                    EHighlightOptions.ShowContour.value or EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
-                    Rgba(255, 98, 0, 255),
-                    Rgba(255, 98, 0, 255),
-                    0.75,
-                ).also {
-                    it.imageSize = 6.0
-                }
-            } else {
-                highlightSettings = HighlightRenderSettings(
-                    EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
-                ).also {
-                    it.imageSize = 6.0
-                }
-
-                if (focusArea != null && !focusArea.isEmpty()) {
+                if ((contour != null) && !contour.isEmpty()) {
                     mapView.centerOnRectArea(
-                        focusArea,
+                        contour,
                         zoomLevel = -1,
                         viewRc = rect,
                         Animation(EAnimation.Linear, 900),
                     )
+
+                    highlightSettings = HighlightRenderSettings(
+                        EHighlightOptions.ShowContour.value or EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
+                        Rgba(255, 98, 0, 255),
+                        Rgba(255, 98, 0, 255),
+                        0.75,
+                    ).also {
+                        it.imageSize = 6.0
+                    }
                 } else {
-                    landmark.coordinates?.let {
-                        mapView.centerOnCoordinates(
-                            it,
-                            -1,
-                            rect.center,
+                    highlightSettings = HighlightRenderSettings(
+                        EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
+                    ).also {
+                        it.imageSize = 6.0
+                    }
+
+                    if (focusArea != null && !focusArea.isEmpty()) {
+                        mapView.centerOnRectArea(
+                            focusArea,
+                            zoomLevel = -1,
+                            viewRc = rect,
                             Animation(EAnimation.Linear, 900),
-                            0.0,
-                            0.0,
                         )
+                    } else {
+                        landmark.coordinates?.let {
+                            mapView.centerOnCoordinates(
+                                it,
+                                -1,
+                                rect.center,
+                                Animation(EAnimation.Linear, 900),
+                                0.0,
+                                0.0,
+                            )
+                        }
                     }
                 }
-            }
 
-            mapView.activateHighlightLandmarks(
-                landmark,
-                highlightSettings,
-            )
+                mapView.activateHighlightLandmarks(
+                    landmark,
+                    highlightSettings,
+                )
+            }
         }
-    }
 
     // Returns the visible map area in surface-view coordinates, accounting for the system
     // bars/display cutout and any visible bottom panel. An optional padding deflates the

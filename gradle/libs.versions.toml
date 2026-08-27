@@ -1,5 +1,5 @@
 [versions]
-magicLaneMapsKotlinVersion = "1.9.2"
+magicLaneSdkVersion = "2.0.0"
 
 minSdkVersion = "21"
 targetSdkVersion = "36"
@@ -64,6 +64,8 @@ androidx-cardview = { group = "androidx.cardview", name = "cardview", version.re
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
+androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout" }
 androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics"}
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
@@ -96,7 +98,9 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 sortabletableview = { group = "com.github.ISchwarz23", name = "SortableTableView", version.ref = "sortableTableView" }
 
-magiclane-maps-kotlin = { group = "com.magiclane", name = "maps-kotlin", version.ref = "magicLaneMapsKotlinVersion"}
+magiclane-maps-kotlin = { group = "com.magiclane", name = "maps-kotlin", version.ref = "magicLaneSdkVersion"}
+magiclane-maps-compose = { group = "com.magiclane", name = "maps-compose", version.ref = "magicLaneSdkVersion"}
+magiclane-maps-compose-components = { group = "com.magiclane", name = "maps-compose-components", version.ref = "magicLaneSdkVersion"}
 nordic-ble = { group = "no.nordicsemi.android", name = "ble", version.ref = "nordicBle" }
 
 [plugins]

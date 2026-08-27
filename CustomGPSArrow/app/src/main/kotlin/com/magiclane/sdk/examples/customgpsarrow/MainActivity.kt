@@ -136,9 +136,9 @@ class MainActivity : AppCompatActivity() {
 
         // The callback is cleared before starting the simulation to prevent it from firing
         // a second time if the road-map status is updated again during the session.
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
                 startSimulation()
             }
         }
@@ -150,7 +150,7 @@ class MainActivity : AppCompatActivity() {
 
     /** Clears global SDK callbacks to prevent stale references after the Activity is destroyed. */
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
         binding.gemSurface.apply {
             onSdkInitFailed = {}

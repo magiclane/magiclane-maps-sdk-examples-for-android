@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
+  SPDX-License-Identifier: Apache-2.0
+
+  Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
+-->
+<resources>
+    <!-- Magic Lane brand colors, matching the maps-compose MagicLaneTheme (dark). -->
+    <color name="magic_lane_primary">#FFA085FF</color>
+    <color name="magic_lane_background">#FF18171A</color>
+    <color name="magic_lane_surface">#FF272531</color>
+    <color name="magic_lane_on_surface">#FFFFFFFF</color>
+</resources>

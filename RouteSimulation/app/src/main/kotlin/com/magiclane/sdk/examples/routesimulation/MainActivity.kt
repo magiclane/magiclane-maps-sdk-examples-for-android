@@ -12,12 +12,16 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.AbsoluteSizeSpan
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.Insets
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -72,7 +76,17 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         val rtdText: String = "",
         val signPostBitmap: Bitmap? = null,
         val roadCodeBitmap: Bitmap? = null,
+        val lanesBitmap: Bitmap? = null,
     )
+
+    /** Where the lane guidance is displayed. */
+    private enum class LaneInfoPlacement {
+        /** Along the bottom side of the top navigation instruction panel. */
+        TOP_PANEL,
+
+        /** Standalone panel near the ETA panel: above it in portrait, right of it in landscape. */
+        NEAR_ETA_PANEL,
+    }
 
     private lateinit var binding: ActivityMainBinding
 
@@ -81,6 +95,20 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private var navigationPanelPadding: Int = 0
     private var signPostImageSize: Int = 0
     private var topPanelWidth: Int = 0
+    private var lanePanelHeight: Int = 0
+    private var lanePanelPadding: Int = 0
+
+    // Where the lane guidance is displayed; pick the placement here at compile time.
+    private val laneInfoPlacement = LaneInfoPlacement.NEAR_ETA_PANEL
+
+    // Whether the standalone lane panel is currently shown; drives the landscape camera focus.
+    // Volatile: written on the UI thread, read from SDK-thread callbacks.
+    @Volatile
+    private var laneInfoVisible = false
+
+    // Pixel width available to render the lane image. Recomputed per orientation because the lane
+    // panel spans the full width in portrait but only the gap to the right of the panels in landscape.
+    private var laneAvailableWidth = 0
 
     private val playingListener = object : SoundPlayingListener() {}
 
@@ -111,6 +139,12 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     // constraint adjustments, so portrait layout is never recomputed from scratch.
     private lateinit var portraitConstraintSet: ConstraintSet
 
+    // Latest system bar / display cutout insets. Updated from the window insets listener rather
+    // than read synchronously, because the insets are not available immediately and change on
+    // rotation (a synchronous read during onConfigurationChanged still returns the pre-rotation
+    // values).
+    private var barInsets: Insets = Insets.NONE
+
     private var navigationStatus = ENavigationStatus.Running
 
     // Define a navigation service from which we will start the simulation.
@@ -129,7 +163,6 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         onNavigationStarted = {
             SdkCall.execute {
                 binding.gemSurfaceView.mapView?.let { mapView ->
-                    mapView.preferences?.enableCursor = false
                     navRoute?.let { route ->
                         mapView.presentRoute(route)
                     }
@@ -184,6 +217,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         navigationImageSize = resources.getDimension(R.dimen.navigation_image_size).toInt()
         navigationPanelPadding = resources.getDimension(R.dimen.nav_top_panel_padding).toInt()
         signPostImageSize = resources.getDimension(R.dimen.sign_post_image_size).toInt()
+        lanePanelHeight = resources.getDimension(R.dimen.lane_panel_height).toInt()
+        lanePanelPadding = resources.getDimension(R.dimen.lane_panel_padding).toInt()
 
         portraitConstraintSet = ConstraintSet().apply { clone(binding.root as ConstraintLayout) }
         applyOrientationLayout()
@@ -202,6 +237,19 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             setPanelHorizontalMargins(binding.trafficPanel)
         }
 
+        // Keep the lane panel's inset-dependent margins correct: the insets arrive after layout and
+        // change on rotation, so we update them here whenever the system (re)dispatches insets.
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            barInsets = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
+            )
+            applyLaneLandscapeInsets()
+            // The camera focus X depends on the insets (a left bar/cutout offsets the panels), and
+            // the insets read during onConfigurationChanged are stale — recompute with fresh ones.
+            applyCameraFocus()
+            insets
+        }
+
         registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
@@ -213,6 +261,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         super.onConfigurationChanged(newConfig)
         applyOrientationLayout()
         applyCameraFocus()
+        // The new orientation's insets are not known yet; request a fresh dispatch so the window
+        // insets listener can correct the lane panel margins (and recompute its width).
+        ViewCompat.requestApplyInsets(binding.root)
     }
 
     private fun applyOrientationLayout() {
@@ -222,16 +273,18 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         // ConstraintSet.applyTo() restores visibility from the time of clone (all panels
         // were GONE at that point), so we must save and restore the live visibility state.
         val topVis = binding.topPanel.visibility
+        val laneVis = binding.laneContainer.visibility
         val bottomVis = binding.bottomPanel.visibility
         val trafficVis = binding.trafficPanel.visibility
         val fabVis = binding.followGpsButton.visibility
         val progressVis = binding.progressBar.visibility
 
         val panelMargin = resources.getDimensionPixelSize(R.dimen.nav_panel_margin)
+        val bigPadding = resources.getDimensionPixelSize(R.dimen.big_padding)
         ConstraintSet().apply {
             clone(portraitConstraintSet)
             if (isLandscape) {
-                val panelWidth = (resources.displayMetrics.widthPixels * 0.4f).toInt()
+                val panelWidth = (resources.displayMetrics.widthPixels * LANDSCAPE_PANEL_WIDTH_FRACTION).toInt()
                 topPanelWidth = panelWidth
 
                 for (id in intArrayOf(R.id.top_panel, R.id.traffic_panel, R.id.bottom_panel)) {
@@ -239,6 +292,31 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                     connect(id, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, 0)
                     clear(id, ConstraintSet.END)
                 }
+
+                // The standalone lane panel moves into the free map area: the region to the right
+                // of the docked panels and inside the system insets, minus a small margin on each
+                // side. It is pinned to the bottom, aligned with the bottom panel; horizontally it
+                // centers on the followed position when it fits there (see
+                // updateLandscapeLanePosition()), starting from a free-space-centered bias.
+                clear(R.id.lane_container, ConstraintSet.TOP)
+                clear(R.id.lane_container, ConstraintSet.START)
+                clear(R.id.lane_container, ConstraintSet.END)
+                connect(R.id.lane_container, ConstraintSet.START, R.id.top_panel, ConstraintSet.END, bigPadding)
+                connect(
+                    R.id.lane_container,
+                    ConstraintSet.END,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.END,
+                    barInsets.right + bigPadding,
+                )
+                connect(
+                    R.id.lane_container,
+                    ConstraintSet.BOTTOM,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.BOTTOM,
+                    barInsets.bottom + bigPadding,
+                )
+                setHorizontalBias(R.id.lane_container, 0.5f)
             } else {
                 topPanelWidth = resources.displayMetrics.widthPixels - 2 * navigationPanelPadding
 
@@ -250,21 +328,147 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }.applyTo(rootLayout)
 
         binding.topPanel.visibility = topVis
+        binding.laneContainer.visibility = laneVis
         binding.bottomPanel.visibility = bottomVis
         binding.trafficPanel.visibility = trafficVis
         binding.followGpsButton.visibility = fabVis
         binding.progressBar.visibility = progressVis
+
+        updateLaneAvailableWidth(isLandscape, panelMargin, barInsets.right)
+
+        // Recompute the GPS-centered bias right away: the 0.5 bias set above is only a fallback,
+        // and waiting for the next insets/instruction pass would let the first post-rotation
+        // frame render off-center relative to the followed position.
+        if (laneInfoVisible) {
+            updateLandscapeLanePosition(binding.laneImage.layoutParams.width + 2 * lanePanelPadding)
+        }
+    }
+
+    /** Recomputes the pixel width used to render the lane image for the current orientation. */
+    private fun updateLaneAvailableWidth(isLandscape: Boolean, panelMargin: Int, rightInset: Int) {
+        val screenWidth = resources.displayMetrics.widthPixels
+        val bigPadding = resources.getDimensionPixelSize(R.dimen.big_padding)
+        val laneInnerPadding = 2 * lanePanelPadding
+
+        laneAvailableWidth = when {
+            // Inside the top panel the lane image spans the panel width minus its padding.
+            laneInfoPlacement == LaneInfoPlacement.TOP_PANEL ->
+                (topPanelWidth - laneInnerPadding).coerceAtLeast(turnImageSize)
+
+            // Width of the free space (area to the right of the docked panels, inside the right
+            // inset, minus the small side margins) reduced by the lane image padding, so the panel
+            // always fits in it.
+            isLandscape ->
+                (screenWidth - panelMargin - topPanelWidth - rightInset - 2 * bigPadding - laneInnerPadding)
+                    .coerceAtLeast(turnImageSize)
+
+            else -> screenWidth - 2 * bigPadding - laneInnerPadding
+        }
+    }
+
+    /**
+     * Applies the current insets to the landscape lane panel: the right inset shifts its right edge
+     * to match the focus viewport (so it stays centered inside it), and the bottom inset keeps it
+     * clear of the bottom system bar. Also refreshes the lane image width. No-op in portrait, where
+     * the lane panel keeps its cloned XML constraints. Driven by the window insets listener so it
+     * always uses fresh insets (a synchronous read is stale right after a rotation).
+     */
+    private fun applyLaneLandscapeInsets() {
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val panelMargin = resources.getDimensionPixelSize(R.dimen.nav_panel_margin)
+
+        if (isLandscape) {
+            val bigPadding = resources.getDimensionPixelSize(R.dimen.big_padding)
+            val params = binding.laneContainer.layoutParams as ConstraintLayout.LayoutParams
+            params.marginEnd = barInsets.right + bigPadding
+            params.bottomMargin = bigPadding + barInsets.bottom
+            binding.laneContainer.layoutParams = params
+        }
+
+        updateLaneAvailableWidth(isLandscape, panelMargin, barInsets.right)
+
+        if (laneInfoVisible) {
+            updateLandscapeLanePosition(binding.laneImage.layoutParams.width + 2 * lanePanelPadding)
+        }
+    }
+
+    /**
+     * In landscape, centers the lane panel horizontally on the followed position (the camera focus
+     * X fraction of the full screen width) whenever it fits there without crossing the free space
+     * bounds; otherwise it falls back to centering inside the free space. No-op in portrait, where
+     * the lane panel stays centered on the screen.
+     */
+    private fun updateLandscapeLanePosition(laneWidthPx: Int) {
+        if (resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE) return
+
+        val screenWidth = resources.displayMetrics.widthPixels
+        val params = binding.laneContainer.layoutParams as ConstraintLayout.LayoutParams
+
+        // Analytic right edge of the docked panels, matching landscapeCameraFocusX(). Reading
+        // binding.topPanel.right here would use the pre-rotation layout for one frame right after
+        // an orientation change, briefly misplacing the panel relative to the followed position.
+        val panelRight = barInsets.left + (screenWidth * LANDSCAPE_PANEL_WIDTH_FRACTION).toInt()
+        val freeLeft = panelRight + params.marginStart
+        val freeRight = screenWidth - params.marginEnd
+        val space = freeRight - freeLeft - laneWidthPx
+
+        val gpsCenteredLeft = (screenWidth * landscapeCameraFocusX()).toInt() - laneWidthPx / 2
+        params.horizontalBias =
+            if (space > 0 && gpsCenteredLeft >= freeLeft && gpsCenteredLeft + laneWidthPx <= freeRight) {
+                (gpsCenteredLeft - freeLeft).toFloat() / space
+            } else {
+                0.5f
+            }
+        binding.laneContainer.layoutParams = params
+    }
+
+    /**
+     * Horizontal camera focus in landscape: the middle of the free map area right of the docked
+     * panels, as a fraction of the full screen width. Only the left inset matters: a left system
+     * bar / cutout pushes the panels right, while on the right the map keeps drawing edge-to-edge
+     * under the bar, so nothing is offset there and the free area ends at the screen edge.
+     */
+    private fun landscapeCameraFocusX(): Float {
+        val screenWidth = resources.displayMetrics.widthPixels
+        val panelRight = barInsets.left + (screenWidth * LANDSCAPE_PANEL_WIDTH_FRACTION).toInt()
+        return (panelRight + screenWidth) / 2f / screenWidth
     }
 
     // this adjusts GPS arrow position on map
     private fun applyCameraFocus() {
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val hasLanePanel = laneInfoVisible
+        val focusX = landscapeCameraFocusX()
         SdkCall.execute {
-            // In landscape the navigation panel occupies the left 40 % of the screen, so shift the
-            // camera focus point right (0.7) to keep the arrow in the visible map area.
+            // In landscape the navigation panels cover the left side of the screen, so shift the
+            // camera focus point right to the middle of the remaining map area; while the bottom
+            // lane panel is present the arrow is also elevated (0.63) so the panel cannot cover it.
             binding.gemSurfaceView.mapView?.preferences?.followPositionPreferences?.cameraFocus =
-                if (isLandscape) XyF(0.7f, 0.75f) else XyF(0.5f, 0.75f)
+                when {
+                    !isLandscape -> XyF(0.5f, 0.75f)
+                    hasLanePanel -> XyF(focusX, 0.63f)
+                    else -> XyF(focusX, 0.75f)
+                }
         }
+    }
+
+    /** Shows/hides the standalone lane panel and keeps the camera focus in sync with its presence. */
+    private fun setLanePanelVisible(isVisible: Boolean) {
+        if (binding.laneContainer.isVisible == isVisible) return
+        binding.laneContainer.isVisible = isVisible
+        laneInfoVisible = isVisible
+        applyCameraFocus()
+    }
+
+    /**
+     * Shows/hides the lane strip inside the top panel and refreshes the focus viewport, since the
+     * panel grows/shrinks with it. Unlike the standalone panel, this placement never covers the
+     * followed position, so the camera focus is left alone.
+     */
+    private fun setTopPanelLaneVisible(isVisible: Boolean) {
+        if (binding.topLaneImage.isVisible == isVisible) return
+        binding.topLaneImage.isVisible = isVisible
+        binding.root.post { updateFocusViewport() }
     }
 
     // this adjusts Magic Lane logo position on map
@@ -343,9 +547,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         // Delay simulation start until the worldwide road map is fully downloaded and up to date;
         // the callback is cleared immediately after firing to avoid repeat invocations.
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
                 startSimulation()
             }
         }
@@ -358,7 +562,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     }
 
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
         binding.gemSurfaceView.apply {
             onSdkInitFailed = {}
@@ -459,6 +663,25 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 navInstruction.text = navData.instructionText
                 navInstruction.maxLines = if (hasRoadCode) 1 else 3
             }
+
+            // Only show the lane info while the turn information (not a status message) is visible.
+            val laneVisible =
+                (navData.lanesBitmap != null) && topPanel.isVisible && turnContainer.isVisible
+            if (laneInfoPlacement == LaneInfoPlacement.TOP_PANEL) {
+                setTopPanelLaneVisible(laneVisible)
+            } else {
+                setLanePanelVisible(laneVisible)
+            }
+            navData.lanesBitmap?.let { bitmap ->
+                val target =
+                    if (laneInfoPlacement == LaneInfoPlacement.TOP_PANEL) topLaneImage else laneImage
+                target.setImageBitmap(bitmap)
+                target.layoutParams.width = bitmap.width
+                target.layoutParams.height = bitmap.height
+                if (laneInfoPlacement == LaneInfoPlacement.NEAR_ETA_PANEL) {
+                    updateLandscapeLanePosition(bitmap.width + 2 * lanePanelPadding)
+                }
+            }
         }
 
         updateTrafficPanel(instruction)
@@ -488,6 +711,15 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             null
         }
 
+        // Trimmed to the visible arrows: the renderer keeps the diagram's aspect inside the
+        // requested canvas, so an untrimmed bitmap carries invisible slack that would misalign
+        // the diagram inside the lane panel.
+        val lanesBitmap = instruction.laneImage?.asBitmap(
+            laneAvailableWidth,
+            lanePanelHeight,
+            activeColor = Rgba.white(),
+        )?.trimmedToContent()
+
         return NavigationUiData(
             instructionText = instructionText,
             instructionIcon = instructionIcon,
@@ -499,6 +731,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             rtdText = rtdText,
             signPostBitmap = signPostBitmap,
             roadCodeBitmap = roadCodeBitmap,
+            lanesBitmap = lanesBitmap,
         )
     }
 
@@ -508,6 +741,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         if (statusMessage.isNotEmpty()) {
             binding.navInstruction.text = statusMessage
+            setLanePanelVisible(false)
+            setTopPanelLaneVisible(false)
         }
     }
 
@@ -553,6 +788,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         binding.bottomPanel.isVisible = isVisible
         if (!isVisible) {
             binding.trafficPanel.isVisible = false
+            setLanePanelVisible(false)
+            setTopPanelLaneVisible(false)
             updateFocusViewport()
         } else {
             binding.root.post { updateFocusViewport() }
@@ -680,6 +917,35 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         return GemUtilImages.asBitmap(image, resultWidth, height)
     }
 
+    /**
+     * Crops the bitmap to the bounding box of its non-transparent pixels; null when the bitmap is
+     * fully transparent.
+     */
+    private fun Bitmap.trimmedToContent(): Bitmap? {
+        val pixels = IntArray(width * height)
+        getPixels(pixels, 0, width, 0, 0, width, height)
+
+        var minX = width
+        var minY = height
+        var maxX = -1
+        var maxY = -1
+        for (y in 0 until height) {
+            val row = y * width
+            for (x in 0 until width) {
+                if (pixels[row + x] ushr 24 != 0) {
+                    if (x < minX) minX = x
+                    if (x > maxX) maxX = x
+                    if (y < minY) minY = y
+                    if (y > maxY) maxY = y
+                }
+            }
+        }
+
+        if (maxX < minX) return null
+        if (minX == 0 && minY == 0 && maxX == width - 1 && maxY == height - 1) return this
+        return Bitmap.createBitmap(this, minX, minY, maxX - minX + 1, maxY - minY + 1)
+    }
+
     // Measures the pixel width the given text would occupy in textView, then restores the original
     // text. Used to calculate how much space the distance label can take before layout happens.
     private fun getTextViewWidth(textView: MaterialTextView, text: String): Int {
@@ -769,18 +1035,33 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             distanceToTraffic.text = distanceToTrafficText
             distanceToTrafficUnit.text = distanceToTrafficUnitText
 
-            trafficDelayTime.text = trafficDelayTimeText
-            trafficDelayTimeUnit.text = trafficDelayTimeUnitText
+            trafficDelay.text = buildTrafficDelayText()
+        }
+    }
 
-            trafficDelayDistance.isVisible = trafficDelayDistanceText.isNotEmpty()
-            if (trafficDelayDistanceText.isNotEmpty()) {
-                trafficDelayDistance.text = trafficDelayDistanceText
+    // Delay time + event length as one string (values big, units small) so the single-line
+    // traffic_delay view ellipsizes the whole text instead of the parts wrapping separately.
+    private fun buildTrafficDelayText(): CharSequence {
+        val unitTextSize = resources.getDimensionPixelSize(R.dimen.nav_top_panel_traffic_small_text_size)
+
+        return SpannableStringBuilder().apply {
+            fun appendValueWithUnit(value: String, unit: String) {
+                if (value.isEmpty()) return
+                if (isNotEmpty()) append(" ")
+                append(value)
+                if (unit.isNotEmpty()) {
+                    append(unit)
+                    setSpan(
+                        AbsoluteSizeSpan(unitTextSize),
+                        length - unit.length,
+                        length,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                    )
+                }
             }
 
-            trafficDelayDistanceUnit.isVisible = trafficDelayDistanceUnitText.isNotEmpty()
-            if (trafficDelayDistanceUnitText.isNotEmpty()) {
-                trafficDelayDistanceUnit.text = trafficDelayDistanceUnitText
-            }
+            appendValueWithUnit(trafficDelayTimeText, trafficDelayTimeUnitText)
+            appendValueWithUnit(trafficDelayDistanceText, trafficDelayDistanceUnitText)
         }
     }
 
@@ -881,5 +1162,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     // ITTSPlayerInitializationListener
     override fun onTTSPlayerInitializationFailed() {
         SoundPlayingService.setDefaultHumanVoice()
+    }
+
+    companion object {
+        // Fraction of the screen width occupied by the navigation panels in landscape orientation.
+        private const val LANDSCAPE_PANEL_WIDTH_FRACTION = 0.45f
     }
 }

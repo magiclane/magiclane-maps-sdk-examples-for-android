@@ -159,9 +159,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun registerSdkListeners() {
         // Self-clearing listener: fires once when the SDK map data is ready, then removes itself.
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
 
                 SdkCall.execute {
                     val currentPosition = PositionService.getCurrentPosition()
@@ -187,7 +187,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
     }
 

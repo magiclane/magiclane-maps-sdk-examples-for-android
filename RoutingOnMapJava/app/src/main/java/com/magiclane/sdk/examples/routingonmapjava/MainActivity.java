@@ -195,9 +195,9 @@ public class MainActivity extends AppCompatActivity {
         // Triggered when the worldwide road map changes readiness state. Route calculation and
         // touch handling are set up only once the map data is fully available (UpToDate). The
         // listener clears itself after the first successful fire to avoid re-triggering.
-        SdkSettings.INSTANCE.setOnWorldwideRoadMapSupportStatus(status -> {
+        SdkSettings.INSTANCE.setOnWorldwideRoadMapSupportStatus((status, checkOnDemand) -> {
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.INSTANCE.setOnWorldwideRoadMapSupportStatus(s -> null);
+                SdkSettings.INSTANCE.setOnWorldwideRoadMapSupportStatus((s, c) -> null);
                 calculateRoute();
                 setupTouchHandler();
             }
@@ -231,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void clearSdkListeners() {
-        SdkSettings.INSTANCE.setOnWorldwideRoadMapSupportStatus(s -> null);
+        SdkSettings.INSTANCE.setOnWorldwideRoadMapSupportStatus((s, c) -> null);
         SdkSettings.INSTANCE.setOnApiTokenRejected(() -> null);
         routingService.setOnStarted(hasProgress -> null);
         routingService.setOnCompleted((routes, errorCode, hint) -> null);

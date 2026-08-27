@@ -109,7 +109,10 @@ class PublicTransportTripActivity : AppCompatActivity() {
     private fun bindHeader(trip: PTTrip) = binding.apply {
         vehicleIcon.setImageResource(PTUi.vehicleIconRes(trip.route.routeType))
 
-        val background = PTUi.parseColor(trip.route.routeColor, ContextCompat.getColor(this@PublicTransportTripActivity, R.color.gray))
+        val background = PTUi.parseColor(
+            trip.route.routeColor,
+            ContextCompat.getColor(this@PublicTransportTripActivity, R.color.gray),
+        )
         lineBadge.apply {
             text = trip.lineName
             setTextColor(

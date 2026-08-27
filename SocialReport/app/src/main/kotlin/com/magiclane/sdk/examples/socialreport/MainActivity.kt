@@ -164,9 +164,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Map interactions are only set up once the worldwide road map is confirmed available.
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
                 SdkCall.execute {
                     val mapView = binding.gemSurfaceView.mapView ?: return@execute
 
@@ -198,7 +198,7 @@ class MainActivity : AppCompatActivity() {
         if (::positionListener.isInitialized) {
             PositionService.removeListener(positionListener)
         }
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
         binding.gemSurfaceView.apply {
             onSdkInitFailed = {}

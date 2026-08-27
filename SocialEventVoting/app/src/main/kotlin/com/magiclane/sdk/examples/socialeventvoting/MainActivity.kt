@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.magiclane.sdk.core.DataBuffer
@@ -204,9 +205,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         // Delay simulation start until the worldwide road map is fully downloaded and up to date;
         // the callback is cleared immediately after firing to avoid repeat invocations.
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
                 startSimulation()
             }
         }
@@ -217,7 +218,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     }
 
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
         binding.gemSurfaceView.apply {
             onSdkInitFailed = {}
@@ -247,8 +248,8 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private fun startSimulation() = SdkCall.execute {
         val waypoints = arrayListOf(
-            Landmark("", 48.11005536802689, 11.520246863603928),
-            Landmark("", 48.11376725816093, 11.517058814987786),
+            Landmark("A", 48.21611, 11.48100),
+            Landmark("B", 48.22646, 11.46622),
         )
 
         val error = navigationService.startSimulation(waypoints, navigationListener, ProgressListener())
@@ -277,6 +278,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         countdownTimer = null
         binding.countdownProgress.visibility = View.GONE
         binding.eventVotingContainer.visibility = View.VISIBLE
+        applyCameraFocus()
 
         highlightAlarmOnMap(overlay)
 
@@ -382,6 +384,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         countdownTimer = null
         binding.countdownProgress.visibility = View.GONE
         binding.eventVotingContainer.visibility = View.GONE
+        applyCameraFocus()
         removeAlarmHighlight()
     }
 
@@ -470,14 +473,15 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         binding.eventVotingContainer.layoutParams = params
     }
 
-    // Adjusts the GPS arrow (camera focus point) so it stays in the visible part of the map. In
-    // landscape the voting panel covers the left 40% of the screen, so the focus point is shifted
-    // right (0.7) to keep the arrow clear of the panel; in portrait it stays horizontally centred.
+    // Adjusts the GPS arrow (camera focus point) so it stays in the visible part of the map. The
+    // focus point is shifted right (0.7) only while the voting panel covers the left 40% of the
+    // screen in landscape; otherwise the arrow stays horizontally centred (0.5).
     private fun applyCameraFocus() {
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val isPanelVisible = binding.eventVotingContainer.isVisible
         SdkCall.execute {
             binding.gemSurfaceView.mapView?.preferences?.followPositionPreferences?.cameraFocus =
-                if (isLandscape) XyF(0.7f, 0.75f) else XyF(0.5f, 0.75f)
+                if (isLandscape && isPanelVisible) XyF(0.7f, 0.75f) else XyF(0.5f, 0.75f)
         }
     }
 

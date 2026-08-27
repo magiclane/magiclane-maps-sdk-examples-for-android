@@ -1,0 +1,48 @@
+<resources>
+    <string name="app_name">DefinePersistentRoadblockCompose</string>
+
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+
+    <string name="define_roadblock">Define roadblock</string>
+    <string name="explanation_message">Zoom in and tap on a road to start defining a roadblock.\n\nPan the map and press the \"+\" button to add a new segment to the roadblock. Press the \"✓\" button when ready. To cancel the operation press the bottom left \"x\" button or the device\'s Back button.\n\nYou can always delete a roadblock by opening the roadblocks view via the top right button, or by tapping the corresponding roadblock icon on the map.</string>
+
+    <string name="close_dialog">Close the dialog</string>
+
+    <string name="roadblocks">Roadblocks</string>
+    <string name="no_roadblocks">There are no active roadblocks.</string>
+
+    <string name="transport_mode">Transport mode</string>
+    <string name="car">Car</string>
+    <string name="truck">Truck</string>
+    <string name="bike">Bike</string>
+
+    <string name="cancel_roadblock_definition">Cancel the roadblock definition?</string>
+    <string name="delete_one_item">Delete 1 item?</string>
+    <string name="action_can_not_be_undone">The action can not be undone.</string>
+    <string name="roadblock_definition_failed">The roadblock could not be defined. Make sure the target is placed on a road and try again.</string>
+
+    <string name="roadblock_name">Roadblock name</string>
+    <string name="done">Done</string>
+    <string name="from_label">From</string>
+    <string name="to_label">To</string>
+    <string name="roadblock_name_exists">You already have a defined roadblock with this name. Please choose another name.</string>
+    <string name="close_set_roadblock">Close the roadblock panel</string>
+    <string name="clear_roadblock_name">Clear the roadblock name</string>
+
+    <string name="length">Length</string>
+    <string name="from">From:</string>
+    <string name="to">To:</string>
+    <string name="valid_from">Valid from:</string>
+    <string name="valid_until">Valid until:</string>
+
+    <string name="open_roadblocks_list">Open the roadblocks list</string>
+    <string name="open_transport_mode_settings">Select the transport mode</string>
+    <string name="cancel_definition">Cancel the roadblock definition</string>
+
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
+</resources>

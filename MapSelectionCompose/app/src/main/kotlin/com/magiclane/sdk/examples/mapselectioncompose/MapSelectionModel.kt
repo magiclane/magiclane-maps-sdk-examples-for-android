@@ -16,12 +16,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.AndroidViewModel
+import com.magiclane.sdk.compose.components.details.CardinalDirection as ECardinalDirections
+import com.magiclane.sdk.compose.components.details.LocationDetailsData as LocationDetailsInfo
+import com.magiclane.sdk.compose.components.details.SafetyCameraData as SafetyCameraInfo
+import com.magiclane.sdk.compose.components.details.SocialReportData as SocialReportInfo
+import com.magiclane.sdk.compose.components.details.TrafficEventData as TrafficEventInfo
+import com.magiclane.sdk.compose.map.GemMapState
 import com.magiclane.sdk.core.EUnitSystem
 import com.magiclane.sdk.core.GemError
-import com.magiclane.sdk.core.GemSurfaceView
 import com.magiclane.sdk.core.Image
 import com.magiclane.sdk.core.ImageDatabase
 import com.magiclane.sdk.core.Parameter
@@ -49,13 +52,8 @@ import com.magiclane.sdk.d3scene.PTStopInfo
 import com.magiclane.sdk.d3scene.PTStopScheduleFilter
 import com.magiclane.sdk.d3scene.PTTrip
 import com.magiclane.sdk.examples.mapselectioncompose.PTUi.lineName
-import com.magiclane.sdk.examples.mapselectioncompose.data.ECardinalDirections
-import com.magiclane.sdk.examples.mapselectioncompose.data.LocationDetailsInfo
 import com.magiclane.sdk.examples.mapselectioncompose.data.PublicTransportStationInfo
 import com.magiclane.sdk.examples.mapselectioncompose.data.RouteInfo
-import com.magiclane.sdk.examples.mapselectioncompose.data.SafetyCameraInfo
-import com.magiclane.sdk.examples.mapselectioncompose.data.SocialReportInfo
-import com.magiclane.sdk.examples.mapselectioncompose.data.TrafficEventInfo
 import com.magiclane.sdk.examples.mapselectioncompose.ui.theme.PTGrayLight
 import com.magiclane.sdk.places.Coordinates
 import com.magiclane.sdk.places.EAddressField
@@ -63,10 +61,14 @@ import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.Route
 import com.magiclane.sdk.routesandnavigation.RoutingService
 import com.magiclane.sdk.routesandnavigation.TrafficEvent
+import com.magiclane.sdk.sensordatasource.PositionListener
+import com.magiclane.sdk.sensordatasource.PositionService
+import com.magiclane.sdk.sensordatasource.enums.EDataType
 import com.magiclane.sdk.util.GemList
 import com.magiclane.sdk.util.GemUtil
 import com.magiclane.sdk.util.GemUtilImages
 import com.magiclane.sdk.util.SdkCall
+import com.magiclane.sdk.util.Util
 import java.util.IdentityHashMap
 import java.util.Locale
 
@@ -125,28 +127,28 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
     var invokeHighlight by mutableStateOf(false)
     var highlightEffect: () -> Unit = {}
 
-    // Layout state reported by the UI layer, used to keep the Magic Lane logo and the camera
-    // centering clear of the system bars and the info panel.
-    var isLandscape = false
+    // State holder of the hosting GemMap composable; grants safe access to the map view without
+    // the UI passing it around, and exposes the free map area kept clear of the panels.
+    private var mapState: GemMapState? = null
 
-    // Measured extent of the info panel: its height when it spans the bottom (portrait) and its
-    // width when it is a card pinned to the bottom-left corner (landscape).
-    var panelHeightPx = 0
-    var panelWidthPx = 0
+    // Free map area (clear of the system bars / cutout and the panels), deflated by [padding].
+    // Used as the viewport when centering on routes / landmarks; null before the first layout.
+    private val visibleArea: Rect?
+        get() = mapState?.visibleArea(padding)
 
-    // Free map area (clear of the system bars / cutout and the info panel), deflated by [padding].
-    // Used as the viewport when centering on routes / landmarks.
-    private var visibleArea = Rect(0, 0, 0, 0)
-
-    // Kept so map areas can be refreshed (e.g. when the panel is hidden) without the UI passing it.
-    private var surfaceView: GemSurfaceView? = null
+    init {
+        val resources = application.resources
+        detailsPanelImageSize = resources.getDimension(R.dimen.image_size).toInt()
+        overlayImageSize = resources.getDimension(R.dimen.overlay_image_size).toInt()
+        padding = resources.getDimension(R.dimen.big_padding).toInt()
+    }
 
     // Resolves an SDK error code to a localized message on the SDK thread.
     private fun errorText(errorCode: Int): String =
         SdkCall.runSynced { GemError.getMessage(errorCode, getApplication()) } ?: ""
 
-    fun initialize(gemSurfaceView: GemSurfaceView) {
-        surfaceView = gemSurfaceView
+    fun initialize(mapState: GemMapState) {
+        this.mapState = mapState
 
         // create routing service
         routingService = RoutingService(
@@ -159,7 +161,7 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
                         {
                             routesList = routes
                             SdkCall.execute {
-                                gemSurfaceView.mapView?.let { mapView ->
+                                mapState.mapView?.let { mapView ->
                                     mapView.presentRoutes(routes, displayBubble = true)
                                     mapView.preferences?.routes?.mainRoute?.let {
                                         selectRoute(
@@ -182,21 +184,9 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
             },
         )
 
-        gemSurfaceView.mapView?.apply {
-            // handle follow position
-
-            onExitFollowingPosition = {
-                followGpsButtonIsVisible = true
-            }
-
-            onEnterFollowingPosition = {
-                followGpsButtonIsVisible = false
-                hideBottomView(this)
-                if (ptStationInfo != null) {
-                    closePublicTransportStationView()
-                }
-            }
-
+        // The follow-position enter/exit callbacks stay owned by GemMapState (they feed its
+        // isFollowingPosition state); the UI reacts to that state instead of hooking them here.
+        mapState.mapView?.apply {
             // Single tap selects, in priority order, a route, traffic event, the current
             // position, a point of interest or a map overlay under the cursor.
             onTouch = { xy ->
@@ -313,7 +303,7 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
                         // is deferred until the panel has been laid out (and the free map area
                         // updated for its height), so the event is centered in what remains
                         // visible of the map above the panel, not in the screen center.
-                        val mapView = surfaceView?.mapView
+                        val mapView = mapState?.mapView
                         val referencePoint = event.referencePoint
                         if (mapView != null && referencePoint != null) {
                             highlightPlace(referencePoint, event.image!!, mapView)
@@ -499,15 +489,10 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
 
         SdkCall.execute {
             removePublicTransportShapes()
-            surfaceView?.mapView?.let { deactivateHighlights(it) }
+            mapState?.mapView?.let { deactivateHighlights(it) }
         }
-
-        // Forget the panel extent so that re-showing a panel at the same size is still detected
-        // as a change by the panel's onGloballyPositioned guard, forcing a focus-viewport refresh.
-        panelHeightPx = 0
-        panelWidthPx = 0
-        // The panel is gone: give the freed space back to the map (and the Magic Lane logo).
-        updateMapAreas()
+        // The panel leaving the composition releases its map obstruction, so GemMap gives the
+        // freed space back to the map (and the Magic Lane logo) on its own.
     }
 
     // Mirrors the station panel's line chips selection on the map: only the selected lines'
@@ -521,8 +506,9 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
         val stopInfo = ptStopInfoWithShapes ?: return
         SdkCall.execute {
             val shapesArea = showPublicTransportShapes(stopInfo, selectedLines)
-            if (shapesArea != null && !shapesArea.isEmpty()) {
-                surfaceView?.mapView?.centerOnRectArea(shapesArea, -1, visibleArea, animation)
+            val area = visibleArea
+            if (shapesArea != null && !shapesArea.isEmpty() && area != null) {
+                mapState?.mapView?.centerOnRectArea(shapesArea, -1, area, animation)
             }
         }
     }
@@ -542,7 +528,7 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
         stopInfo: PTStopInfo,
         selectedLines: Set<String> = emptySet(),
     ): RectangleGeographicArea? {
-        val preferences = surfaceView?.mapView?.preferences ?: return null
+        val preferences = mapState?.mapView?.preferences ?: return null
 
         removePublicTransportShapes()
 
@@ -597,7 +583,7 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
     private fun removePublicTransportShapes() {
         if (ptShapeCollections.isEmpty()) return
 
-        surfaceView?.mapView?.preferences?.markers?.let { markers ->
+        mapState?.mapView?.preferences?.markers?.let { markers ->
             ptShapeCollections.forEach { markers.removeCollection(it) }
         }
         ptShapeCollections.clear()
@@ -614,11 +600,12 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
         stationLandmark ?: return
         stationLandmark.image = ImageDatabase.searchResultsPin
 
+        val area = visibleArea ?: return
         if (shapesArea != null && !shapesArea.isEmpty()) {
-            mapView.centerOnRectArea(shapesArea, -1, visibleArea, animation)
+            mapView.centerOnRectArea(shapesArea, -1, area, animation)
         } else {
             stationLandmark.coordinates?.let {
-                mapView.centerOnCoordinates(it, -1, visibleArea.center, animation, Double.MAX_VALUE, 0.0)
+                mapView.centerOnCoordinates(it, -1, area.center, animation, Double.MAX_VALUE, 0.0)
             }
         }
 
@@ -663,14 +650,38 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
 
             preferences?.routes?.mainRoute = route
             invokeHighlight = true
-            highlightEffect = {
-                centerOnRoutes(routesList, animation = animation, viewRc = visibleArea)
+            highlightEffect = effect@{
+                val area = visibleArea ?: return@effect
+                centerOnRoutes(routesList, animation = animation, viewRc = area)
             }
         }
     }
 
-    fun startFollowingPosition(surfaceView: GemSurfaceView?) = SdkCall.execute {
-        surfaceView?.mapView?.followPosition()
+    // Entering GPS-following mode dismisses whatever is selected: the info panel or the station
+    // panel, with everything drawn on the map for them.
+    fun onEnterFollowingPosition() {
+        hideBottomView()
+        if (ptStationInfo != null) {
+            closePublicTransportStationView()
+        }
+    }
+
+    // Called when the user grants the location permission: shows the follow-GPS button as soon
+    // as a valid position is available.
+    fun showFollowGpsOnFirstValidPosition() = SdkCall.execute {
+        lateinit var positionListener: PositionListener
+        if (PositionService.position?.isValid() == true) {
+            Util.postOnMain { followGpsButtonIsVisible = true }
+        } else {
+            positionListener = PositionListener {
+                if (it.isValid()) {
+                    PositionService.removeListener(positionListener)
+                    Util.postOnMain { followGpsButtonIsVisible = true }
+                }
+            }
+
+            PositionService.addListener(positionListener, EDataType.Position)
+        }
     }
 
     // Clears every info panel state (hiding the panel) without touching the map.
@@ -1158,7 +1169,8 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
 
     private fun highlightPlace(coordinates: Coordinates, image: Image, mapView: MapView) {
         invokeHighlight = true
-        highlightEffect = {
+        highlightEffect = effect@{
+            val area = visibleArea ?: return@effect
             val landmark = Landmark()
             landmark.coordinates = coordinates
             landmark.image = image
@@ -1167,7 +1179,7 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
                 mapView.centerOnCoordinates(
                     it,
                     84,
-                    visibleArea.center,
+                    area.center,
                     animation,
                     Double.MAX_VALUE,
                     0.0,
@@ -1201,11 +1213,12 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
         }
 
         invokeHighlight = true
-        highlightEffect = {
+        highlightEffect = effect@{
+            val area = visibleArea ?: return@effect
             val contour = landmark.getContourGeographicArea()
             if ((contour != null) && !contour.isEmpty()) {
                 contour.let {
-                    mapView.centerOnRectArea(it, -1, visibleArea, animation)
+                    mapView.centerOnRectArea(it, -1, area, animation)
 
                     val displaySettings = HighlightRenderSettings(
                         EHighlightOptions.ShowContour.value or EHighlightOptions.ShowLandmark.value or EHighlightOptions.Overlap.value,
@@ -1221,7 +1234,7 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
                     mapView.centerOnCoordinates(
                         it,
                         -1,
-                        visibleArea.center,
+                        area.center,
                         animation,
                         Double.MAX_VALUE,
                         0.0,
@@ -1243,81 +1256,20 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
         mapView.hideCustomMarkers("safety_fov")
     }
 
-    fun hideBottomView(mapView: MapView?) = SdkCall.execute {
+    fun hideBottomView() = SdkCall.execute {
         hideInfoPanelStates()
-        mapView?.let {
+        mapState?.mapView?.let {
             deactivateHighlights(it)
         }
-        // Forget the panel extent so that re-showing the panel at the same size is still detected
-        // as a change by the panel's onGloballyPositioned guard, forcing a focus-viewport refresh.
-        panelHeightPx = 0
-        panelWidthPx = 0
-        // The panel is gone: give the freed space back to the map (and the Magic Lane logo).
-        updateMapAreas()
+        // The panel leaving the composition releases its map obstruction, so GemMap gives the
+        // freed space back to the map (and the Magic Lane logo) on its own.
     }
 
     fun isBottomViewVisible() =
         socialReportInfo != null || locationDetailsInfo != null || safetyCameraInfo != null || trafficEventInfo != null || routeInfo != null
 
-    // Recomputes the free map area for the current orientation / panel state and applies it to:
-    //  - the map's focus viewport, which anchors the Magic Lane logo inside the visible area, and
-    //  - [visibleArea], the (padded) rectangle used to center routes and landmarks.
-    // The free area is expressed as Rect(left, top, right, bottom) and excludes the system bars,
-    // the display cutout and the info panel (bottom edge in portrait, left edge in landscape).
-    fun updateMapAreas(gemSurfaceView: GemSurfaceView? = surfaceView) = SdkCall.runSynced {
-        val view = gemSurfaceView ?: return@runSynced
-        val mapView = view.mapView ?: return@runSynced
-        val viewport = mapView.viewport ?: return@runSynced
-
-        val width = viewport.width
-        val height = viewport.height
-        if (width == 0 || height == 0) return@runSynced
-
-        val insets = ViewCompat.getRootWindowInsets(view)?.getInsets(SYSTEM_INSET_TYPES)
-        val insetLeft = insets?.left ?: 0
-        val insetTop = insets?.top ?: 0
-        val insetRight = insets?.right ?: 0
-        val insetBottom = insets?.bottom ?: 0
-        // The info panel and the station panel restrict the free map area the same way (they
-        // are never visible together): bottom edge in portrait, left edge in landscape.
-        val panelVisible = isBottomViewVisible() || ptStationInfo != null
-
-        val left: Int
-        val top = insetTop
-        val right = (width - insetRight).coerceAtLeast(insetLeft + 1)
-        val bottom: Int
-
-        if (isLandscape) {
-            // The panel hugs the bottom-left corner, so it pushes the free area's left edge inward.
-            left = if (panelVisible && panelWidthPx > 0) {
-                panelWidthPx.coerceIn(insetLeft, right - 1)
-            } else {
-                insetLeft
-            }
-            bottom = (height - insetBottom).coerceAtLeast(top + 1)
-        } else {
-            // The panel spans the bottom edge, so it raises the free area's bottom edge.
-            left = insetLeft
-            bottom = if (panelVisible && panelHeightPx > 0) {
-                (height - panelHeightPx).coerceIn(top + 1, height)
-            } else {
-                (height - insetBottom).coerceAtLeast(top + 1)
-            }
-        }
-
-        // Logo placement uses the full free area; centering uses a padded version so routes are
-        // not drawn flush against the edges.
-        mapView.preferences?.focusViewport = Rect(left, top, right, bottom)
-        visibleArea = Rect(
-            (left + padding).coerceAtMost(right - 1),
-            (top + padding).coerceAtMost(bottom - 1),
-            (right - padding).coerceAtLeast(left + 1),
-            (bottom - padding).coerceAtLeast(top + 1),
-        )
-    }
-
     fun invokeHighlightEffect() = SdkCall.execute {
-        if (!visibleArea.isEmpty() && invokeHighlight) {
+        if (visibleArea != null && invokeHighlight) {
             invokeHighlight = false
             highlightEffect.invoke()
         }
@@ -1381,11 +1333,5 @@ class MapSelectionModel(application: Application) : AndroidViewModel(application
         }
 
         return description
-    }
-
-    companion object {
-        // Window insets the map's focus viewport (and the info panel) must stay clear of.
-        private val SYSTEM_INSET_TYPES =
-            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
     }
 }

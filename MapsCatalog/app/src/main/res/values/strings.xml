@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
+  SPDX-License-Identifier: Apache-2.0
+
+  Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
+-->
+<resources>
+    <string name="app_name">MapsCatalog</string>
+    <string name="error">Error</string>
+    <string name="info">Info</string>
+    <string name="ok">OK</string>
+    <string name="search_hint">Search</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="internet_required">This app requires Internet connection to browse and download the maps catalog.</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="catalog_download_error">The maps catalog could not be downloaded: %1$s</string>
+    <string name="road_map_support_disabled_no_disk_space">Road map support was disabled because the device is running out of disk space. Free up some space and restart the app.</string>
+    <string name="road_map_support_disabled_expired_sdk">Road map support was disabled because this SDK version has expired. Please update the app to a newer SDK version.</string>
+    <string name="item_download_error">%1$s could not be downloaded: %2$s</string>
+    <string name="maps_up_to_date">Your maps are up to date.</string>
+    <string name="update_check_requires_internet">This action requires an Internet connection.</string>
+    <string name="update_check_error">Checking for a map update failed: %1$s</string>
+    <string name="maps_update_apply_error">The maps update could not be applied: %1$s</string>
+    <string name="region_count">%1$d regions · %2$s</string>
+    <plurals name="country_count">
+        <item quantity="one">%d country</item>
+        <item quantity="other">%d countries</item>
+    </plurals>
+    <plurals name="map_count">
+        <item quantity="one">%d map</item>
+        <item quantity="other">%d maps</item>
+    </plurals>
+
+    <!-- Catalog UI strings, ported from the maps-compose content-store components. -->
+    <string name="offline">Offline</string>
+    <string name="online">Online</string>
+    <string name="clear_search">Clear search</string>
+    <string name="download">Download</string>
+    <string name="download_all">Download All</string>
+    <string name="pause">Pause</string>
+    <string name="pause_all">Pause All</string>
+    <string name="resume_all">Resume All</string>
+    <string name="delete">Delete</string>
+    <string name="delete_all">Delete All</string>
+    <string name="downloaded">Downloaded</string>
+    <string name="paused">Paused</string>
+    <string name="expand">Expand</string>
+    <string name="collapse">Collapse</string>
+    <string name="country_flag">Country flag</string>
+    <string name="map_version">Maps version: %1$s</string>
+    <string name="check_for_map_update">Check for map update</string>
+    <string name="checking_for_map_update">Checking for map update…</string>
+    <string name="map_update_available">Map update available</string>
+    <string name="update_maps_to_version">Update maps to version %1$s</string>
+    <string name="updating_maps">Updating maps…</string>
+    <string name="updating_to_version">Updating maps to version %1$s</string>
+    <string name="applying_map_update">Applying map update…</string>
+    <string name="waiting_for_internet_connection">Waiting for internet connection…</string>
+    <string name="no_internet_connection">No internet connection</string>
+    <string name="content_store_failed">The content store could not be reached. Please try again later.</string>
+    <string name="no_search_results">No results found</string>
+    <string name="regions">Regions</string>
+    <string name="maps">Maps</string>
+    <string name="cancel">Cancel</string>
+    <string name="cancel_update">Cancel maps update</string>
+    <string name="delete_confirm_title">Delete \"%1$s\"?</string>
+    <string name="delete_all_maps_title">Offline maps</string>
+    <string name="delete_all_maps_message">This will delete all downloaded maps from this device.</string>
+    <string name="no_offline_maps">No offline maps yet. Download maps from the Online tab to use them offline.</string>
+    <string name="progress_percent">%1$d%%</string>
+</resources>

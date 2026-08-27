@@ -33,9 +33,12 @@ Explore the examples to learn the capabilities of the Magic Lane Maps Android SD
 * [BLE Server2](BLEServer2) - Start simulated navigation between 2 given landmarks. Displays turn-by-turn navigation instructions, estimated time of arrival, remaining time and distance. Acts like BLE server. Send navigation info (next turn image as bitmap, distance to next turn, next navigation instruction) to the BLE client.
 * [Custom GPS Arrow](CustomGPSArrow) - Start simulated navigation between 2 given landmarks if a route can be calculated, using a custom GPS arrow.
 * [Define Persistent Roadblock](DefinePersistentRoadblock) - Make possible the definition of a persistent roadblock.
+* [Define Persistent Roadblock Compose](DefinePersistentRoadblockCompose) - Define a persistent roadblock by tracing it along the roads, list the active roadblocks and present or delete them. Uses Jetpack Compose.
 * [Display Current Street Info](DisplayCurrentStreetInfo) - Fly to current coordinates. Display current street name, speed and road modifier.
+* [Display Current Street Info Compose](DisplayCurrentStreetInfoCompose) - Fly to current coordinates and display current street name, speed and road modifier, using Jetpack Compose.
+* [Download A Map](DownloadAMap) - Gather the list of available maps; Download an onboard map.
+* [Download A Voice](DownloadAVoice) - Gather the list of available voices; download first available voice.
 * [Downloaded Onboard Map Simulation](DownloadedOnboardMapSimulation) - Fully offline start simulation between 2 given landmarks if any route can be calculated.
-* [Downloading Onboard Map](DownloadingOnboardMap) - Gather the list of available maps; Download an onboard map.
 * [Downloading Onboard Map Simulation](DownloadingOnboardMapSimulation) - Gather the list of available maps; Download an onboard map. Starts a simulation.
 * [Draw Polyline](DrawPolyline) - Create a polyline and its display settings; fly to the polyline.
 * [Driver Behavior](DriverBehavior) - Start recording driver behaviour analysis. View recorded analyses.
@@ -64,17 +67,20 @@ Explore the examples to learn the capabilities of the Magic Lane Maps Android SD
 * [Map Perspective Change](MapPerspectiveChange) - Display an interactive map with a button that changes the view perspective between 2D and 3D.
 * [Map Selection](MapSelection) - Present a map. Calculate the routes between 2 given landmarks. Illustrate how to tap on different map overlays.
 * [Map Selection Compose](MapSelectionCompose) - Map selection example using Jetpack Compose.
+* [Maps Catalog Compose](MapsCatalogCompose) - Browse the online maps catalog by continent, download / pause / resume / delete maps with progress, search, and manage the offline maps, using Jetpack Compose.
 * [Marker Clustering](MarkerClustering) - Render thousands of GeoJSON campsites, cluster them into count pills, and show green/red pins with a tap-to-list panel.
 * [Marker Collection Display Icon](MarkerCollectionDisplayIcon) - Show usage of `MarkerCollection`.
 * [Monitor Geofence Area](MonitorGeofenceArea) - Get notified when crossing a geographic area.
 * [Multiple Surfaces in Fragment](MultipleSurfacesInFragment) - Display a variable list of maps on an Android Fragment.
 * [Overlapped Maps](OverlappedMaps) - Display a second map view over the existing one.
 * [Overspeed TTS Warning](OverspeedTTSWarning) - Start a navigation from the current position to a given landmark. Display the current speed and the legal speed limit. Send a TTS warning when the current speed exceeds the legal speed limit (throttled to at most once every 5 minutes).
+* [Overspeed TTS Warning Compose](OverspeedTTSWarningCompose) - Overspeed TTS warning example using Jetpack Compose.
 * [Projection](Projection) - Show various types of projections for landmarks.
 * [Public Transit Routing](PublicTransitRouting) - Calculate the public transport routes between 2 given landmarks; display the selected route on the map with a Magic Earth-style routes list, route description and public transport settings.
 * [Range Finder](RangeFinder) - Calculate the routes between 2 given landmarks; display and fly to the first route in the resulting route list, if it exists.
 * [Range Finder Compose](RangeFinderCompose) - Range finder example using Jetpack Compose.
 * [Route Alarms](RouteAlarms) - Start simulated navigation between 2 given landmarks if a route can be calculated.
+* [Route Alarms Compose](RouteAlarmsCompose) - Start simulated navigation along a route passing a safety camera. Display an alarm panel with the camera icon and the live distance to it, highlight the camera and its field of view on the map and play a TTS warning when the camera is approached. Uses Jetpack Compose.
 * [Route Instructions](RouteInstructions) - Calculate the routes between 2 given landmarks; display a list with all route instructions, if exists.
 * [Route Navigation](RouteNavigation) - Start navigation from the current position to a given landmark if any route can be calculated.
 * [Route Restrictions](RouteRestrictions) - Start simulated navigation between 2 given landmarks using a truck (lorry) route profile with a mass exceeding 3500 kg. Listen for route restrictions during navigation. Display active route restrictions.
@@ -91,19 +97,40 @@ Explore the examples to learn the capabilities of the Magic Lane Maps Android SD
 * [Send Debug Info](SendDebugInfo) - Show how to send the app log and latest crash report, if any, to Magic Lane support.
 * [Set TTS Language](SetTTSLanguage) - Show usage of `SoundPlayingService` class and setting TTS language.
 * [Social Event Voting](SocialEventVoting) - Present a social event panel that displays the score of the event and the option to vote the event.
+* [Social Event Voting Compose](SocialEventVotingCompose) - Start simulated navigation along a route passing social reports. Present an event voting panel with the report's icon, name, confirmation score, report time and live distance, vote the report with the thumb up / down buttons (kept available for a few seconds after passing the event), highlight the alarmed report on the map and play a TTS warning when it is approached. Uses Jetpack Compose.
 * [Social Report](SocialReport) - Wait for a valid position. Submit a social report.
+* [Speed Check Area Alarms](SpeedCheckAreaAlarms) - Start simulated navigation along a route crossing an average speed check area. Display a panel with the distance to the area entry / exit and the running average speed, highlight the entry and exit speed cameras on the map and play TTS messages when approaching, entering and exiting the area.
+* [Speed Check Area Alarms Compose](SpeedCheckAreaAlarmsCompose) - Start simulated navigation along a route crossing an average speed check area. Display an alarm panel with the distance to the area entry / exit and the running average speed, highlight the entry and exit speed cameras on the map and play TTS messages when approaching, entering and exiting the area. Uses Jetpack Compose.
 * [Stay Inside Geofence Area](StayInsideGeofenceArea) - Get notified when leaving a geographic area.
 * [Take Screenshot](TakeScreenshot) - Capture a screenshot of the map view by tapping the "Take Screenshot" button at the bottom of the screen. Preview the captured screenshot in a bottom sheet dialog.
 * [Track Positions](TrackPositions) - Mock navigation from point A to point B using external data source while tracking positions. Display path using tracked positions.
 * [Truck Profile](TruckProfile) - Calculate the truck routes between 2 given landmarks. Change the truck profile and recalculate routes depending on the new settings.
-* [Voice Downloading](VoiceDownloading) - Gather the list of available voices; download first available voice.
+* [Voices Catalog Compose](VoicesCatalogCompose) - Browse the online voices catalog, download / delete voices with progress and manage the offline voices, using Jetpack Compose.
 * [Weather](Weather) - Show how to use weather service to display forecast for a selected landmark.
+* [Weather Compose](WeatherCompose) - Weather forecast example using Jetpack Compose.
 * [What's Nearby](WhatsNearby) - Search all landmarks near current position; display a list of found landmarks.
 * [What's Nearby Category](WhatsNearbyCategory) - Search all landmarks of a specific category near current position; display a list of found landmarks.
 * [WiFi Client](WiFiClient) - WiFi client for the WiFiServer example. It discovers WiFiServer instances on the local network via Network Service Discovery (DNS-SD), connects to the selected one over TCP and displays the navigation instructions received from it (next turn icon, distance to the next turn and turn instruction text).
 * [WiFi Client1](WiFiClient1) - WiFi client for the WiFiServer1 example. It discovers WiFiServer1 instances on the local network via Network Service Discovery (DNS-SD), connects to the selected one over TCP and displays the navigation data received from it: the next-turn icon (sent by the server as a ready-rendered PNG image, like in the BLEClient1 example -- no icons are bundled with this app), the distance to the next turn, the turn instruction text and the bottom panel with ETA, remaining travel time and distance.
 * [WiFi Server](WiFiServer) - Acts as a WiFi server. It opens a TCP socket, advertises it on the local network via Network Service Discovery (DNS-SD) and sends navigation info (next turn event, distance to next turn, next navigation instruction) as newline-delimited JSON messages to every connected WiFiClient.
 * [WiFi Server1](WiFiServer1) - Acts as a WiFi server. It opens a TCP socket, advertises it on the local network via Network Service Discovery (DNS-SD) and sends navigation info (next turn icon as a PNG image, distance to next turn, next navigation instruction, remaining travel time and distance) as newline-delimited JSON messages to every connected WiFiClient1. Unlike the WiFiServer example, which sends a turn event id that the client maps to its own bundled icons, this example sends the rendered turn icon itself (like the BLEServer1 example does over GATT).
+
+## Jetpack Compose
+
+Examples ending in `Compose` are built with Jetpack Compose and consume the Magic Lane
+Compose extension from Maven, exactly like a customer app would:
+
+```kotlin
+// Base SDK
+implementation("com.magiclane:maps-kotlin:<version>")
+// `GemMap` composable + state holders
+implementation("com.magiclane:maps-compose:<version>")
+// Ready-made UI (theme, panels, search, ...)
+implementation("com.magiclane:maps-compose-components:<version>")
+```
+
+All three artifacts release together and share one version - `magicLaneSdkVersion` in
+[gradle/libs.versions.toml](gradle/libs.versions.toml).
 
 ## Running individual examples
 

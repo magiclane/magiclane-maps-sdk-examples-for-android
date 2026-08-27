@@ -8,5 +8,11 @@
     <color name="on_background">#211D2A</color>
     <color name="surface">#FFFFFF</color>
     <color name="on_surface">#211D2A</color>
-</resources>
 
+    <!-- Magic Earth roadblock UI colors -->
+    <color name="toolbar_pill">#4659A9</color>
+    <color name="neon_green">#3DC11C</color>
+    <color name="color_blue">#0678F4</color>
+    <color name="color_red">#F42E2E</color>
+    <color name="divider">#DCDCDC</color>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="big_padding">30dp</dimen>
+    <dimen name="image_size">40dp</dimen>
+
+    <dimen name="offset">50dp</dimen>
+</resources>

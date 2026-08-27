@@ -157,7 +157,7 @@ class GemSdkTestRule(
             var mapState = EOffboardListenerStatus.OldData
             val latch = CountDownLatch(1)
 
-            SdkSettings.onWorldwideRoadMapSupportStatus = { state ->
+            SdkSettings.onWorldwideRoadMapSupportStatus = { state, _ ->
                 mapState = state
             }
 

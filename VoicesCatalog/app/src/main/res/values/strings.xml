@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
+  SPDX-License-Identifier: Apache-2.0
+
+  Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
+-->
+<resources>
+    <string name="app_name">VoicesCatalog</string>
+    <string name="error">Error</string>
+    <string name="info">Info</string>
+    <string name="ok">OK</string>
+    <string name="voices">Voices</string>
+    <string name="search_hint">Search</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="internet_required">This app requires Internet connection to browse and download the voices catalog.</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="catalog_download_error">The voices catalog could not be downloaded: %1$s</string>
+    <string name="item_download_error">%1$s could not be downloaded: %2$s</string>
+    <string name="group_detail">%1$s · %2$s</string>
+    <string name="language_with_country">%1$s (%2$s)</string>
+    <plurals name="country_count">
+        <item quantity="one">%d country</item>
+        <item quantity="other">%d countries</item>
+    </plurals>
+    <plurals name="voice_count">
+        <item quantity="one">%d voice</item>
+        <item quantity="other">%d voices</item>
+    </plurals>
+
+    <!-- Catalog UI strings, ported from the maps-compose content-store components. -->
+    <string name="offline">Offline</string>
+    <string name="online">Online</string>
+    <string name="clear_search">Clear search</string>
+    <string name="download">Download</string>
+    <string name="download_all">Download All</string>
+    <string name="pause">Pause</string>
+    <string name="pause_all">Pause All</string>
+    <string name="resume_all">Resume All</string>
+    <string name="delete">Delete</string>
+    <string name="delete_all">Delete All</string>
+    <string name="downloaded">Downloaded</string>
+    <string name="paused">Paused</string>
+    <string name="expand">Expand</string>
+    <string name="collapse">Collapse</string>
+    <string name="country_flag">Country flag</string>
+    <string name="no_internet_connection">No internet connection</string>
+    <string name="content_store_failed">The content store could not be reached. Please try again later.</string>
+    <string name="no_search_results">No results found</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete_confirm_title">Delete \"%1$s\"?</string>
+    <string name="text_to_speech">Text-to-Speech</string>
+    <string name="selected_voice">Selected Voice</string>
+    <string name="selected">Selected</string>
+    <string name="human_voices">Human Voices</string>
+    <string name="voice_gender_male">Male voice</string>
+    <string name="voice_gender_female">Female voice</string>
+    <string name="no_offline_voices">No offline human voices yet. Download voices from the Online tab to use them offline.</string>
+    <string name="delete_all_voices_title">Voices</string>
+    <string name="delete_all_voices_message">This will delete all downloaded human voices from this device. The selected voice is kept.</string>
+</resources>

@@ -58,14 +58,7 @@ object PTStationStore {
     val isValid: Boolean
         get() = overlayItem != null && stopInfo != null
 
-    fun set(
-        item: OverlayItem,
-        name: String,
-        address: String,
-        icon: Bitmap?,
-        info: PTStopInfo,
-        utcOffsetMs: Long?,
-    ) {
+    fun set(item: OverlayItem, name: String, address: String, icon: Bitmap?, info: PTStopInfo, utcOffsetMs: Long?) {
         overlayItem = item
         stationName = name
         stationAddress = address
@@ -153,30 +146,28 @@ object PTUi {
 
     // Guarantees the badge text is readable: when the delivered text color equals the
     // background color, the inverted background color is used instead.
-    fun contrastingTextColor(backgroundColor: Int, textColor: Int): Int =
-        if (backgroundColor != textColor) {
-            textColor
-        } else {
-            Color.argb(
-                255,
-                255 - Color.red(backgroundColor),
-                255 - Color.green(backgroundColor),
-                255 - Color.blue(backgroundColor),
-            )
-        }
+    fun contrastingTextColor(backgroundColor: Int, textColor: Int): Int = if (backgroundColor != textColor) {
+        textColor
+    } else {
+        Color.argb(
+            255,
+            255 - Color.red(backgroundColor),
+            255 - Color.green(backgroundColor),
+            255 - Color.blue(backgroundColor),
+        )
+    }
 
     // Rounded rectangle used as background for line chips and badges. A subtle outline is added
     // when the badge color would blend into the surface it sits on.
-    fun badgeBackground(context: Context, color: Int): GradientDrawable =
-        GradientDrawable().apply {
-            cornerRadius = context.resources.getDimension(R.dimen.pt_badge_corner_radius)
-            setColor(color)
-            if (color == ContextCompat.getColor(context, R.color.surface) ||
-                color == ContextCompat.getColor(context, R.color.background)
-            ) {
-                setStroke(2, ContextCompat.getColor(context, R.color.gray))
-            }
+    fun badgeBackground(context: Context, color: Int): GradientDrawable = GradientDrawable().apply {
+        cornerRadius = context.resources.getDimension(R.dimen.pt_badge_corner_radius)
+        setColor(color)
+        if (color == ContextCompat.getColor(context, R.color.surface) ||
+            color == ContextCompat.getColor(context, R.color.background)
+        ) {
+            setStroke(2, ContextCompat.getColor(context, R.color.gray))
         }
+    }
 
     // "Now" / "5 min" for departures within the next hour, absolute "H:MM" otherwise.
     // Returns the value and its unit ("min" or empty).
@@ -215,29 +206,27 @@ object PTUi {
     }
 
     // "Arrived" (last station) / "Departed" / "Scheduled" status of a station along a trip.
-    fun stopStatus(context: Context, departed: Boolean, isLastStop: Boolean): String =
-        context.getString(
-            when {
-                departed && isLastStop -> R.string.pt_arrived
-                departed -> R.string.pt_departed
-                else -> R.string.pt_scheduled
-            },
-        )
+    fun stopStatus(context: Context, departed: Boolean, isLastStop: Boolean): String = context.getString(
+        when {
+            departed && isLastStop -> R.string.pt_arrived
+            departed -> R.string.pt_departed
+            else -> R.string.pt_scheduled
+        },
+    )
 
     fun clockTime(date: Date?): String = date?.let { clockFormat.format(it) } ?: ""
 
     // Realtime status color: blue = running early, red = delayed, green = on time,
     // default text color = no realtime data (scheduled only).
-    fun statusColor(context: Context, hasRealtime: Boolean, delayMinutes: Int): Int =
-        ContextCompat.getColor(
-            context,
-            when {
-                !hasRealtime -> R.color.on_background
-                delayMinutes < 0 -> R.color.pt_status_early
-                delayMinutes > 0 -> R.color.pt_status_late
-                else -> R.color.pt_status_on_time
-            },
-        )
+    fun statusColor(context: Context, hasRealtime: Boolean, delayMinutes: Int): Int = ContextCompat.getColor(
+        context,
+        when {
+            !hasRealtime -> R.color.on_background
+            delayMinutes < 0 -> R.color.pt_status_early
+            delayMinutes > 0 -> R.color.pt_status_late
+            else -> R.color.pt_status_on_time
+        },
+    )
 
     // How crowded a vehicle is, bucketed from the producer's occupancy states. The GTFS-RT
     // occupancy scale is not linear, so states are grouped instead of interpolated.

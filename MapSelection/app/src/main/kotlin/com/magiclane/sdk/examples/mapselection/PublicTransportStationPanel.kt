@@ -256,13 +256,19 @@ class PublicTransportStationPanel(
             holder.itemBinding.apply {
                 vehicleIcon.setImageResource(PTUi.vehicleIconRes(trip.route.routeType))
 
-                val background = PTUi.parseColor(trip.route.routeColor, ContextCompat.getColor(root.context, R.color.gray))
+                val background = PTUi.parseColor(
+                    trip.route.routeColor,
+                    ContextCompat.getColor(root.context, R.color.gray),
+                )
                 lineBadge.apply {
                     text = trip.lineName
                     setTextColor(
                         PTUi.contrastingTextColor(
                             background,
-                            PTUi.parseColor(trip.route.routeTextColor, ContextCompat.getColor(root.context, R.color.on_secondary)),
+                            PTUi.parseColor(
+                                trip.route.routeTextColor,
+                                ContextCompat.getColor(root.context, R.color.on_secondary),
+                            ),
                         ),
                     )
                     this.background = PTUi.badgeBackground(context, background)
@@ -274,7 +280,13 @@ class PublicTransportStationPanel(
                 // its slot but is marked red with a struck-through time.
                 val isCancelled = trip.isCancelled == true
 
-                val statusText = PTUi.tripStatus(root.context, trip.departureTime, now, trip.stopPlatformCode, isCancelled)
+                val statusText = PTUi.tripStatus(
+                    root.context,
+                    trip.departureTime,
+                    now,
+                    trip.stopPlatformCode,
+                    isCancelled,
+                )
                 status.text = statusText
                 status.isVisible = statusText.isNotEmpty()
 

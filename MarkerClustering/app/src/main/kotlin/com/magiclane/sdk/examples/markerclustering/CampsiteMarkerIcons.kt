@@ -70,12 +70,12 @@ class CampsiteMarkerIcons(private val context: Context) {
      * visible capsule.
      */
     fun makePill(digits: Int = 1): Image? = cache.getOrPut("pill-$digits") {
-        val height = 64f                            // power-of-two
-        val width = if (digits >= 3) 128f else 64f  // 128 holds 3–4 digits
+        val height = 64f // power-of-two
+        val width = if (digits >= 3) 128f else 64f // 128 holds 3–4 digits
         val capsuleWidth = when {
-            digits >= 4 -> 91f   // snug 4-digit
-            digits == 3 -> 76f   // snug 3-digit
-            else -> 64f          // 1–2 digits → circle
+            digits >= 4 -> 91f // snug 4-digit
+            digits == 3 -> 76f // snug 3-digit
+            else -> 64f // 1–2 digits → circle
         }
         val margin = (width - capsuleWidth) / 2f
         val stroke = height / 24f

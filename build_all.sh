@@ -247,6 +247,7 @@ SHOW_EXIT_MESSAGE=true
 declare -a EXAMPLE_PROJECTS=()
 declare -a ONLY_EXAMPLES=()
 declare -a EXCLUDE_EXAMPLES=()
+declare -a COMPOSE_AAR_PATHS=()
 
 function dist_clean()
 {
@@ -896,45 +897,39 @@ function extract_sdk_archive()
 {
     [[ -z "${LOCAL_MAVEN_REPOSITORY}" ]] && [[ -n "${SDK_ARCHIVE_PATH}" ]] || return 0
 
-    local SDK_ARCHIVE_FILENAME
-    SDK_ARCHIVE_FILENAME="${SDK_ARCHIVE_PATH##*/}"
-    SDK_AAR_PATH="${SDK_ARCHIVE_PATH}"
-
-    if [[ ! "${SDK_ARCHIVE_FILENAME}" =~ (.tar.bz2|.aar|.zip)$ ]]; then
+    if [[ "${SDK_ARCHIVE_PATH##*/}" != *.zip ]]; then
         log_error "Invalid SDK archive '${SDK_ARCHIVE_PATH}'"
-        log_error "Supported formats: .tar.bz2, .zip, .aar"
+        log_error "Supported format: .zip (SDK distribution zip)"
         exit 1
     fi
 
-    if [[ "${SDK_ARCHIVE_FILENAME}" =~ (.tar.bz2|.zip)$ ]]; then
-        log_info "Extracting SDK archive..."
-        SDK_TEMP_DIR="$(mktemp -d)"
-
-        case "${SDK_ARCHIVE_PATH}" in
-            *.tar.bz2)
-                tar -xvf "${SDK_ARCHIVE_PATH}" --strip-components=1 -C "${SDK_TEMP_DIR}"
-                ;;
-            *.zip)
-                if ! check_cmd unzip; then
-                    log_error "unzip command not found. Please install unzip to extract .zip archives"
-                    exit 2
-                fi
-                unzip -q "${SDK_ARCHIVE_PATH}" -d "${SDK_TEMP_DIR}"
-                if [[ $(find "${SDK_TEMP_DIR}" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ') -eq 1 ]]; then
-                    local TOP_DIR
-                    TOP_DIR="$(find "${SDK_TEMP_DIR}" -mindepth 1 -maxdepth 1 -type d)"
-                    mv "${TOP_DIR}"/* "${SDK_TEMP_DIR}/"
-                    rmdir "${TOP_DIR}"
-                fi
-                ;;
-        esac
-
-        SDK_AAR_PATH="$(find "${SDK_TEMP_DIR}" -maxdepth 2 -type f -iname "*.aar" 2>/dev/null | sort | head -1 || true)"
-        log_success "SDK archive extracted successfully"
+    if ! check_cmd unzip; then
+        log_error "unzip command not found. Please install unzip to extract .zip archives"
+        exit 2
     fi
 
+    log_info "Extracting SDK archive..."
+    SDK_TEMP_DIR="$(mktemp -d)"
+
+    unzip -q "${SDK_ARCHIVE_PATH}" -d "${SDK_TEMP_DIR}"
+    if [[ $(find "${SDK_TEMP_DIR}" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ') -eq 1 ]]; then
+        local TOP_DIR
+        TOP_DIR="$(find "${SDK_TEMP_DIR}" -mindepth 1 -maxdepth 1 -type d)"
+        mv "${TOP_DIR}"/* "${SDK_TEMP_DIR}/"
+        rmdir "${TOP_DIR}"
+    fi
+
+    SDK_AAR_PATH="$(find "${SDK_TEMP_DIR}" -maxdepth 2 -type f -iname "MAGICLANE-*SDK-ANDROID-*.aar" 2>/dev/null | sort | head -1 || true)"
+
+    mapfile -t COMPOSE_AAR_PATHS < <(find "${SDK_TEMP_DIR}" -maxdepth 2 -type f -iname "MAGICLANE-MAPS-COMPOSE-*.aar" 2>/dev/null | sort)
+    if [[ ${#COMPOSE_AAR_PATHS[@]} -gt 0 ]]; then
+        log_info "Found ${#COMPOSE_AAR_PATHS[@]} Compose AAR(s) in the archive"
+    fi
+
+    log_success "SDK archive extracted successfully"
+
     if [[ -z "${SDK_AAR_PATH}" ]] || [[ ! -f "${SDK_AAR_PATH}" ]]; then
-        log_error "Invalid aar path '${SDK_AAR_PATH}'"
+        log_error "No SDK AAR found in archive '${SDK_ARCHIVE_PATH}'"
         exit 1
     fi
 }
@@ -946,6 +941,12 @@ function copy_sdk_to_examples()
     local EXAMPLE_PATH
     for EXAMPLE_PATH in "${EXAMPLE_PROJECTS[@]}"; do
         cp "${SDK_AAR_PATH}" "${EXAMPLE_PATH}/app/libs"
+
+        # Compose AARs go only into the examples that use the Compose extension
+        if [[ ${#COMPOSE_AAR_PATHS[@]} -gt 0 ]] \
+            && grep -q "magiclane\.maps\.compose" "${EXAMPLE_PATH}/app/build.gradle.kts" 2>/dev/null; then
+            cp "${COMPOSE_AAR_PATHS[@]}" "${EXAMPLE_PATH}/app/libs"
+        fi
     done
 }
 
@@ -1192,8 +1193,9 @@ Usage: ${PROGNAME} [options]
 Options:
     -h, --help                   Show this help message
 
-    --sdk-archive=<path>         Set path to the Maps SDK for Android archive
-                                 (.tar.bz2, .zip, or .aar).
+    --sdk-archive=<path>         Set path to the Maps SDK for Android distribution zip.
+                                 A zip that also carries the Compose extension AARs makes
+                                 the Compose examples build from them as well.
                                  If missing, SDK will be retrieved from Maven SDK Registry
 
     --local-maven-repository=<path>

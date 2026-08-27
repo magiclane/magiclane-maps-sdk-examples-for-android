@@ -21,3 +21,6 @@ local.properties
 
 # Claude / Cowork local agent folder
 .claude/
+
+# graphify knowledge-graph output
+/graphify-out/

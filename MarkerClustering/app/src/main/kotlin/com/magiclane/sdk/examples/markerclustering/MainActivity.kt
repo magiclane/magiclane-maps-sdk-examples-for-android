@@ -231,8 +231,10 @@ class MainActivity : AppCompatActivity() {
         // Otherwise a single campsite → centre the map on it and show the info panel.
         // Prefer the match carrying our JSON metadata (the detail-layer pin) over the
         // transparent cluster-layer marker.
-        val marker = (markers.firstOrNull { it.marker?.name?.contains("\"bookable\"") == true }
-            ?: markers.firstOrNull())?.marker ?: return
+        val marker = (
+            markers.firstOrNull { it.marker?.name?.contains("\"bookable\"") == true }
+                ?: markers.firstOrNull()
+            )?.marker ?: return
         // We're already on the SDK thread here, so centre directly.
         marker.getCoordinates()?.firstOrNull()?.let { coordinates -> centerOn(mapView, coordinates) }
         runOnAliveUi { showInfoPanel(CampsiteInfo.from(marker)) }

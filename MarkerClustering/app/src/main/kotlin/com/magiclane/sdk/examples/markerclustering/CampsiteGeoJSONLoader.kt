@@ -20,16 +20,14 @@ import java.io.InputStreamReader
  */
 object CampsiteGeoJSONLoader {
 
-    fun loadFromAssets(
-        context: Context,
-        assetName: String = "campsites.geojson",
-    ): List<CampsiteMarkerDescriptor> = runCatching {
-        context.assets.open(assetName).use { stream ->
-            JsonReader(InputStreamReader(stream, Charsets.UTF_8)).use { reader ->
-                parse(reader)
+    fun loadFromAssets(context: Context, assetName: String = "campsites.geojson"): List<CampsiteMarkerDescriptor> =
+        runCatching {
+            context.assets.open(assetName).use { stream ->
+                JsonReader(InputStreamReader(stream, Charsets.UTF_8)).use { reader ->
+                    parse(reader)
+                }
             }
-        }
-    }.getOrElse { emptyList() }
+        }.getOrElse { emptyList() }
 
     private fun parse(reader: JsonReader): List<CampsiteMarkerDescriptor> {
         val result = mutableListOf<CampsiteMarkerDescriptor>()
@@ -103,9 +101,17 @@ object CampsiteGeoJSONLoader {
         )
     }
 
-    private fun JsonReader.nextStringOrNull(): String? =
-        if (peek() == JsonToken.NULL) { skipValue(); null } else nextString()
+    private fun JsonReader.nextStringOrNull(): String? = if (peek() == JsonToken.NULL) {
+        skipValue()
+        null
+    } else {
+        nextString()
+    }
 
-    private fun JsonReader.nextBooleanOrFalse(): Boolean =
-        if (peek() == JsonToken.NULL) { skipValue(); false } else nextBoolean()
+    private fun JsonReader.nextBooleanOrFalse(): Boolean = if (peek() == JsonToken.NULL) {
+        skipValue()
+        false
+    } else {
+        nextBoolean()
+    }
 }

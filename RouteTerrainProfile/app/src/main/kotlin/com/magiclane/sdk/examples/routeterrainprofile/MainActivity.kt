@@ -174,9 +174,9 @@ class MainActivity : AppCompatActivity() {
 
         // Delay route calculation until the worldwide road map data is ready and up to date;
         // the callback is cleared immediately after firing to avoid repeat invocations.
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
                 calculateRoute()
             }
         }
@@ -189,7 +189,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
         gemSurfaceView.apply {
             onSdkInitFailed = {}

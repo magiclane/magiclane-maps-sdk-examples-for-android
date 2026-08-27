@@ -296,9 +296,9 @@ public class MainActivity extends AppCompatActivity
 
         // Delay route calculation until the road map is fully up to date.
         // The callback is cleared immediately after firing to prevent repeat invocations.
-        SdkSettings.INSTANCE.setOnWorldwideRoadMapSupportStatus(status -> {
+        SdkSettings.INSTANCE.setOnWorldwideRoadMapSupportStatus((status, checkOnDemand) -> {
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.INSTANCE.setOnWorldwideRoadMapSupportStatus(s -> Unit.INSTANCE);
+                SdkSettings.INSTANCE.setOnWorldwideRoadMapSupportStatus((s, c) -> Unit.INSTANCE);
                 calculateRouteFromGPX();
             }
             return Unit.INSTANCE;
@@ -312,7 +312,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void clearSdkListeners() {
-        SdkSettings.INSTANCE.setOnWorldwideRoadMapSupportStatus(s -> Unit.INSTANCE);
+        SdkSettings.INSTANCE.setOnWorldwideRoadMapSupportStatus((s, c) -> Unit.INSTANCE);
         SdkSettings.INSTANCE.setOnApiTokenRejected(() -> Unit.INSTANCE);
         binding.gemSurfaceView.setOnSdkInitFailed(error -> Unit.INSTANCE);
         binding.gemSurfaceView.setOnDefaultMapViewCreated(mapView -> Unit.INSTANCE);

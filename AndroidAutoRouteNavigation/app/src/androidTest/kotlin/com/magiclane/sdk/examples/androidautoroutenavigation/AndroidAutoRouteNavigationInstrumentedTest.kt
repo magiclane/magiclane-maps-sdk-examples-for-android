@@ -72,39 +72,37 @@ class AndroidAutoRouteNavigationInstrumentedTest {
      * fills [RoutingInstance.results] and notifies listeners) and returns
      * (returnCode, completionErrorCode).
      */
-    private fun calculateRouteBlocking(
-        waypoints: LandmarkList,
-        timeoutMs: Long = ROUTE_TIMEOUT_MS,
-    ): Pair<Int, Int> = runBlocking {
-        var completionError = GemError.NoError
-        val channel = Channel<Unit>(Channel.RENDEZVOUS)
+    private fun calculateRouteBlocking(waypoints: LandmarkList, timeoutMs: Long = ROUTE_TIMEOUT_MS): Pair<Int, Int> =
+        runBlocking {
+            var completionError = GemError.NoError
+            val channel = Channel<Unit>(Channel.RENDEZVOUS)
 
-        val listener = ProgressListener.create(
-            onCompleted = { errorCode, _ ->
-                completionError = errorCode
-                launch { channel.send(Unit) }
-            },
-        )
-        RoutingInstance.listeners.add(listener)
+            val listener = ProgressListener.create(
+                onCompleted = { errorCode, _ ->
+                    completionError = errorCode
+                    launch { channel.send(Unit) }
+                },
+            )
+            RoutingInstance.listeners.add(listener)
 
-        try {
-            // Stale results from a previous test would otherwise survive a calculation that never
-            // starts (results are only cleared by the service's onStarted callback).
-            val returnCode = SdkCall.execute {
-                RoutingInstance.results.clear()
-                RoutingInstance.service.calculateRoute(waypoints)
-            } ?: GemError.General
+            try {
+                // Stale results from a previous test would otherwise survive a calculation that never
+                // starts (results are only cleared by the service's onStarted callback).
+                val returnCode = SdkCall.execute {
+                    RoutingInstance.results.clear()
+                    RoutingInstance.service.calculateRoute(waypoints)
+                } ?: GemError.General
 
-            // onCompleted only fires when the calculation was successfully started.
-            if (returnCode == GemError.NoError) {
-                withTimeout(timeoutMs) { channel.receive() }
+                // onCompleted only fires when the calculation was successfully started.
+                if (returnCode == GemError.NoError) {
+                    withTimeout(timeoutMs) { channel.receive() }
+                }
+
+                Pair(returnCode, completionError)
+            } finally {
+                RoutingInstance.listeners.remove(listener)
             }
-
-            Pair(returnCode, completionError)
-        } finally {
-            RoutingInstance.listeners.remove(listener)
         }
-    }
 
     @Test
     fun londonToParisRouteCalculationSucceeds() {

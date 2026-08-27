@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Set roadblock" panel, copied from the Magic Earth set roadblock view: the roadblock
+     name and the validity interval are chosen here, then "Done" defines the roadblock. -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/big_padding">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/close_button"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/close_set_roadblock"
+            app:icon="@drawable/ic_highlight_off_34"
+            app:iconSize="@dimen/close_icon_size"
+            app:iconTint="@color/on_surface"
+            app:layout_constraintBottom_toBottomOf="@id/done_button"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/done_button" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="@string/define_roadblock"
+            android:textColor="@color/on_surface"
+            android:textSize="@dimen/big_text_size"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/done_button"
+            app:layout_constraintEnd_toStartOf="@id/done_button"
+            app:layout_constraintStart_toEndOf="@id/close_button"
+            app:layout_constraintTop_toTopOf="@id/done_button" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/done_button"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/done"
+            android:textAllCaps="true"
+            android:textSize="@dimen/standard_text_size"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/roadblock_name_input_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/small_padding"
+            android:hint="@string/roadblock_name"
+            app:endIconMode="clear_text"
+            app:layout_constraintTop_toBottomOf="@id/done_button">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/roadblock_name_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="flagNoExtractUi|actionDone"
+                android:inputType="text"
+                android:singleLine="true" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Selects which end of the validity interval the date and time buttons edit. -->
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/interval_toggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/big_padding"
+            app:checkedButton="@id/from_button"
+            app:layout_constraintTop_toBottomOf="@id/roadblock_name_input_layout"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <Button
+                android:id="@+id/from_button"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@string/from_label"
+                android:textSize="@dimen/standard_text_size"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/to_button"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@string/to_label"
+                android:textSize="@dimen/standard_text_size"
+                android:textStyle="bold" />
+
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <Button
+            android:id="@+id/date_button"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/big_padding"
+            android:layout_marginEnd="@dimen/big_padding"
+            android:singleLine="true"
+            android:textAlignment="center"
+            android:textSize="@dimen/standard_text_size"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/time_button"
+            app:layout_constraintHorizontal_weight="2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/interval_toggle"
+            tools:text="4 Apr 2026" />
+
+        <Button
+            android:id="@+id/time_button"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/big_padding"
+            android:singleLine="true"
+            android:textAlignment="center"
+            android:textSize="@dimen/standard_text_size"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_weight="1"
+            app:layout_constraintStart_toEndOf="@id/date_button"
+            app:layout_constraintTop_toBottomOf="@id/interval_toggle"
+            tools:text="10:31" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

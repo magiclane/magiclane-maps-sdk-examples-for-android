@@ -139,7 +139,7 @@ class MainActivity : AppCompatActivity() {
     // Registers all SDK callbacks. Always paired with clearSdkListeners() in onDestroy.
     private fun registerSdkListeners() {
         // Wait for map data to be ready before starting driver behaviour analysis.
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
                 SdkCall.execute {
                     dataSource = DataSourceFactory.produceLive()
@@ -159,7 +159,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 // One-shot listener — clear after the first UpToDate signal.
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
             }
         }
 
@@ -170,7 +170,7 @@ class MainActivity : AppCompatActivity() {
 
     // Clears SDK callbacks to prevent them reaching a destroyed activity.
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
     }
 

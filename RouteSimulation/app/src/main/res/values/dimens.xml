@@ -22,4 +22,7 @@
     <dimen name="medium_text_size">18sp</dimen>
     <dimen name="nav_top_panel_instruction_text_size">22sp</dimen>
     <dimen name="bottom_panel_height">50dp</dimen>
+    <dimen name="lane_panel_height">48dp</dimen>
+    <!-- Breathing room between the lane diagram and the lane panel edges. -->
+    <dimen name="lane_panel_padding">8dp</dimen>
 </resources>

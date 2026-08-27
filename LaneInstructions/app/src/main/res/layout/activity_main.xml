@@ -26,13 +26,15 @@
 
         <!--
             Top navigation panel: shows the next turn icon + distance (grouped in turn_container)
-            and the instruction / status text. Its width is 0dp so it can be constrained to the full
-            width in portrait or to the left 40% in landscape (see applyOrientationLayout()).
+            and the instruction / status text, plus — with the TOP_PANEL lane placement — the lane
+            guidance along its bottom side (top_lane_image). Its width is 0dp so it can be
+            constrained to the full width in portrait or to the left 40% in landscape (see
+            applyOrientationLayout()).
         -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/top_panel"
             android:layout_width="0dp"
-            android:layout_height="@dimen/top_panel_height"
+            android:layout_height="wrap_content"
             android:layout_margin="@dimen/big_padding"
             android:background="@android:color/black"
             android:elevation="@dimen/elevation_height"
@@ -45,6 +47,17 @@
             app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
             app:marginTopWithSystemWindowInsets="@{@dimen/no_extra_inset}">
+
+            <!-- Turn info + instruction text row; wraps the turn content, no artificial height. -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/instruction_container"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/big_padding"
+                android:paddingBottom="@dimen/big_padding"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
 
             <!-- Turn icon + distance. Hidden as a group while a transient status message is shown. -->
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -61,7 +74,6 @@
                     android:id="@+id/nav_instruction_icon"
                     android:layout_width="@dimen/turn_image_size"
                     android:layout_height="@dimen/turn_image_size"
-                    android:layout_marginTop="@dimen/big_padding"
                     app:layout_constraintBottom_toTopOf="@id/nav_instruction_distance"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -72,7 +84,6 @@
                     android:id="@+id/nav_instruction_distance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="@dimen/big_padding"
                     android:textColor="@android:color/white"
                     android:textSize="@dimen/medium_text_size"
                     android:textStyle="bold"
@@ -100,12 +111,34 @@
                 app:layout_constraintStart_toEndOf="@id/turn_container"
                 app:layout_constraintTop_toTopOf="parent" />
 
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!--
+                Lane guidance along the panel's bottom side (TOP_PANEL placement). Shown by
+                renderInstructionUi(); the panel grows to make room for it while it is visible.
+            -->
+            <ImageView
+                android:id="@+id/top_lane_image"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/lane_panel_height"
+                android:layout_marginStart="@dimen/lane_panel_padding"
+                android:layout_marginTop="@dimen/lane_panel_padding"
+                android:layout_marginEnd="@dimen/lane_panel_padding"
+                android:layout_marginBottom="@dimen/lane_panel_padding"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/instruction_container"
+                tools:ignore="ContentDescription" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <!--
             Lane guidance panel. In portrait it sits centered just above the bottom panel; in
-            landscape applyOrientationLayout() re-anchors it to the bottom-right, filling the gap
-            between the bottom panel's right edge and the right edge of the map viewport.
+            landscape applyOrientationLayout() re-anchors it bottom-aligned with the bottom panel
+            in the free space right of the docked panels, centered on the followed position when
+            it fits there (see updateLandscapeLanePosition()).
         -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/lane_container"
@@ -125,7 +158,7 @@
                 android:id="@+id/lane_image"
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/lane_panel_height"
-                android:layout_margin="@dimen/medium_padding"
+                android:layout_margin="@dimen/lane_panel_padding"
                 android:foregroundGravity="center"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"

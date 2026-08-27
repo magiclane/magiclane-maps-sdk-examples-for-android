@@ -7,15 +7,18 @@
 
 package com.magiclane.sdk.examples.routealarms
 
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
 import androidx.test.espresso.idling.CountingIdlingResource
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -32,6 +35,7 @@ import com.magiclane.sdk.core.SdkSettings
 import com.magiclane.sdk.core.SoundPlayingListener
 import com.magiclane.sdk.core.SoundPlayingPreferences
 import com.magiclane.sdk.core.SoundPlayingService
+import com.magiclane.sdk.core.XyF
 import com.magiclane.sdk.d3scene.ECommonOverlayId
 import com.magiclane.sdk.d3scene.EHighlightOptions
 import com.magiclane.sdk.d3scene.HighlightRenderSettings
@@ -68,6 +72,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     private lateinit var binding: ActivityMainBinding
     private val mapView
         get() = binding.gemSurfaceView.mapView
+
+    private val isLandscape
+        get() = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     private var alarmImageSize = 0
     private var safetyAlarmId = 0
@@ -212,12 +219,31 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
 
         alarmImageSize = resources.getDimensionPixelSize(R.dimen.alarm_image_size)
+        applyAlarmPanelWidth()
+
+        // A 180-degree landscape flip moves the display cutout to the other side
+        // without a configuration change - the insets then shift the panel, so track
+        // its edges to keep the GPS arrow centered in the space left free.
+        binding.alarmPanel.addOnLayoutChangeListener { _, left, _, right, _, oldLeft, _, oldRight, _ ->
+            if (left != oldLeft || right != oldRight) {
+                updateFollowPositionCameraFocus()
+            }
+        }
 
         registerSdkListeners()
 
         if (!Util.isInternetConnected(this)) {
             showDialog(getString(R.string.internet_required))
         }
+    }
+
+    // The activity handles orientation changes itself (configChanges in the manifest),
+    // so the panel width and the follow position camera focus are refreshed here.
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applyAlarmPanelWidth()
+        // Defer until the panel has been re-laid out for the new orientation.
+        binding.root.doOnPreDraw { updateFollowPositionCameraFocus() }
     }
 
     override fun onDestroy() {
@@ -252,9 +278,9 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             updateFocusViewport()
         }
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
 
                 startSimulation()
             }
@@ -273,7 +299,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             onDefaultMapViewCreated = {}
             onSurfaceChanged = { _, _ -> }
         }
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
     }
 
@@ -301,6 +327,43 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 (viewport.height - (insets?.bottom ?: 0)).coerceAtLeast(top)
             }
             currentMapView.preferences?.focusViewport = Rect(left, top, right, bottom)
+        }
+    }
+
+    /**
+     * The panel spans the whole screen width in portrait and only the left half of
+     * the screen in landscape, leaving the right half free for the GPS arrow.
+     */
+    private fun applyAlarmPanelWidth() {
+        val params = binding.alarmPanel.layoutParams as ConstraintLayout.LayoutParams
+        if (isLandscape) {
+            params.matchConstraintDefaultWidth = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT_PERCENT
+            params.matchConstraintPercentWidth = 0.5f
+        } else {
+            // Spread width fills the space between the constraints, respecting the margins.
+            params.matchConstraintDefaultWidth = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT_SPREAD
+            params.matchConstraintPercentWidth = 1f
+        }
+        binding.alarmPanel.layoutParams = params
+    }
+
+    /**
+     * Places the follow position camera focus (the GPS arrow) horizontally at the
+     * center of the map area not covered by the panel: while the panel covers the
+     * left half of a landscape screen, the center of the space remaining at its
+     * right (computed from the laid out panel, which a display cutout may have
+     * shifted right); 0.5 otherwise. Must be called after the panel is laid out.
+     */
+    private fun updateFollowPositionCameraFocus() {
+        val screenWidth = binding.root.width
+        val x = if (isLandscape && binding.alarmPanel.isVisible && screenWidth > 0) {
+            (binding.alarmPanel.right + screenWidth) / (2f * screenWidth)
+        } else {
+            0.5f
+        }
+        SdkCall.execute {
+            val preferences = mapView?.preferences?.followPositionPreferences ?: return@execute
+            preferences.cameraFocus = XyF(x, preferences.cameraFocus.y)
         }
     }
 
@@ -420,14 +483,18 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         binding.alarmPanel.visibility = View.VISIBLE
         alarmBitmap?.let { binding.alarmImage.setImageBitmap(it) }
         EspressoIdlingResource.updateAlarmVisibility(isVisible = true)
-        // Defer until the panel has been laid out so its top edge is known, then
-        // lift the logo above it.
-        binding.alarmPanel.post { updateFocusViewport() }
+        // Defer until the panel has been laid out so its edges are known, then lift
+        // the logo above it and center the GPS arrow in the space it leaves free.
+        binding.alarmPanel.post {
+            updateFollowPositionCameraFocus()
+            updateFocusViewport()
+        }
     }
 
     private fun hideAlarmPanel() {
         binding.alarmPanel.visibility = View.GONE
         EspressoIdlingResource.updateAlarmVisibility(isVisible = false)
+        updateFollowPositionCameraFocus()
         // Restore the logo to its default bottom position.
         updateFocusViewport()
     }

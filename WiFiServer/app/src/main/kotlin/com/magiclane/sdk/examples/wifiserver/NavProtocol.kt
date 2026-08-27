@@ -47,28 +47,24 @@ object NavProtocol {
     fun instructionMessage(text: String): String =
         JSONObject().put(KEY_TYPE, TYPE_INSTRUCTION).put(KEY_TEXT, text).toString()
 
-    fun distanceMessage(text: String): String =
-        JSONObject().put(KEY_TYPE, TYPE_DISTANCE).put(KEY_TEXT, text).toString()
+    fun distanceMessage(text: String): String = JSONObject().put(KEY_TYPE, TYPE_DISTANCE).put(KEY_TEXT, text).toString()
 
-    fun turnMessage(event: Int, entrance: Int, exit: Int, driveSide: Int): String =
-        JSONObject()
-            .put(KEY_TYPE, TYPE_TURN)
-            .put(KEY_EVENT, event)
-            .put(KEY_ENTRANCE, entrance)
-            .put(KEY_EXIT, exit)
-            .put(KEY_DRIVE_SIDE, driveSide)
-            .toString()
+    fun turnMessage(event: Int, entrance: Int, exit: Int, driveSide: Int): String = JSONObject()
+        .put(KEY_TYPE, TYPE_TURN)
+        .put(KEY_EVENT, event)
+        .put(KEY_ENTRANCE, entrance)
+        .put(KEY_EXIT, exit)
+        .put(KEY_DRIVE_SIDE, driveSide)
+        .toString()
 
-    fun routeMessage(remainingTimeSeconds: Int, remainingDistanceMeters: Int): String =
-        JSONObject()
-            .put(KEY_TYPE, TYPE_ROUTE)
-            .put(KEY_REMAINING_TIME, remainingTimeSeconds)
-            .put(KEY_REMAINING_DISTANCE, remainingDistanceMeters)
-            .toString()
+    fun routeMessage(remainingTimeSeconds: Int, remainingDistanceMeters: Int): String = JSONObject()
+        .put(KEY_TYPE, TYPE_ROUTE)
+        .put(KEY_REMAINING_TIME, remainingTimeSeconds)
+        .put(KEY_REMAINING_DISTANCE, remainingDistanceMeters)
+        .toString()
 
-    fun speedMessage(speedMps: Double): String =
-        JSONObject()
-            .put(KEY_TYPE, TYPE_SPEED)
-            .put(KEY_SPEED, speedMps)
-            .toString()
+    fun speedMessage(speedMps: Double): String = JSONObject()
+        .put(KEY_TYPE, TYPE_SPEED)
+        .put(KEY_SPEED, speedMps)
+        .toString()
 }

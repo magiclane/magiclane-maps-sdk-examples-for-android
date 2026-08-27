@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="com.magiclane.sdk.examples.speedcheckareaalarms.MainActivity">
+
+        <com.magiclane.sdk.core.GemSurfaceView
+            android:id="@+id/gem_surface_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/primary"
+            app:layout_constraintTop_toTopOf="parent"
+            app:title="@string/app_name"
+            app:titleTextColor="@color/on_primary"
+            app:paddingTopWithSystemWindowInsets='@{"8dp"}'
+            app:paddingLeftWithSystemWindowInsets='@{@dimen/small_padding}'
+            app:paddingRightWithSystemWindowInsets='@{@dimen/small_padding}'
+            android:paddingBottom="12dp"
+            />
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progress_bar"
+           android:indeterminate="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/follow_gps_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/big_padding"
+            android:src="@drawable/ic_baseline_gps_fixed_24"
+            android:visibility="gone"
+            app:backgroundTint="@color/primary"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:tint="@color/on_primary"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            tools:ignore="ContentDescription" />
+
+        <!-- Width percent is switched at runtime: full width in portrait, the left
+             half of the screen in landscape (see applySpeedSectionPanelWidth). -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/speed_section_panel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/big_padding"
+            android:padding="@dimen/big_padding"
+            android:background="@color/surface"
+            android:elevation="@dimen/elevation_height"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0"
+            app:layout_constraintWidth_percent="1"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:marginBottomWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginLeftWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            app:marginRightWithSystemWindowInsets="@{@dimen/no_extra_inset}"
+            tools:visibility="visible">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/speed_section_image"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/alarm_image_size"
+                android:adjustViewBounds="true"
+                android:maxWidth="@dimen/alarm_image_size"
+                android:layout_margin="@dimen/small_padding"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                tools:ignore="ContentDescription" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/speed_section_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/big_padding"
+                android:layout_marginEnd="@dimen/big_padding"
+                android:gravity="start"
+                android:text="@string/speed_check_area"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/big_text_size"
+                android:textStyle="bold"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/speed_section_distance"
+                app:layout_constraintStart_toEndOf="@id/speed_section_image"
+                app:layout_constraintEnd_toStartOf="@id/average_speed_barrier"
+                app:layout_constraintVertical_chainStyle="packed" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/speed_section_distance"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/big_padding"
+                android:layout_marginEnd="@dimen/big_padding"
+                android:gravity="start"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/standard_text_size"
+                app:layout_constraintTop_toBottomOf="@id/speed_section_title"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@id/speed_section_image"
+                app:layout_constraintEnd_toStartOf="@id/average_speed_barrier"
+                tools:text="out in 1.2 km" />
+
+            <androidx.constraintlayout.widget.Barrier
+                android:id="@+id/average_speed_barrier"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:barrierDirection="start"
+                app:constraint_referenced_ids="average_speed_label,average_speed_value" />
+
+            <androidx.constraintlayout.widget.Group
+                android:id="@+id/average_speed_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:constraint_referenced_ids="average_speed_label,average_speed_value,average_speed_unit"
+                tools:visibility="visible" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/average_speed_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/average_speed"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/small_text_size"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/average_speed_value"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintVertical_chainStyle="packed" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/average_speed_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/big_text_size"
+                android:textStyle="bold"
+                app:layout_constraintTop_toBottomOf="@id/average_speed_label"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/average_speed_unit"
+                tools:text="78" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/average_speed_unit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/small_padding"
+                android:textColor="@color/on_surface"
+                android:textSize="@dimen/standard_text_size"
+                app:layout_constraintBaseline_toBaselineOf="@id/average_speed_value"
+                app:layout_constraintEnd_toEndOf="parent"
+                tools:text="km/h" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

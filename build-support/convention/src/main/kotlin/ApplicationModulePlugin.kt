@@ -144,7 +144,11 @@ class ApplicationModulePlugin : Plugin<Project> {
 
                 packaging {
                     jniLibs {
+                        // libGEM.so is the release lib, libGEM_d.so the debug one - both
+                        // must keep their symbols or native breakpoints in the SDK's JNI
+                        // sources cannot bind.
                         keepDebugSymbols += "**/libGEM.so"
+                        keepDebugSymbols += "**/libGEM_d.so"
                     }
                 }
 
@@ -193,7 +197,7 @@ class ApplicationModulePlugin : Plugin<Project> {
                     dependencies {
                         add("implementation", fileTree(mapOf("dir" to gemSDKPath, "include" to listOf("*.jar", "*.aar"))))
                     }
-                    configurations.forEach { it.exclude("com.magiclane", "maps-kotlin") }
+                    excludeMavenSdkArtifacts(File(gemSDKPath))
                 }
             } else {
                 // Check if direct downloaded Maps SDK for Android exists in libs folder
@@ -210,9 +214,22 @@ class ApplicationModulePlugin : Plugin<Project> {
                     dependencies {
                         add("implementation", fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
                     }
-                    configurations.forEach { it.exclude("com.magiclane", "maps-kotlin") }
+                    excludeMavenSdkArtifacts(libsDir)
                 }
             }
+        }
+    }
+
+    // Exclude the Maven coordinates of the SDK artifacts supplied as local AARs.
+    private fun Project.excludeMavenSdkArtifacts(aarDir: File) {
+        configurations.forEach { it.exclude("com.magiclane", "maps-kotlin") }
+
+        val aarNames = aarDir.listFiles()?.map { it.name }.orEmpty()
+        if (aarNames.any { it.matches(Regex("MAGICLANE-MAPS-COMPOSE-\\d.*\\.aar")) }) {
+            configurations.forEach { it.exclude("com.magiclane", "maps-compose") }
+        }
+        if (aarNames.any { it.matches(Regex("MAGICLANE-MAPS-COMPOSE-COMPONENTS-.*\\.aar")) }) {
+            configurations.forEach { it.exclude("com.magiclane", "maps-compose-components") }
         }
     }
 

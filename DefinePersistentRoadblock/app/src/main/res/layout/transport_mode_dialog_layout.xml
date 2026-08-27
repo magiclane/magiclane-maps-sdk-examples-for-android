@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/big_padding"
+            android:text="@string/transport_mode"
+            android:textSize="@dimen/big_text_size"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Vehicle type chips, copied from the Magic Earth roadblock settings. -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/vehicle_type_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/big_padding"
+            android:layout_marginEnd="@dimen/big_padding"
+            android:layout_marginBottom="@dimen/big_padding"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/title"
+            app:selectionRequired="true"
+            app:singleLine="false"
+            app:singleSelection="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/car_chip"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/car"
+                app:checkedIconEnabled="false"
+                app:chipBackgroundColor="@color/transport_chip_background"
+                app:chipIcon="@drawable/ic_directions_car_24"
+                app:chipIconTint="@color/on_surface"
+                app:chipIconVisible="true"
+                app:chipStrokeColor="@color/transport_chip_stroke"
+                app:chipStrokeWidth="1.5dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/truck_chip"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/truck"
+                app:checkedIconEnabled="false"
+                app:chipBackgroundColor="@color/transport_chip_background"
+                app:chipIcon="@drawable/ic_directions_truck_24"
+                app:chipIconTint="@color/on_surface"
+                app:chipIconVisible="true"
+                app:chipStrokeColor="@color/transport_chip_stroke"
+                app:chipStrokeWidth="1.5dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/bike_chip"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/bike"
+                app:checkedIconEnabled="false"
+                app:chipBackgroundColor="@color/transport_chip_background"
+                app:chipIcon="@drawable/ic_directions_bike_24"
+                app:chipIconTint="@color/on_surface"
+                app:chipIconVisible="true"
+                app:chipStrokeColor="@color/transport_chip_stroke"
+                app:chipStrokeWidth="1.5dp" />
+
+        </com.google.android.material.chip.ChipGroup>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

@@ -594,10 +594,10 @@ class MainActivity : AppCompatActivity() {
             applyCameraFocus()
         }
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
                 // Only react to the first transition into the ready state.
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
                 startPositionSimulation()
             }
         }
@@ -698,6 +698,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun clearSdkListeners() {
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
         binding.gemSurfaceView.apply {
             onSdkInitFailed = {}

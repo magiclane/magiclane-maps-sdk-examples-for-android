@@ -7,7 +7,6 @@
 
 package com.magiclane.sdk.examples.rangefindercompose
 
-import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -15,76 +14,49 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.displayCutout
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.magiclane.sdk.compose.components.common.FilterChipRow
+import com.magiclane.sdk.compose.components.settings.DropdownSettingRow
+import com.magiclane.sdk.compose.components.settings.SliderSettingRow
+import com.magiclane.sdk.compose.map.GemMap
+import com.magiclane.sdk.compose.map.rememberGemMapState
+import com.magiclane.sdk.compose.sdk.SdkInitState
+import com.magiclane.sdk.compose.sdk.rememberGemSdkState
+import com.magiclane.sdk.compose.theme.MagicLaneTheme
+import com.magiclane.sdk.compose.ui.AdaptivePanelScaffold
+import com.magiclane.sdk.compose.ui.ErrorDialog
 import com.magiclane.sdk.core.GemError
 import com.magiclane.sdk.core.GemSdk
-import com.magiclane.sdk.core.GemSurfaceView
-import com.magiclane.sdk.core.SdkSettings
-import com.magiclane.sdk.examples.rangefindercompose.ui.theme.RangeFinderTheme
 import com.magiclane.sdk.routesandnavigation.ERouteTransportMode
 import com.magiclane.sdk.util.Util
 import kotlin.system.exitProcess
@@ -100,8 +72,6 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: RangeFinderModel by viewModels()
 
-    private lateinit var mapSurfaceView: GemSurfaceView
-
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.auto(
@@ -116,12 +86,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         configureWindow()
         setContent {
-            RangeFinderTheme {
-                RangeFinderApp(viewModel) { setMapSurfaceView(it) }
+            MagicLaneTheme {
+                RangeFinderApp(viewModel)
             }
         }
-
-        registerSdkListeners()
 
         // The example needs the network to compute routes; warn the user if there is none.
         if (!Util.isInternetConnected(this)) {
@@ -132,27 +100,8 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        clearSdkListeners()
         GemSdk.release() // Release the SDK.
         exitProcess(0)
-    }
-
-    // Registers all SDK-level listeners. The map surface listeners are wired in the MapSurface
-    // composable factory and reset in clearSdkListeners().
-    private fun registerSdkListeners() {
-        SdkSettings.onApiTokenRejected = {
-            viewModel.errorMessage = getString(R.string.token_rejected_message)
-        }
-    }
-
-    // Clears SDK-level and map surface listeners so callbacks never reach a destroyed activity.
-    private fun clearSdkListeners() {
-        SdkSettings.onApiTokenRejected = {}
-        if (::mapSurfaceView.isInitialized) {
-            mapSurfaceView.onSdkInitSucceeded = {}
-            mapSurfaceView.onSdkInitFailed = {}
-            mapSurfaceView.onSurfaceChanged = null
-        }
     }
 
     private fun configureWindow() {
@@ -165,226 +114,157 @@ class MainActivity : ComponentActivity() {
             window.isNavigationBarContrastEnforced = false
         }
     }
-
-    private fun setMapSurfaceView(view: GemSurfaceView) {
-        mapSurfaceView = view
-    }
 }
 
 @Composable
-fun RangeFinderApp(viewModel: RangeFinderModel = viewModel(), mapSurfaceViewSetter: (GemSurfaceView) -> Unit) {
-    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+fun RangeFinderApp(viewModel: RangeFinderModel = viewModel()) {
+    val context = LocalContext.current
 
-    // Keep the model's orientation in sync and recompute the free map area on rotation so the
-    // Magic Lane logo and the route centering stay clear of the options panel.
-    LaunchedEffect(isLandscape) {
-        viewModel.isLandscape = isLandscape
-        viewModel.updateMapAreas()
+    // The map surface lifecycle, the SDK listeners and the free-map-area / logo placement
+    // are all handled by the maps-compose library.
+    val mapState = rememberGemMapState()
+    val sdkState = rememberGemSdkState()
+
+    LaunchedEffect(mapState) {
+        viewModel.initialize(mapState)
     }
 
-    Box(Modifier.fillMaxSize().background(color = Color.Black)) {
-        // Full-screen map. The Magic Lane logo is kept inside the visible area via the focus
-        // viewport (see RangeFinderModel.updateMapAreas), so it never hides behind the panel.
-        MapSurface(Modifier.fillMaxSize(), mapSurfaceViewSetter, viewModel)
-
-        // Portrait: the panel spans the bottom edge. Landscape: it becomes a full-height card
-        // pinned to the left edge, leaving the rest of the map visible.
-        RangePanel(
-            modifier = if (isLandscape) {
-                Modifier
-                    .align(Alignment.TopStart)
-                    .fillMaxWidth(LANDSCAPE_PANEL_WIDTH_FRACTION)
-                    .fillMaxHeight()
-            } else {
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(PORTRAIT_PANEL_HEIGHT)
-            },
-            viewModel = viewModel,
-            isLandscape = isLandscape,
-        )
+    LaunchedEffect(sdkState.initState) {
+        if (sdkState.initState == SdkInitState.Ready) {
+            viewModel.onSdkInitSucceeded()
+        }
     }
+
+    LaunchedEffect(sdkState.isTokenRejected) {
+        if (sdkState.isTokenRejected) {
+            viewModel.errorMessage = context.getString(R.string.token_rejected_message)
+        }
+    }
+
+    AdaptivePanelScaffold(
+        mapState = mapState,
+        modifier = Modifier.fillMaxSize().background(color = Color.Black),
+        panel = { RangePanel(viewModel = viewModel) },
+        portraitPanelMaxHeight = PORTRAIT_PANEL_HEIGHT,
+        landscapePanelWidthFraction = LANDSCAPE_PANEL_WIDTH_FRACTION,
+        // The panel deliberately ignores the bottom inset so it draws edge-to-edge under the
+        // transparent navigation bar.
+        portraitPanelInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
+        landscapePanelInsets = WindowInsets.safeDrawing.only(
+            WindowInsetsSides.Start + WindowInsetsSides.Top,
+        ),
+        map = {
+            GemMap(
+                modifier = Modifier.fillMaxSize(),
+                mapState = mapState,
+                sdkState = sdkState,
+                onSdkInitFailed = { error ->
+                    // The SDK is not initialized here, so resolve the message directly (no SdkCall).
+                    viewModel.errorMessage = context.getString(
+                        R.string.sdk_initialization_failed,
+                        GemError.getMessage(error, context),
+                    )
+                },
+            )
+        },
+    )
 
     if (viewModel.errorMessage.isNotEmpty()) {
-        ErrorDialog(viewModel)
+        ErrorDialog(
+            message = viewModel.errorMessage,
+            onDismiss = { viewModel.errorMessage = "" },
+            title = null,
+            confirmText = stringResource(R.string.ok),
+        )
     }
 }
 
+// Options panel hosting the range list and the routing controls. Its placement (bottom edge in
+// portrait, full-height start card in landscape), corner rounding, insets and the map free-area
+// bookkeeping are provided by AdaptivePanelScaffold.
 @Composable
-fun MapSurface(
-    modifier: Modifier = Modifier,
-    mapSurfaceViewSetter: (GemSurfaceView) -> Unit,
-    viewModel: RangeFinderModel,
-) {
-    AndroidView(modifier = modifier, factory = { context ->
-        GemSurfaceView(context).also { surfaceView ->
-            surfaceView.onSdkInitSucceeded = {
-                viewModel.onSdkInitSucceeded()
-                // Store the surface and position the Magic Lane logo as soon as the map is ready.
-                viewModel.initialize(surfaceView)
-            }
-
-            // Re-align the Magic Lane logo whenever the surface is resized (e.g. on rotation).
-            surfaceView.onSurfaceChanged = { _, _ ->
-                viewModel.updateMapAreas(surfaceView)
-            }
-
-            surfaceView.onSdkInitFailed = { error ->
-                // The SDK is not initialized here, so resolve the message directly (no SdkCall).
-                viewModel.errorMessage = context.getString(
-                    R.string.sdk_initialization_failed,
-                    GemError.getMessage(error, context),
-                )
-            }
-
-            mapSurfaceViewSetter(surfaceView)
-        }
-    })
-}
-
-// Options panel hosting the range list and the routing controls. Spans the bottom edge in portrait
-// and becomes a full-height card on the left in landscape.
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun RangePanel(modifier: Modifier = Modifier, viewModel: RangeFinderModel, isLandscape: Boolean) {
+fun RangePanel(viewModel: RangeFinderModel) {
     val scrollState = rememberScrollState()
 
-    // Round only the corners that face the map interior.
-    val shape = if (isLandscape) {
-        RoundedCornerShape(topEnd = 15.dp, bottomEnd = 15.dp)
-    } else {
-        RoundedCornerShape(topStart = 15.dp, topEnd = 15.dp)
-    }
-
-    // Content must clear the side/top system bars, but in portrait it deliberately ignores the
-    // bottom inset so the panel draws under the transparent navigation bar (edge-to-edge). In
-    // landscape the panel hugs the left edge, so only the start and top insets apply.
-    val insetSides = if (isLandscape) {
-        WindowInsetsSides.Start + WindowInsetsSides.Top
-    } else {
-        WindowInsetsSides.Horizontal
-    }
-
-    Surface(
-        modifier = modifier.onGloballyPositioned { coordinates ->
-            // Report the panel extent so the model keeps the logo / centering clear of it.
-            val width = coordinates.size.width
-            val height = coordinates.size.height
-            val changed = if (isLandscape) {
-                viewModel.panelWidthPx != width
-            } else {
-                viewModel.panelHeightPx != height
-            }
-            if (changed) {
-                viewModel.panelWidthPx = width
-                viewModel.panelHeightPx = height
-                viewModel.updateMapAreas()
-            }
-        },
-        shape = shape,
-        color = Color.White,
+    Column(
+        modifier = Modifier.fillMaxSize(),
     ) {
+        // Indeterminate progress bar shown while a range route is being computed (kept in the
+        // layout via alpha so the content below does not jump).
+        LinearProgressIndicator(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(top = 10.dp)
+                .alpha(if (viewModel.displayProgress) 1f else 0f),
+        )
+
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(
-                    WindowInsets.systemBars.union(WindowInsets.displayCutout).only(insetSides),
-                ),
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+                .verticalScroll(scrollState),
         ) {
-            // Indeterminate progress bar shown while a range route is being computed (kept in the
-            // layout via alpha so the content below does not jump).
-            LinearProgressIndicator(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 10.dp)
-                    .alpha(if (viewModel.displayProgress) 1f else 0f),
+            RangeList(viewModel)
+
+            RangeValueRow(viewModel)
+
+            // Slider, dropdown and filter-chip rows come from the maps-compose-components
+            // settings/common catalogs; only the range list and its add/remove chrome stay local.
+            SliderSettingRow(
+                label = "",
+                value = viewModel.rangeSlider.value.value,
+                onValueChange = { viewModel.didChangeRangeSliderPosition(it) },
+                valueText = viewModel.rangeSlider.valueText.value,
+                valueRange = viewModel.rangeSlider.leftSide.value..viewModel.rangeSlider.rightSide.value,
+                steps = viewModel.rangeSlider.steps.value,
+                minText = viewModel.rangeSlider.leftSideText.value,
+                maxText = viewModel.rangeSlider.rightSideText.value,
             )
 
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-                    .verticalScroll(scrollState),
-            ) {
-                RangeList(viewModel)
+            DropdownSettingRow(
+                label = stringResource(R.string.transport_mode),
+                options = viewModel.transportModes,
+                selectedOption = viewModel.selectedTransportModeText.value,
+                onSelectionChanged = viewModel::didSelectNewTransportMode,
+            )
 
-                RangeValueRow(viewModel)
-
-                SliderRow(
-                    leftSideText = viewModel.rangeSlider.leftSideText.value,
-                    valueText = viewModel.rangeSlider.valueText.value,
-                    rightSideText = viewModel.rangeSlider.rightSideText.value,
+            if (viewModel.selectedTransportMode.value != ERouteTransportMode.Pedestrian.value) {
+                DropdownSettingRow(
+                    label = stringResource(R.string.range_type),
+                    options = viewModel.rangeTypes,
+                    selectedOption = viewModel.selectedRangeTypeText.value,
+                    onSelectionChanged = viewModel::didSelectNewRangeType,
                 )
-
-                Slider(
-                    modifier = Modifier.padding(horizontal = 10.dp),
-                    value = viewModel.rangeSlider.value.value,
-                    onValueChange = { viewModel.didChangeRangeSliderPosition(it) },
-                    steps = viewModel.rangeSlider.steps.value,
-                    valueRange = viewModel.rangeSlider.leftSide.value..viewModel.rangeSlider.rightSide.value,
-                )
-
-                Row(
-                    Modifier
-                        .padding(horizontal = 10.dp)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    SectionTitle(stringResource(R.string.transport_mode))
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    DropdownMenuBox(
-                        viewModel.transportModes,
-                        viewModel.selectedTransportModeText,
-                    ) { transportMode: Int ->
-                        viewModel.didSelectNewTransportMode(transportMode)
-                    }
-                }
-
-                if (viewModel.selectedTransportMode.value != ERouteTransportMode.Pedestrian.value) {
-                    SelectionRow(
-                        titleResId = R.string.range_type,
-                        options = viewModel.rangeTypes,
-                        selectedText = viewModel.selectedRangeTypeText,
-                        onSelectionChanged = viewModel::didSelectNewRangeType,
-                    )
-                }
-
-                if (viewModel.selectedTransportMode.value == ERouteTransportMode.Bicycle.value) {
-                    SelectionRow(
-                        titleResId = R.string.bike_type,
-                        options = viewModel.bikeTypes,
-                        selectedText = viewModel.selectedBikeTypeText,
-                        onSelectionChanged = viewModel::didSelectNewBikeType,
-                    )
-
-                    SliderRow(
-                        modifier = Modifier.padding(top = 10.dp),
-                        leftSideText = viewModel.hillsFactorSlider.leftSideText.value,
-                        valueText = viewModel.hillsFactorSlider.valueText.value,
-                        rightSideText = viewModel.hillsFactorSlider.rightSideText.value,
-                    )
-
-                    Slider(
-                        modifier = Modifier.padding(horizontal = 10.dp),
-                        value = viewModel.hillsFactorSlider.value.value,
-                        onValueChange = { viewModel.didChangeHillsFactorSliderPosition(it) },
-                        steps = viewModel.hillsFactorSlider.steps.value,
-                        valueRange = viewModel.hillsFactorSlider.leftSide.value..viewModel.hillsFactorSlider.rightSide.value,
-                    )
-                }
-
-                SectionTitle(
-                    text = stringResource(R.string.avoid),
-                    modifier = Modifier.padding(start = 10.dp, top = 10.dp),
-                )
-
-                AvoidOptions(viewModel = viewModel)
             }
+
+            if (viewModel.selectedTransportMode.value == ERouteTransportMode.Bicycle.value) {
+                DropdownSettingRow(
+                    label = stringResource(R.string.bike_type),
+                    options = viewModel.bikeTypes,
+                    selectedOption = viewModel.selectedBikeTypeText.value,
+                    onSelectionChanged = viewModel::didSelectNewBikeType,
+                )
+
+                SliderSettingRow(
+                    label = stringResource(R.string.hills_factor),
+                    value = viewModel.hillsFactorSlider.value.value,
+                    onValueChange = { viewModel.didChangeHillsFactorSliderPosition(it) },
+                    valueText = viewModel.hillsFactorSlider.valueText.value,
+                    valueRange = viewModel.hillsFactorSlider.leftSide.value..viewModel.hillsFactorSlider.rightSide.value,
+                    steps = viewModel.hillsFactorSlider.steps.value,
+                    minText = viewModel.hillsFactorSlider.leftSideText.value,
+                    maxText = viewModel.hillsFactorSlider.rightSideText.value,
+                )
+            }
+
+            SectionTitle(
+                text = stringResource(R.string.avoid),
+                modifier = Modifier.padding(start = 10.dp, top = 10.dp),
+            )
+
+            AvoidOptions(viewModel = viewModel)
         }
     }
 }
@@ -442,41 +322,6 @@ private fun RangeValueRow(viewModel: RangeFinderModel) {
     }
 }
 
-// Row showing a slider's left bound, current value and right bound.
-@Composable
-private fun SliderRow(modifier: Modifier = Modifier, leftSideText: String, valueText: String, rightSideText: String) {
-    Row(
-        modifier
-            .padding(horizontal = 10.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            modifier = Modifier.padding(start = 5.dp),
-            text = leftSideText,
-            color = Color.Black,
-            fontSize = 15.sp,
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Text(
-            text = valueText,
-            color = Color.Black,
-            fontSize = 15.sp,
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Text(
-            modifier = Modifier.padding(end = 5.dp),
-            text = rightSideText,
-            color = Color.Black,
-            fontSize = 15.sp,
-        )
-    }
-}
-
 @Composable
 private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
     Text(
@@ -488,185 +333,46 @@ private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-@Composable
-private fun SelectionRow(
-    @StringRes titleResId: Int,
-    options: List<String>,
-    selectedText: MutableState<String>,
-    onSelectionChanged: (Int) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .padding(start = 10.dp, end = 10.dp, top = 10.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        SectionTitle(stringResource(titleResId))
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        DropdownMenuBox(
-            options = options,
-            selectedText = selectedText,
-            onSelectionChanged = onSelectionChanged,
-        )
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
+// Maps the selected transport mode to its avoidance flags and shows them as library filter chips.
 @Composable
 private fun AvoidOptions(viewModel: RangeFinderModel) {
-    when (viewModel.selectedTransportMode.value) {
-        ERouteTransportMode.Car.value -> {
-            FlowRow(modifier = Modifier.padding(horizontal = 10.dp)) {
-                AvoidItem(R.string.ferries, viewModel.carSettings.avoidFerries)
-                AvoidItem(R.string.motorways, viewModel.carSettings.avoidMotorways)
-                AvoidItem(R.string.unpaved_roads, viewModel.carSettings.avoidUnpavedRoads)
-                AvoidItem(R.string.toll_roads, viewModel.carSettings.avoidTollRoads)
-                AvoidItem(R.string.traffic, viewModel.carSettings.avoidTraffic)
-            }
-        }
+    val avoidOptions = when (viewModel.selectedTransportMode.value) {
+        ERouteTransportMode.Car.value -> listOf(
+            R.string.ferries to viewModel.carSettings.avoidFerries,
+            R.string.motorways to viewModel.carSettings.avoidMotorways,
+            R.string.unpaved_roads to viewModel.carSettings.avoidUnpavedRoads,
+            R.string.toll_roads to viewModel.carSettings.avoidTollRoads,
+            R.string.traffic to viewModel.carSettings.avoidTraffic,
+        )
 
-        ERouteTransportMode.Lorry.value -> {
-            FlowRow(modifier = Modifier.padding(horizontal = 10.dp)) {
-                AvoidItem(R.string.ferries, viewModel.truckSettings.avoidFerries)
-                AvoidItem(R.string.motorways, viewModel.truckSettings.avoidMotorways)
-                AvoidItem(R.string.unpaved_roads, viewModel.truckSettings.avoidUnpavedRoads)
-                AvoidItem(R.string.toll_roads, viewModel.truckSettings.avoidTollRoads)
-                AvoidItem(R.string.traffic, viewModel.truckSettings.avoidTraffic)
-            }
-        }
+        ERouteTransportMode.Lorry.value -> listOf(
+            R.string.ferries to viewModel.truckSettings.avoidFerries,
+            R.string.motorways to viewModel.truckSettings.avoidMotorways,
+            R.string.unpaved_roads to viewModel.truckSettings.avoidUnpavedRoads,
+            R.string.toll_roads to viewModel.truckSettings.avoidTollRoads,
+            R.string.traffic to viewModel.truckSettings.avoidTraffic,
+        )
 
-        ERouteTransportMode.Pedestrian.value -> {
-            FlowRow(modifier = Modifier.padding(horizontal = 10.dp)) {
-                AvoidItem(R.string.ferries, viewModel.pedestrianSettings.avoidFerries)
-                AvoidItem(R.string.unpaved_roads, viewModel.pedestrianSettings.avoidUnpavedRoads)
-            }
-        }
+        ERouteTransportMode.Pedestrian.value -> listOf(
+            R.string.ferries to viewModel.pedestrianSettings.avoidFerries,
+            R.string.unpaved_roads to viewModel.pedestrianSettings.avoidUnpavedRoads,
+        )
 
-        ERouteTransportMode.Bicycle.value -> {
-            FlowRow(modifier = Modifier.padding(horizontal = 10.dp)) {
-                AvoidItem(R.string.ferries, viewModel.bicycleSettings.avoidFerries)
-                AvoidItem(R.string.unpaved_roads, viewModel.bicycleSettings.avoidUnpavedRoads)
-            }
-        }
+        ERouteTransportMode.Bicycle.value -> listOf(
+            R.string.ferries to viewModel.bicycleSettings.avoidFerries,
+            R.string.unpaved_roads to viewModel.bicycleSettings.avoidUnpavedRoads,
+        )
+
+        else -> emptyList()
     }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AvoidItem(@StringRes textResId: Int, selected: MutableState<Boolean>) {
-    FilterChip(
-        modifier = Modifier.padding(end = 10.dp),
-        onClick = { selected.value = !selected.value },
-        label = {
-            Text(
-                text = stringResource(textResId),
-                fontSize = 16.sp,
-            )
+    FilterChipRow(
+        labels = avoidOptions.map { stringResource(it.first) },
+        selected = avoidOptions.map { it.second.value },
+        onToggle = { index ->
+            val flag = avoidOptions[index].second
+            flag.value = !flag.value
         },
-        selected = selected.value,
-        leadingIcon = null,
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DropdownMenuBox(options: List<String>, selectedText: MutableState<String>, onSelectionChanged: (Int) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    MaterialTheme(
-        shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(16.dp)),
-    ) {
-        Box(
-            modifier = Modifier.padding(start = 10.dp),
-        ) {
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = {
-                    expanded = !expanded
-                    if (expanded) {
-                        keyboardController?.hide()
-                    }
-                },
-            ) {
-                TextField(
-                    value = selectedText.value,
-                    onValueChange = {},
-                    readOnly = true,
-                    singleLine = true,
-                    maxLines = 1,
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(
-                            expanded = expanded,
-                        )
-                    },
-                    modifier = Modifier
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
-                        .border(2.dp, SolidColor(Color.Blue), shape = RoundedCornerShape(15.dp)),
-                    colors = ExposedDropdownMenuDefaults.textFieldColors(
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedContainerColor = Color.Transparent,
-                    ),
-                )
-
-                ExposedDropdownMenu(
-                    modifier = Modifier.background(Color.White),
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                ) {
-                    for (i in options.indices) {
-                        val isSelected = selectedText.value == options[i]
-
-                        DropdownMenuItem(
-                            text = { Text(text = options[i]) },
-                            leadingIcon = {
-                                RadioButton(
-                                    selected = isSelected,
-                                    onClick = null,
-                                )
-                            },
-                            onClick = {
-                                selectedText.value = options[i]
-                                expanded = false
-                                onSelectionChanged(i)
-                            },
-                        )
-
-                        if (i != options.lastIndex) {
-                            HorizontalDivider(
-                                color = Color.LightGray,
-                                thickness = 1.dp,
-                                modifier = Modifier.padding(horizontal = 10.dp),
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ErrorDialog(viewModel: RangeFinderModel) {
-    AlertDialog(
-        text = {
-            Text(text = viewModel.errorMessage)
-        },
-        onDismissRequest = {
-            viewModel.errorMessage = ""
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    viewModel.errorMessage = ""
-                },
-            ) {
-                Text(stringResource(R.string.ok))
-            }
-        },
+        modifier = Modifier.padding(horizontal = 10.dp),
     )
 }

@@ -198,9 +198,9 @@ class MainActivity : AppCompatActivity() {
         // Triggered when the worldwide road map changes readiness state. Route calculation and
         // touch handling are set up only once the map data is fully available (UpToDate). The
         // listener clears itself after the first successful fire to avoid re-triggering.
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
                 calculateRoute()
                 setupTouchHandler()
             }
@@ -212,7 +212,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
         binding.gemSurfaceView.apply {
             onSdkInitFailed = {}

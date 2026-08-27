@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SPDX-FileCopyrightText: 2026 Magic Lane International B.V. <info@magiclane.com>
+  SPDX-License-Identifier: Apache-2.0
+
+  Contact Magic Lane at <info@magiclane.com> for SDK licensing options.
+-->
+<resources>
+
+    <!-- Mirrors the maps-compose MagicLaneTheme colors on a Material3 views theme. -->
+    <style name="Theme.VoicesCatalog" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/magic_lane_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="android:colorBackground">@color/magic_lane_background</item>
+        <item name="colorSurface">@color/magic_lane_surface</item>
+        <item name="colorOnSurface">@color/magic_lane_on_surface</item>
+        <item name="android:windowBackground">@color/magic_lane_surface</item>
+    </style>
+</resources>

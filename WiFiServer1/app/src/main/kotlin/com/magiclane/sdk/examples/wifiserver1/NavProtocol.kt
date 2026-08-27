@@ -42,16 +42,14 @@ object NavProtocol {
     fun instructionMessage(text: String): String =
         JSONObject().put(KEY_TYPE, TYPE_INSTRUCTION).put(KEY_TEXT, text).toString()
 
-    fun distanceMessage(text: String): String =
-        JSONObject().put(KEY_TYPE, TYPE_DISTANCE).put(KEY_TEXT, text).toString()
+    fun distanceMessage(text: String): String = JSONObject().put(KEY_TYPE, TYPE_DISTANCE).put(KEY_TEXT, text).toString()
 
     fun turnImageMessage(base64Png: String): String =
         JSONObject().put(KEY_TYPE, TYPE_TURN_IMAGE).put(KEY_IMAGE, base64Png).toString()
 
-    fun routeMessage(remainingTimeSeconds: Int, remainingDistanceMeters: Int): String =
-        JSONObject()
-            .put(KEY_TYPE, TYPE_ROUTE)
-            .put(KEY_REMAINING_TIME, remainingTimeSeconds)
-            .put(KEY_REMAINING_DISTANCE, remainingDistanceMeters)
-            .toString()
+    fun routeMessage(remainingTimeSeconds: Int, remainingDistanceMeters: Int): String = JSONObject()
+        .put(KEY_TYPE, TYPE_ROUTE)
+        .put(KEY_REMAINING_TIME, remainingTimeSeconds)
+        .put(KEY_REMAINING_DISTANCE, remainingDistanceMeters)
+        .toString()
 }

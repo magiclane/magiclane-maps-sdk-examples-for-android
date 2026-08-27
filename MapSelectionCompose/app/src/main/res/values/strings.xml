@@ -11,26 +11,14 @@
     <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
     <string name="internet_required">This app requires Internet connection. Please connect to the Internet.</string>
     <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
-    <string name="location_permission_required">Location permission is required in order to select the current location arrow.</string>
-    <string name="follow_gps">Follow GPS position</string>
     <string name="ok">Ok</string>
-    <string name="close">Close</string>
 
-    <!-- Public transport station / trip views -->
+    <!-- Public transport station / trip views (texts pre-formatted for the library panels) -->
     <string name="pt_now">Now</string>
     <string name="pt_minutes_short">min</string>
     <string name="pt_departed">Departed</string>
     <string name="pt_scheduled">Scheduled</string>
     <string name="pt_arrived">Arrived</string>
     <string name="pt_platform">Platform %1$s</string>
-    <string name="pt_no_departures">No upcoming departures</string>
-    <string name="pt_clear_line_selection">Clear line selection</string>
-    <string name="pt_wheelchair_accessible">Wheelchair accessible</string>
-    <string name="pt_bikes_allowed">Bikes allowed</string>
     <string name="pt_cancelled">Cancelled</string>
-    <string name="pt_service_alert">Service alert</string>
-    <string name="pt_alert_details">Alert details</string>
-    <string name="pt_crowding_low">Not crowded</string>
-    <string name="pt_crowding_medium">Moderately crowded</string>
-    <string name="pt_crowding_high">Crowded</string>
 </resources>

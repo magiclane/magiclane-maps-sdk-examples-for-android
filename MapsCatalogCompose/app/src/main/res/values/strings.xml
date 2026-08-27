@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">MapsCatalogCompose</string>
+    <string name="error">Error</string>
+    <string name="info">Info</string>
+    <string name="ok">OK</string>
+    <string name="offline_maps">Offline Maps</string>
+    <string name="search_hint">Search</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="internet_required">This app requires Internet connection to browse and download the maps catalog.</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="catalog_download_error">The maps catalog could not be downloaded: %1$s</string>
+    <string name="road_map_support_disabled_no_disk_space">Road map support was disabled because the device is running out of disk space. Free up some space and restart the app.</string>
+    <string name="road_map_support_disabled_expired_sdk">Road map support was disabled because this SDK version has expired. Please update the app to a newer SDK version.</string>
+    <string name="item_download_error">%1$s could not be downloaded: %2$s</string>
+    <string name="maps_up_to_date">Your maps are up to date.</string>
+    <string name="update_check_requires_internet">This action requires an Internet connection.</string>
+    <string name="update_check_error">Checking for a map update failed: %1$s</string>
+    <string name="maps_update_apply_error">The maps update could not be applied: %1$s</string>
+    <string name="region_count">%1$d regions · %2$s</string>
+    <plurals name="country_count">
+        <item quantity="one">%d country</item>
+        <item quantity="other">%d countries</item>
+    </plurals>
+    <plurals name="map_count">
+        <item quantity="one">%d map</item>
+        <item quantity="other">%d maps</item>
+    </plurals>
+</resources>

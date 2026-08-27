@@ -23,6 +23,8 @@ android {
 
 dependencies {
     implementation(shared.magiclane.maps.kotlin)
+    implementation(shared.magiclane.maps.compose)
+    implementation(shared.magiclane.maps.compose.components)
 
     val composeBom = platform(shared.androidx.compose.bom)
     implementation(composeBom)

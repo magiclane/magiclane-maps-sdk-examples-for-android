@@ -126,9 +126,9 @@ class MainActivity : AppCompatActivity() {
 
         // Fired when the worldwide road-map support status changes. Once the map is ready
         // (UpToDate) we clear this single-shot listener and reveal the send button.
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
                 runOnAliveUi {
                     binding.progressBar.visibility = View.GONE
                     binding.sendDebugInfoButton.visibility = View.VISIBLE
@@ -149,7 +149,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
         binding.gemSurfaceView.apply {
             onSdkInitFailed = {}

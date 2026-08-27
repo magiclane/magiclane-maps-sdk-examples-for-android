@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">VoicesCatalogCompose</string>
+    <string name="error">Error</string>
+    <string name="info">Info</string>
+    <string name="ok">OK</string>
+    <string name="voices">Voices</string>
+    <string name="text_to_speech">Text-to-Speech</string>
+    <string name="search_hint">Search</string>
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="internet_required">This app requires Internet connection to browse and download the voices catalog.</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="catalog_download_error">The voices catalog could not be downloaded: %1$s</string>
+    <string name="item_download_error">%1$s could not be downloaded: %2$s</string>
+    <string name="group_detail">%1$s · %2$s</string>
+    <string name="language_with_country">%1$s (%2$s)</string>
+    <plurals name="country_count">
+        <item quantity="one">%d country</item>
+        <item quantity="other">%d countries</item>
+    </plurals>
+    <plurals name="voice_count">
+        <item quantity="one">%d voice</item>
+        <item quantity="other">%d voices</item>
+    </plurals>
+</resources>

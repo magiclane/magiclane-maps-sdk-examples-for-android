@@ -200,10 +200,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.gemSurfaceView.onSurfaceChanged = { _, _ -> updateFocusViewport() }
 
-        SdkSettings.onWorldwideRoadMapSupportStatus = { status ->
+        SdkSettings.onWorldwideRoadMapSupportStatus = { status, _ ->
             if (status == EOffboardListenerStatus.UpToDate) {
                 // Clear immediately to avoid repeat invocations on subsequent status events.
-                SdkSettings.onWorldwideRoadMapSupportStatus = {}
+                SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
 
                 EspressoIdlingResource.decrement()
                 binding.hint.visibility = View.VISIBLE
@@ -256,7 +256,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun clearSdkListeners() {
-        SdkSettings.onWorldwideRoadMapSupportStatus = {}
+        SdkSettings.onWorldwideRoadMapSupportStatus = { _, _ -> }
         SdkSettings.onApiTokenRejected = {}
         binding.gemSurfaceView.apply {
             onSdkInitFailed = {}

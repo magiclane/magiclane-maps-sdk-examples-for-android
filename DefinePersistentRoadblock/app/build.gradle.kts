@@ -25,6 +25,7 @@ dependencies {
 
     implementation(shared.androidx.core.ktx)
     implementation(shared.androidx.appcompat)
+    implementation(shared.androidx.recyclerview)
     implementation(shared.material)
 
     testImplementation(shared.junit)
