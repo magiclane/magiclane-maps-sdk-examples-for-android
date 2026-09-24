@@ -45,6 +45,7 @@ import com.magiclane.sdk.compose.components.navigation.NavigationInstructionPane
 import com.magiclane.sdk.compose.components.navigation.NavigationUiState
 import com.magiclane.sdk.compose.components.navigation.TrafficBanner
 import com.magiclane.sdk.compose.components.navigation.rememberNavigationUiState
+import com.magiclane.sdk.compose.components.traffic.NavigationRoadblockDialog
 import com.magiclane.sdk.compose.map.GemMap
 import com.magiclane.sdk.compose.map.GemMapState
 import com.magiclane.sdk.compose.map.ObstructionEdge
@@ -156,6 +157,12 @@ fun RouteSimulationScreen(
 
     val endOfSectionIcon = rememberEndOfSectionIcon()
 
+    // Tapping the navigated route opens the "Define roadblock" dialog. The handler lives on
+    // the map view, so it has to be (re)installed whenever the map view is created.
+    LaunchedEffect(mapState.isMapReady) {
+        viewModel.registerRouteTouchHandler(mapState)
+    }
+
     Box(modifier) {
         if (panelsVisible) {
             Column(
@@ -232,6 +239,17 @@ fun RouteSimulationScreen(
         )
 
         LoadingOverlay(visible = viewModel.progressBarIsVisible)
+    }
+
+    if (viewModel.roadblockPanelIsVisible) {
+        NavigationRoadblockDialog(
+            unitSystem = viewModel.roadblockUnitSystem,
+            onLengthPicked = { lengthInMeters ->
+                viewModel.roadblockPanelIsVisible = false
+                viewModel.setNavigationRoadblock(navState.listener, lengthInMeters)
+            },
+            onDismiss = { viewModel.roadblockPanelIsVisible = false },
+        )
     }
 
     if (viewModel.errorMessage.isNotEmpty()) {

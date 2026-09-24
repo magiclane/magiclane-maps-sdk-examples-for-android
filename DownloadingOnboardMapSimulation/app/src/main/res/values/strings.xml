@@ -16,5 +16,5 @@
     <string name="downloading_map">Downloading %s…</string>
     <string name="map_downloaded">%s downloaded</string>
     <string name="tts_language_eng_usa">eng-USA</string>
-    <string name="time_format_hh_mm">%d:%02d</string>
+    <string name="time_format_hh_mm">%1$d:%2$02d</string>
 </resources>

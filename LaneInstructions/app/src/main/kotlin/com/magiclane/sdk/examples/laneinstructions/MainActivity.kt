@@ -673,9 +673,14 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     /** Shows a transient status message (e.g. "Calculating…") in place of the turn information. */
     private fun refreshStatusMessage() {
         val statusMessage = getStatusMessage()
-        binding.turnContainer.isVisible = statusMessage.isEmpty()
+        val hasStatusMessage = statusMessage.isNotEmpty()
 
-        if (statusMessage.isNotEmpty()) {
+        // A status message means there is no usable instruction yet, so everything that
+        // describes the next turn (turn image, distance to it and the lane guidance) is hidden
+        // and the panel carries the message alone.
+        binding.turnContainer.isVisible = !hasStatusMessage
+
+        if (hasStatusMessage) {
             binding.navInstruction.text = statusMessage
             setLanePanelVisible(false)
             setTopPanelLaneVisible(false)
@@ -803,6 +808,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 }
             }
         }
+
+        // The instruction may arrive while a status message is on screen ("Calculating..."
+        // after a route deviation): the message keeps the panel to itself.
+        refreshStatusMessage()
     }
 
     private fun NavigationInstruction.getDistanceInMeters(): String {

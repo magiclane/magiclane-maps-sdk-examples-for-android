@@ -175,6 +175,11 @@ public class MainActivity extends AppCompatActivity
                 binding.eta.setText(etaText[0]);
                 binding.rtt.setText(rttText[0]);
                 binding.rtd.setText(rtdText[0]);
+
+                // The instruction may arrive while a status message is on screen
+                // ("Calculating..." after a route deviation): the message keeps the panel
+                // to itself.
+                refreshStatusMessage();
             });
         }
 
@@ -454,6 +459,8 @@ public class MainActivity extends AppCompatActivity
 
     private void refreshStatusMessage() {
         String statusMessage = getStatusMessage();
+        // A status message means there is no usable instruction yet, so the turn information
+        // (turn image and distance to it) is hidden and the panel carries the message alone.
         if (statusMessage.isEmpty()) {
             binding.turnContainer.setVisibility(View.VISIBLE);
         } else {

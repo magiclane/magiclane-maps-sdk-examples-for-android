@@ -1,5 +1,5 @@
 [versions]
-magicLaneSdkVersion = "2.0.0"
+magicLaneSdkVersion = "2.1.0"
 
 minSdkVersion = "21"
 targetSdkVersion = "36"
@@ -46,6 +46,7 @@ testRules = "1.7.0"
 testRunner = "1.7.0"
 testUIAutomator = "2.3.0"
 nordicBle = "2.11.0"
+zxing = "3.5.3"
 
 [libraries]
 build-android-gradle = { module = "com.android.tools.build:gradle", version.ref = "gradlePlugin" }
@@ -102,6 +103,7 @@ magiclane-maps-kotlin = { group = "com.magiclane", name = "maps-kotlin", version
 magiclane-maps-compose = { group = "com.magiclane", name = "maps-compose", version.ref = "magicLaneSdkVersion"}
 magiclane-maps-compose-components = { group = "com.magiclane", name = "maps-compose-components", version.ref = "magicLaneSdkVersion"}
 nordic-ble = { group = "no.nordicsemi.android", name = "ble", version.ref = "nordicBle" }
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "gradlePlugin" }

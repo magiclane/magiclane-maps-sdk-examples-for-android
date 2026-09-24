@@ -9,6 +9,7 @@ package com.magiclane.sdk.examples.routenavigation
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Dialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -21,6 +22,8 @@ import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.AbsoluteSizeSpan
 import android.view.View
+import android.view.Window
+import android.view.WindowManager
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -29,6 +32,7 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.Insets
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
@@ -53,6 +57,7 @@ import com.magiclane.sdk.core.TimezoneService
 import com.magiclane.sdk.core.XyF
 import com.magiclane.sdk.examples.routenavigation.databinding.ActivityMainBinding
 import com.magiclane.sdk.examples.routenavigation.databinding.DialogLayoutBinding
+import com.magiclane.sdk.examples.routenavigation.databinding.RoadblockLayoutBinding
 import com.magiclane.sdk.places.Landmark
 import com.magiclane.sdk.routesandnavigation.ENavigationStatus
 import com.magiclane.sdk.routesandnavigation.ERouteStatus
@@ -160,7 +165,13 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private var navigationStatus = ENavigationStatus.Running
 
-    private var firstTime = true
+    // True while the top panel carries a status message ("Calculating...") instead of an
+    // instruction; everything else the top of the screen shows is hidden for as long.
+    private var hasStatusMessage = false
+
+    // The "Define roadblock" panel, shown while a tap lands on the navigation route. Kept around
+    // so it can be dismissed when the navigation ends.
+    private var roadblockDialog: Dialog? = null
 
     // Modern permissions launcher
     private val permissionsLauncher = registerForActivityResult(
@@ -220,17 +231,32 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         canPlayNavigationSound = true,
     )
 
+    // The progress bar only covers the initial route calculation. Later recalculations (a
+    // roadblock, a route deviation) are already announced by the "Calculating..." status in the
+    // navigation instruction panel, which the progress bar would only cover.
+    private var initialRouteCalculated = false
+
     // Define a listener that will let us know the progress of the routing process.
     private val routingProgressListener = ProgressListener.create(
         onStarted = {
-            if (firstTime) {
-                binding.progressBar.visibility = View.VISIBLE
-                firstTime = false
-            }
+            binding.progressBar.visibility = if (initialRouteCalculated) View.GONE else View.VISIBLE
         },
 
-        onCompleted = { _, _ ->
+        onCompleted = { errorCode, _ ->
             binding.progressBar.visibility = View.GONE
+
+            if (errorCode == GemError.NoError) {
+                initialRouteCalculated = true
+            } else {
+                // The navigation only starts once the route is ready, so a failed calculation
+                // is reported here: neither onNavigationError nor onNavigationEnded sees it.
+                showDialog(
+                    getString(
+                        R.string.route_navigation_error,
+                        SdkCall.runSynced { GemError.getMessage(errorCode, this) },
+                    ),
+                )
+            }
         },
 
         postOnMain = true,
@@ -552,6 +578,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     override fun onDestroy() {
         super.onDestroy()
 
+        hideRoadblockPanel()
         clearSdkListeners()
 
         // Release the SDK.
@@ -585,6 +612,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         binding.gemSurfaceView.onDefaultMapViewCreated = {
             updateFocusViewport()
+            setupRouteTouchHandler()
 
             lateinit var positionListener: PositionListener
             if (PositionService.position?.isValid() == true) {
@@ -629,6 +657,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             onSdkInitFailed = {}
             onDefaultMapViewCreated = {}
             onSurfaceChanged = { _, _ -> }
+            mapView?.onTouch = null
         }
     }
 
@@ -692,6 +721,78 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         }
     }
 
+    /**
+     * Opens the "Define roadblock" panel when a tap lands on the navigated route. The cursor
+     * selection has to run on the SDK thread, so the panel is shown back on the UI thread.
+     */
+    private fun setupRouteTouchHandler() {
+        binding.gemSurfaceView.mapView?.onTouch = { xy ->
+            SdkCall.execute {
+                val mapView = binding.gemSurfaceView.mapView ?: return@execute
+                mapView.cursorScreenPosition = xy
+
+                if (!mapView.cursorSelectionRoutes.isNullOrEmpty()) {
+                    runOnUiThread { showRoadblockPanel() }
+                }
+            }
+        }
+    }
+
+    /**
+     * Shows the roadblock length choices over the map. The panel is a dialog, so a tap outside it
+     * and the back key both dismiss it; [onNavigationEnded] takes care of the navigation ending
+     * while it is open.
+     */
+    private fun showRoadblockPanel() {
+        if (roadblockDialog?.isShowing == true) return
+
+        val panelWidth = resources.getDimensionPixelSize(R.dimen.roadblock_panel_width)
+        val dialog = Dialog(this)
+
+        val panelBinding = RoadblockLayoutBinding.inflate(layoutInflater).apply {
+            roadblock250M.setOnClickListener { onRoadblockLengthPicked(dialog, ROADBLOCK_LENGTH_250_M) }
+            roadblock1Km.setOnClickListener { onRoadblockLengthPicked(dialog, ROADBLOCK_LENGTH_1_KM) }
+            roadblock5Km.setOnClickListener { onRoadblockLengthPicked(dialog, ROADBLOCK_LENGTH_5_KM) }
+        }
+
+        dialog.apply {
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            setContentView(panelBinding.root)
+            setCancelable(true)
+            setCanceledOnTouchOutside(true)
+            setOnDismissListener { roadblockDialog = null }
+            // The panel draws its own rounded background, so the dialog window must not add one.
+            window?.apply {
+                setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+                setLayout(panelWidth, WindowManager.LayoutParams.WRAP_CONTENT)
+            }
+            show()
+        }
+
+        roadblockDialog = dialog
+    }
+
+    private fun hideRoadblockPanel() {
+        roadblockDialog?.dismiss()
+        roadblockDialog = null
+    }
+
+    private fun onRoadblockLengthPicked(dialog: Dialog, lengthInMeters: Int) {
+        dialog.dismiss()
+        setNavigationRoadblock(lengthInMeters)
+    }
+
+    /**
+     * Blocks the given length of the route ahead of the current position, which makes the
+     * navigation service recalculate the route around it. Ignored when the navigation is no longer
+     * running by the time the choice is made.
+     */
+    private fun setNavigationRoadblock(lengthInMeters: Int) = SdkCall.execute {
+        if (!navigationService.isNavigationActive(navigationListener)) return@execute
+
+        navigationService.setNavigationRoadBlock(lengthInMeters)
+    }
+
     private fun onNavigationEnded(errorCode: ErrorCode = GemError.NoError) {
         runOnUiThread {
             if ((errorCode != GemError.NoError) && (errorCode != GemError.Cancel)) {
@@ -701,6 +802,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
                 }
             }
             setNavigationPanelsVisible(isVisible = false)
+            hideRoadblockPanel()
         }
 
         SdkCall.execute {
@@ -769,6 +871,10 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             }
         }
 
+        // The instruction may arrive while a status message is on screen ("Calculating..."
+        // after a route deviation): the message keeps the panel to itself.
+        refreshStatusMessage()
+
         updateTrafficPanel(instruction)
     }
 
@@ -821,12 +927,23 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
     private fun refreshStatusMessage() {
         val statusMessage = getStatusMessage()
-        binding.turnContainer.isVisible = statusMessage.isEmpty()
+        hasStatusMessage = statusMessage.isNotEmpty()
 
-        if (statusMessage.isNotEmpty()) {
+        // A status message means there is no usable instruction yet, so everything that
+        // describes the next turn (turn image, distance to it, road code, sign post, the
+        // lane guidance and the traffic event ahead) is hidden and the panel carries the
+        // message alone.
+        binding.turnContainer.isVisible = !hasStatusMessage
+
+        if (hasStatusMessage) {
+            binding.signPost.isVisible = false
+            binding.roadCode.isVisible = false
+            binding.navInstruction.isVisible = true
+            binding.navInstruction.maxLines = STATUS_MESSAGE_MAX_LINES
             binding.navInstruction.text = statusMessage
             setLanePanelVisible(false)
             setTopPanelLaneVisible(false)
+            binding.trafficPanel.isVisible = false
         }
     }
 
@@ -1134,7 +1251,7 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
     }
 
     private fun updateTrafficPanel(instruction: NavigationInstruction) {
-        if (!binding.topPanel.isVisible) {
+        if (!binding.topPanel.isVisible || hasStatusMessage) {
             binding.trafficPanel.isVisible = false
             return
         }
@@ -1349,5 +1466,13 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
 
         // Fraction of the screen width occupied by the navigation panels in landscape orientation.
         private const val LANDSCAPE_PANEL_WIDTH_FRACTION = 0.45f
+
+        // Lines the top panel gives to a status message ("Calculating...").
+        private const val STATUS_MESSAGE_MAX_LINES = 3
+
+        // Lengths, in meters, offered by the "Define roadblock" panel.
+        private const val ROADBLOCK_LENGTH_250_M = 250
+        private const val ROADBLOCK_LENGTH_1_KM = 1000
+        private const val ROADBLOCK_LENGTH_5_KM = 5000
     }
 }

@@ -12,4 +12,8 @@
     <string name="route_simulation_error">Route simulation error: %s</string>
     <string name="in_str">in %s</string>
     <string name="out_in_str">out in %s</string>
+    <string name="define_roadblock">Define Roadblock</string>
+    <string name="roadblock_250_m">250 m</string>
+    <string name="roadblock_1_km">1 km</string>
+    <string name="roadblock_5_km">5 km</string>
 </resources>

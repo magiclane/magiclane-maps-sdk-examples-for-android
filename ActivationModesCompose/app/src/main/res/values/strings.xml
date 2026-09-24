@@ -1,0 +1,64 @@
+<resources>
+    <string name="app_name">ActivationModesCompose</string>
+    <string name="panel_title">Activation modes</string>
+
+    <string name="status_activation">Activation</string>
+    <string name="status_activated">ACTIVATED</string>
+    <string name="status_not_activated">NOT ACTIVATED</string>
+    <string name="status_connection">Connection</string>
+    <string name="status_online">online</string>
+    <string name="status_offline">offline</string>
+    <string name="status_app_id">App id</string>
+    <string name="status_no_token">(no token set)</string>
+    <string name="status_last_notification">Last SDK notification: %1$s</string>
+    <string name="notification_none">none yet</string>
+    <string name="notification_not_activated">onSdkNotActivated (%1$s)</string>
+    <string name="notification_activated">onSdkActivated</string>
+    <string name="reason_not_yet_activated">not yet activated</string>
+    <string name="reason_activation_expired">activation expired</string>
+
+    <string name="section_auto">1. Auto-activation (online)</string>
+    <string name="section_auto_hint">With the connection allowed, the SDK reaches Magic Lane Services and activates itself from the project token. Disallow it to simulate a device without internet.</string>
+    <string name="allow_connection">Allow internet connection</string>
+    <string name="message_connection_allowed">Connection allowed - auto-activation will run once online.</string>
+    <string name="message_connection_disallowed">Connection disallowed.</string>
+
+    <string name="section_offline_activation">2. Manual offline activation</string>
+    <string name="section_offline_activation_hint">For a device that never goes online. The request blob is generated on-device; the offline_activation_key comes back from Magic Lane Services via the companion app (scan the QR) or your own REST call.</string>
+    <string name="license_key_label">License key (optional)</string>
+    <string name="license_key_hint">leave empty to let the SDK generate one</string>
+    <string name="get_activation_blob">Get activation request blob</string>
+    <string name="scan_with_companion_app">Scan with the Magic Lane companion app:</string>
+    <string name="raw_blob">Raw blob:</string>
+    <string name="rest_request_intro">Or send the request yourself, from any online machine:</string>
+    <string name="rest_services_list_hint">The activation service URL comes from the services list, which this SDK has not fetched because the connection is disallowed. From any online machine GET the services list, take the entry with \"service_id\": 3 and type one of its \"URLs\" below:</string>
+    <string name="services_list_url">GET https://m71os.services.magicearthsdk.com/services_list_json</string>
+    <string name="activation_service_url_label">Activation service URL</string>
+    <string name="rest_response_hint">The response carries \"%1$s\" - paste it below.</string>
+    <string name="offline_activation_key_label">offline_activation_key</string>
+    <string name="complete_offline_activation">Complete offline activation</string>
+    <string name="message_activation_blob_ready">Activation request blob ready. Scan the QR with the companion app, or send the REST request.</string>
+    <string name="message_offline_activation_done">Offline activation completed - the SDK is activated.</string>
+
+    <string name="section_offline_deactivation">3. Manual offline deactivation</string>
+    <string name="section_offline_deactivation_hint">Releases this device\'s activation without going online, e.g. to decommission it or reuse its license key. The device stops being activated as soon as the blob is produced.</string>
+    <string name="get_deactivation_blob">Get deactivation request blob</string>
+    <string name="offline_deactivation_key_label">offline_deactivation_key</string>
+    <string name="complete_offline_deactivation">Complete offline deactivation</string>
+    <string name="message_nothing_to_deactivate">Nothing to deactivate - no active CORE activation on this device.</string>
+    <string name="message_deactivation_blob_ready">Deactivation request blob ready. Scan the QR with the companion app, or send the REST request.</string>
+    <string name="message_offline_deactivation_done">Offline deactivation completed - the SDK is no longer activated.</string>
+
+    <string name="section_reset">4. Reset to first run (testing aid)</string>
+    <string name="section_reset_hint">Disallows the connection and deletes this device\'s local activation records, so the SDK reports NOT ACTIVATED like on a first run and every scenario above can be replayed without restarting. Only the local records are dropped - nothing is released at Magic Lane Services; a real device must use the offline deactivation above.</string>
+    <string name="reset_to_first_run">Reset to first run</string>
+    <string name="message_reset_done">Reset done - offline, no local activations. Replay any scenario above.</string>
+
+    <string name="message_no_token">No application token is set on the SDK - cannot build the request.</string>
+    <string name="message_call_failed">%1$s failed (%2$d): %3$s</string>
+    <string name="qr_unavailable">Blob too large for a QR code. Use the raw blob or the REST request below.</string>
+
+    <string name="sdk_initialization_failed">SDK initialization failed: %1$s</string>
+    <string name="token_rejected_message">The token you provided was rejected. Make sure you provide the correct value, or if you don\'t have a token, check the magiclane.com website, sign up or sign in and generate one. Then input it in the AndroidManifest.xml file.</string>
+    <string name="close_button">Close</string>
+</resources>

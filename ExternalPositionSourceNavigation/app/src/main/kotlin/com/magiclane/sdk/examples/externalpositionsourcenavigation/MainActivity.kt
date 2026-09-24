@@ -572,10 +572,17 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
             rtt.text = rttText
             rtd.text = rtdText
         }
+
+        // The instruction may arrive while a status message is on screen ("Calculating..."
+        // after a route deviation): the message keeps the panel to itself.
+        refreshStatusMessage()
     }
 
     private fun refreshStatusMessage() {
         val statusMessage = getStatusMessage()
+
+        // A status message means there is no usable instruction yet, so the turn information
+        // (turn image and distance to it) is hidden and the panel carries the message alone.
         binding.turnContainer.isVisible = statusMessage.isEmpty()
         if (statusMessage.isNotEmpty()) {
             binding.navInstruction.text = statusMessage

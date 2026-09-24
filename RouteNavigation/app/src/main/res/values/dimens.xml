@@ -25,4 +25,11 @@
     <dimen name="lane_panel_height">48dp</dimen>
     <!-- Breathing room between the lane diagram and the lane panel edges. -->
     <dimen name="lane_panel_padding">8dp</dimen>
+    <!-- "Define roadblock" panel. -->
+    <dimen name="roadblock_panel_width">320dp</dimen>
+    <dimen name="roadblock_panel_padding">20dp</dimen>
+    <dimen name="roadblock_panel_corner_radius">16dp</dimen>
+    <dimen name="roadblock_title_margin_bottom">12dp</dimen>
+    <dimen name="roadblock_item_height">56dp</dimen>
+    <dimen name="roadblock_divider_height">1dp</dimen>
 </resources>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Contents of the "Define roadblock" panel: a title and one entry per roadblock length. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/roadblock_panel_background"
+        android:orientation="vertical"
+        android:paddingTop="@dimen/roadblock_panel_padding"
+        android:paddingBottom="@dimen/roadblock_panel_padding">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/roadblock_title_margin_bottom"
+            android:paddingStart="@dimen/roadblock_panel_padding"
+            android:paddingEnd="@dimen/roadblock_panel_padding"
+            android:text="@string/define_roadblock"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="@dimen/big_text_size"
+            android:textStyle="bold" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/roadblock_250_m"
+            style="@style/RoadblockEntry"
+            android:text="@string/roadblock_250_m" />
+
+        <View style="@style/RoadblockDivider" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/roadblock_1_km"
+            style="@style/RoadblockEntry"
+            android:text="@string/roadblock_1_km" />
+
+        <View style="@style/RoadblockDivider" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/roadblock_5_km"
+            style="@style/RoadblockEntry"
+            android:text="@string/roadblock_5_km" />
+
+    </LinearLayout>
+</layout>

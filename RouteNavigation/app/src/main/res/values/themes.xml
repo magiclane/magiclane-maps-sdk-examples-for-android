@@ -16,4 +16,26 @@
         <item name="colorSurface">@color/surface</item>
         <item name="colorOnSurface">@color/on_surface</item>
     </style>
+
+    <!-- One selectable length entry of the "Define roadblock" panel. -->
+    <style name="RoadblockEntry">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/roadblock_item_height</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">@dimen/roadblock_panel_padding</item>
+        <item name="android:paddingEnd">@dimen/roadblock_panel_padding</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textSize">@dimen/medium_text_size</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Hairline between two "Define roadblock" entries. -->
+    <style name="RoadblockDivider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/roadblock_divider_height</item>
+        <item name="android:layout_marginStart">@dimen/roadblock_panel_padding</item>
+        <item name="android:layout_marginEnd">@dimen/roadblock_panel_padding</item>
+        <item name="android:background">?attr/colorOutlineVariant</item>
+    </style>
 </resources>

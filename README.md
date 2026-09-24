@@ -18,6 +18,7 @@ The **Magic Lane Android Maps SDK** enables developers to create feature-rich ma
 
 Explore the examples to learn the capabilities of the Magic Lane Maps Android SDK:
 
+* [Activation Modes Compose](ActivationModesCompose) - Show every way an SDK with auto-activation becomes (and stops being) activated: auto-activation when online, the manual offline activation / deactivation ceremony for devices that never go online (request blob as QR code for the companion app or as a REST request), with the activation state reflected as a watermark on the map. Uses Jetpack Compose.
 * [Android Auto Route Navigation](AndroidAutoRouteNavigation) - Start navigation from the current position to a given landmark if a route can be calculated.
 * [Apply Custom Map Style](ApplyCustomMapStyle) - Present a map; apply a custom map style.
 * [Apply Map Style](ApplyMapStyle) - Get the map style items from the server; download and apply a map style.
