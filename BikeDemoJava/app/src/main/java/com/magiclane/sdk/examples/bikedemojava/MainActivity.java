@@ -1057,10 +1057,11 @@ public class MainActivity extends AppCompatActivity implements SoundUtils.ITTSPl
                 meters = (int) landmark.getCoordinates().getDistance(reference);
             }
             Pair<String, String> dist = GemUtil.INSTANCE.getDistText(meters, EUnitSystem.Metric, true, false);
+            Pair<String, String> details = GemUtil.INSTANCE.pairFormatLandmarkDetails(landmark, true);
             list.add(new SearchResultItem(
                 landmark.getImage() != null ? landmark.getImage().asBitmap(searchIconSize, searchIconSize) : null,
-                GemUtil.INSTANCE.formatName(landmark),
-                GemUtil.INSTANCE.getLandmarkDescription(landmark, true),
+                details.getFirst(),
+                details.getSecond(),
                 dist.getFirst(),
                 dist.getSecond(),
                 landmark

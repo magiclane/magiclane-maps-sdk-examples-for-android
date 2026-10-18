@@ -1,5 +1,5 @@
 [versions]
-magicLaneSdkVersion = "2.1.0"
+magicLaneSdkVersion = "2.2.0"
 
 minSdkVersion = "21"
 targetSdkVersion = "36"

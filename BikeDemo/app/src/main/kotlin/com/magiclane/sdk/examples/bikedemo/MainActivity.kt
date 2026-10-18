@@ -495,10 +495,11 @@ class MainActivity : AppCompatActivity(), SoundUtils.ITTSPlayerInitializationLis
         landmarks.map { landmark ->
             val meters = reference?.let { landmark.coordinates?.getDistance(it)?.toInt() } ?: 0
             val dist = GemUtil.getDistText(meters, EUnitSystem.Metric, true)
+            val details = GemUtil.pairFormatLandmarkDetails(landmark, true)
             SearchResultItem(
                 bmp = landmark.image?.asBitmap(searchIconSize, searchIconSize),
-                text = GemUtil.formatName(landmark),
-                subText = GemUtil.getLandmarkDescription(landmark, true),
+                text = details.first,
+                subText = details.second,
                 distance = dist.first,
                 unit = dist.second,
                 landmark = landmark,
